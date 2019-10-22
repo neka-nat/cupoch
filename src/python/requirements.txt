@@ -1,0 +1,2 @@
+numpy
+open3d-python

@@ -1,0 +1,7 @@
+add_subdirectory(cupoc)
+if (BUILD_UNIT_TESTS)
+    add_subdirectory(tests)
+endif ()
+if (BUILD_PYTHON_MODULE)
+    add_subdirectory(python)
+endif ()

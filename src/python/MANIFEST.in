@@ -1,0 +1,9 @@
+# Misc
+include requirements.txt
+
+# Compiled module
+include cupoc/cupoc*.pyd
+include cupoc/cupoc*.so
+
+# Exclude
+global-exclude *.py[co]
