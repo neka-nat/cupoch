@@ -16,3 +16,85 @@ struct equal_to<Eigen::Vector3i> {
 };
 
 }
+
+namespace cupoc {
+
+template<class... Args>
+struct add_tuple_functor : public thrust::binary_function<const thrust::tuple<Args...>, const thrust::tuple<Args...>, thrust::tuple<Args...>> {
+    __host__ __device__
+    thrust::tuple<Args...> operator()(const thrust::tuple<Args...>& x, const thrust::tuple<Args...>& y) const;
+};
+
+template<class... Args>
+struct devided_tuple_functor : public thrust::binary_function<const thrust::tuple<Args...>, const int, thrust::tuple<Args...>> {
+    __host__ __device__
+    thrust::tuple<Args...> operator()(const thrust::tuple<Args...>& x, const int& y) const;
+};
+
+template<class T1>
+struct add_tuple_functor<T1> : public thrust::binary_function<const thrust::tuple<T1>, const thrust::tuple<T1>, thrust::tuple<T1>> {
+    __host__ __device__
+    thrust::tuple<T1> operator()(const thrust::tuple<T1>& x, const thrust::tuple<T1>& y) const {
+        thrust::tuple<T1> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) + thrust::get<0>(y);
+        return ans;
+    }
+};
+
+template<class T1, class T2>
+struct add_tuple_functor<T1, T2> : public thrust::binary_function<const thrust::tuple<T1, T2>, const thrust::tuple<T1, T2>, thrust::tuple<T1, T2>> {
+    __host__ __device__
+    thrust::tuple<T1, T2> operator()(const thrust::tuple<T1, T2>& x, const thrust::tuple<T1, T2>& y) const {
+        thrust::tuple<T1, T2> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) + thrust::get<0>(y);
+        thrust::get<1>(ans) = thrust::get<1>(x) + thrust::get<1>(y);
+        return ans;
+    }
+};
+
+template<class T1, class T2, class T3>
+struct add_tuple_functor<T1, T2, T3> : public thrust::binary_function<const thrust::tuple<T1, T2, T3>, const thrust::tuple<T1, T2, T3>, thrust::tuple<T1, T2, T3>> {
+    __host__ __device__
+    thrust::tuple<T1, T2, T3> operator()(const thrust::tuple<T1, T2, T3>& x, const thrust::tuple<T1, T2, T3>& y) const {
+        thrust::tuple<T1, T2, T3> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) + thrust::get<0>(y);
+        thrust::get<1>(ans) = thrust::get<1>(x) + thrust::get<1>(y);
+        thrust::get<2>(ans) = thrust::get<2>(x) + thrust::get<2>(y);
+        return ans;
+    }
+};
+
+template<class T1>
+struct devided_tuple_functor<T1> : public thrust::binary_function<const thrust::tuple<T1>, const int, thrust::tuple<T1>> {
+    __host__ __device__
+    thrust::tuple<T1> operator()(const thrust::tuple<T1>& x, const int& y) const {
+        thrust::tuple<T1> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) / static_cast<float>(y);
+        return ans;
+    }
+};
+
+template<class T1, class T2>
+struct devided_tuple_functor<T1, T2> : public thrust::binary_function<const thrust::tuple<T1, T2>, const int, thrust::tuple<T1, T2>> {
+    __host__ __device__
+    thrust::tuple<T1, T2> operator()(const thrust::tuple<T1, T2>& x, const int& y) const {
+        thrust::tuple<T1, T2> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) / static_cast<float>(y);
+        thrust::get<1>(ans) = thrust::get<1>(x) / static_cast<float>(y);
+        return ans;
+    }
+};
+
+template<class T1, class T2, class T3>
+struct devided_tuple_functor<T1, T2, T3> : public thrust::binary_function<const thrust::tuple<T1, T2, T3>, const int, thrust::tuple<T1, T2, T3>> {
+    __host__ __device__
+    thrust::tuple<T1, T2, T3> operator()(const thrust::tuple<T1, T2, T3>& x, const int& y) const {
+        thrust::tuple<T1, T2, T3> ans;
+        thrust::get<0>(ans) = thrust::get<0>(x) / static_cast<float>(y);
+        thrust::get<1>(ans) = thrust::get<1>(x) / static_cast<float>(y);
+        thrust::get<2>(ans) = thrust::get<2>(x) / static_cast<float>(y);
+        return ans;
+    }
+};
+
+}
