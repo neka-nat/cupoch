@@ -31,16 +31,55 @@ if (BUILD_EIGEN3)
     set(EIGEN3_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/third_party/eigen")
 endif ()
 
-set(flann_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/cpp)
+set(flann_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/flann/src/cpp)
 
-include_directories(fmt/include)
+file(GLOB_RECURSE C_SOURCES flann/src/cpp/flann/flann.cpp)
+file(GLOB_RECURSE CPP_SOURCES flann/src/cpp/flann/flann_cpp.cpp)
+file(GLOB_RECURSE CU_SOURCES flann/src/cpp/flann/*.cu)
+
+add_library(flann_cpp_s STATIC ${CPP_SOURCES})
+target_include_directories(flann_cpp_s PUBLIC ${flann_INCLUDE_DIRS})
+target_link_libraries(flann_cpp_s ${LZ4_LIBRARIES})
+set_property(TARGET flann_cpp_s PROPERTY COMPILE_DEFINITIONS FLANN_STATIC FLANN_USE_CUDA)
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DFLANN_USE_CUDA")
+cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
+target_include_directories(flann_cuda_s PUBLIC ${flann_INCLUDE_DIRS})
+set_property(TARGET flann_cuda_s PROPERTY COMPILE_DEFINITIONS FLANN_STATIC)
+
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
+    add_library(flann_cpp SHARED "")
+    set_target_properties(flann_cpp PROPERTIES LINKER_LANGUAGE CXX)
+    target_link_libraries(flann_cpp -Wl,-whole-archive flann_cpp_s -Wl,-no-whole-archive)
+    cuda_add_library(flann_cuda SHARED "")
+    set_target_properties(flann_cuda PROPERTIES LINKER_LANGUAGE CXX)
+    target_link_libraries(flann_cuda -Wl,-whole-archive flann_cuda_s -Wl,-no-whole-archive)
+    set_property(TARGET flann_cpp_s PROPERTY COMPILE_DEFINITIONS FLANN_USE_CUDA)
+else()
+    add_library(flann_cpp SHARED ${CPP_SOURCES})
+    target_link_libraries(flann_cpp -Wl,--push-state,--no-as-needed ${LZ4_LIBRARIES} -Wl,--pop-state)
+    # export lz4 headers, so that MSVC to creates flann_cpp.lib
+    set_target_properties(flann_cpp PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS YES)
+    cuda_add_library(flann_cuda SHARED ${CPP_SOURCES})
+    set_property(TARGET flann_cpp PROPERTY COMPILE_DEFINITIONS FLANN_USE_CUDA)
+endif()
+
+
 cuda_add_library(fmt fmt/src/format.cc fmt/src/posix.cc)
+target_include_directories(fmt PUBLIC fmt/include)
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+
+# liblzf
+file(GLOB LIBLZF_SOURCE_FILES "liblzf/*.c")
+add_library(liblzf ${LIBLZF_SOURCE_FILES})
+target_include_directories(liblzf PUBLIC liblzf)
+set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
+     ${liblzf_INCLUDE_DIRS}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)

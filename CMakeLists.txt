@@ -106,7 +106,13 @@ set(CUDA_ARCH -gencode arch=compute_30,code=sm_30
               -gencode arch=compute_60,code=sm_60
               -gencode arch=compute_61,code=sm_61
               -gencode arch=compute_70,code=sm_70)
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr --expt-extended-lambda ${CUDA_ARCH})
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
+    --expt-relaxed-constexpr
+    --expt-extended-lambda
+    -Xcudafe "--diag_suppress=integer_sign_change"
+    -Xcudafe "--diag_suppress=partial_override"
+    -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
+    ${CUDA_ARCH})
 
 add_subdirectory(third_party)
 

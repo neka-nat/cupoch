@@ -2,11 +2,11 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <thrust/device_vector.h>
 
 #include "cupoc/geometry/kdtree_search_param.h"
 #include "cupoc/geometry/pointcloud.h"
 #include "cupoc/utility/eigen.h"
+#include "cupoc/utility/helper.h"
 
 namespace flann {
 template <typename T>
@@ -34,29 +34,29 @@ public:
     bool SetGeometry(const PointCloud &geometry);
 
     template <typename T>
-    int Search(const T &query,
+    int Search(const thrust::device_vector<T> &query,
                const KDTreeSearchParam &param,
-               thrust::device_vector<int> &indices,
-               thrust::device_vector<float> &distance2) const;
+               thrust::device_vector<KNNIndices> &indices,
+               thrust::device_vector<KNNDistances> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const T &query,
+    int SearchKNN(const thrust::device_vector<T> &query,
                   int knn,
-                  thrust::device_vector<int> &indices,
-                  thrust::device_vector<float> &distance2) const;
+                  thrust::device_vector<KNNIndices> &indices,
+                  thrust::device_vector<KNNDistances> &distance2) const;
 
     template <typename T>
-    int SearchRadius(const T &query,
+    int SearchRadius(const thrust::device_vector<T> &query,
                      float radius,
-                     thrust::device_vector<int> &indices,
-                     thrust::device_vector<float> &distance2) const;
+                     thrust::device_vector<KNNIndices> &indices,
+                     thrust::device_vector<KNNDistances> &distance2) const;
 
     template <typename T>
-    int SearchHybrid(const T &query,
+    int SearchHybrid(const thrust::device_vector<T> &query,
                      float radius,
                      int max_nn,
-                     thrust::device_vector<int> &indices,
-                     thrust::device_vector<float> &distance2) const;
+                     thrust::device_vector<KNNIndices> &indices,
+                     thrust::device_vector<KNNDistances> &distance2) const;
 
 private:
     bool SetRawData(const Eigen::Map<const Eigen::MatrixXf_u> &data);

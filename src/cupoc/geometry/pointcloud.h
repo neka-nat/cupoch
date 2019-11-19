@@ -39,6 +39,7 @@ public:
                                          const Eigen::Vector3f &max_bound) const;
 
     bool EstimateNormals(const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
+    bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference = Eigen::Vector3f(0.0, 0.0, 1.0));
 
 public:
     thrust::device_vector<Eigen::Vector3f_u> points_;
