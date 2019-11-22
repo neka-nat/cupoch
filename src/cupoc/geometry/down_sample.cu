@@ -13,7 +13,7 @@ namespace {
 struct compute_key_functor {
     compute_key_functor(const Eigen::Vector3f& voxel_min_bound, float voxel_size)
         : voxel_min_bound_(voxel_min_bound), voxel_size_(voxel_size) {};
-    const Eigen::Vector3f voxel_min_bound_;
+    const Eigen::Vector3f& voxel_min_bound_;
     const float voxel_size_;
     __device__
     Eigen::Vector3i operator()(const Eigen::Vector3f_u& pt) {

@@ -10,14 +10,15 @@ using namespace cupoc::geometry;
 namespace {
 
 template<typename ElementType, typename ArrayType>
-struct indexed_copy_functor {
-    indexed_copy_functor(int index)
-        : index_(index) {};
-    const int index_;
+struct stride_copy_functor {
+    stride_copy_functor(const ElementType* elements, int stride)
+        : elements_(elements), stride_(stride) {};
+    const ElementType* elements_;
+    const int stride_;
     __device__
-    ArrayType operator()(const ElementType& x, const ArrayType& idxs) {
-        ArrayType ans = idxs;
-        ans[index_] = x;
+    ArrayType operator()(int index) {
+        ArrayType ans;
+        for (int k = 0; k < stride_; ++k) ans[k] = elements_[index * stride_ + k];
         return ans;
     }
 };
@@ -26,19 +27,14 @@ void ConvertIndicesAndDistaces(int knn, int n_query, thrust::device_vector<int> 
                                thrust::device_vector<float> distance2_dv,
                                thrust::device_vector<KNNIndices> &indices,
                                thrust::device_vector<KNNDistances> &distance2) {
-    const int total_size = knn * n_query;
     indices.resize(n_query);
     distance2.resize(n_query);
     thrust::for_each(indices.begin(), indices.end(), [] __device__ (KNNIndices& idxs){idxs.fill(-1);});
     thrust::for_each(distance2.begin(), distance2.end(), [] __device__ (KNNDistances& dist){dist.fill(-1.0);});
-    for (int k = 0; k < knn; ++k) {
-        thrust::strided_range<thrust::device_vector<int>::iterator> itr_idxs(indices_dv.begin() + k, indices_dv.begin() + total_size + 1 - knn + k, knn);
-        indexed_copy_functor<int, KNNIndices> icf_i(k);
-        thrust::transform(itr_idxs.begin(), itr_idxs.end(), indices.begin(), indices.begin(), icf_i);
-        thrust::strided_range<thrust::device_vector<float>::iterator> itr_dist(distance2_dv.begin() + k, distance2_dv.begin() + total_size + 1 - knn + k, knn);
-        indexed_copy_functor<float, KNNDistances> icf_d(k);
-        thrust::transform(itr_dist.begin(), itr_dist.end(), distance2.begin(), distance2.begin(), icf_d);
-    }
+    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_query), indices.begin(),
+                      stride_copy_functor<int, KNNIndices>(thrust::raw_pointer_cast(indices_dv.data()), knn));
+    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_query), distance2.begin(),
+                      stride_copy_functor<float, KNNDistances>(thrust::raw_pointer_cast(distance2_dv.data()), knn));
 }
 
 }

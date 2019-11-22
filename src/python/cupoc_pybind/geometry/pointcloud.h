@@ -24,6 +24,10 @@ public:
 
     host_PointCloud VoxelDownSample(float voxel_size);
 
+    bool EstimateNormals(const geometry::KDTreeSearchParamKNN& search_params);
+
+    bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f& orientation_reference);
+
 private:
     utility::shared_ptr<PointCloud> device_impl_;
 };

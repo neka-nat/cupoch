@@ -5,7 +5,7 @@ CUDA-based Point Cloud library
 ## Core Features
 
 * Point cloud calculations using CUDA
-* Almost compatible with Open3D
+* API like [Open3D](https://github.com/intel-isl/Open3D)
 
 ## Installation
 

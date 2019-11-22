@@ -29,6 +29,14 @@ void pybind_pointcloud(py::module &m) {
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "
                  "a voxel",
-                 "voxel_size"_a);
-
+                 "voxel_size"_a)
+            .def("estimate_normals", &geometry::host_PointCloud::EstimateNormals,
+                 "Function to compute the normals of a point cloud. Normals "
+                 "are oriented with respect to the input point cloud if "
+                 "normals exist",
+                 "search_param"_a = geometry::KDTreeSearchParamKNN())
+            .def("orient_normals_to_align_with_direction",
+                 &geometry::host_PointCloud::OrientNormalsToAlignWithDirection,
+                 "Function to orient the normals of a point cloud",
+                 "orientation_reference"_a = Eigen::Vector3f(0.0, 0.0, 1.0));
 }

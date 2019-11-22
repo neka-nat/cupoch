@@ -11,7 +11,7 @@ namespace {
 
 struct transform_functor {
     transform_functor(const Eigen::Matrix4f& transform) : transform_(transform){};
-    const Eigen::Matrix4f_u transform_;
+    const Eigen::Matrix4f_u& transform_;
     __device__
     void operator()(Eigen::Vector3f_u& pt) {
         pt = transform_.block<3, 3>(0, 0) * pt + transform_.block<3, 1>(0, 3);

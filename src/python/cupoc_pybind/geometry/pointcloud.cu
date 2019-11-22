@@ -31,3 +31,11 @@ host_PointCloud host_PointCloud::VoxelDownSample(float voxel_size) {
     out.device_impl_ = device_impl_->VoxelDownSample(voxel_size);
     return out;
 }
+
+bool host_PointCloud::EstimateNormals(const geometry::KDTreeSearchParamKNN& search_params) {
+    return device_impl_->EstimateNormals(search_params);
+}
+
+bool host_PointCloud::OrientNormalsToAlignWithDirection(const Eigen::Vector3f& orientation_reference) {
+    return device_impl_->OrientNormalsToAlignWithDirection(orientation_reference);
+}

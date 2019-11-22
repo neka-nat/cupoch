@@ -77,7 +77,7 @@ public:
         }
     }
 
-    __host__ __device__
+    __host__
     inline shared_ptr& operator=(const shared_ptr& src) noexcept {
         shared_ptr(src).swap(*this);
         return *this;
