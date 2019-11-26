@@ -17,11 +17,11 @@ struct extact_knn_distance_functor {
 
 struct make_correspondence_pair_functor {
    __device__
-   thrust::tuple<int, int> operator() (int i, const geometry::KNNIndices& idxs) const {
+   Eigen::Vector2i operator() (int i, const geometry::KNNIndices& idxs) const {
         if (idxs[0] < 0) {
-            return thrust::make_tuple(-1, -1);
+            return Eigen::Vector2i(-1, -1);
         } else {
-            return thrust::make_tuple(i, idxs[0]);
+            return Eigen::Vector2i(i, idxs[0]);
         }
    }
 };
@@ -50,7 +50,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                       indices.begin(), result.correspondence_set_.begin(),
                       make_correspondence_pair_functor());
     auto end = thrust::remove_if(result.correspondence_set_.begin(), result.correspondence_set_.end(),
-                                 [] __device__ (const thrust::tuple<int, int>& x) -> bool {return (thrust::get<0>(x) < 0);});
+                                 [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
     int n_out = static_cast<int>(end - result.correspondence_set_.begin());
     result.correspondence_set_.resize(n_out);
 
@@ -66,6 +66,25 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
 }
 
 }
+
+RegistrationResult::RegistrationResult(const Eigen::Matrix4f &transformation)
+    : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+
+RegistrationResult::RegistrationResult(const RegistrationResult& other)
+    : transformation_(other.transformation_), correspondence_set_(other.correspondence_set_), inlier_rmse_(other.inlier_rmse_), fitness_(other.fitness_)
+{}
+
+RegistrationResult::~RegistrationResult() {}
+
+void RegistrationResult::SetCorrespondenceSet(const thrust::host_vector<Eigen::Vector2i>& corres) {
+    correspondence_set_ = corres;
+}
+
+thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet() const {
+    thrust::host_vector<Eigen::Vector2i> corres = correspondence_set_;
+    return std::move(corres);
+}
+
 
 RegistrationResult cupoc::registration::RegistrationICP(
     const geometry::PointCloud &source,

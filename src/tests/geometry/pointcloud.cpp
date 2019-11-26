@@ -4,6 +4,10 @@
 using namespace cupoc;
 using namespace cupoc::geometry;
 
+TEST(PointCloud, Constuctor) {
+
+}
+
 TEST(PointCloud, Transform) {
     test_pointcloud_transform();
 }

@@ -1,5 +1,6 @@
 #include "cupoc/registration/kabsch.h"
 #include "cupoc/utility/svd3_cuda.h"
+#include <Eigen/Geometry>
 #include <thrust/reduce.h>
 
 using namespace cupoc;

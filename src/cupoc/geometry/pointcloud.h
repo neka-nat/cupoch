@@ -3,6 +3,7 @@
 #include "cupoc/utility/eigen.h"
 #include "cupoc/geometry/kdtree_search_param.h"
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 namespace cupoc {
 namespace geometry {
@@ -10,7 +11,12 @@ namespace geometry {
 class PointCloud {
 public:
     PointCloud();
+    PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points);
+    PointCloud(const PointCloud& other);
     ~PointCloud();
+
+    void SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points);
+    thrust::host_vector<Eigen::Vector3f_u> GetPoints() const;
 
     Eigen::Vector3f GetMinBound() const;
     Eigen::Vector3f GetMaxBound() const;

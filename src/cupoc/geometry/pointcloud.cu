@@ -38,8 +38,19 @@ struct cropped_copy_functor {
 }
 
 PointCloud::PointCloud() {}
+PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points) : points_(points) {}
+PointCloud::PointCloud(const PointCloud& other) : points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
 
 PointCloud::~PointCloud() {}
+
+void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points) {
+    points_ = points;
+}
+
+thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetPoints() const {
+    thrust::host_vector<Eigen::Vector3f_u> points = points_;
+    return std::move(points);
+}
 
 Eigen::Vector3f PointCloud::GetMinBound() const {
     return ComputeMinBound(points_);

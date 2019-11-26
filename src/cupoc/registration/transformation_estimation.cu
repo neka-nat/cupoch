@@ -12,8 +12,8 @@ struct element_copy_functor {
     element_copy_functor(const Eigen::Vector3f_u* points) : points_(points) {};
     const Eigen::Vector3f_u* points_;
     __device__
-    Eigen::Vector3f_u operator()(const thrust::tuple<int, int>& x) const {
-        return points_[thrust::get<Index>(x)];
+    Eigen::Vector3f_u operator()(const Eigen::Vector2i& x) const {
+        return points_[x[Index]];
     }
 };
 

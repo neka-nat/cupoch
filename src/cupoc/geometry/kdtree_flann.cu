@@ -174,45 +174,23 @@ bool KDTreeFlann::SetRawData(const Eigen::Map<const Eigen::MatrixXf_u> &data) {
     return true;
 }
 
-template int KDTreeFlann::Search<Eigen::Vector3f>(
-        const thrust::device_vector<Eigen::Vector3f> &query,
+template int KDTreeFlann::Search<Eigen::Vector3f_u>(
+        const thrust::device_vector<Eigen::Vector3f_u> &query,
         const KDTreeSearchParam &param,
         thrust::device_vector<KNNIndices> &indices,
         thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchKNN<Eigen::Vector3f>(
-        const thrust::device_vector<Eigen::Vector3f> &query,
+template int KDTreeFlann::SearchKNN<Eigen::Vector3f_u>(
+        const thrust::device_vector<Eigen::Vector3f_u> &query,
         int knn,
         thrust::device_vector<KNNIndices> &indices,
         thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchRadius<Eigen::Vector3f>(
-        const thrust::device_vector<Eigen::Vector3f> &query,
+template int KDTreeFlann::SearchRadius<Eigen::Vector3f_u>(
+        const thrust::device_vector<Eigen::Vector3f_u> &query,
         float radius,
         thrust::device_vector<KNNIndices> &indices,
         thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::Vector3f>(
-        const thrust::device_vector<Eigen::Vector3f> &query,
-        float radius,
-        int max_nn,
-        thrust::device_vector<KNNIndices> &indices,
-        thrust::device_vector<KNNDistances> &distance2) const;
-
-template int KDTreeFlann::Search<Eigen::VectorXf>(
-        const thrust::device_vector<Eigen::VectorXf> &query,
-        const KDTreeSearchParam &param,
-        thrust::device_vector<KNNIndices> &indices,
-        thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchKNN<Eigen::VectorXf>(
-        const thrust::device_vector<Eigen::VectorXf> &query,
-        int knn,
-        thrust::device_vector<KNNIndices> &indices,
-        thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchRadius<Eigen::VectorXf>(
-        const thrust::device_vector<Eigen::VectorXf> &query,
-        float radius,
-        thrust::device_vector<KNNIndices> &indices,
-        thrust::device_vector<KNNDistances> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::VectorXf>(
-        const thrust::device_vector<Eigen::VectorXf> &query,
+template int KDTreeFlann::SearchHybrid<Eigen::Vector3f_u>(
+        const thrust::device_vector<Eigen::Vector3f_u> &query,
         float radius,
         int max_nn,
         thrust::device_vector<KNNIndices> &indices,

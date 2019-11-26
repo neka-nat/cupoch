@@ -1,6 +1,7 @@
 #pragma once
 #include "cupoc/utility/eigen.h"
 #include "cupoc/registration/transformation_estimation.h"
+#include <thrust/host_vector.h>
 
 namespace cupoc {
 
@@ -30,9 +31,12 @@ public:
 class RegistrationResult {
 public:
     RegistrationResult(
-            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity())
-        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
-    ~RegistrationResult() {}
+            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity());
+    RegistrationResult(const RegistrationResult& other);
+    ~RegistrationResult();
+
+    void SetCorrespondenceSet(const thrust::host_vector<Eigen::Vector2i>& corres);
+    thrust::host_vector<Eigen::Vector2i> GetCorrespondenceSet() const;
 
 public:
     Eigen::Matrix4f_u transformation_;

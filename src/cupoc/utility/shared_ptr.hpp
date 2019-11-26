@@ -16,7 +16,6 @@ struct sp_counter_base
     virtual void dispose(void*) = 0;
 };
 
-template<typename T>
 struct sp_counter_impl_p : sp_counter_base
 {
     __host__ __device__
@@ -45,7 +44,7 @@ public:
     template<typename U>
     __host__ __device__
     explicit shared_ptr(U* ptr) : current_ptr(reinterpret_cast<void*>(ptr)), counter(NULL) {
-        if(ptr) counter = new sp_counter_impl_p<T>();
+        if(ptr) counter = new sp_counter_impl_p();
     }
 
     template<typename U>

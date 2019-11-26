@@ -12,7 +12,7 @@ class PointCloud;
 
 namespace registration {
 
-typedef thrust::device_vector<thrust::tuple<int, int>> CorrespondenceSet;
+typedef thrust::device_vector<Eigen::Vector2i> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,
