@@ -9,19 +9,23 @@ using namespace cupoc::registration;
 namespace {
 
 struct extact_knn_distance_functor {
+    extact_knn_distance_functor(const float* distances) : distances_(distances) {};
+    const float* distances_;
     __device__
-    float operator() (const geometry::KNNDistances& x) const {
-        return max(x[0], 0.0);
+    float operator() (int idx) const {
+        return max(distances_[idx], 0.0);
     }
 };
 
 struct make_correspondence_pair_functor {
+    make_correspondence_pair_functor(const int* indices) : indices_(indices) {};
+    const int* indices_;
    __device__
-   Eigen::Vector2i operator() (int i, const geometry::KNNIndices& idxs) const {
-        if (idxs[0] < 0) {
+   Eigen::Vector2i operator() (int i) const {
+        if (indices_[i] < 0) {
             return Eigen::Vector2i(-1, -1);
         } else {
-            return Eigen::Vector2i(i, idxs[0]);
+            return Eigen::Vector2i(i, indices_[i]);
         }
    }
 };
@@ -38,17 +42,18 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     }
 
     const int n_pt = source.points_.size();
-    thrust::device_vector<geometry::KNNIndices> indices(n_pt);
-    thrust::device_vector<geometry::KNNDistances> dists(n_pt);
+    thrust::device_vector<int> indices(n_pt);
+    thrust::device_vector<float> dists(n_pt);
     target_kdtree.SearchHybrid(source.points_, max_correspondence_distance,
                                1, indices, dists);
-    const float error2 = thrust::transform_reduce(dists.begin(), dists.end(),
-                                                  extact_knn_distance_functor(),
-                                                  0.0f, thrust::plus<float>());
+    extact_knn_distance_functor func(thrust::raw_pointer_cast(dists.data()));
+    const float error2 = thrust::transform_reduce(thrust::make_counting_iterator(0),
+                                                  thrust::make_counting_iterator(n_pt),
+                                                  func, 0.0f, thrust::plus<float>());
     result.correspondence_set_.resize(n_pt);
     thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_pt),
-                      indices.begin(), result.correspondence_set_.begin(),
-                      make_correspondence_pair_functor());
+                      result.correspondence_set_.begin(),
+                      make_correspondence_pair_functor(thrust::raw_pointer_cast(indices.data())));
     auto end = thrust::remove_if(result.correspondence_set_.begin(), result.correspondence_set_.end(),
                                  [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
     int n_out = static_cast<int>(end - result.correspondence_set_.begin());
@@ -82,7 +87,7 @@ void RegistrationResult::SetCorrespondenceSet(const thrust::host_vector<Eigen::V
 
 thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet() const {
     thrust::host_vector<Eigen::Vector2i> corres = correspondence_set_;
-    return std::move(corres);
+    return corres;
 }
 
 

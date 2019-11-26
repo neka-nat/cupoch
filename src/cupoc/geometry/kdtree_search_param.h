@@ -5,7 +5,6 @@ namespace geometry {
 
 static const int NUM_MAX_NN = 50;
 typedef Eigen::Matrix<int, NUM_MAX_NN, 1, Eigen::DontAlign> KNNIndices;
-typedef Eigen::Matrix<float, NUM_MAX_NN, 1, Eigen::DontAlign> KNNDistances;
 
 class KDTreeSearchParam {
 public:

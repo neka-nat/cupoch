@@ -40,7 +40,7 @@ void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points)
 
 thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetPoints() const {
     thrust::host_vector<Eigen::Vector3f_u> points = points_;
-    return std::move(points);
+    return points;
 }
 
 void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals) {
@@ -49,7 +49,7 @@ void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normal
 
 thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetNormals() const {
     thrust::host_vector<Eigen::Vector3f_u> normals = normals_;
-    return std::move(normals);
+    return normals;
 }
 
 void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors) {
@@ -58,7 +58,7 @@ void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors)
 
 thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetColors() const {
     thrust::host_vector<Eigen::Vector3f_u> colors = colors_;
-    return std::move(colors);
+    return colors;
 }
 
 PointCloud &PointCloud::Clear() {

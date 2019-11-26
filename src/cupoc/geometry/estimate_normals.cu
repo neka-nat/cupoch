@@ -228,12 +228,17 @@ Eigen::Vector3f_u ComputeNormal(const Eigen::Vector3f_u* points,
 }
 
 struct compute_normal_functor {
-    compute_normal_functor(const Eigen::Vector3f_u* points, int knn) : points_(points), knn_(knn) {};
+    compute_normal_functor(const Eigen::Vector3f_u* points,
+                           const int* indices, int knn)
+        : points_(points), indices_(indices), knn_(knn) {};
     const Eigen::Vector3f_u* points_;
+    const int* indices_;
     const int knn_;
     __device__
-    Eigen::Vector3f_u operator()(const KNNIndices& x) const {
-        Eigen::Vector3f_u normal = ComputeNormal(points_, x, knn_);
+    Eigen::Vector3f_u operator()(const int& idx) const {
+        KNNIndices idxs = KNNIndices::Constant(-1);
+        for (int k = 0; k < knn_; ++k) idxs[k] = indices_[idx * knn_ + k];
+        Eigen::Vector3f_u normal = ComputeNormal(points_, idxs, knn_);
         if (normal.norm() == 0.0) {
             normal = Eigen::Vector3f_u(0.0, 0.0, 1.0);
         }
@@ -264,11 +269,13 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-    thrust::device_vector<KNNIndices> indices;
-    thrust::device_vector<KNNDistances> distance2;
+    thrust::device_vector<int> indices;
+    thrust::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
     normals_.resize(points_.size());
-    compute_normal_functor func(thrust::raw_pointer_cast(points_.data()), ((const KDTreeSearchParamKNN &)search_param).knn_);
+    compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
+                                thrust::raw_pointer_cast(indices.data()),
+                                ((const KDTreeSearchParamKNN &)search_param).knn_);
     thrust::transform(indices.begin(), indices.end(), normals_.begin(), func);
     return true;
 }
