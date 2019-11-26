@@ -10,7 +10,6 @@
 #include <pybind11/stl_bind.h>
 #include <thrust/host_vector.h>
 #include "cupoc/utility/eigen.h"
-#include "cupoc/utility/shared_ptr.hpp"
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -40,4 +39,3 @@ void bind_copy_functions(Class_ &cl) {
 // PYBIND11_MAKE_OPAQUE(thrust::host_vector<int>);
 // PYBIND11_MAKE_OPAQUE(thrust::host_vector<float>);
 // PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f_u>);
-PYBIND11_DECLARE_HOLDER_TYPE(T, cupoc::utility::shared_ptr<T>);

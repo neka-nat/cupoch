@@ -1,6 +1,5 @@
 #pragma once
 #include "cupoc/geometry/geometry.h"
-#include "cupoc/utility/shared_ptr.hpp"
 #include "cupoc/utility/eigen.h"
 #include "cupoc/geometry/kdtree_search_param.h"
 #include <thrust/device_vector.h>
@@ -22,6 +21,9 @@ public:
     void SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals);
     thrust::host_vector<Eigen::Vector3f_u> GetNormals() const;
 
+    void SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors);
+    thrust::host_vector<Eigen::Vector3f_u> GetColors() const;
+
     Eigen::Vector3f GetMinBound() const;
     Eigen::Vector3f GetMaxBound() const;
     Eigen::Vector3f GetCenter() const;
@@ -42,14 +44,15 @@ public:
         return !points_.empty() && colors_.size() == points_.size();
     }
 
+    PointCloud &NormalizeNormals();
     PointCloud& Transform(const Eigen::Matrix4f& transformation);
 
-    utility::shared_ptr<PointCloud> SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert = false) const;
+    std::shared_ptr<PointCloud> SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert = false) const;
 
-    utility::shared_ptr<PointCloud> VoxelDownSample(float voxel_size) const;
+    std::shared_ptr<PointCloud> VoxelDownSample(float voxel_size) const;
 
-    utility::shared_ptr<PointCloud> Crop(const Eigen::Vector3f &min_bound,
-                                         const Eigen::Vector3f &max_bound) const;
+    std::shared_ptr<PointCloud> Crop(const Eigen::Vector3f &min_bound,
+                                     const Eigen::Vector3f &max_bound) const;
 
     bool EstimateNormals(const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
     bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference = Eigen::Vector3f(0.0, 0.0, 1.0));

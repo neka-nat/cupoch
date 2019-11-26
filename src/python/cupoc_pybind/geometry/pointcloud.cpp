@@ -4,7 +4,7 @@
 using namespace cupoc;
 
 void pybind_pointcloud(py::module &m) {
-    py::class_<geometry::PointCloud, utility::shared_ptr<geometry::PointCloud>>
+    py::class_<geometry::PointCloud, std::shared_ptr<geometry::PointCloud>>
             pointcloud(m, "PointCloud",
                        "PointCloud class. A point cloud consists of point "
                        "coordinates, and optionally point colors and point "
@@ -18,12 +18,16 @@ void pybind_pointcloud(py::module &m) {
                                     &geometry::PointCloud::SetPoints)
             .def_property("normals", &geometry::PointCloud::GetNormals,
                                      &geometry::PointCloud::SetNormals)
+            .def_property("colors", &geometry::PointCloud::GetColors,
+                                     &geometry::PointCloud::SetColors)
             .def("has_points", &geometry::PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &geometry::PointCloud::HasNormals,
                  "Returns ``True`` if the point cloud contains point normals.")
             .def("has_colors", &geometry::PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
+            .def("normalize_normals", &geometry::PointCloud::NormalizeNormals,
+                 "Normalize point normals to length 1.")
             .def("transform", &geometry::PointCloud::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")

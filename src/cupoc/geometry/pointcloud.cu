@@ -52,6 +52,15 @@ thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetNormals() const {
     return std::move(normals);
 }
 
+void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors) {
+    colors_ = colors;
+}
+
+thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetColors() const {
+    thrust::host_vector<Eigen::Vector3f_u> colors = colors_;
+    return std::move(colors);
+}
+
 PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
@@ -73,15 +82,20 @@ Eigen::Vector3f PointCloud::GetCenter() const {
     return ComuteCenter(points_);
 }
 
+PointCloud &PointCloud::NormalizeNormals() {
+    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
+    return *this;
+}
+
 PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
     return *this;
 }
 
-utility::shared_ptr<PointCloud> PointCloud::Crop(const Eigen::Vector3f &min_bound,
-                                                 const Eigen::Vector3f &max_bound) const {
-    auto output = utility::shared_ptr<PointCloud>(new PointCloud());
+std::shared_ptr<PointCloud> PointCloud::Crop(const Eigen::Vector3f &min_bound,
+                                             const Eigen::Vector3f &max_bound) const {
+    auto output = std::make_shared<PointCloud>();
     if (min_bound[0] > max_bound[0] ||
         min_bound[1] > max_bound[1] ||
         min_bound[2] > max_bound[2]) {

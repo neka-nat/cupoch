@@ -1,5 +1,4 @@
 #include "cupoc/geometry/pointcloud.h"
-#include "cupoc/geometry/geometry3d.h"
 #include "cupoc/utility/console.h"
 #include "cupoc/utility/helper.h"
 #include <thrust/gather.h>
@@ -34,7 +33,7 @@ int CalcAverageByKey(thrust::device_vector<Eigen::Vector3i>& keys,
     auto end1 = thrust::reduce_by_key(keys.begin(), keys.end(),
                                       thrust::make_constant_iterator(1),
                                       keys_out.begin(), counts.begin());
-    int n_out = static_cast<int>(end1.second - counts.begin());
+    int n_out = thrust::distance(counts.begin(), end1.second);
     counts.resize(n_out);
 
     thrust::equal_to<Eigen::Vector3i> binary_pred;
@@ -52,18 +51,26 @@ int CalcAverageByKey(thrust::device_vector<Eigen::Vector3i>& keys,
 
 }
 
-utility::shared_ptr<PointCloud> PointCloud::SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert) const {
-    auto output = utility::shared_ptr<PointCloud>(new PointCloud());
+std::shared_ptr<PointCloud> PointCloud::SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert) const {
+    auto output = std::make_shared<PointCloud>();
     const bool has_normals = HasNormals();
     const bool has_colors = HasColors();
 
     output->points_.resize(indices.size());
     thrust::gather(indices.begin(), indices.end(), points_.begin(), output->points_.begin());
+    if (HasNormals()) {
+        output->normals_.resize(indices.size());
+        thrust::gather(indices.begin(), indices.end(), normals_.begin(), output->normals_.begin());
+    }
+    if (HasColors()) {
+        output->colors_.resize(indices.size());
+        thrust::gather(indices.begin(), indices.end(), colors_.begin(), output->colors_.begin());
+    }
     return output;
 }
 
-utility::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const {
-    auto output = utility::shared_ptr<PointCloud>(new PointCloud());
+std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const {
+    auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
         utility::LogWarning("[VoxelDownSample] voxel_size <= 0.\n");
         return output;
@@ -104,6 +111,7 @@ utility::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) co
                     thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->normals_.begin())));
         output->points_.resize(n_out);
         output->normals_.resize(n_out);
+        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
     } else if (!has_normals && has_colors) {
         thrust::device_vector<Eigen::Vector3f_u> sorted_colors = colors_;
         output->colors_.resize(n);
@@ -127,6 +135,7 @@ utility::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) co
         output->points_.resize(n_out);
         output->normals_.resize(n_out);
         output->colors_.resize(n_out);
+        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
     }
 
     utility::LogDebug(
