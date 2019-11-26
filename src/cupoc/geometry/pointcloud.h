@@ -1,4 +1,5 @@
 #pragma once
+#include "cupoc/geometry/geometry.h"
 #include "cupoc/utility/shared_ptr.hpp"
 #include "cupoc/utility/eigen.h"
 #include "cupoc/geometry/kdtree_search_param.h"
@@ -8,7 +9,7 @@
 namespace cupoc {
 namespace geometry {
 
-class PointCloud {
+class PointCloud : public Geometry {
 public:
     PointCloud();
     PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points);
@@ -18,9 +19,15 @@ public:
     void SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points);
     thrust::host_vector<Eigen::Vector3f_u> GetPoints() const;
 
+    void SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals);
+    thrust::host_vector<Eigen::Vector3f_u> GetNormals() const;
+
     Eigen::Vector3f GetMinBound() const;
     Eigen::Vector3f GetMaxBound() const;
     Eigen::Vector3f GetCenter() const;
+
+    PointCloud &Clear() override;
+    bool IsEmpty() const override;
 
     __host__ __device__
     bool HasPoints() const { return !points_.empty(); }

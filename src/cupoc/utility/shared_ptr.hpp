@@ -19,9 +19,9 @@ struct sp_counter_base
 struct sp_counter_impl_p : sp_counter_base
 {
     __host__ __device__
-    sp_counter_impl_p() : sp_counter_base() {}
+    sp_counter_impl_p();
 	__host__
-    virtual void dispose(void* p) {if(p) cudaFree(reinterpret_cast<void*>(p));}
+    virtual void dispose(void* p);
 };
 
 

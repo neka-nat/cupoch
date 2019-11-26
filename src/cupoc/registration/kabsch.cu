@@ -11,8 +11,8 @@ namespace {
 struct outer_product_functor {
     outer_product_functor(const Eigen::Vector3f_u& x_offset, const Eigen::Vector3f_u& y_offset)
         : x_offset_(x_offset), y_offset_(y_offset) {};
-    const Eigen::Vector3f_u& x_offset_;
-    const Eigen::Vector3f_u& y_offset_;
+    const Eigen::Vector3f_u x_offset_;
+    const Eigen::Vector3f_u y_offset_;
     __device__
     Eigen::Matrix3f_u operator() (const Eigen::Vector3f_u x, const Eigen::Vector3f_u& y) const {
         const Eigen::Vector3f_u centralized_x = x - x_offset_;

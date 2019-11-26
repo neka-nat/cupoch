@@ -9,15 +9,6 @@ using namespace cupoc::geometry;
 
 namespace {
 
-struct transform_functor {
-    transform_functor(const Eigen::Matrix4f& transform) : transform_(transform){};
-    const Eigen::Matrix4f_u& transform_;
-    __device__
-    void operator()(Eigen::Vector3f_u& pt) {
-        pt = transform_.block<3, 3>(0, 0) * pt + transform_.block<3, 1>(0, 3);
-    }
-};
-
 struct cropped_copy_functor {
     cropped_copy_functor(const Eigen::Vector3f &min_bound, const Eigen::Vector3f &max_bound)
         : min_bound_(min_bound), max_bound_(max_bound) {};
@@ -37,9 +28,9 @@ struct cropped_copy_functor {
 
 }
 
-PointCloud::PointCloud() {}
-PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points) : points_(points) {}
-PointCloud::PointCloud(const PointCloud& other) : points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
+PointCloud::PointCloud() : Geometry(Geometry::GeometryType::PointCloud, 3) {}
+PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(points) {}
+PointCloud::PointCloud(const PointCloud& other) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
 
 PointCloud::~PointCloud() {}
 
@@ -51,6 +42,24 @@ thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetPoints() const {
     thrust::host_vector<Eigen::Vector3f_u> points = points_;
     return std::move(points);
 }
+
+void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals) {
+    normals_ = normals;
+}
+
+thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetNormals() const {
+    thrust::host_vector<Eigen::Vector3f_u> normals = normals_;
+    return std::move(normals);
+}
+
+PointCloud &PointCloud::Clear() {
+    points_.clear();
+    normals_.clear();
+    colors_.clear();
+    return *this;
+}
+
+bool PointCloud::IsEmpty() const {return !HasPoints();}
 
 Eigen::Vector3f PointCloud::GetMinBound() const {
     return ComputeMinBound(points_);
@@ -65,8 +74,8 @@ Eigen::Vector3f PointCloud::GetCenter() const {
 }
 
 PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
-    transform_functor func(transformation);
-    thrust::for_each(points_.begin(), points_.end(), func);
+    TransformPoints(transformation, points_);
+    TransformNormals(transformation, normals_);
     return *this;
 }
 
