@@ -56,7 +56,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                       make_correspondence_pair_functor(thrust::raw_pointer_cast(indices.data())));
     auto end = thrust::remove_if(result.correspondence_set_.begin(), result.correspondence_set_.end(),
                                  [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
-    int n_out = static_cast<int>(end - result.correspondence_set_.begin());
+    int n_out = thrust::distance(result.correspondence_set_.begin(), end);
     result.correspondence_set_.resize(n_out);
 
     if (result.correspondence_set_.empty()) {

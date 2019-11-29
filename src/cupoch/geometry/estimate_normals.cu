@@ -246,8 +246,8 @@ struct compute_normal_functor {
     }
 };
 
-struct align_normals_direction {
-    align_normals_direction(const Eigen::Vector3f& orientation_reference)
+struct align_normals_direction_functor {
+    align_normals_direction_functor(const Eigen::Vector3f& orientation_reference)
         : orientation_reference_(orientation_reference) {};
     const Eigen::Vector3f orientation_reference_;
     __device__
@@ -287,7 +287,7 @@ bool PointCloud::OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orient
                 "PointCloud. Call EstimateNormals() first.\n");
         return false;
     }
-    align_normals_direction func(orientation_reference);
+    align_normals_direction_functor func(orientation_reference);
     thrust::for_each(normals_.begin(), normals_.end(), func);
     return true;
 }

@@ -58,19 +58,19 @@ public:
                      thrust::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const thrust::host_vector<T> &query,
+    int SearchKNN(const T &query,
                   int knn,
                   thrust::host_vector<int> &indices,
                   thrust::host_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchRadius(const thrust::host_vector<T> &query,
+    int SearchRadius(const T &query,
                      float radius,
                      thrust::host_vector<int> &indices,
                      thrust::host_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchHybrid(const thrust::host_vector<T> &query,
+    int SearchHybrid(const T &query,
                      float radius,
                      int max_nn,
                      thrust::host_vector<int> &indices,

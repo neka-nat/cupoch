@@ -2,11 +2,28 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
 #include <thrust/sort.h>
+#include <thrust/remove.h>
 
 using namespace Eigen;
 using namespace cupoch;
 using namespace std;
 using namespace unit_test;
+
+namespace {
+
+struct is_minus_one_functor {
+    bool operator() (int x) const {
+        return (x == -1);
+    }
+};
+
+struct is_inf_functor {
+    bool operator() (float x) const {
+        return std::isinf(x);
+    }
+};
+
+}
 
 TEST(KDTreeFlann, SearchKNN) {
     thrust::host_vector<int> ref_indices;
@@ -36,9 +53,7 @@ TEST(KDTreeFlann, SearchKNN) {
 
     geometry::KDTreeFlann kdtree(pc);
 
-    thrust::host_vector<Eigen::Vector3f_u> query;
-    const Vector3f q = {1.647059, 4.392157, 8.784314};
-    query.push_back(q);
+    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
     thrust::host_vector<int> indices;
     thrust::host_vector<float> distance2;
@@ -82,9 +97,7 @@ TEST(KDTreeFlann, SearchRadius) {
 
     geometry::KDTreeFlann kdtree(pc);
 
-    thrust::host_vector<Eigen::Vector3f_u> query;
-    const Vector3f q = {1.647059, 4.392157, 8.784314};
-    query.push_back(q);
+    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
     float radius = 5.0;
     thrust::host_vector<int> indices;
     thrust::host_vector<float> distance2;
@@ -94,6 +107,8 @@ TEST(KDTreeFlann, SearchRadius) {
 
     EXPECT_EQ(result, 21);
 
+    thrust::remove_if(indices.begin(), indices.end(), is_minus_one_functor());
+    thrust::remove_if(distance2.begin(), distance2.end(), is_inf_functor());
     indices.resize(result);
     distance2.resize(result);
     thrust::sort(ref_indices.begin(), ref_indices.end());
@@ -130,9 +145,7 @@ TEST(KDTreeFlann, SearchHybrid) {
 
     geometry::KDTreeFlann kdtree(pc);
 
-    thrust::host_vector<Eigen::Vector3f_u> query;
-    const Vector3f q = {1.647059, 4.392157, 8.784314};
-    query.push_back(q);
+    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;
     float radius = 5.0;
     thrust::host_vector<int> indices;
