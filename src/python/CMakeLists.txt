@@ -1,6 +1,6 @@
-set(PACKAGE_NAME cupoc)
+set(PACKAGE_NAME cupoch)
 
-file(GLOB_RECURSE PY_ALL_SOURCE_FILES "cupoc_pybind/*.cpp")
+file(GLOB_RECURSE PY_ALL_SOURCE_FILES "cupoch_pybind/*.cpp")
 
 pybind11_add_module(${PACKAGE_NAME}
     ${PY_ALL_SOURCE_FILES}
@@ -14,9 +14,9 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
 )
 
-target_link_libraries(${PACKAGE_NAME} PRIVATE cupoc_registration cupoc_geometry cupoc_utility ${CUDA_LIBRARIES})
+target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration cupoch_geometry cupoch_utility ${CUDA_LIBRARIES})
 
-# At `make`: cupoc.so (or the equivalents) will be created at
+# At `make`: cupoch.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/python`
 set(PYTHON_COMPILED_MODULE_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python")
 set_target_properties(${PACKAGE_NAME} PROPERTIES

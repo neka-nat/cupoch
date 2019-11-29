@@ -1,2 +1,0 @@
-cuda_add_library(cupoc_registration registration.cu transformation_estimation.cu kabsch.cu)
-target_link_libraries(cupoc_registration cupoc_geometry)

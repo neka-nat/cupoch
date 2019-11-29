@@ -1,4 +1,4 @@
-add_subdirectory(cupoc)
+add_subdirectory(cupoch)
 if (BUILD_UNIT_TESTS)
     add_subdirectory(tests)
 endif ()

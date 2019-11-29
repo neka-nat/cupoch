@@ -1,10 +1,10 @@
-#include "cupoc/geometry/kdtree_flann.h"
-#include "cupoc/geometry/pointcloud.h"
+#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
 #include <thrust/sort.h>
 
 using namespace Eigen;
-using namespace cupoc;
+using namespace cupoch;
 using namespace std;
 using namespace unit_test;
 

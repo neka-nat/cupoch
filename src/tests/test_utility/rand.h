@@ -3,7 +3,7 @@
 #include <Eigen/Core>
 #include <thrust/host_vector.h>
 
-#include "cupoc/utility/eigen.h"
+#include "cupoch/utility/eigen.h"
 
 namespace unit_test {
 // Initialize an Eigen::Vector3f.

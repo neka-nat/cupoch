@@ -4,7 +4,7 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
 endif()
 
-project(cupoc)
+project(cupoch)
 
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              ON)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)

@@ -1,21 +1,21 @@
-# cupoc
+# cupoch
 
-**CU**DA-based **Po**int **C**loud library
+Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 ## Core Features
 
-* Point cloud calculations using CUDA
+* 3D data processing using CUDA
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 
 ## Installation
 
 ```
-pip install cupoc
+pip install cupoch
 ```
 
 ```
-git clone https://github.com/neka-nat/cupoc.git --recurse
-cd cupoc
+git clone https://github.com/neka-nat/cupoch.git --recurse
+cd cupoch
 mkdir build
 cd build
 cmake ..; make -j

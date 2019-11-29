@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
-#include "cupoc/geometry/pointcloud.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
 #include <thrust/unique.h>
 
 using namespace Eigen;
-using namespace cupoc;
-using namespace cupoc::geometry;
+using namespace cupoch;
+using namespace cupoch::geometry;
 using namespace unit_test;
 
 TEST(PointCloud, Constuctor) {

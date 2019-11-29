@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include "cupoc/utility/eigen.h"
+#include "cupoch/utility/eigen.h"
 #include <thrust/host_vector.h>
 
 namespace unit_test {
