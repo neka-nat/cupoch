@@ -36,6 +36,16 @@ void pybind_pointcloud(py::module &m) {
                  "pointcloud with "
                  "a voxel",
                  "voxel_size"_a)
+            .def("remove_radius_outlier",
+                 &geometry::PointCloud::RemoveRadiusOutliers,
+                 "Function to remove points that have less than nb_points"
+                 " in a given sphere of a given radius",
+                 "nb_points"_a, "radius"_a)
+            .def("remove_statistical_outlier",
+                 &geometry::PointCloud::RemoveStatisticalOutliers,
+                 "Function to remove points that are further away from their "
+                 "neighbors in average",
+                 "nb_neighbors"_a, "std_ratio"_a)
             .def("estimate_normals", &geometry::PointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "

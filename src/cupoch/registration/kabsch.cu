@@ -2,6 +2,7 @@
 #include "cupoch/utility/svd3_cuda.h"
 #include <Eigen/Geometry>
 #include <thrust/reduce.h>
+#include <thrust/inner_product.h>
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -36,10 +37,9 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen
     //Centralize them
     //Compute the H matrix
     outer_product_functor func(model_center, target_center);
-    thrust::device_vector<Eigen::Matrix3f_u> hh_array(model.size());
-    thrust::transform(model.begin(), model.end(), target.begin(), hh_array.begin(), func);
     const Eigen::Matrix3f_u init = Eigen::Matrix3f_u::Zero();
-    Eigen::Matrix3f_u hh = thrust::reduce(hh_array.begin(), hh_array.end(), init);
+    Eigen::Matrix3f_u hh = thrust::inner_product(model.begin(), model.end(), target.begin(), init,
+                                                 thrust::plus<Eigen::Matrix3f_u>(), func);
 
     //Do svd
     hh /= model.size();

@@ -1,6 +1,7 @@
 #include "cupoch/registration/transformation_estimation.h"
 #include "cupoch/registration/kabsch.h"
 #include "cupoch/geometry/pointcloud.h"
+#include <thrust/inner_product.h>
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -30,7 +31,6 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
     const geometry::PointCloud &source,
     const geometry::PointCloud &target,
     const CorrespondenceSet &corres) const {
-    thrust::device_vector<float> sqr_errs(corres.size());
     thrust::device_vector<Eigen::Vector3f_u> src_cor(corres.size());
     thrust::device_vector<Eigen::Vector3f_u> tgt_cor(corres.size());
     thrust::transform(corres.begin(), corres.end(), src_cor.begin(),
@@ -38,8 +38,8 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
     thrust::transform(corres.begin(), corres.end(), tgt_cor.begin(),
                       element_copy_functor<1>(thrust::raw_pointer_cast(target.points_.data())));
     diff_square_functor func;
-    thrust::transform(src_cor.begin(), src_cor.end(), tgt_cor.begin(), sqr_errs.begin(), func);
-    const float err = thrust::reduce(sqr_errs.begin(), sqr_errs.end());
+    const float err = thrust::inner_product(src_cor.begin(), src_cor.end(), tgt_cor.begin(), 0.0f,
+                                            thrust::plus<float>(), func);
     return std::sqrt(err / (float)corres.size());
 }
 

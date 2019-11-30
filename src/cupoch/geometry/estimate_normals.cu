@@ -42,7 +42,7 @@ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A, float eval0) {
 __device__
 Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
                                     const Eigen::Vector3f &evec0,
-                                    double eval1) {
+                                    float eval1) {
     Eigen::Vector3f U, V;
     if (std::abs(evec0(0)) > std::abs(evec0(1))) {
         float inv_length =
@@ -213,7 +213,7 @@ Eigen::Vector3f_u ComputeNormal(const Eigen::Vector3f_u* points,
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
     }
-    cumulants /= (double)indices.size();
+    cumulants /= (float)knn;
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -276,7 +276,8 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
                                 thrust::raw_pointer_cast(indices.data()),
                                 ((const KDTreeSearchParamKNN &)search_param).knn_);
-    thrust::transform(indices.begin(), indices.end(), normals_.begin(), func);
+    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator((int)points_.size()),
+                      normals_.begin(), func);
     return true;
 }
 

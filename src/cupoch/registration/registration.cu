@@ -13,7 +13,7 @@ struct extact_knn_distance_functor {
     const float* distances_;
     __device__
     float operator() (int idx) const {
-        return max(distances_[idx], 0.0);
+        return (std::isinf(distances_[idx])) ? 0.0 : distances_[idx];
     }
 };
 
@@ -22,11 +22,7 @@ struct make_correspondence_pair_functor {
     const int* indices_;
    __device__
    Eigen::Vector2i operator() (int i) const {
-        if (indices_[i] < 0) {
-            return Eigen::Vector2i(-1, -1);
-        } else {
-            return Eigen::Vector2i(i, indices_[i]);
-        }
+        return (indices_[i] < 0) ? Eigen::Vector2i(-1, -1) : Eigen::Vector2i(i, indices_[i]);
    }
 };
 

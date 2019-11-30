@@ -402,3 +402,146 @@ TEST(PointCloud, VoxelDownSample) {
     ExpectEQ(ref_normals, output_nl);
     ExpectEQ(ref_colors, output_cl);
 }
+
+TEST(PointCloud, CropPointCloud) {
+    size_t size = 100;
+    geometry::PointCloud pc;
+
+    Vector3f vmin(0.0, 0.0, 0.0);
+    Vector3f vmax(1000.0, 1000.0, 1000.0);
+
+    thrust::host_vector<Vector3f_u> points(size);
+    Rand(points, vmin, vmax, 0);
+    pc.SetPoints(points);
+
+    Vector3f_u minBound(200.0, 200.0, 200.0);
+    Vector3f_u maxBound(800.0, 800.0, 800.0);
+    auto output_pc = pc.Crop(minBound, maxBound);
+
+    ExpectLE(minBound, output_pc->GetPoints());
+    ExpectGE(maxBound, output_pc->GetPoints());
+}
+
+TEST(PointCloud, EstimateNormals) {
+    thrust::host_vector<Vector3f_u> ref;
+    ref.push_back(Vector3f_u(0.282003, 0.866394, 0.412111));
+    ref.push_back(Vector3f_u(0.550791, 0.829572, -0.091869));
+    ref.push_back(Vector3f_u(0.076085, -0.974168, 0.212620));
+    ref.push_back(Vector3f_u(0.261265, 0.825182, 0.500814));
+    ref.push_back(Vector3f_u(0.035397, 0.428362, 0.902913));
+    ref.push_back(Vector3f_u(0.711421, 0.595291, 0.373508));
+    ref.push_back(Vector3f_u(0.519141, 0.552592, 0.652024));
+    ref.push_back(Vector3f_u(0.490520, 0.573293, -0.656297));
+    ref.push_back(Vector3f_u(0.324029, 0.744177, 0.584128));
+    ref.push_back(Vector3f_u(0.120589, -0.989854, 0.075152));
+    ref.push_back(Vector3f_u(0.370700, 0.767066, 0.523632));
+    ref.push_back(Vector3f_u(0.874692, -0.158725, -0.457952));
+    ref.push_back(Vector3f_u(0.238700, 0.937064, -0.254819));
+    ref.push_back(Vector3f_u(0.518237, 0.540189, 0.663043));
+    ref.push_back(Vector3f_u(0.238700, 0.937064, -0.254819));
+    ref.push_back(Vector3f_u(0.080943, -0.502095, -0.861016));
+    ref.push_back(Vector3f_u(0.753661, -0.527376, -0.392261));
+    ref.push_back(Vector3f_u(0.721099, 0.542859, -0.430489));
+    ref.push_back(Vector3f_u(0.159997, -0.857801, -0.488446));
+    ref.push_back(Vector3f_u(0.445869, 0.725107, 0.524805));
+    ref.push_back(Vector3f_u(0.019474, -0.592041, -0.805672));
+    ref.push_back(Vector3f_u(0.024464, 0.856206, 0.516056));
+    ref.push_back(Vector3f_u(0.478041, 0.869593, -0.123631));
+    ref.push_back(Vector3f_u(0.104534, -0.784980, -0.610638));
+    ref.push_back(Vector3f_u(0.073901, 0.570353, 0.818069));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(0.581675, 0.167795, -0.795926));
+    ref.push_back(Vector3f_u(0.069588, -0.845043, -0.530150));
+    ref.push_back(Vector3f_u(0.626448, 0.486534, 0.608973));
+    ref.push_back(Vector3f_u(0.670665, 0.657002, 0.344321));
+    ref.push_back(Vector3f_u(0.588868, 0.011829, 0.808143));
+    ref.push_back(Vector3f_u(0.081974, 0.638039, 0.765628));
+    ref.push_back(Vector3f_u(0.159997, -0.857801, -0.488446));
+    ref.push_back(Vector3f_u(0.559499, 0.824271, -0.086826));
+    ref.push_back(Vector3f_u(0.612885, 0.727999, 0.307229));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(0.268803, 0.796616, 0.541431));
+    ref.push_back(Vector3f_u(0.604933, 0.787776, -0.116044));
+    ref.push_back(Vector3f_u(0.111998, 0.869999, -0.480165));
+
+    size_t size = 40;
+    geometry::PointCloud pc;
+
+    Vector3f vmin(0.0, 0.0, 0.0);
+    Vector3f vmax(1000.0, 1000.0, 1000.0);
+
+    thrust::host_vector<Vector3f_u> points(size);
+    Rand(points, vmin, vmax, 0);
+    pc.SetPoints(points);
+
+    pc.EstimateNormals(geometry::KDTreeSearchParamKNN());
+    thrust::host_vector<Vector3f_u> normals = pc.GetNormals();
+    for (size_t idx = 0; idx < ref.size(); ++idx) {
+        if ((ref[idx](0) < 0 && normals[idx](0) > 0) ||
+            (ref[idx](0) > 0 && normals[idx](0) < 0)) {
+            normals[idx] *= -1;
+        }
+    }
+    ExpectEQ(ref, normals);
+}
+
+TEST(PointCloud, OrientNormalsToAlignWithDirection) {
+    thrust::host_vector<Vector3f_u> ref;
+    ref.push_back(Vector3f_u(0.282003, 0.866394, 0.412111));
+    ref.push_back(Vector3f_u(0.550791, 0.829572, -0.091869));
+    ref.push_back(Vector3f_u(0.076085, -0.974168, 0.212620));
+    ref.push_back(Vector3f_u(0.261265, 0.825182, 0.500814));
+    ref.push_back(Vector3f_u(0.035397, 0.428362, 0.902913));
+    ref.push_back(Vector3f_u(0.711421, 0.595291, 0.373508));
+    ref.push_back(Vector3f_u(0.519141, 0.552592, 0.652024));
+    ref.push_back(Vector3f_u(-0.490520, -0.573293, 0.656297));
+    ref.push_back(Vector3f_u(0.324029, 0.744177, 0.584128));
+    ref.push_back(Vector3f_u(-0.120589, 0.989854, -0.075152));
+    ref.push_back(Vector3f_u(0.370700, 0.767066, 0.523632));
+    ref.push_back(Vector3f_u(-0.874692, 0.158725, 0.457952));
+    ref.push_back(Vector3f_u(-0.238700, -0.937064, 0.254819));
+    ref.push_back(Vector3f_u(0.518237, 0.540189, 0.663043));
+    ref.push_back(Vector3f_u(-0.238700, -0.937064, 0.254819));
+    ref.push_back(Vector3f_u(-0.080943, 0.502095, 0.861016));
+    ref.push_back(Vector3f_u(-0.753661, 0.527376, 0.392261));
+    ref.push_back(Vector3f_u(-0.721099, -0.542859, 0.430489));
+    ref.push_back(Vector3f_u(-0.159997, 0.857801, 0.488446));
+    ref.push_back(Vector3f_u(0.445869, 0.725107, 0.524805));
+    ref.push_back(Vector3f_u(-0.019474, 0.592041, 0.805672));
+    ref.push_back(Vector3f_u(0.024464, 0.856206, 0.516056));
+    ref.push_back(Vector3f_u(0.478041, 0.869593, -0.123631));
+    ref.push_back(Vector3f_u(-0.104534, 0.784980, 0.610638));
+    ref.push_back(Vector3f_u(0.073901, 0.570353, 0.818069));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(-0.581675, -0.167795, 0.795926));
+    ref.push_back(Vector3f_u(-0.069588, 0.845043, 0.530150));
+    ref.push_back(Vector3f_u(0.626448, 0.486534, 0.608973));
+    ref.push_back(Vector3f_u(0.670665, 0.657002, 0.344321));
+    ref.push_back(Vector3f_u(0.588868, 0.011829, 0.808143));
+    ref.push_back(Vector3f_u(0.081974, 0.638039, 0.765628));
+    ref.push_back(Vector3f_u(-0.159997, 0.857801, 0.488446));
+    ref.push_back(Vector3f_u(0.559499, 0.824271, -0.086826));
+    ref.push_back(Vector3f_u(0.612885, 0.727999, 0.307229));
+    ref.push_back(Vector3f_u(0.178678, 0.974506, 0.135693));
+    ref.push_back(Vector3f_u(0.268803, 0.796616, 0.541431));
+    ref.push_back(Vector3f_u(0.604933, 0.787776, -0.116044));
+    ref.push_back(Vector3f_u(-0.111998, -0.869999, 0.480165));
+
+    int size = 40;
+    geometry::PointCloud pc;
+
+    Vector3f vmin(0.0, 0.0, 0.0);
+    Vector3f vmax(1000.0, 1000.0, 1000.0);
+
+    thrust::host_vector<Vector3f_u> points;
+    points.resize(size);
+    Rand(points, vmin, vmax, 0);
+    pc.SetPoints(points);
+
+    pc.EstimateNormals();
+    pc.OrientNormalsToAlignWithDirection(Vector3f(1.5, 0.5, 3.3));
+
+    ExpectEQ(ref, pc.GetNormals());
+}
