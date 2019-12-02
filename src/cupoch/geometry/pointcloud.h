@@ -45,7 +45,12 @@ public:
     }
 
     PointCloud &NormalizeNormals();
+    PointCloud &PaintUniformColor(const Eigen::Vector3f &color);
+
     PointCloud& Transform(const Eigen::Matrix4f& transformation);
+
+    PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
+                                       bool remove_infinite = true);
 
     std::shared_ptr<PointCloud> SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert = false) const;
 

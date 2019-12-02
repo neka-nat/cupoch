@@ -14,7 +14,7 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
 )
 
-target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration cupoch_geometry cupoch_utility ${CUDA_LIBRARIES})
+target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration cupoch_io cupoch_geometry cupoch_utility ${CUDA_LIBRARIES})
 
 # At `make`: cupoch.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/python`

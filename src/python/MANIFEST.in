@@ -1,9 +1,11 @@
 # Misc
+include README.md
+include LICENSE.txt
 include requirements.txt
 
 # Compiled module
-include cupoc/cupoc*.pyd
-include cupoc/cupoc*.so
+include cupoch/cupoch*.pyd
+include cupoch/cupoch*.so
 
 # Exclude
 global-exclude *.py[co]

@@ -30,11 +30,23 @@ static const std::unordered_map<std::string,
 
 namespace io {
 
+void HostPointCloud::FromDevice(const geometry::PointCloud& pointcloud) {
+    points_ = pointcloud.GetPoints();
+    normals_ = pointcloud.GetNormals();
+    colors_ = pointcloud.GetColors();
+}
+
+void HostPointCloud::ToDevice(geometry::PointCloud& pointcloud) const {
+    pointcloud.SetPoints(points_);
+    pointcloud.SetPoints(normals_);
+    pointcloud.SetColors(colors_);
+}
+
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format,
         bool print_progress) {
-    auto pointcloud = utility::shapred_ptr<geometry::PointCloud>(new geometry::PointCloud());
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
     ReadPointCloud(filename, *pointcloud, format, print_progress);
     return pointcloud;
 }
@@ -66,7 +78,7 @@ bool ReadPointCloud(const std::string &filename,
     }
     bool success = map_itr->second(filename, pointcloud, print_progress);
     utility::LogDebug("Read geometry::PointCloud: {:d} vertices.\n",
-                      (int)pointcloud.points_.size());
+                      (int)pointcloud.GetPoints().size());
     if (remove_nan_points || remove_infinite_points) {
         pointcloud.RemoveNoneFinitePoints(remove_nan_points,
                                           remove_infinite_points);

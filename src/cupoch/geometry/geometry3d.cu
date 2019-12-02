@@ -1,4 +1,5 @@
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/utility/console.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -57,6 +58,24 @@ Eigen::Vector3f_u cupoch::geometry::ComuteCenter(const thrust::device_vector<Eig
     if (points.empty()) return init;
     Eigen::Vector3f_u sum = thrust::reduce(points.begin(), points.end(), init, thrust::plus<Eigen::Vector3f_u>());
     return sum / points.size();
+}
+
+void cupoch::geometry::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f_u>& colors,
+    const size_t size,
+    const Eigen::Vector3f& color) {
+    colors.resize(size);
+    Eigen::Vector3f clipped_color = color;
+    if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
+        utility::LogWarning(
+                "invalid color in PaintUniformColor, clipping to [0, 1]");
+        clipped_color = clipped_color.array()
+                                .max(Eigen::Vector3f(0, 0, 0).array())
+                                .matrix();
+        clipped_color = clipped_color.array()
+                                .min(Eigen::Vector3f(1, 1, 1).array())
+                                .matrix();
+    }
+    thrust::fill(colors.begin(), colors.end(), clipped_color);
 }
 
 void cupoch::geometry::TransformPoints(const Eigen::Matrix4f& transformation,

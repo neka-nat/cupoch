@@ -1,10 +1,11 @@
-#include <liblzf/lzf.h>
+#include <lzf.h>
 #include <cstdint>
 #include <cstdio>
 #include <sstream>
 
-#include "cupoch/op/class_io/pointcloud_io.h"
+#include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/filesystem.h"
 #include "cupoch/utility/helper.h"
 
 // References for PCD file IO
@@ -308,19 +309,20 @@ Eigen::Vector3f UnpackASCIIPCDColor(const char *data_ptr,
 bool ReadPCDData(FILE *file,
                  const PCDHeader &header,
                  geometry::PointCloud &pointcloud) {
+    HostPointCloud host_pc;
     // The header should have been checked
     if (header.has_points) {
-        pointcloud.points_.resize(header.points);
+        host_pc.points_.resize(header.points);
     } else {
         utility::LogWarning(
                 "[ReadPCDData] Fields for point data are not complete.\n");
         return false;
     }
     if (header.has_normals) {
-        pointcloud.normals_.resize(header.points);
+        host_pc.normals_.resize(header.points);
     }
     if (header.has_colors) {
-        pointcloud.colors_.resize(header.points);
+        host_pc.colors_.resize(header.points);
     }
     if (header.datatype == PCD_DATA_ASCII) {
         char line_buffer[DEFAULT_IO_BUFFER_SIZE];
@@ -336,31 +338,31 @@ bool ReadPCDData(FILE *file,
             for (size_t i = 0; i < header.fields.size(); i++) {
                 const auto &field = header.fields[i];
                 if (field.name == "x") {
-                    pointcloud.points_[idx](0) = UnpackASCIIPCDElement(
+                    host_pc.points_[idx](0) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "y") {
-                    pointcloud.points_[idx](1) = UnpackASCIIPCDElement(
+                    host_pc.points_[idx](1) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "z") {
-                    pointcloud.points_[idx](2) = UnpackASCIIPCDElement(
+                    host_pc.points_[idx](2) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "normal_x") {
-                    pointcloud.normals_[idx](0) = UnpackASCIIPCDElement(
+                    host_pc.normals_[idx](0) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "normal_y") {
-                    pointcloud.normals_[idx](1) = UnpackASCIIPCDElement(
+                    host_pc.normals_[idx](1) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "normal_z") {
-                    pointcloud.normals_[idx](2) = UnpackASCIIPCDElement(
+                    host_pc.normals_[idx](2) = UnpackASCIIPCDElement(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 } else if (field.name == "rgb" || field.name == "rgba") {
-                    pointcloud.colors_[idx] = UnpackASCIIPCDColor(
+                    host_pc.colors_[idx] = UnpackASCIIPCDColor(
                             strs[field.count_offset].c_str(), field.type,
                             field.size);
                 }
@@ -378,31 +380,31 @@ bool ReadPCDData(FILE *file,
             }
             for (const auto &field : header.fields) {
                 if (field.name == "x") {
-                    pointcloud.points_[i](0) =
+                    host_pc.points_[i](0) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "y") {
-                    pointcloud.points_[i](1) =
+                    host_pc.points_[i](1) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "z") {
-                    pointcloud.points_[i](2) =
+                    host_pc.points_[i](2) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "normal_x") {
-                    pointcloud.normals_[i](0) =
+                    host_pc.normals_[i](0) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "normal_y") {
-                    pointcloud.normals_[i](1) =
+                    host_pc.normals_[i](1) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "normal_z") {
-                    pointcloud.normals_[i](2) =
+                    host_pc.normals_[i](2) =
                             UnpackBinaryPCDElement(buffer.get() + field.offset,
                                                    field.type, field.size);
                 } else if (field.name == "rgb" || field.name == "rgba") {
-                    pointcloud.colors_[i] =
+                    host_pc.colors_[i] =
                             UnpackBinaryPCDColor(buffer.get() + field.offset,
                                                  field.type, field.size);
                 }
@@ -446,49 +448,50 @@ bool ReadPCDData(FILE *file,
             const char *base_ptr = buffer.get() + field.offset * header.points;
             if (field.name == "x") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.points_[i](0) = UnpackBinaryPCDElement(
+                    host_pc.points_[i](0) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "y") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.points_[i](1) = UnpackBinaryPCDElement(
+                    host_pc.points_[i](1) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "z") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.points_[i](2) = UnpackBinaryPCDElement(
+                    host_pc.points_[i](2) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "normal_x") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.normals_[i](0) = UnpackBinaryPCDElement(
+                    host_pc.normals_[i](0) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "normal_y") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.normals_[i](1) = UnpackBinaryPCDElement(
+                    host_pc.normals_[i](1) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "normal_z") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.normals_[i](2) = UnpackBinaryPCDElement(
+                    host_pc.normals_[i](2) = UnpackBinaryPCDElement(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             } else if (field.name == "rgb" || field.name == "rgba") {
                 for (int i = 0; i < header.points; i++) {
-                    pointcloud.colors_[i] = UnpackBinaryPCDColor(
+                    host_pc.colors_[i] = UnpackBinaryPCDColor(
                             base_ptr + i * field.size * field.count, field.type,
                             field.size);
                 }
             }
         }
     }
+    host_pc.ToDevice(pointcloud);
     return true;
 }
 
@@ -603,38 +606,40 @@ bool WritePCDData(FILE *file,
                   const geometry::PointCloud &pointcloud) {
     bool has_normal = pointcloud.HasNormals();
     bool has_color = pointcloud.HasColors();
+    HostPointCloud host_pc;
+    host_pc.FromDevice(pointcloud);
     if (header.datatype == PCD_DATA_ASCII) {
-        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-            const auto &point = pointcloud.points_[i];
+        for (size_t i = 0; i < host_pc.points_.size(); i++) {
+            const auto &point = host_pc.points_[i];
             fprintf(file, "%.10g %.10g %.10g", point(0), point(1), point(2));
             if (has_normal) {
-                const auto &normal = pointcloud.normals_[i];
+                const auto &normal = host_pc.normals_[i];
                 fprintf(file, " %.10g %.10g %.10g", normal(0), normal(1),
                         normal(2));
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
+                const auto &color = host_pc.colors_[i];
                 fprintf(file, " %.10g", ConvertRGBToFloat(color));
             }
             fprintf(file, "\n");
         }
     } else if (header.datatype == PCD_DATA_BINARY) {
         std::unique_ptr<float[]> data(new float[header.elementnum]);
-        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-            const auto &point = pointcloud.points_[i];
+        for (size_t i = 0; i < host_pc.points_.size(); i++) {
+            const auto &point = host_pc.points_[i];
             data[0] = (float)point(0);
             data[1] = (float)point(1);
             data[2] = (float)point(2);
             int idx = 3;
             if (has_normal) {
-                const auto &normal = pointcloud.normals_[i];
+                const auto &normal = host_pc.normals_[i];
                 data[idx + 0] = (float)normal(0);
                 data[idx + 1] = (float)normal(1);
                 data[idx + 2] = (float)normal(2);
                 idx += 3;
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
+                const auto &color = host_pc.colors_[i];
                 data[idx] = ConvertRGBToFloat(color);
             }
             fwrite(data.get(), sizeof(float), header.elementnum, file);
@@ -645,21 +650,21 @@ bool WritePCDData(FILE *file,
                 (std::uint32_t)(header.elementnum * header.points);
         std::unique_ptr<float[]> buffer(new float[buffer_size]);
         std::unique_ptr<float[]> buffer_compressed(new float[buffer_size * 2]);
-        for (size_t i = 0; i < pointcloud.points_.size(); i++) {
-            const auto &point = pointcloud.points_[i];
+        for (size_t i = 0; i < host_pc.points_.size(); i++) {
+            const auto &point = host_pc.points_[i];
             buffer[0 * strip_size + i] = (float)point(0);
             buffer[1 * strip_size + i] = (float)point(1);
             buffer[2 * strip_size + i] = (float)point(2);
             int idx = 3;
             if (has_normal) {
-                const auto &normal = pointcloud.normals_[i];
+                const auto &normal = host_pc.normals_[i];
                 buffer[(idx + 0) * strip_size + i] = (float)normal(0);
                 buffer[(idx + 1) * strip_size + i] = (float)normal(1);
                 buffer[(idx + 2) * strip_size + i] = (float)normal(2);
                 idx += 3;
             }
             if (has_color) {
-                const auto &color = pointcloud.colors_[i];
+                const auto &color = host_pc.colors_[i];
                 buffer[idx * strip_size + i] = ConvertRGBToFloat(color);
             }
         }

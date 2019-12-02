@@ -3,12 +3,25 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include <thrust/gather.h>
-#include <thrust/inner_product.h>
 
 using namespace cupoch;
 using namespace cupoch::geometry;
 
 namespace {
+
+void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud& dst,
+                          const thrust::device_vector<size_t> &indices) {
+    dst.points_.resize(indices.size());
+    thrust::gather(indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
+    if (src.HasNormals()) {
+        dst.normals_.resize(indices.size());
+        thrust::gather(indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
+    }
+    if (src.HasColors()) {
+        dst.colors_.resize(indices.size());
+        thrust::gather(indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
+    }
+}
 
 struct compute_key_functor {
     compute_key_functor(const Eigen::Vector3f& voxel_min_bound, float voxel_size)
@@ -62,28 +75,31 @@ struct stride_copy_functor {
 };
 
 struct has_radius_points_functor {
-    has_radius_points_functor(const int* indices, int n_points) : indices_(indices), n_points_(n_points) {};
+    has_radius_points_functor(const int* indices, int n_points, int knn)
+        : indices_(indices), n_points_(n_points), knn_(knn) {};
     const int* indices_;
     const int n_points_;
+    const int knn_;
     __device__
     bool operator() (int idx) const {
         int count = 0;
-        for (int i = 0; i < NUM_MAX_NN; ++i) {
-            if (indices_[idx * NUM_MAX_NN + i] >= 0) count++;
+        for (int i = 0; i < knn_; ++i) {
+            if (indices_[idx * knn_ + i] >= 0) count++;
         }
         return (count > n_points_);
     }
 };
 
 struct average_distance_functor {
-    average_distance_functor(const float* distance) : distance_(distance) {};
+    average_distance_functor(const float* distance, int knn) : distance_(distance), knn_(knn) {};
     const float* distance_;
+    const int knn_;
     __device__
     float operator() (int idx) const {
         int count = 0;
         float avg = 0;
-        for (int i = 0; i < NUM_MAX_NN; ++i) {
-            const float d = distance_[idx * NUM_MAX_NN + i];
+        for (int i = 0; i < knn_; ++i) {
+            const float d = distance_[idx * knn_ + i];
             if (std::isinf(d) || d < 0.0) continue;
             avg += d;
             count++;
@@ -107,18 +123,17 @@ struct check_distance_threshold_functor {
 
 std::shared_ptr<PointCloud> PointCloud::SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert) const {
     auto output = std::make_shared<PointCloud>();
-    const bool has_normals = HasNormals();
-    const bool has_colors = HasColors();
 
-    output->points_.resize(indices.size());
-    thrust::gather(indices.begin(), indices.end(), points_.begin(), output->points_.begin());
-    if (HasNormals()) {
-        output->normals_.resize(indices.size());
-        thrust::gather(indices.begin(), indices.end(), normals_.begin(), output->normals_.begin());
-    }
-    if (HasColors()) {
-        output->colors_.resize(indices.size());
-        thrust::gather(indices.begin(), indices.end(), colors_.begin(), output->colors_.begin());
+    if (invert) {
+        size_t n_out = points_.size() - indices.size();
+        thrust::device_vector<size_t> sorted_indices = indices;
+        thrust::sort(sorted_indices.begin(), sorted_indices.end());
+        thrust::device_vector<size_t> inv_indices(n_out);
+        thrust::set_difference(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
+                               sorted_indices.begin(), sorted_indices.end(), inv_indices.begin());
+        SelectDownSampleImpl(*this, *output, inv_indices);
+    } else {
+        SelectDownSampleImpl(*this, *output, indices);
     }
     return output;
 }
@@ -236,9 +251,9 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     kdtree.SearchRadius(points_, search_radius, tmp_indices, dist);
     const size_t n_pt = points_.size();
     thrust::device_vector<size_t> indices(n_pt);
-    has_radius_points_functor func(thrust::raw_pointer_cast(tmp_indices.data()), nb_points);
-    auto end = thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_pt),
-                                 indices.begin(), func);
+    has_radius_points_functor func(thrust::raw_pointer_cast(tmp_indices.data()), nb_points, NUM_MAX_NN);
+    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_pt),
+                               indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
     return std::make_tuple(SelectDownSample(indices), indices);
 }
@@ -263,7 +278,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     thrust::device_vector<int> tmp_indices;
     thrust::device_vector<float> dist;
     kdtree.SearchKNN(points_, int(nb_neighbors), tmp_indices, dist);
-    average_distance_functor avg_func(thrust::raw_pointer_cast(dist.data()));
+    average_distance_functor avg_func(thrust::raw_pointer_cast(dist.data()), nb_neighbors);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator((size_t)n_pt),
                       avg_distances.begin(), avg_func);
     const size_t valid_distances = thrust::count_if(avg_distances.begin(), avg_distances.end(), [] __device__ (float x) {return (x >= 0.0);});
@@ -274,12 +289,10 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     float cloud_mean = thrust::reduce(avg_distances.begin(), avg_distances.end(), 0.0,
             [] __device__ (float const &x, float const &y) { return (y > 0) ? x + y : x; });
     cloud_mean /= valid_distances;
-    const float sq_sum = thrust::inner_product(
-            avg_distances.begin(), avg_distances.end(), avg_distances.begin(),
-            0.0, [] __device__ (float const &x, float const &y) { return x + y; },
-            [cloud_mean] __device__ (float const &x, float const &y) {
-                return x > 0 ? (x - cloud_mean) * (y - cloud_mean) : 0;
-            });
+    const float sq_sum = thrust::transform_reduce(
+            avg_distances.begin(), avg_distances.end(),
+            [cloud_mean] __device__ (const float x) {return (x > 0) ? (x - cloud_mean) * (x - cloud_mean) : 0;},
+            0.0, thrust::plus<float>());
     // Bessel's correction
     const float std_dev = std::sqrt(sq_sum / (valid_distances - 1));
     const float distance_threshold = cloud_mean + std_ratio * std_dev;

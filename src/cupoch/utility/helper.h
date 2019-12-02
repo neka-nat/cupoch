@@ -1,6 +1,8 @@
 #pragma once
 #include <Eigen/Core>
 #include <thrust/functional.h>
+#include <vector>
+#include <string>
 
 namespace thrust {
 
@@ -109,4 +111,12 @@ struct devided_tuple_functor<T1, T2, T3> : public thrust::binary_function<const 
     }
 };
 
+namespace utility {
+
+void SplitString(std::vector<std::string>& tokens,
+                 const std::string& str,
+                 const std::string& delimiters = " ",
+                 bool trim_empty_str = true);
+
+}
 }

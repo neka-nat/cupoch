@@ -8,6 +8,8 @@
 #include <cuda.h>
 
 
+#define DEFAULT_IO_BUFFER_SIZE 1024
+
 namespace cupoch {
 namespace utility {
 

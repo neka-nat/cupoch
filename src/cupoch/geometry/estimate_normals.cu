@@ -263,7 +263,6 @@ struct align_normals_direction_functor {
 }
 
 bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
-    const bool has_normal = HasNormals();
     if (HasNormals() == false) {
         normals_.resize(points_.size());
     }
@@ -272,7 +271,6 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     thrust::device_vector<int> indices;
     thrust::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
-    normals_.resize(points_.size());
     compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
                                 thrust::raw_pointer_cast(indices.data()),
                                 ((const KDTreeSearchParamKNN &)search_param).knn_);

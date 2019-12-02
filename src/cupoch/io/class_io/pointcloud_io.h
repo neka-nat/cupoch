@@ -3,14 +3,23 @@
 #include <string>
 
 #include "cupoch/geometry/pointcloud.h"
-#include "cupoch/utility/shared_ptr.hpp"
+#include <thrust/host_vector.h>
+
 
 namespace cupoch {
 namespace io {
 
+struct HostPointCloud {
+    void FromDevice(const geometry::PointCloud& pointcloud);
+    void ToDevice(geometry::PointCloud& pointcloud) const;
+    thrust::host_vector<Eigen::Vector3f_u> points_;
+    thrust::host_vector<Eigen::Vector3f_u> normals_;
+    thrust::host_vector<Eigen::Vector3f_u> colors_;
+};
+
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)
 /// Return an empty pointcloud if fail to read the file.
-utility::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
+std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,
         const std::string &format = "auto",
         bool print_progress = false);

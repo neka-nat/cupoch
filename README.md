@@ -1,3 +1,7 @@
+<p align="center">
+<img src="docs/_static/cupoch_logo.png" width="480" />
+</p>
+
 # cupoch
 
 Cupoch is a library that implements rapid 3D data processing using CUDA.
