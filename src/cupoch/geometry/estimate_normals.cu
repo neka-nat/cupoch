@@ -194,15 +194,15 @@ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
 }
 
 __device__
-Eigen::Vector3f_u ComputeNormal(const Eigen::Vector3f_u* points,
+Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
                                 const KNNIndices &indices, int knn) {
-    if (indices[0] < 0) return Eigen::Vector3f_u(0.0, 0.0, 1.0);
+    if (indices[0] < 0) return Eigen::Vector3f(0.0, 0.0, 1.0);
 
     Eigen::Matrix3f covariance;
     Eigen::Matrix<float, 9, 1> cumulants;
     cumulants.setZero();
     for (size_t i = 0; i < knn; i++) {
-        const Eigen::Vector3f_u& point = points[indices[i]];
+        const Eigen::Vector3f& point = points[indices[i]];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);
@@ -228,19 +228,19 @@ Eigen::Vector3f_u ComputeNormal(const Eigen::Vector3f_u* points,
 }
 
 struct compute_normal_functor {
-    compute_normal_functor(const Eigen::Vector3f_u* points,
+    compute_normal_functor(const Eigen::Vector3f* points,
                            const int* indices, int knn)
         : points_(points), indices_(indices), knn_(knn) {};
-    const Eigen::Vector3f_u* points_;
+    const Eigen::Vector3f* points_;
     const int* indices_;
     const int knn_;
     __device__
-    Eigen::Vector3f_u operator()(const int& idx) const {
+    Eigen::Vector3f operator()(const int& idx) const {
         KNNIndices idxs = KNNIndices::Constant(-1);
         for (int k = 0; k < knn_; ++k) idxs[k] = indices_[idx * knn_ + k];
-        Eigen::Vector3f_u normal = ComputeNormal(points_, idxs, knn_);
+        Eigen::Vector3f normal = ComputeNormal(points_, idxs, knn_);
         if (normal.norm() == 0.0) {
-            normal = Eigen::Vector3f_u(0.0, 0.0, 1.0);
+            normal = Eigen::Vector3f(0.0, 0.0, 1.0);
         }
         return normal;
     }
@@ -251,7 +251,7 @@ struct align_normals_direction_functor {
         : orientation_reference_(orientation_reference) {};
     const Eigen::Vector3f orientation_reference_;
     __device__
-    void operator()(Eigen::Vector3f_u& normal) const {
+    void operator()(Eigen::Vector3f& normal) const {
         if (normal.norm() == 0.0) {
             normal = orientation_reference_;
         } else if (normal.dot(orientation_reference_) < 0.0) {

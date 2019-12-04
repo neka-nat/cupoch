@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Core>
 #include <thrust/functional.h>
+#include <thrust/iterator/zip_iterator.h>
 #include <vector>
 #include <string>
 
@@ -110,6 +111,16 @@ struct devided_tuple_functor<T1, T2, T3> : public thrust::binary_function<const 
         return ans;
     }
 };
+
+template<class... Args>
+thrust::zip_iterator<thrust::tuple<Args...> > make_tuple_iterator(const Args&... args) {
+    return thrust::make_zip_iterator(thrust::make_tuple(args...));
+}
+
+template<class... Args>
+thrust::zip_iterator<thrust::tuple<Args...> > make_tuple_iterator(Args&... args) {
+    return thrust::make_zip_iterator(thrust::make_tuple(args...));
+}
 
 namespace utility {
 

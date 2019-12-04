@@ -29,7 +29,7 @@ struct compute_key_functor {
     const Eigen::Vector3f voxel_min_bound_;
     const float voxel_size_;
     __device__
-    Eigen::Vector3i operator()(const Eigen::Vector3f_u& pt) {
+    Eigen::Vector3i operator()(const Eigen::Vector3f& pt) {
         auto ref_coord = (pt - voxel_min_bound_) / voxel_size_;
         return Eigen::Vector3i(int(floor(ref_coord(0))), int(floor(ref_coord(1))), int(floor(ref_coord(2))));
     }
@@ -64,12 +64,12 @@ int CalcAverageByKey(thrust::device_vector<Eigen::Vector3i>& keys,
 }
 
 struct stride_copy_functor {
-    stride_copy_functor(const Eigen::Vector3f_u* data, int every_k_points)
+    stride_copy_functor(const Eigen::Vector3f* data, int every_k_points)
         : data_(data), every_k_points_(every_k_points) {};
-    const Eigen::Vector3f_u* data_;
+    const Eigen::Vector3f* data_;
     const int every_k_points_;
     __device__
-    Eigen::Vector3f_u operator() (int idx) const {
+    Eigen::Vector3f operator() (int idx) const {
         return data_[idx * every_k_points_];
     }
 };
@@ -161,50 +161,50 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const 
     thrust::device_vector<Eigen::Vector3i> keys(n);
     thrust::transform(points_.begin(), points_.end(), keys.begin(), ck_func);
 
-    thrust::device_vector<Eigen::Vector3f_u> sorted_points = points_;
+    thrust::device_vector<Eigen::Vector3f> sorted_points = points_;
     output->points_.resize(n);
     if (!has_normals && !has_colors) {
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f_u>::iterator> IteratorTuple;
+        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
-        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f_u>(keys,
-                    thrust::make_zip_iterator(thrust::make_tuple(sorted_points.begin())),
-                    thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin())));
+        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f>(keys,
+                    make_tuple_iterator(sorted_points.begin()),
+                    make_tuple_iterator(output->points_.begin()));
         output->points_.resize(n_out);
     } else if (has_normals && !has_colors) {
-        thrust::device_vector<Eigen::Vector3f_u> sorted_normals = normals_;
+        thrust::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         output->normals_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f_u>::iterator, thrust::device_vector<Eigen::Vector3f_u>::iterator> IteratorTuple;
+        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
-        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f_u, Eigen::Vector3f_u>(keys,
-                    thrust::make_zip_iterator(thrust::make_tuple(sorted_points.begin(), sorted_normals.begin())),
-                    thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->normals_.begin())));
+        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(keys,
+                    make_tuple_iterator(sorted_points.begin(), sorted_normals.begin()),
+                    make_tuple_iterator(output->points_.begin(), output->normals_.begin()));
         output->points_.resize(n_out);
         output->normals_.resize(n_out);
-        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
+        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
     } else if (!has_normals && has_colors) {
-        thrust::device_vector<Eigen::Vector3f_u> sorted_colors = colors_;
+        thrust::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         output->colors_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f_u>::iterator, thrust::device_vector<Eigen::Vector3f_u>::iterator> IteratorTuple;
+        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
-        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f_u, Eigen::Vector3f_u>(keys,
-                    thrust::make_zip_iterator(thrust::make_tuple(sorted_points.begin(), sorted_colors.begin())),
-                    thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->colors_.begin())));
+        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(keys,
+                    make_tuple_iterator(sorted_points.begin(), sorted_colors.begin()),
+                    make_tuple_iterator(output->points_.begin(), output->colors_.begin()));
         output->points_.resize(n_out);
         output->colors_.resize(n_out);
     } else {
-        thrust::device_vector<Eigen::Vector3f_u> sorted_normals = normals_;
-        thrust::device_vector<Eigen::Vector3f_u> sorted_colors = colors_;
+        thrust::device_vector<Eigen::Vector3f> sorted_normals = normals_;
+        thrust::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         output->normals_.resize(n);
         output->colors_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f_u>::iterator, thrust::device_vector<Eigen::Vector3f_u>::iterator, thrust::device_vector<Eigen::Vector3f_u>::iterator> IteratorTuple;
+        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
-        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f_u, Eigen::Vector3f_u, Eigen::Vector3f_u>(keys,
-                    thrust::make_zip_iterator(thrust::make_tuple(sorted_points.begin(), sorted_normals.begin(), sorted_colors.begin())),
-                    thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->normals_.begin(), output->colors_.begin())));
+        auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>(keys,
+                    make_tuple_iterator(sorted_points.begin(), sorted_normals.begin(), sorted_colors.begin()),
+                    make_tuple_iterator(output->points_.begin(), output->normals_.begin(), output->colors_.begin()));
         output->points_.resize(n_out);
         output->normals_.resize(n_out);
         output->colors_.resize(n_out);
-        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
+        thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
     }
 
     utility::LogDebug(

@@ -47,13 +47,13 @@ TEST(KDTreeFlann, SearchKNN) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f_u> points(size);
+    thrust::host_vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
     thrust::host_vector<int> indices;
     thrust::host_vector<float> distance2;
@@ -91,19 +91,19 @@ TEST(KDTreeFlann, SearchRadius) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f_u> points(size);
+    thrust::host_vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     float radius = 5.0;
     thrust::host_vector<int> indices;
     thrust::host_vector<float> distance2;
 
     int result =
-            kdtree.SearchRadius<Vector3f_u>(query, radius, indices, distance2);
+            kdtree.SearchRadius<Vector3f>(query, radius, indices, distance2);
 
     EXPECT_EQ(result, 21);
 
@@ -139,19 +139,19 @@ TEST(KDTreeFlann, SearchHybrid) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f_u> points(size);
+    thrust::host_vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
     geometry::KDTreeFlann kdtree(pc);
 
-    Eigen::Vector3f_u query = {1.647059, 4.392157, 8.784314};
+    Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;
     float radius = 5.0;
     thrust::host_vector<int> indices;
     thrust::host_vector<float> distance2;
 
-    int result = kdtree.SearchHybrid<Vector3f_u>(query, radius, max_nn, indices,
+    int result = kdtree.SearchHybrid<Vector3f>(query, radius, max_nn, indices,
                                                  distance2);
 
     EXPECT_EQ(result, 15);

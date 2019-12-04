@@ -38,4 +38,4 @@ void bind_copy_functions(Class_ &cl) {
 
 // PYBIND11_MAKE_OPAQUE(thrust::host_vector<int>);
 // PYBIND11_MAKE_OPAQUE(thrust::host_vector<float>);
-// PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f_u>);
+// PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f>);

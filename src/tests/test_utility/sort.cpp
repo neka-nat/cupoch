@@ -22,8 +22,8 @@ bool unit_test::sort::GE(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1) {
 // ----------------------------------------------------------------------------
 // Sort a vector of Eigen::Vector3d elements.
 // ----------------------------------------------------------------------------
-void unit_test::sort::Do(host_vector<Eigen::Vector3f_u>& v) {
-    Eigen::Vector3f_u temp(0.0, 0.0, 0.0);
+void unit_test::sort::Do(host_vector<Eigen::Vector3f>& v) {
+    Eigen::Vector3f temp(0.0, 0.0, 0.0);
     for (size_t i = 0; i < v.size(); i++) {
         for (size_t j = 0; j < v.size(); j++) {
             if (GE(v[i], v[j])) continue;

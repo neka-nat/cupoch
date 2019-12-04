@@ -12,6 +12,6 @@ bool GE(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1);
 // Sort a vector of Eigen::Vector3f elements.
 // method needed because std::sort failed on TravisCI/macOS (works fine on
 // Linux)
-void Do(thrust::host_vector<Eigen::Vector3f_u>& v);
+void Do(thrust::host_vector<Eigen::Vector3f>& v);
 }  // namespace Sort
 }  // namespace unit_test

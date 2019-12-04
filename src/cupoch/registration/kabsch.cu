@@ -10,26 +10,26 @@ using namespace cupoch::registration;
 namespace {
 
 struct outer_product_functor {
-    outer_product_functor(const Eigen::Vector3f_u& x_offset, const Eigen::Vector3f_u& y_offset)
+    outer_product_functor(const Eigen::Vector3f& x_offset, const Eigen::Vector3f& y_offset)
         : x_offset_(x_offset), y_offset_(y_offset) {};
-    const Eigen::Vector3f_u x_offset_;
-    const Eigen::Vector3f_u y_offset_;
+    const Eigen::Vector3f x_offset_;
+    const Eigen::Vector3f y_offset_;
     __device__
-    Eigen::Matrix3f_u operator() (const Eigen::Vector3f_u x, const Eigen::Vector3f_u& y) const {
-        const Eigen::Vector3f_u centralized_x = x - x_offset_;
-        const Eigen::Vector3f_u centralized_y = y - y_offset_;
-        Eigen::Matrix3f_u ans = centralized_x * centralized_y.transpose();
+    Eigen::Matrix3f operator() (const Eigen::Vector3f x, const Eigen::Vector3f& y) const {
+        const Eigen::Vector3f centralized_x = x - x_offset_;
+        const Eigen::Vector3f centralized_y = y - y_offset_;
+        Eigen::Matrix3f ans = centralized_x * centralized_y.transpose();
         return ans;
     }
 };
 
 }
 
-Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f_u>& model,
-                                               const thrust::device_vector<Eigen::Vector3f_u>& target) {
+Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f>& model,
+                                               const thrust::device_vector<Eigen::Vector3f>& target) {
     //Compute the center
-    Eigen::Vector3f_u model_center = thrust::reduce(model.begin(), model.end(), Eigen::Vector3f_u(0.0, 0.0, 0.0));
-    Eigen::Vector3f_u target_center = thrust::reduce(target.begin(), target.end(), Eigen::Vector3f_u(0.0, 0.0, 0.0));
+    Eigen::Vector3f model_center = thrust::reduce(model.begin(), model.end(), Eigen::Vector3f(0.0, 0.0, 0.0));
+    Eigen::Vector3f target_center = thrust::reduce(target.begin(), target.end(), Eigen::Vector3f(0.0, 0.0, 0.0));
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;
@@ -37,9 +37,9 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen
     //Centralize them
     //Compute the H matrix
     outer_product_functor func(model_center, target_center);
-    const Eigen::Matrix3f_u init = Eigen::Matrix3f_u::Zero();
-    Eigen::Matrix3f_u hh = thrust::inner_product(model.begin(), model.end(), target.begin(), init,
-                                                 thrust::plus<Eigen::Matrix3f_u>(), func);
+    const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
+    Eigen::Matrix3f hh = thrust::inner_product(model.begin(), model.end(), target.begin(), init,
+                                               thrust::plus<Eigen::Matrix3f>(), func);
 
     //Do svd
     hh /= model.size();

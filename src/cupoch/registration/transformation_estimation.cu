@@ -10,17 +10,17 @@ namespace{
 
 template<int Index>
 struct element_copy_functor {
-    element_copy_functor(const Eigen::Vector3f_u* points) : points_(points) {};
-    const Eigen::Vector3f_u* points_;
+    element_copy_functor(const Eigen::Vector3f* points) : points_(points) {};
+    const Eigen::Vector3f* points_;
     __device__
-    Eigen::Vector3f_u operator()(const Eigen::Vector2i& x) const {
+    Eigen::Vector3f operator()(const Eigen::Vector2i& x) const {
         return points_[x[Index]];
     }
 };
 
 struct diff_square_functor {
     __device__
-    float operator()(const Eigen::Vector3f_u& x, const Eigen::Vector3f_u& y) const {
+    float operator()(const Eigen::Vector3f& x, const Eigen::Vector3f& y) const {
         return (x - y).squaredNorm();
     }
 };
@@ -31,8 +31,8 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
     const geometry::PointCloud &source,
     const geometry::PointCloud &target,
     const CorrespondenceSet &corres) const {
-    thrust::device_vector<Eigen::Vector3f_u> src_cor(corres.size());
-    thrust::device_vector<Eigen::Vector3f_u> tgt_cor(corres.size());
+    thrust::device_vector<Eigen::Vector3f> src_cor(corres.size());
+    thrust::device_vector<Eigen::Vector3f> tgt_cor(corres.size());
     thrust::transform(corres.begin(), corres.end(), src_cor.begin(),
                       element_copy_functor<0>(thrust::raw_pointer_cast(source.points_.data())));
     thrust::transform(corres.begin(), corres.end(), tgt_cor.begin(),
@@ -47,8 +47,8 @@ Eigen::Matrix4f TransformationEstimationPointToPoint::ComputeTransformation(
     const geometry::PointCloud &source,
     const geometry::PointCloud &target,
     const CorrespondenceSet &corres) const {
-    thrust::device_vector<Eigen::Vector3f_u> src_cor(corres.size());
-    thrust::device_vector<Eigen::Vector3f_u> tgt_cor(corres.size());
+    thrust::device_vector<Eigen::Vector3f> src_cor(corres.size());
+    thrust::device_vector<Eigen::Vector3f> tgt_cor(corres.size());
     thrust::transform(corres.begin(), corres.end(), src_cor.begin(),
                       element_copy_functor<0>(thrust::raw_pointer_cast(source.points_.data())));
     thrust::transform(corres.begin(), corres.end(), tgt_cor.begin(),

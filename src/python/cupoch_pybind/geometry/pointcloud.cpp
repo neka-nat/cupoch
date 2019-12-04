@@ -12,7 +12,7 @@ void pybind_pointcloud(py::module &m) {
     py::detail::bind_default_constructor<geometry::PointCloud>(pointcloud);
     py::detail::bind_copy_functions<geometry::PointCloud>(pointcloud);
     pointcloud
-            .def(py::init<const thrust::host_vector<Eigen::Vector3f_u> &>(),
+            .def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
                  "Create a PointCloud from points", "points"_a)
             .def_property("points", &geometry::PointCloud::GetPoints,
                                     &geometry::PointCloud::SetPoints)

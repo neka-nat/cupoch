@@ -15,7 +15,7 @@ struct cropped_copy_functor {
     const Eigen::Vector3f min_bound_;
     const Eigen::Vector3f max_bound_;
     __device__
-    bool operator()(const Eigen::Vector3f_u& pt) {
+    bool operator()(const Eigen::Vector3f& pt) {
         if (pt[0] >= min_bound_[0] && pt[0] <= max_bound_[0] &&
             pt[1] >= min_bound_[1] && pt[1] <= max_bound_[1] &&
             pt[2] >= min_bound_[2] && pt[2] <= max_bound_[2]) {
@@ -32,7 +32,7 @@ struct check_nan_functor {
     const bool remove_nan_;
     const bool remove_infinite_;
     __device__
-    bool operator()(const Eigen::Vector3f_u& point) const {
+    bool operator()(const Eigen::Vector3f& point) const {
         bool is_nan = remove_nan_ &&
                       (std::isnan(point(0)) || std::isnan(point(1)) ||
                        std::isnan(point(2)));
@@ -46,35 +46,35 @@ struct check_nan_functor {
 }
 
 PointCloud::PointCloud() : Geometry(Geometry::GeometryType::PointCloud, 3) {}
-PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(points) {}
+PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f>& points) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(points) {}
 PointCloud::PointCloud(const PointCloud& other) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
 
 PointCloud::~PointCloud() {}
 
-void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points) {
+void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f>& points) {
     points_ = points;
 }
 
-thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetPoints() const {
-    thrust::host_vector<Eigen::Vector3f_u> points = points_;
+thrust::host_vector<Eigen::Vector3f> PointCloud::GetPoints() const {
+    thrust::host_vector<Eigen::Vector3f> points = points_;
     return points;
 }
 
-void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals) {
+void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f>& normals) {
     normals_ = normals;
 }
 
-thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetNormals() const {
-    thrust::host_vector<Eigen::Vector3f_u> normals = normals_;
+thrust::host_vector<Eigen::Vector3f> PointCloud::GetNormals() const {
+    thrust::host_vector<Eigen::Vector3f> normals = normals_;
     return normals;
 }
 
-void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors) {
+void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f>& colors) {
     colors_ = colors;
 }
 
-thrust::host_vector<Eigen::Vector3f_u> PointCloud::GetColors() const {
-    thrust::host_vector<Eigen::Vector3f_u> colors = colors_;
+thrust::host_vector<Eigen::Vector3f> PointCloud::GetColors() const {
+    thrust::host_vector<Eigen::Vector3f> colors = colors_;
     return colors;
 }
 
@@ -100,7 +100,7 @@ Eigen::Vector3f PointCloud::GetCenter() const {
 }
 
 PointCloud &PointCloud::NormalizeNormals() {
-    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f_u& nl) {nl.normalize();});
+    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
     return *this;
 }
 
@@ -136,24 +136,24 @@ std::shared_ptr<PointCloud> PointCloud::Crop(const Eigen::Vector3f &min_bound,
         n_out = thrust::distance(output->points_.begin(), end);
     } else if (has_normal && !has_color) {
         output->normals_.resize(points_.size());
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->normals_.begin()));
-        auto end = thrust::copy_if(thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), normals_.begin())),
-                                   thrust::make_zip_iterator(thrust::make_tuple(points_.end(), normals_.end())), points_.begin(),
+        auto begin = make_tuple_iterator(output->points_.begin(), output->normals_.begin());
+        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), normals_.begin()),
+                                   make_tuple_iterator(points_.end(), normals_.end()), points_.begin(),
                                    begin, func);
         n_out = thrust::distance(begin, end);
     } else if (!has_normal && has_color) {
         output->colors_.resize(points_.size());
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->colors_.begin()));
-        auto end = thrust::copy_if(thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), colors_.begin())),
-                                   thrust::make_zip_iterator(thrust::make_tuple(points_.end(), colors_.end())), points_.begin(),
+        auto begin = make_tuple_iterator(output->points_.begin(), output->colors_.begin());
+        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), colors_.begin()),
+                                   make_tuple_iterator(points_.end(), colors_.end()), points_.begin(),
                                    begin, func);
         n_out = thrust::distance(begin, end);
-    } else if (has_normal && !has_color) {
+    } else {
         output->normals_.resize(points_.size());
         output->colors_.resize(points_.size());
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(output->points_.begin(), output->normals_.begin(), output->colors_.begin()));
-        auto end = thrust::copy_if(thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), normals_.begin(), colors_.begin())),
-                                   thrust::make_zip_iterator(thrust::make_tuple(points_.end(), normals_.end(), colors_.end())), points_.begin(),
+        auto begin = make_tuple_iterator(output->points_.begin(), output->normals_.begin(), output->colors_.begin());
+        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), normals_.begin(), colors_.begin()),
+                                   make_tuple_iterator(points_.end(), normals_.end(), colors_.end()), points_.begin(),
                                    begin, func);
         n_out = thrust::distance(begin, end);
     }
@@ -173,18 +173,18 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infi
         auto end = thrust::remove_if(points_.begin(), points_.end(), func);
         k = thrust::distance(points_.begin(), end);
     } else if (has_normal && !has_color) {
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), normals_.begin()));
-        auto end = thrust::remove_if(begin, thrust::make_zip_iterator(thrust::make_tuple(points_.end(), normals_.end())),
+        auto begin = make_tuple_iterator(points_.begin(), normals_.begin());
+        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), normals_.end()),
                                      points_.begin(), func);
         k = thrust::distance(begin, end);
     } else if (has_normal && !has_color) {
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), colors_.begin()));
-        auto end = thrust::remove_if(begin, thrust::make_zip_iterator(thrust::make_tuple(points_.end(), colors_.end())),
+        auto begin = make_tuple_iterator(points_.begin(), colors_.begin());
+        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), colors_.end()),
                                      points_.begin(), func);
         k = thrust::distance(begin, end);
     } else {
-        auto begin = thrust::make_zip_iterator(thrust::make_tuple(points_.begin(), normals_.begin(), colors_.begin()));
-        auto end = thrust::remove_if(begin, thrust::make_zip_iterator(thrust::make_tuple(points_.end(), normals_.end(), colors_.end())),
+        auto begin = make_tuple_iterator(points_.begin(), normals_.begin(), colors_.begin());
+        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), normals_.end(), colors_.end()),
                                      points_.begin(), func);
         k = thrust::distance(begin, end);
     }

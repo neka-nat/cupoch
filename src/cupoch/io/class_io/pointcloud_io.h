@@ -12,9 +12,9 @@ namespace io {
 struct HostPointCloud {
     void FromDevice(const geometry::PointCloud& pointcloud);
     void ToDevice(geometry::PointCloud& pointcloud) const;
-    thrust::host_vector<Eigen::Vector3f_u> points_;
-    thrust::host_vector<Eigen::Vector3f_u> normals_;
-    thrust::host_vector<Eigen::Vector3f_u> colors_;
+    thrust::host_vector<Eigen::Vector3f> points_;
+    thrust::host_vector<Eigen::Vector3f> normals_;
+    thrust::host_vector<Eigen::Vector3f> colors_;
 };
 
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)

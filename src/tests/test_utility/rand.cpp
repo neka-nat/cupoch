@@ -92,7 +92,7 @@ void unit_test::Rand(host_vector<Vector3i> &v,
 // Initialize an Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector3f_u> &v,
+void unit_test::Rand(host_vector<Vector3f> &v,
                      const Vector3f &vmin,
                      const Vector3f &vmax,
                      const int &seed) {

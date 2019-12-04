@@ -11,18 +11,18 @@ namespace geometry {
 class PointCloud : public Geometry {
 public:
     PointCloud();
-    PointCloud(const thrust::host_vector<Eigen::Vector3f_u>& points);
+    PointCloud(const thrust::host_vector<Eigen::Vector3f>& points);
     PointCloud(const PointCloud& other);
     ~PointCloud();
 
-    void SetPoints(const thrust::host_vector<Eigen::Vector3f_u>& points);
-    thrust::host_vector<Eigen::Vector3f_u> GetPoints() const;
+    void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);
+    thrust::host_vector<Eigen::Vector3f> GetPoints() const;
 
-    void SetNormals(const thrust::host_vector<Eigen::Vector3f_u>& normals);
-    thrust::host_vector<Eigen::Vector3f_u> GetNormals() const;
+    void SetNormals(const thrust::host_vector<Eigen::Vector3f>& normals);
+    thrust::host_vector<Eigen::Vector3f> GetNormals() const;
 
-    void SetColors(const thrust::host_vector<Eigen::Vector3f_u>& colors);
-    thrust::host_vector<Eigen::Vector3f_u> GetColors() const;
+    void SetColors(const thrust::host_vector<Eigen::Vector3f>& colors);
+    thrust::host_vector<Eigen::Vector3f> GetColors() const;
 
     Eigen::Vector3f GetMinBound() const;
     Eigen::Vector3f GetMaxBound() const;
@@ -71,9 +71,9 @@ public:
     bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference = Eigen::Vector3f(0.0, 0.0, 1.0));
 
 public:
-    thrust::device_vector<Eigen::Vector3f_u> points_;
-    thrust::device_vector<Eigen::Vector3f_u> normals_;
-    thrust::device_vector<Eigen::Vector3f_u> colors_;
+    thrust::device_vector<Eigen::Vector3f> points_;
+    thrust::device_vector<Eigen::Vector3f> normals_;
+    thrust::device_vector<Eigen::Vector3f> colors_;
 };
 
 
