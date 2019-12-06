@@ -113,4 +113,4 @@ bool WritePointCloud(const std::string &filename,
 }
 
 }  // namespace io
-}  // namespace open3d
+}  // namespace cupoch

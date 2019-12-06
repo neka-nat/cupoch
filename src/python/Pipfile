@@ -10,4 +10,4 @@ numpy = "*"
 open3d-python = "*"
 
 [requires]
-python_version = "3.7"
+

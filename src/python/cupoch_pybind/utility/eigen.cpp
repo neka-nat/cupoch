@@ -276,10 +276,10 @@ Example usage
             py::py_array_to_vectors_int<Eigen::Vector3i>);
     vector3ivector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Open3D format..
+                return R"(Convert int32 numpy array of shape ``(n, 3)`` to Cupoch format..
 Example usage
 .. code-block:: python
-    import open3d
+    import cupoch
     import numpy as np
     # Example mesh
     # x, y coordinates:
@@ -291,17 +291,17 @@ Example usage
     #      [2: (0, 0)]\/________\[3: (2, 0)]
     #
     # z coordinate: 0
-    mesh = open3d.geometry.TriangleMesh()
+    mesh = cupoch.geometry.TriangleMesh()
     np_vertices = np.array([[-1, 2, 0],
                             [1, 2, 0],
                             [0, 0, 0],
                             [2, 0, 0]])
     np_triangles = np.array([[0, 2, 1],
                              [1, 2, 3]]).astype(np.int32)
-    mesh.vertices = open3d.Vector3dVector(np_vertices)
-    # From numpy to Open3D
-    mesh.triangles = open3d.Vector3iVector(np_triangles)
-    # From Open3D to numpy
+    mesh.vertices = cupoch.Vector3dVector(np_vertices)
+    # From numpy to Cupoch
+    mesh.triangles = cupoch.Vector3iVector(np_triangles)
+    # From Cupoch to numpy
     np_triangles = np.asarray(mesh.triangles)
 )";
             }),

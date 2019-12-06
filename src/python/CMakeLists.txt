@@ -27,7 +27,7 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
 # 1) Pure-python code and misc files, copied from src/Python/package
-# 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
+# 2) The compiled python-C++ module, i.e. cupoch.so (or the equivalents)
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time
 set(PYTHON_PACKAGE_DST_DIR "${CMAKE_BINARY_DIR}/lib/python_package")

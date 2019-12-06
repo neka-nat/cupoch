@@ -6,8 +6,8 @@ endif()
 
 project(cupoch)
 
-option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              ON)
-option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
+option(BUILD_UNIT_TESTS          "Build the Cupoch unit tests"              ON)
+option(BUILD_EIGEN3              "Use the Eigen3 that comes with Cupoch"    ON)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
