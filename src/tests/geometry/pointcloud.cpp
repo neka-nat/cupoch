@@ -403,6 +403,50 @@ TEST(PointCloud, VoxelDownSample) {
     ExpectEQ(ref_colors, output_cl);
 }
 
+TEST(PointCloud, UniformDownSample) {
+    thrust::host_vector<Vector3f> ref;
+    ref.push_back(Vector3f(839.215686, 392.156863, 780.392157));
+    ref.push_back(Vector3f(364.705882, 509.803922, 949.019608));
+    ref.push_back(Vector3f(152.941176, 400.000000, 129.411765));
+    ref.push_back(Vector3f(490.196078, 972.549020, 290.196078));
+    ref.push_back(Vector3f(66.666667, 949.019608, 525.490196));
+    ref.push_back(Vector3f(235.294118, 968.627451, 901.960784));
+    ref.push_back(Vector3f(435.294118, 929.411765, 929.411765));
+    ref.push_back(Vector3f(827.450980, 329.411765, 227.450980));
+    ref.push_back(Vector3f(396.078431, 811.764706, 682.352941));
+    ref.push_back(Vector3f(615.686275, 278.431373, 784.313725));
+    ref.push_back(Vector3f(101.960784, 125.490196, 494.117647));
+    ref.push_back(Vector3f(584.313725, 243.137255, 149.019608));
+    ref.push_back(Vector3f(172.549020, 239.215686, 796.078431));
+    ref.push_back(Vector3f(66.666667, 203.921569, 458.823529));
+    ref.push_back(Vector3f(996.078431, 50.980392, 866.666667));
+    ref.push_back(Vector3f(356.862745, 549.019608, 576.470588));
+    ref.push_back(Vector3f(745.098039, 627.450980, 35.294118));
+    ref.push_back(Vector3f(666.666667, 494.117647, 160.784314));
+    ref.push_back(Vector3f(325.490196, 231.372549, 70.588235));
+    ref.push_back(Vector3f(470.588235, 592.156863, 941.176471));
+    ref.push_back(Vector3f(674.509804, 482.352941, 478.431373));
+    ref.push_back(Vector3f(345.098039, 184.313725, 607.843137));
+    ref.push_back(Vector3f(529.411765, 86.274510, 258.823529));
+    ref.push_back(Vector3f(772.549020, 286.274510, 329.411765));
+    ref.push_back(Vector3f(764.705882, 698.039216, 117.647059));
+
+    size_t size = 100;
+    geometry::PointCloud pc;
+
+    Vector3f vmin(0.0, 0.0, 0.0);
+    Vector3f vmax(1000.0, 1000.0, 1000.0);
+
+    thrust::host_vector<Vector3f> points(size);
+    Rand(points, vmin, vmax, 0);
+    pc.SetPoints(points);
+
+    size_t every_k_points = 4;
+    auto output_pc = pc.UniformDownSample(every_k_points);
+
+    ExpectEQ(ref, output_pc->GetPoints());
+}
+
 TEST(PointCloud, CropPointCloud) {
     size_t size = 100;
     geometry::PointCloud pc;

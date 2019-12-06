@@ -222,17 +222,20 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     }
     const int n_out = points_.size() / every_k_points;
     output->points_.resize(n_out);
-    thrust::transform(thrust::make_constant_iterator(0), thrust::make_constant_iterator(n_out),
-                      output->points_.begin(), stride_copy_functor(thrust::raw_pointer_cast(output->points_.data()), every_k_points));
+    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+                      output->points_.begin(),
+                      stride_copy_functor(thrust::raw_pointer_cast(output->points_.data()), every_k_points));
     if (HasNormals()) {
         output->normals_.resize(n_out);
-        thrust::transform(thrust::make_constant_iterator(0), thrust::make_constant_iterator(n_out),
-                          output->normals_.begin(), stride_copy_functor(thrust::raw_pointer_cast(output->normals_.data()), every_k_points));
+        thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+                          output->normals_.begin(),
+                          stride_copy_functor(thrust::raw_pointer_cast(output->normals_.data()), every_k_points));
     }
     if (HasColors()) {
         output->normals_.resize(n_out);
-        thrust::transform(thrust::make_constant_iterator(0), thrust::make_constant_iterator(n_out),
-                          output->colors_.begin(), stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
+        thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+                          output->colors_.begin(),
+                          stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
     }
     return output;
 }

@@ -1,2 +1,2 @@
-cuda_add_library(cupoch_registration registration.cu transformation_estimation.cu kabsch.cu)
+cuda_add_library(cupoch_registration registration.cu transformation_estimation.cu kabsch.cu feature.cu)
 target_link_libraries(cupoch_registration cupoch_geometry)
