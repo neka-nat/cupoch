@@ -261,6 +261,12 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     return std::make_tuple(SelectDownSample(indices), indices);
 }
 
+std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
+PointCloud::RemoveRadiusOutliersHost(size_t nb_points, float search_radius) const {
+    auto output = RemoveRadiusOutliers(nb_points, search_radius);
+    return std::make_tuple(std::get<0>(output), thrust::host_vector<size_t>(std::get<1>(output)));
+}
+
 std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       float std_ratio) const {
@@ -304,4 +310,11 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                indices.begin(), th_func);
     indices.resize(thrust::distance(indices.begin(), end));
     return std::make_tuple(SelectDownSample(indices), indices);
+}
+
+std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
+PointCloud::RemoveStatisticalOutliersHost(size_t nb_neighbors,
+    float std_ratio) const {
+    auto output = RemoveStatisticalOutliers(nb_neighbors, std_ratio);
+    return std::make_tuple(std::get<0>(output), thrust::host_vector<size_t>(std::get<1>(output)));
 }

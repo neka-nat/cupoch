@@ -18,6 +18,18 @@ struct equal_to<Eigen::Vector3i> {
     }
 };
 
+template<typename MatType, typename VecType>
+struct plus<thrust::tuple<MatType, VecType, float>> {
+    __host__ __device__
+    thrust::tuple<MatType, VecType, float> operator() (const thrust::tuple<MatType, VecType, float>& x,
+                                                       const thrust::tuple<MatType, VecType, float>& y) const {
+        MatType mat = thrust::get<0>(x) + thrust::get<0>(y);
+        VecType vec = thrust::get<1>(x) + thrust::get<1>(y);
+        float r = thrust::get<2>(x) + thrust::get<2>(y);
+        return thrust::make_tuple(mat, vec, r);
+    }
+};
+
 }
 
 namespace Eigen {

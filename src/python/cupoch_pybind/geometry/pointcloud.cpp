@@ -37,12 +37,12 @@ void pybind_pointcloud(py::module &m) {
                  "a voxel",
                  "voxel_size"_a)
             .def("remove_radius_outlier",
-                 &geometry::PointCloud::RemoveRadiusOutliers,
+                 &geometry::PointCloud::RemoveRadiusOutliersHost,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a)
             .def("remove_statistical_outlier",
-                 &geometry::PointCloud::RemoveStatisticalOutliers,
+                 &geometry::PointCloud::RemoveStatisticalOutliersHost,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
                  "nb_neighbors"_a, "std_ratio"_a)

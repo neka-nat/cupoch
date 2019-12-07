@@ -177,7 +177,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infi
         auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), normals_.end()),
                                      points_.begin(), func);
         k = thrust::distance(begin, end);
-    } else if (has_normal && !has_color) {
+    } else if (!has_normal && has_color) {
         auto begin = make_tuple_iterator(points_.begin(), colors_.begin());
         auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), colors_.end()),
                                      points_.begin(), func);

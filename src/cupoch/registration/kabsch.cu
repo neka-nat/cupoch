@@ -2,22 +2,39 @@
 #include "cupoch/utility/svd3_cuda.h"
 #include <Eigen/Geometry>
 #include <thrust/reduce.h>
-#include <thrust/inner_product.h>
+#include <thrust/transform_reduce.h>
 
 using namespace cupoch;
 using namespace cupoch::registration;
 
 namespace {
 
+template<int Index>
+struct extract_correspondence_functor {
+    extract_correspondence_functor(const Eigen::Vector3f* points, const Eigen::Vector2i* corres)
+        : points_(points), corres_(corres) {};
+    const Eigen::Vector3f* points_;
+    const Eigen::Vector2i* corres_;
+    __device__
+    Eigen::Vector3f operator() (size_t idx) const {
+        return points_[corres_[idx][Index]];
+    }
+};
+
 struct outer_product_functor {
-    outer_product_functor(const Eigen::Vector3f& x_offset, const Eigen::Vector3f& y_offset)
-        : x_offset_(x_offset), y_offset_(y_offset) {};
+    outer_product_functor(const Eigen::Vector3f* source, const Eigen::Vector3f* target,
+                          const Eigen::Vector2i* corres, const Eigen::Vector3f& x_offset,
+                          const Eigen::Vector3f& y_offset)
+        : source_(source), target_(target), corres_(corres), x_offset_(x_offset), y_offset_(y_offset) {};
+    const Eigen::Vector3f* source_;
+    const Eigen::Vector3f* target_;
+    const Eigen::Vector2i* corres_;
     const Eigen::Vector3f x_offset_;
     const Eigen::Vector3f y_offset_;
     __device__
-    Eigen::Matrix3f operator() (const Eigen::Vector3f x, const Eigen::Vector3f& y) const {
-        const Eigen::Vector3f centralized_x = x - x_offset_;
-        const Eigen::Vector3f centralized_y = y - y_offset_;
+    Eigen::Matrix3f operator() (size_t idx) const {
+        const Eigen::Vector3f centralized_x = source_[corres_[idx][0]] - x_offset_;
+        const Eigen::Vector3f centralized_y = target_[corres_[idx][1]] - y_offset_;
         Eigen::Matrix3f ans = centralized_x * centralized_y.transpose();
         return ans;
     }
@@ -26,20 +43,35 @@ struct outer_product_functor {
 }
 
 Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f>& model,
-                                               const thrust::device_vector<Eigen::Vector3f>& target) {
+                                               const thrust::device_vector<Eigen::Vector3f>& target,
+                                               const CorrespondenceSet& corres) {
     //Compute the center
-    Eigen::Vector3f model_center = thrust::reduce(model.begin(), model.end(), Eigen::Vector3f(0.0, 0.0, 0.0));
-    Eigen::Vector3f target_center = thrust::reduce(target.begin(), target.end(), Eigen::Vector3f(0.0, 0.0, 0.0));
+    extract_correspondence_functor<0> ex_func0(thrust::raw_pointer_cast(model.data()),
+                                               thrust::raw_pointer_cast(corres.data()));
+    extract_correspondence_functor<1> ex_func1(thrust::raw_pointer_cast(target.data()),
+                                               thrust::raw_pointer_cast(corres.data()));
+    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+                                                            thrust::make_counting_iterator(corres.size()),
+                                                            ex_func0, Eigen::Vector3f(0.0, 0.0, 0.0),
+                                                            thrust::plus<Eigen::Vector3f>());
+    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+                                                             thrust::make_counting_iterator(corres.size()),
+                                                             ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),
+                                                             thrust::plus<Eigen::Vector3f>());
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;
 
     //Centralize them
     //Compute the H matrix
-    outer_product_functor func(model_center, target_center);
+    outer_product_functor func(thrust::raw_pointer_cast(model.data()),
+                               thrust::raw_pointer_cast(target.data()),
+                               thrust::raw_pointer_cast(corres.data()),
+                               model_center, target_center);
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
-    Eigen::Matrix3f hh = thrust::inner_product(model.begin(), model.end(), target.begin(), init,
-                                               thrust::plus<Eigen::Matrix3f>(), func);
+    Eigen::Matrix3f hh = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+                                                  thrust::make_counting_iterator(corres.size()),
+                                                  func, init, thrust::plus<Eigen::Matrix3f>());
 
     //Do svd
     hh /= model.size();

@@ -58,11 +58,20 @@ public:
 
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
+
     std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
 
+    std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
+    RemoveRadiusOutliersHost(size_t nb_points, float search_radius) const;
+
+
     std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
+
+    std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
+    RemoveStatisticalOutliersHost(size_t nb_neighbors, float std_ratio) const;
+
 
     std::shared_ptr<PointCloud> Crop(const Eigen::Vector3f &min_bound,
                                      const Eigen::Vector3f &max_bound) const;

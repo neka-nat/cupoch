@@ -65,5 +65,29 @@ private:
             TransformationEstimationType::PointToPoint;
 };
 
+/// Estimate a transformation for point to plane distance
+class TransformationEstimationPointToPlane : public TransformationEstimation {
+public:
+    TransformationEstimationPointToPlane() {}
+    ~TransformationEstimationPointToPlane() override {}
+
+public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+    float ComputeRMSE(const geometry::PointCloud &source,
+                      const geometry::PointCloud &target,
+                      const CorrespondenceSet &corres) const override;
+    Eigen::Matrix4f ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const override;
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::PointToPlane;
+};
+
 }
 }
