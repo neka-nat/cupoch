@@ -13,7 +13,8 @@ def measure_time(obj, method_name, device, *args):
     return res
 
 
-pcd_file = "../../testdata/icp/cloud_bin_0.pcd"
+# pcd_file = "../../testdata/icp/cloud_bin_0.pcd"
+pcd_file = "../../testdata/fragment.ply"
 pc_cpu = measure_time(o3d.io, "read_point_cloud", "CPU", pcd_file)
 print(pc_cpu)
 pc_gpu = measure_time(cph.io, "read_point_cloud", "GPU", pcd_file)

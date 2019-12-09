@@ -14,6 +14,7 @@ static const std::unordered_map<
         std::string,
         std::function<bool(const std::string &, geometry::PointCloud &, bool)>>
         file_extension_to_pointcloud_read_function{
+                {"ply", ReadPointCloudFromPLY},
                 {"pcd", ReadPointCloudFromPCD},
         };
 
@@ -24,6 +25,7 @@ static const std::unordered_map<std::string,
                                                    const bool,
                                                    const bool)>>
         file_extension_to_pointcloud_write_function{
+                {"ply", WritePointCloudToPLY},
                 {"pcd", WritePointCloudToPCD},
         };
 }  // unnamed namespace
@@ -38,8 +40,14 @@ void HostPointCloud::FromDevice(const geometry::PointCloud& pointcloud) {
 
 void HostPointCloud::ToDevice(geometry::PointCloud& pointcloud) const {
     pointcloud.SetPoints(points_);
-    pointcloud.SetPoints(normals_);
+    pointcloud.SetNormals(normals_);
     pointcloud.SetColors(colors_);
+}
+
+void HostPointCloud::Clear() {
+    points_.clear();
+    normals_.clear();
+    colors_.clear();
 }
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(

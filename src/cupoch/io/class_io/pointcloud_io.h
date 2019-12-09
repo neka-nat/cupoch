@@ -10,8 +10,11 @@ namespace cupoch {
 namespace io {
 
 struct HostPointCloud {
+    HostPointCloud() = default;
+    ~HostPointCloud() = default;
     void FromDevice(const geometry::PointCloud& pointcloud);
     void ToDevice(geometry::PointCloud& pointcloud) const;
+    void Clear();
     thrust::host_vector<Eigen::Vector3f> points_;
     thrust::host_vector<Eigen::Vector3f> normals_;
     thrust::host_vector<Eigen::Vector3f> colors_;
@@ -44,6 +47,16 @@ bool WritePointCloud(const std::string &filename,
                      bool write_ascii = false,
                      bool compressed = false,
                      bool print_progress = false);
+
+bool ReadPointCloudFromPLY(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           bool print_progress = false);
+
+bool WritePointCloudToPLY(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          bool write_ascii = false,
+                          bool compressed = false,
+                          bool print_progress = false);
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,

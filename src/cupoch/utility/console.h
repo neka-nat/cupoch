@@ -227,5 +227,57 @@ inline void LogDebugf(const char *format, const Args &... args) {
     Logger::i().Debugf(format, args...);
 }
 
+class ConsoleProgressBar {
+public:
+    ConsoleProgressBar(size_t expected_count,
+                       const std::string &progress_info,
+                       bool active = false) {
+        reset(expected_count, progress_info, active);
+    }
+
+    void reset(size_t expected_count,
+               const std::string &progress_info,
+               bool active) {
+        expected_count_ = expected_count;
+        current_count_ = -1;
+        progress_info_ = progress_info;
+        progress_pixel_ = 0;
+        active_ = active;
+        operator++();
+    }
+
+    ConsoleProgressBar &operator++() {
+        current_count_++;
+        if (!active_) {
+            return *this;
+        }
+        if (current_count_ >= expected_count_) {
+            fmt::print("{}[{}] 100%\n", progress_info_,
+                       std::string(resolution_, '='));
+        } else {
+            size_t new_progress_pixel =
+                    int(current_count_ * resolution_ / expected_count_);
+            if (new_progress_pixel > progress_pixel_) {
+                progress_pixel_ = new_progress_pixel;
+                int percent = int(current_count_ * 100 / expected_count_);
+                fmt::print("{}[{}>{}] {:d}%\r", progress_info_,
+                           std::string(progress_pixel_, '='),
+                           std::string(resolution_ - 1 - progress_pixel_, ' '),
+                           percent);
+                fflush(stdout);
+            }
+        }
+        return *this;
+    }
+
+private:
+    const size_t resolution_ = 40;
+    size_t expected_count_;
+    size_t current_count_;
+    std::string progress_info_;
+    size_t progress_pixel_;
+    bool active_;
+};
+
 }  // namespace utility
 }  // namespace cupoch

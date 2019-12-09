@@ -40,7 +40,6 @@ file(GLOB_RECURSE CU_SOURCES flann/src/cpp/flann/*.cu)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DFLANN_USE_CUDA")
 cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
 target_include_directories(flann_cuda_s PUBLIC ${flann_INCLUDE_DIRS})
-set_property(TARGET flann_cuda_s PROPERTY COMPILE_DEFINITIONS FLANN_STATIC)
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
@@ -62,9 +61,14 @@ add_library(liblzf ${LIBLZF_SOURCE_FILES})
 target_include_directories(liblzf PUBLIC liblzf)
 set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
 
+# rply
+add_library(rply rply/rply.c)
+set(rply_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rply)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
+     ${rply_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
 )
