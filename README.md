@@ -2,7 +2,7 @@
 <img src="docs/_static/cupoch_logo.png" width="320" />
 </p>
 
-# cupoch
+# CUDA-based 3D Data Processing Library
 
 Cupoch is a library that implements rapid 3D data processing using CUDA.
 
@@ -10,8 +10,8 @@ Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 * 3D data processing using CUDA
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
-* OpenGL/DirectX-based GUI (not using any GUI frameworks, such as Qt, wxwidget...) 
-* Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack.git) data structure
+* Interactive GUI (based on [imgui](https://github.com/ocornut/imgui))
+* Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
 
 ## Installation
 

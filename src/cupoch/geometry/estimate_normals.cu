@@ -201,7 +201,9 @@ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
     Eigen::Matrix3f covariance;
     Eigen::Matrix<float, 9, 1> cumulants;
     cumulants.setZero();
+    int count = 0;
     for (size_t i = 0; i < knn; i++) {
+        if (indices[i] < 0) break;
         const Eigen::Vector3f& point = points[indices[i]];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
@@ -212,8 +214,10 @@ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
         cumulants(6) += point(1) * point(1);
         cumulants(7) += point(1) * point(2);
         cumulants(8) += point(2) * point(2);
+        count++;
     }
-    cumulants /= (float)knn;
+    if (count < 3) return Eigen::Vector3f(0.0, 0.0, 1.0);
+    cumulants /= (float)count;
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
