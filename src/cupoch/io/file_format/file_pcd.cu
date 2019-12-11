@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "cupoch/io/class_io/pointcloud_io.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 #include "cupoch/utility/helper.h"

@@ -1,12 +1,15 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <string>
-
-#include "cupoch/geometry/pointcloud.h"
 #include <thrust/host_vector.h>
 
-
 namespace cupoch {
+
+namespace geometry {
+class PointCloud;
+}
+
 namespace io {
 
 struct HostPointCloud {

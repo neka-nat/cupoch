@@ -1,4 +1,5 @@
 #include <rply.h>
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/utility/console.h"
 

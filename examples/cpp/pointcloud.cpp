@@ -1,4 +1,5 @@
 #include "cupoch/io/class_io/pointcloud_io.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 
 int main(int argc, char *argv[]) {

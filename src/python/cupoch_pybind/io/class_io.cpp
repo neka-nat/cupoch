@@ -1,8 +1,8 @@
-#include <string>
-#include <unordered_map>
-
-#include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch_pybind/io/io.h"
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/io/class_io/pointcloud_io.h"
+
+#include <string>
 
 using namespace cupoch;
 
