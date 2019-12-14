@@ -110,8 +110,11 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
 }
 
 PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
-    TransformPoints(transformation, points_);
-    TransformNormals(transformation, normals_);
+    cudaStream_t streams[2];
+    for(int i = 0; i < 2; i++) cudaStreamCreate(&streams[i]);
+    TransformPoints(streams[0], transformation, points_);
+    TransformNormals(streams[1], transformation, normals_);
+    cudaDeviceSynchronize();
     return *this;
 }
 

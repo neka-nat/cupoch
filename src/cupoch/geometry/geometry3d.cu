@@ -78,14 +78,14 @@ void cupoch::geometry::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::V
     thrust::fill(colors.begin(), colors.end(), clipped_color);
 }
 
-void cupoch::geometry::TransformPoints(const Eigen::Matrix4f& transformation,
-                                      thrust::device_vector<Eigen::Vector3f>& points) {
+void cupoch::geometry::TransformPoints(cudaStream_t& stream, const Eigen::Matrix4f& transformation,
+                                       thrust::device_vector<Eigen::Vector3f>& points) {
     transform_points_functor func(transformation);
-    thrust::for_each(points.begin(), points.end(), func);
+    thrust::for_each(thrust::cuda::par.on(stream), points.begin(), points.end(), func);
 }
 
-void cupoch::geometry::TransformNormals(const Eigen::Matrix4f& transformation,
-                                      thrust::device_vector<Eigen::Vector3f>& normals) {
+void cupoch::geometry::TransformNormals(cudaStream_t& stream, const Eigen::Matrix4f& transformation,
+                                        thrust::device_vector<Eigen::Vector3f>& normals) {
     transform_normals_functor func(transformation);
-    thrust::for_each(normals.begin(), normals.end(), func);
+    thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(), func);
 }

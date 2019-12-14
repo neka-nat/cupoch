@@ -45,19 +45,24 @@ struct outer_product_functor {
 Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f>& model,
                                                const thrust::device_vector<Eigen::Vector3f>& target,
                                                const CorrespondenceSet& corres) {
+    cudaStream_t streams[2];
+    for(int i = 0; i < 2; i++) cudaStreamCreate(&streams[i]);
     //Compute the center
     extract_correspondence_functor<0> ex_func0(thrust::raw_pointer_cast(model.data()),
                                                thrust::raw_pointer_cast(corres.data()));
     extract_correspondence_functor<1> ex_func1(thrust::raw_pointer_cast(target.data()),
                                                thrust::raw_pointer_cast(corres.data()));
-    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::cuda::par.on(streams[0]),
+                                                            thrust::make_counting_iterator<size_t>(0),
                                                             thrust::make_counting_iterator(corres.size()),
                                                             ex_func0, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                             thrust::plus<Eigen::Vector3f>());
-    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::cuda::par.on(streams[1]),
+                                                             thrust::make_counting_iterator<size_t>(0),
                                                              thrust::make_counting_iterator(corres.size()),
                                                              ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                              thrust::plus<Eigen::Vector3f>());
+    cudaDeviceSynchronize();
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;

@@ -11,16 +11,21 @@ namespace {
 
 void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud& dst,
                           const thrust::device_vector<size_t> &indices) {
+    cudaStream_t streams[3];
+    const bool has_normals = src.HasNormals();
+    const bool has_colors = src.HasColors();
+    for(int i = 0; i < 3; i++) cudaStreamCreate(&streams[i]);
+    if (has_normals) dst.normals_.resize(indices.size());
+    if (has_colors) dst.colors_.resize(indices.size());
     dst.points_.resize(indices.size());
-    thrust::gather(indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
-    if (src.HasNormals()) {
-        dst.normals_.resize(indices.size());
-        thrust::gather(indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
+    thrust::gather(thrust::cuda::par.on(streams[0]), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
+    if (has_normals) {
+        thrust::gather(thrust::cuda::par.on(streams[1]), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
     }
-    if (src.HasColors()) {
-        dst.colors_.resize(indices.size());
-        thrust::gather(indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
+    if (has_colors) {
+        thrust::gather(thrust::cuda::par.on(streams[2]), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
     }
+    cudaDeviceSynchronize();
 }
 
 struct compute_key_functor {
