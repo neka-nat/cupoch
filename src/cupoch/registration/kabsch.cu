@@ -1,5 +1,6 @@
 #include "cupoch/registration/kabsch.h"
 #include "cupoch/utility/svd3_cuda.h"
+#include "cupoch/utility/global_stream.h"
 #include <Eigen/Geometry>
 #include <thrust/reduce.h>
 #include <thrust/transform_reduce.h>
@@ -40,24 +41,29 @@ struct outer_product_functor {
     }
 };
 
+struct set_correspondence_functor {
+    __device__
+    Eigen::Vector2i operator() (size_t idx) {
+        return Eigen::Vector2i(idx, idx);
+    }
+};
+
 }
 
 Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f>& model,
                                                const thrust::device_vector<Eigen::Vector3f>& target,
                                                const CorrespondenceSet& corres) {
-    cudaStream_t streams[2];
-    for(int i = 0; i < 2; i++) cudaStreamCreate(&streams[i]);
     //Compute the center
     extract_correspondence_functor<0> ex_func0(thrust::raw_pointer_cast(model.data()),
                                                thrust::raw_pointer_cast(corres.data()));
     extract_correspondence_functor<1> ex_func1(thrust::raw_pointer_cast(target.data()),
                                                thrust::raw_pointer_cast(corres.data()));
-    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::cuda::par.on(streams[0]),
+    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetGlobalStream(0)),
                                                             thrust::make_counting_iterator<size_t>(0),
                                                             thrust::make_counting_iterator(corres.size()),
                                                             ex_func0, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                             thrust::plus<Eigen::Vector3f>());
-    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::cuda::par.on(streams[1]),
+    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetGlobalStream(1)),
                                                              thrust::make_counting_iterator<size_t>(0),
                                                              thrust::make_counting_iterator(corres.size()),
                                                              ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),
@@ -95,4 +101,12 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen
     tr.block<3, 1>(0, 3) -= tr.block<3, 3>(0, 0) * model_center;
 
     return tr;
+}
+
+Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen::Vector3f>& model,
+                                               const thrust::device_vector<Eigen::Vector3f>& target) {
+    CorrespondenceSet corres(model.size());
+    set_correspondence_functor func;
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(model.size()), corres.begin(), func);
+    return Kabsch(model, target, corres);
 }

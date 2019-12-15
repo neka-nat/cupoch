@@ -2,6 +2,7 @@
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/global_stream.h"
 #include <thrust/gather.h>
 
 using namespace cupoch;
@@ -11,19 +12,17 @@ namespace {
 
 void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud& dst,
                           const thrust::device_vector<size_t> &indices) {
-    cudaStream_t streams[3];
     const bool has_normals = src.HasNormals();
     const bool has_colors = src.HasColors();
-    for(int i = 0; i < 3; i++) cudaStreamCreate(&streams[i]);
     if (has_normals) dst.normals_.resize(indices.size());
     if (has_colors) dst.colors_.resize(indices.size());
     dst.points_.resize(indices.size());
-    thrust::gather(thrust::cuda::par.on(streams[0]), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
+    thrust::gather(thrust::cuda::par.on(utility::GetGlobalStream(0)), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
     if (has_normals) {
-        thrust::gather(thrust::cuda::par.on(streams[1]), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
+        thrust::gather(thrust::cuda::par.on(utility::GetGlobalStream(1)), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
     }
     if (has_colors) {
-        thrust::gather(thrust::cuda::par.on(streams[2]), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
+        thrust::gather(thrust::cuda::par.on(utility::GetGlobalStream(2)), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
     }
     cudaDeviceSynchronize();
 }
@@ -220,6 +219,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const 
 
 std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     size_t every_k_points) const {
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
     auto output = std::make_shared<PointCloud>();
     if (every_k_points == 0) {
         utility::LogError("[UniformDownSample] Illegal sample rate.");
@@ -227,21 +228,25 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     }
     const int n_out = points_.size() / every_k_points;
     output->points_.resize(n_out);
-    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+    if (has_normals) output->normals_.resize(n_out);
+    if (has_colors) output->colors_.resize(n_out);
+    thrust::transform(thrust::cuda::par.on(utility::GetGlobalStream(0)),
+                      thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                       output->points_.begin(),
                       stride_copy_functor(thrust::raw_pointer_cast(output->points_.data()), every_k_points));
-    if (HasNormals()) {
-        output->normals_.resize(n_out);
-        thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+    if (has_normals) {
+        thrust::transform(thrust::cuda::par.on(utility::GetGlobalStream(1)),
+                          thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                           output->normals_.begin(),
                           stride_copy_functor(thrust::raw_pointer_cast(output->normals_.data()), every_k_points));
     }
-    if (HasColors()) {
-        output->normals_.resize(n_out);
-        thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
+    if (has_colors) {
+        thrust::transform(thrust::cuda::par.on(utility::GetGlobalStream(2)),
+                          thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                           output->colors_.begin(),
                           stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
     }
+    cudaDeviceSynchronize();
     return output;
 }
 

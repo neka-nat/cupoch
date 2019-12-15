@@ -15,10 +15,16 @@ void ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f>& colors,
                                 const size_t size,
                                 const Eigen::Vector3f& color);
 
-void TransformPoints(cudaStream_t& stream, const Eigen::Matrix4f& transformation,
+void TransformPoints(const Eigen::Matrix4f& transformation,
                      thrust::device_vector<Eigen::Vector3f>& points);
 
-void TransformNormals(cudaStream_t& stream, const Eigen::Matrix4f& transformation,
+void TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
+                     thrust::device_vector<Eigen::Vector3f>& points);
+
+void TransformNormals(const Eigen::Matrix4f& transformation,
+                      thrust::device_vector<Eigen::Vector3f>& normals);
+
+void TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
                       thrust::device_vector<Eigen::Vector3f>& normals);
 
 }

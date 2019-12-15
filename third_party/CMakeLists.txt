@@ -41,16 +41,6 @@ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DFLANN_USE_CUDA")
 cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
 target_include_directories(flann_cuda_s PUBLIC ${flann_INCLUDE_DIRS})
 
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_COMPILER_IS_GNUCC)
-    cuda_add_library(flann_cuda SHARED "")
-    set_target_properties(flann_cuda PROPERTIES LINKER_LANGUAGE CXX)
-    target_link_libraries(flann_cuda -Wl,-whole-archive flann_cuda_s -Wl,-no-whole-archive)
-else()
-    cuda_add_library(flann_cuda SHARED ${CPP_SOURCES})
-endif()
-
-
 cuda_add_library(fmt fmt/src/format.cc fmt/src/posix.cc)
 target_include_directories(fmt PUBLIC fmt/include)
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)

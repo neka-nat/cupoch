@@ -2,6 +2,7 @@
 #include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/global_stream.h"
 #include <thrust/gather.h>
 
 using namespace cupoch;
@@ -110,10 +111,8 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
 }
 
 PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
-    cudaStream_t streams[2];
-    for(int i = 0; i < 2; i++) cudaStreamCreate(&streams[i]);
-    TransformPoints(streams[0], transformation, points_);
-    TransformNormals(streams[1], transformation, normals_);
+    TransformPoints(utility::GetGlobalStream(0), transformation, points_);
+    TransformNormals(utility::GetGlobalStream(1), transformation, normals_);
     cudaDeviceSynchronize();
     return *this;
 }

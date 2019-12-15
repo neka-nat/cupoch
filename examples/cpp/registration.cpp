@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
                                 -0.139, 0.967, -0.215, 0.7,
                                 0.487, 0.255, 0.835, -1.4,
                                 0.0, 0.0, 0.0, 1.0).finished();
-    registration::RegistrationICP(*source, *target, 0.02, init);
+    auto res = registration::RegistrationICP(*source, *target, 0.02, init);
+    std::cout << res.transformation_ << std::endl;
     return 0;
 }

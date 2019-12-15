@@ -29,8 +29,8 @@ thrust::host_vector<EigenVector> py_array_to_vectors_float(
     thrust::host_vector<EigenVector> eigen_vectors(array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        // The EigenVector here must be a double-typed eigen vector, since only
-        // cupoch::Vector3dVector binds to py_array_to_vectors_double.
+        // The EigenVector here must be a float-typed eigen vector, since only
+        // cupoch::Vector3dVector binds to py_array_to_vectors_float.
         // Therefore, we can use the memory map directly.
         eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
     }

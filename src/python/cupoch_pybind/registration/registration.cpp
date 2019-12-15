@@ -112,6 +112,25 @@ void pybind_registration_classes(py::module &m) {
                                     "TransformationEstimationPointToPoint ");
                  });
 
+    // cupoch.registration.TransformationEstimationPointToPlane:
+    // TransformationEstimation
+    py::class_<registration::TransformationEstimationPointToPlane,
+               PyTransformationEstimation<
+                       registration::TransformationEstimationPointToPlane>,
+               registration::TransformationEstimation>
+            te_p2l(m, "TransformationEstimationPointToPlane",
+                   "Class to estimate a transformation for point to plane "
+                   "distance.");
+    py::detail::bind_default_constructor<
+            registration::TransformationEstimationPointToPlane>(te_p2l);
+    py::detail::bind_copy_functions<
+            registration::TransformationEstimationPointToPlane>(te_p2l);
+    te_p2l.def(
+            "__repr__",
+            [](const registration::TransformationEstimationPointToPlane &te) {
+                return std::string("TransformationEstimationPointToPlane");
+            });
+
     // cupoch.registration.RegistrationResult
     py::class_<registration::RegistrationResult> registration_result(
             m, "RegistrationResult",
@@ -123,7 +142,7 @@ void pybind_registration_classes(py::module &m) {
     registration_result
             .def_readwrite("transformation",
                            &registration::RegistrationResult::transformation_,
-                           "``4 x 4`` float64 numpy array: The estimated "
+                           "``4 x 4`` float32 numpy array: The estimated "
                            "transformation matrix.")
             .def_property(
                     "correspondence_set",
