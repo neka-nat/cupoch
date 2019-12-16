@@ -6,7 +6,11 @@ namespace utility {
 
 static const size_t MAX_DEVICES = 16;
 
-cudaStream_t GetGlobalStream(size_t i);
+cudaStream_t GetStream(size_t i);
+
+int GetDevice();
+
+void SetDevice(int device_no);
 
 }
 }

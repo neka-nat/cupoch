@@ -55,12 +55,26 @@ set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
 add_library(rply rply/rply.c)
 set(rply_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rply)
 
+# dlpack
+set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
+
+# rmm
+add_library(rmm SHARED rmm/src/rmm.cpp
+            rmm/src/memory_manager.cpp
+            cnmem/src/cnmem.cpp
+            rmm/src/mr/default_memory_resource.cpp)
+target_include_directories(rmm PUBLIC cnmem/include rmm/include)
+target_link_libraries(rmm ${CUDA_LIBRAIES})
+set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
+     ${dlpack_INCLUDE_DIRS}
+     ${rmm_INCLUDE_DIRS}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)

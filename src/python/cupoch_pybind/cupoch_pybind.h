@@ -19,7 +19,7 @@ namespace pybind11 {
 namespace detail {
 
 template <typename Type, typename Alloc> struct type_caster<thrust::host_vector<Type, Alloc> >
- : list_caster<thrust::host_vector<Type, Alloc>, Type> {};
+    : list_caster<thrust::host_vector<Type, Alloc>, Type> {};
 
 template <typename T, typename Class_>
 void bind_default_constructor(Class_ &cl) {
@@ -36,6 +36,6 @@ void bind_copy_functions(Class_ &cl) {
 }  // namespace detail
 }  // namespace pybind11
 
-// PYBIND11_MAKE_OPAQUE(thrust::host_vector<int>);
-// PYBIND11_MAKE_OPAQUE(thrust::host_vector<float>);
-// PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<int>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<float>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f>);

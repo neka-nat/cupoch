@@ -1,6 +1,6 @@
 #include "cupoch/registration/kabsch.h"
 #include "cupoch/utility/svd3_cuda.h"
-#include "cupoch/utility/global_stream.h"
+#include "cupoch/utility/platform.h"
 #include <Eigen/Geometry>
 #include <thrust/reduce.h>
 #include <thrust/transform_reduce.h>
@@ -58,12 +58,12 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen
                                                thrust::raw_pointer_cast(corres.data()));
     extract_correspondence_functor<1> ex_func1(thrust::raw_pointer_cast(target.data()),
                                                thrust::raw_pointer_cast(corres.data()));
-    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetGlobalStream(0)),
+    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetStream(0)),
                                                             thrust::make_counting_iterator<size_t>(0),
                                                             thrust::make_counting_iterator(corres.size()),
                                                             ex_func0, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                             thrust::plus<Eigen::Vector3f>());
-    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetGlobalStream(1)),
+    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::cuda::par.on(utility::GetStream(1)),
                                                              thrust::make_counting_iterator<size_t>(0),
                                                              thrust::make_counting_iterator(corres.size()),
                                                              ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),

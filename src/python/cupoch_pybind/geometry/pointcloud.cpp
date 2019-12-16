@@ -14,12 +14,12 @@ void pybind_pointcloud(py::module &m) {
     pointcloud
             .def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
                  "Create a PointCloud from points", "points"_a)
-            .def_property("points", &geometry::PointCloud::GetPoints,
-                                    &geometry::PointCloud::SetPoints)
-            .def_property("normals", &geometry::PointCloud::GetNormals,
-                                     &geometry::PointCloud::SetNormals)
-            .def_property("colors", &geometry::PointCloud::GetColors,
-                                     &geometry::PointCloud::SetColors)
+            .def_property("host_points", &geometry::PointCloud::GetPoints,
+                                         &geometry::PointCloud::SetPoints)
+            .def_property("host_normals", &geometry::PointCloud::GetNormals,
+                                          &geometry::PointCloud::SetNormals)
+            .def_property("host_colors", &geometry::PointCloud::GetColors,
+                                         &geometry::PointCloud::SetColors)
             .def("has_points", &geometry::PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &geometry::PointCloud::HasNormals,
