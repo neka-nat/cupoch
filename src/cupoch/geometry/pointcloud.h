@@ -45,17 +45,31 @@ public:
     }
 
     PointCloud &NormalizeNormals();
+
+    /// Assigns each point in the PointCloud the same color \param color.
     PointCloud &PaintUniformColor(const Eigen::Vector3f &color);
 
     PointCloud& Transform(const Eigen::Matrix4f& transformation);
 
+    /// Remove all points fromt he point cloud that have a nan entry, or
+    /// infinite entries.
+    /// Also removes the corresponding normals and color entries.
     PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
                                        bool remove_infinite = true);
 
+    /// Function to select points from \param input pointcloud into
+    /// \return output pointcloud
+    /// Points with indices in \param indices are selected.
     std::shared_ptr<PointCloud> SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert = false) const;
 
+    /// Function to downsample \param input pointcloud into output pointcloud
+    /// with a voxel \param voxel_size defines the resolution of the voxel grid,
+    /// smaller value leads to denser output point cloud. Normals and colors are
+    /// averaged if they exist.
     std::shared_ptr<PointCloud> VoxelDownSample(float voxel_size) const;
 
+    /// Function to downsample \param input pointcloud into output pointcloud
+    /// uniformly \param every_k_points indicates the sample rate.
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
 
@@ -73,12 +87,32 @@ public:
     RemoveStatisticalOutliersHost(size_t nb_neighbors, float std_ratio) const;
 
 
+    /// Function to crop pointcloud into output pointcloud
+    /// All points with coordinates outside the bounding box \param bbox are
+    /// clipped.
     std::shared_ptr<PointCloud> Crop(const Eigen::Vector3f &min_bound,
                                      const Eigen::Vector3f &max_bound) const;
 
+    /// Function to compute the normals of a point cloud
+    /// \param cloud is the input point cloud. It also stores the output
+    /// normals. Normals are oriented with respect to the input point cloud if
+    /// normals exist in the input. \param search_param The KDTree search
+    /// parameters
     bool EstimateNormals(const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
+
+    /// Function to orient the normals of a point cloud
+    /// \param cloud is the input point cloud. It must have normals.
+    /// Normals are oriented with respect to \param orientation_reference
     bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference = Eigen::Vector3f(0.0, 0.0, 1.0));
 
+    /// Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// Returns a vector of point labels, -1 indicates noise according to
+    /// the algorithm.
+    thrust::device_vector<int> ClusterDBSCAN(float eps,
+                                             size_t min_points,
+                                             bool print_progress = false) const;
 public:
     thrust::device_vector<Eigen::Vector3f> points_;
     thrust::device_vector<Eigen::Vector3f> normals_;

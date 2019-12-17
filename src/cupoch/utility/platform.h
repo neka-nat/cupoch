@@ -4,7 +4,7 @@
 namespace cupoch {
 namespace utility {
 
-static const size_t MAX_DEVICES = 16;
+static const size_t MAX_NUM_STREAMS = 16;
 
 cudaStream_t GetStream(size_t i);
 

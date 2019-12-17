@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 
@@ -32,24 +33,6 @@ static const std::unordered_map<std::string,
 }  // unnamed namespace
 
 namespace io {
-
-void HostPointCloud::FromDevice(const geometry::PointCloud& pointcloud) {
-    points_ = pointcloud.GetPoints();
-    normals_ = pointcloud.GetNormals();
-    colors_ = pointcloud.GetColors();
-}
-
-void HostPointCloud::ToDevice(geometry::PointCloud& pointcloud) const {
-    pointcloud.SetPoints(points_);
-    pointcloud.SetNormals(normals_);
-    pointcloud.SetColors(colors_);
-}
-
-void HostPointCloud::Clear() {
-    points_.clear();
-    normals_.clear();
-    colors_.clear();
-}
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &filename,

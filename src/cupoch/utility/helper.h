@@ -1,7 +1,10 @@
 #pragma once
+#include "cupoch/utility/platform.h"
 #include <Eigen/Core>
 #include <thrust/functional.h>
 #include <thrust/iterator/zip_iterator.h>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
 #include <vector>
 #include <string>
 
@@ -140,6 +143,33 @@ void SplitString(std::vector<std::string>& tokens,
                  const std::string& str,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
+
+
+template<typename T>
+void CopyToDeviceMultiStream(const thrust::host_vector<T>& src, thrust::device_vector<T>& dst,
+                             int n_stream = MAX_NUM_STREAMS) {
+    const int step = src.size() / n_stream;
+    int step_size = step * sizeof(T);
+    for (int i = 0; i < n_stream; ++i) {
+        const int offset = i * step;
+        if (i == n_stream - 1) step_size = (src.size() - step * (n_stream - 1)) * sizeof(T);
+        cudaMemcpyAsync(thrust::raw_pointer_cast(&dst[offset]), thrust::raw_pointer_cast(&src[offset]),
+                        step_size, cudaMemcpyHostToDevice, GetStream(i));
+    }
+}
+
+template<typename T>
+void CopyFromDeviceMultiStream(const thrust::device_vector<T>& src, thrust::host_vector<T>& dst,
+                               int n_stream = MAX_NUM_STREAMS) {
+    const int step = src.size() / n_stream;
+    int step_size = step * sizeof(T);
+    for (int i = 0; i < n_stream; ++i) {
+        const int offset = i * step;
+        if (i == n_stream - 1) step_size = (src.size() - step * (n_stream - 1)) * sizeof(T);
+        cudaMemcpyAsync(thrust::raw_pointer_cast(&dst[offset]), thrust::raw_pointer_cast(&src[offset]),
+                        step_size, cudaMemcpyDeviceToHost, GetStream(i));
+    }
+}
 
 }
 }

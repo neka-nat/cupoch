@@ -8,6 +8,8 @@ project(cupoch)
 
 option(BUILD_UNIT_TESTS          "Build the Cupoch unit tests"              ON)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Cupoch"    ON)
+option(BUILD_GLEW                "Build glew from source"                   OFF)
+option(BUILD_GLFW                "Build glfw from source"                   OFF)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
@@ -109,6 +111,7 @@ set(CUDA_ARCH -gencode arch=compute_30,code=sm_30
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     --expt-relaxed-constexpr
     --expt-extended-lambda
+    --default-stream per-thread
     -Xcudafe "--diag_suppress=integer_sign_change"
     -Xcudafe "--diag_suppress=partial_override"
     -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
