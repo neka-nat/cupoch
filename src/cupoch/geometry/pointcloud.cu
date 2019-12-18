@@ -1,5 +1,4 @@
 #include "cupoch/geometry/pointcloud.h"
-#include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
@@ -46,9 +45,9 @@ struct check_nan_functor {
 
 }
 
-PointCloud::PointCloud() : Geometry(Geometry::GeometryType::PointCloud, 3) {}
-PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f>& points) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(points) {}
-PointCloud::PointCloud(const PointCloud& other) : Geometry(Geometry::GeometryType::PointCloud, 3), points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
+PointCloud::PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
+PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f>& points) : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+PointCloud::PointCloud(const PointCloud& other) : Geometry3D(Geometry::GeometryType::PointCloud), points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
 
 PointCloud::~PointCloud() {}
 

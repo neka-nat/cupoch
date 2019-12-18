@@ -41,26 +41,26 @@ struct transform_normals_functor {
 };
 }
 
-Eigen::Vector3f cupoch::geometry::ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) {
+Eigen::Vector3f Geometry3D::ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
     return thrust::reduce(points.begin(), points.end(), init, elementwise_min_functor());
 }
 
-Eigen::Vector3f cupoch::geometry::ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) {
+Eigen::Vector3f Geometry3D::ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
     return thrust::reduce(points.begin(), points.end(), init, elementwise_max_functor());
 }
 
-Eigen::Vector3f cupoch::geometry::ComuteCenter(const thrust::device_vector<Eigen::Vector3f>& points) {
+Eigen::Vector3f Geometry3D::ComuteCenter(const thrust::device_vector<Eigen::Vector3f>& points) const {
     Eigen::Vector3f init = Eigen::Vector3f::Zero();
     if (points.empty()) return init;
     Eigen::Vector3f sum = thrust::reduce(points.begin(), points.end(), init, thrust::plus<Eigen::Vector3f>());
     return sum / points.size();
 }
 
-void cupoch::geometry::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f>& colors,
+void Geometry3D::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f>& colors,
     const size_t size,
     const Eigen::Vector3f& color) {
     colors.resize(size);
@@ -78,26 +78,26 @@ void cupoch::geometry::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::V
     thrust::fill(colors.begin(), colors.end(), clipped_color);
 }
 
-void cupoch::geometry::TransformPoints(const Eigen::Matrix4f& transformation,
-                                       thrust::device_vector<Eigen::Vector3f>& points) {
+void Geometry3D::TransformPoints(const Eigen::Matrix4f& transformation,
+                                 thrust::device_vector<Eigen::Vector3f>& points) {
     transform_points_functor func(transformation);
     thrust::for_each(points.begin(), points.end(), func);
 }
 
-void cupoch::geometry::TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                                       thrust::device_vector<Eigen::Vector3f>& points) {
+void Geometry3D::TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
+                                 thrust::device_vector<Eigen::Vector3f>& points) {
     transform_points_functor func(transformation);
     thrust::for_each(thrust::cuda::par.on(stream), points.begin(), points.end(), func);
 }
 
-void cupoch::geometry::TransformNormals(const Eigen::Matrix4f& transformation,
-                                        thrust::device_vector<Eigen::Vector3f>& normals) {
+void Geometry3D::TransformNormals(const Eigen::Matrix4f& transformation,
+                                  thrust::device_vector<Eigen::Vector3f>& normals) {
     transform_normals_functor func(transformation);
     thrust::for_each(normals.begin(), normals.end(), func);
 }
 
-void cupoch::geometry::TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                                        thrust::device_vector<Eigen::Vector3f>& normals) {
+void Geometry3D::TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
+                                  thrust::device_vector<Eigen::Vector3f>& normals) {
     transform_normals_functor func(transformation);
     thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(), func);
 }

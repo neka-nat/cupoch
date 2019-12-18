@@ -1,5 +1,5 @@
 #pragma once
-#include "cupoch/geometry/geometry.h"
+#include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/eigen.h"
 #include "cupoch/geometry/kdtree_search_param.h"
 #include <thrust/device_vector.h>
@@ -8,7 +8,7 @@
 namespace cupoch {
 namespace geometry {
 
-class PointCloud : public Geometry {
+class PointCloud : public Geometry3D {
 public:
     PointCloud();
     PointCloud(const thrust::host_vector<Eigen::Vector3f>& points);

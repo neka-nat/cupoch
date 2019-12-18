@@ -4,12 +4,26 @@ if (NOT CMAKE_VERSION VERSION_LESS "3.1")
     cmake_policy(SET CMP0054 NEW)
 endif()
 
+add_custom_target(build_all_3rd_party_libs
+    COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
+)
+
 project(cupoch)
+
+if(WIN32 AND NOT CYGWIN)
+    set(DEF_INSTALL_CMAKE_DIR CMake)
+else()
+    set(DEF_INSTALL_CMAKE_DIR lib/cmake/cupoch)
+endif()
+set(INSTALL_CMAKE_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH
+    "Installation directory for CMake files")
 
 option(BUILD_UNIT_TESTS          "Build the Cupoch unit tests"              ON)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Cupoch"    ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
 option(BUILD_GLFW                "Build glfw from source"                   OFF)
+option(BUILD_PNG                 "Build png from source"                    OFF)
+option(BUILD_JPEG                "Build jpeg-turbo from source"             ON)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
@@ -116,6 +130,13 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     -Xcudafe "--diag_suppress=partial_override"
     -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
     ${CUDA_ARCH})
+
+# 3rd-party projects that are added with external_project_add will be installed
+# with this prefix. E.g.
+# - 3RDPARTY_INSTALL_PREFIX: Open3D/build/3rdparty_install
+# - Headers: Open3D/build/3rdparty_install/include/extern_lib.h
+# - Libraries: Open3D/build/3rdparty_install/lib/extern_lib.a
+set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
 
 add_subdirectory(third_party)
 

@@ -8,6 +8,9 @@ public:
     enum class GeometryType {
         Unspecified = 0,
         PointCloud = 1,
+        MeshBase = 5,
+        TriangleMesh = 6,
+        Image = 8,
     };
 
 public:

@@ -6,6 +6,8 @@ if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
     pkg_search_module(GLFW            glfw3           QUIET)
     pkg_search_module(GLEW            glew            QUIET)
+    pkg_search_module(PNG             libpng>=1.6.0   QUIET)
+    pkg_search_module(JPEG_TURBO      libturbojpeg    QUIET)
 endif (PKGCONFIG_FOUND)
 
 macro(INSTALL_HEADERS source)
@@ -131,6 +133,55 @@ add_library(liblzf ${LIBLZF_SOURCE_FILES})
 target_include_directories(liblzf PUBLIC liblzf)
 set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
 
+# PNG
+if (BUILD_PNG)
+    message(STATUS "Building LIBPNG from source (BUILD_PNG=ON)")
+elseif (PNG_FOUND)
+    message(STATUS "Using installed LIBPNG ${PNG_VERSION}")
+else ()
+    message(STATUS "Unable to find libpng installed in the system")
+    message(STATUS "Building libpng from source")
+    set(BUILD_PNG on)
+endif ()
+
+if (BUILD_PNG)
+    add_subdirectory(zlib)
+    add_subdirectory(libpng)
+    list(APPEND PNG_LIBRARIES zlib)
+endif ()
+
+# JPEG
+if (BUILD_JPEG)
+    message(STATUS "Building libjpeg-turbo from source (BUILD_JPEG=ON)")
+elseif (JPEG_TURBO_FOUND)
+    message(STATUS "Using installed libjpeg-turbo ${JPEG_TUROB_VERSION}")
+    message(STATUS ${JPEG_TURBO_INCLUDE_DIRS})
+    message(STATUS ${JPEG_TURBO_LIBRARIES})
+else ()
+    message(STATUS "Unable to find libjpeg-turbo installed in the system")
+    message(STATUS "Building libjpeg-turbo from source")
+    set(BUILD_JPEG ON)
+endif ()
+
+if (BUILD_JPEG)
+    message(STATUS "Building libjpeg-turbo from source")
+    include(libjpeg-turbo/libjpeg-turbo.cmake)
+endif()
+
+
+# tinyobjloader
+message(STATUS "Building tinyobjloader from source")
+add_library(tinyobjloader STATIC tinyobjloader/tiny_obj_loader.cc)
+target_include_directories(tinyobjloader PUBLIC "tinyobjloader/")
+if (NOT BUILD_SHARED_LIBS)
+  install(TARGETS tinyobjloader
+        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif()
+set(tinyobjloader_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
+set(tinyobjloader_LIBRARIES tinyobjloader)
+
 # rply
 add_library(rply rply/rply.c)
 set(rply_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rply)
@@ -139,7 +190,7 @@ set(rply_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rply)
 set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
 
 # rmm
-add_library(rmm SHARED rmm/src/rmm.cpp
+add_library(rmm STATIC rmm/src/rmm.cpp
             rmm/src/memory_manager.cpp
             cnmem/src/cnmem.cpp
             rmm/src/mr/default_memory_resource.cpp)
@@ -148,7 +199,7 @@ target_link_libraries(rmm ${CUDA_LIBRAIES})
 set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
 
 # imgui
-add_library(imgui imgui/imgui.cpp
+add_library(imgui STATIC imgui/imgui.cpp
             imgui/imgui_draw.cpp
             imgui/imgui_widgets.cpp)
 set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
@@ -156,12 +207,23 @@ set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
+     ${GLEW_INCLUDE_DIRS}
+     ${GLFW_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
      ${dlpack_INCLUDE_DIRS}
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
+     ${tinyobjloader_INCLUDE_DIRS}
+)
+
+# set 3RDPARTY_LIBRARIES
+list(APPEND 3RDPARTY_LIBRARIES
+     ${GLEW_LIBRARIES}
+     ${GLFW_LIBRARIES}
+     ${tinyobjloader_LIBRARIES}
+     ${googletest_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
