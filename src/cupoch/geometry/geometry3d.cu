@@ -53,7 +53,7 @@ Eigen::Vector3f Geometry3D::ComputeMaxBound(const thrust::device_vector<Eigen::V
     return thrust::reduce(points.begin(), points.end(), init, elementwise_max_functor());
 }
 
-Eigen::Vector3f Geometry3D::ComuteCenter(const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeCenter(const thrust::device_vector<Eigen::Vector3f>& points) const {
     Eigen::Vector3f init = Eigen::Vector3f::Zero();
     if (points.empty()) return init;
     Eigen::Vector3f sum = thrust::reduce(points.begin(), points.end(), init, thrust::plus<Eigen::Vector3f>());
@@ -80,8 +80,7 @@ void Geometry3D::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3
 
 void Geometry3D::TransformPoints(const Eigen::Matrix4f& transformation,
                                  thrust::device_vector<Eigen::Vector3f>& points) {
-    transform_points_functor func(transformation);
-    thrust::for_each(points.begin(), points.end(), func);
+    TransformPoints(0, transformation, points);
 }
 
 void Geometry3D::TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
@@ -92,12 +91,61 @@ void Geometry3D::TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& tra
 
 void Geometry3D::TransformNormals(const Eigen::Matrix4f& transformation,
                                   thrust::device_vector<Eigen::Vector3f>& normals) {
-    transform_normals_functor func(transformation);
-    thrust::for_each(normals.begin(), normals.end(), func);
+    TransformNormals(0, transformation, normals);
 }
 
 void Geometry3D::TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
                                   thrust::device_vector<Eigen::Vector3f>& normals) {
     transform_normals_functor func(transformation);
     thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(), func);
+}
+
+void Geometry3D::TranslatePoints(const Eigen::Vector3f& translation,
+                                 thrust::device_vector<Eigen::Vector3f>& points,
+                                 bool relative) const {
+    Eigen::Vector3f transform = translation;
+    if (!relative) {
+        transform -= ComputeCenter(points);
+    }
+    thrust::for_each(points.begin(), points.end(), [=] __device__ (Eigen::Vector3f& pt) {pt += transform;});
+}
+
+void Geometry3D::ScalePoints(const float scale,
+                             thrust::device_vector<Eigen::Vector3f>& points,
+                             bool center) const {
+    Eigen::Vector3f points_center(0, 0, 0);
+    if (center && !points.empty()) {
+        points_center = ComputeCenter(points);
+    }
+    thrust::for_each(points.begin(), points.end(),
+                     [=] __device__ (Eigen::Vector3f& pt) {pt = (pt - points_center) * scale + points_center;});
+}
+
+void Geometry3D::RotatePoints(const Eigen::Matrix3f& R,
+                              thrust::device_vector<Eigen::Vector3f>& points,
+                              bool center) const {
+    RotatePoints(0, R, points, center);
+}
+
+void Geometry3D::RotatePoints(cudaStream_t stream, const Eigen::Matrix3f& R,
+                              thrust::device_vector<Eigen::Vector3f>& points,
+                              bool center) const {
+    Eigen::Vector3f points_center(0, 0, 0);
+    if (center && !points.empty()) {
+        points_center = ComputeCenter(points);
+    }
+    thrust::for_each(thrust::cuda::par.on(stream), points.begin(), points.end(),
+                     [=] __device__ (Eigen::Vector3f& pt) {pt = R * (pt - points_center) + points_center;});
+}
+
+
+void Geometry3D::RotateNormals(const Eigen::Matrix3f& R,
+                               thrust::device_vector<Eigen::Vector3f>& normals) const {
+    RotateNormals(0, R, normals);
+}
+
+void Geometry3D::RotateNormals(cudaStream_t stream, const Eigen::Matrix3f& R,
+                               thrust::device_vector<Eigen::Vector3f>& normals) const {
+    thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(),
+                     [=] __device__ (Eigen::Vector3f& normal) {normal = R * normal;});
 }

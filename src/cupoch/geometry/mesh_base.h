@@ -46,6 +46,12 @@ public:
 public:
     virtual MeshBase &Clear() override;
     virtual bool IsEmpty() const override;
+    virtual MeshBase &Transform(const Eigen::Matrix4f &transformation) override;
+    virtual MeshBase &Translate(const Eigen::Vector3f &translation,
+                                bool relative = true) override;
+    virtual MeshBase &Scale(const float scale, bool center = true) override;
+    virtual MeshBase &Rotate(const Eigen::Matrix3f &R,
+                             bool center = true) override;
 
     __host__ __device__
     bool HasVertices() const { return vertices_.size() > 0; }

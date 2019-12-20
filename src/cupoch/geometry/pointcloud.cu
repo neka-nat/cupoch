@@ -96,7 +96,7 @@ Eigen::Vector3f PointCloud::GetMaxBound() const {
 }
 
 Eigen::Vector3f PointCloud::GetCenter() const {
-    return ComuteCenter(points_);
+    return ComputeCenter(points_);
 }
 
 PointCloud &PointCloud::NormalizeNormals() {
@@ -112,6 +112,24 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
 PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
     TransformPoints(utility::GetStream(0), transformation, points_);
     TransformNormals(utility::GetStream(1), transformation, normals_);
+    cudaDeviceSynchronize();
+    return *this;
+}
+
+PointCloud& PointCloud::Translate(const Eigen::Vector3f &translation,
+                                  bool relative) {
+    TranslatePoints(translation, points_, relative);
+    return *this;
+}
+
+PointCloud& PointCloud::Scale(const float scale, bool center) {
+    ScalePoints(scale, points_, center);
+    return *this;
+}
+
+PointCloud &PointCloud::Rotate(const Eigen::Matrix3f &R, bool center) {
+    RotatePoints(utility::GetStream(0), R, points_, center);
+    RotateNormals(utility::GetStream(1), R, normals_);
     cudaDeviceSynchronize();
     return *this;
 }

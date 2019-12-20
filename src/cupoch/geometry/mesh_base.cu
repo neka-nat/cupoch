@@ -1,4 +1,5 @@
 #include "cupoch/geometry/mesh_base.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -41,6 +42,31 @@ MeshBase &MeshBase::Clear() {
 }
 
 bool MeshBase::IsEmpty() const {return !HasVertices();}
+
+MeshBase &MeshBase::Transform(const Eigen::Matrix4f &transformation) {
+    TransformPoints(utility::GetStream(0), transformation, vertices_);
+    TransformNormals(utility::GetStream(1), transformation, vertex_normals_);
+    cudaDeviceSynchronize();
+    return *this;
+}
+
+MeshBase &MeshBase::Translate(const Eigen::Vector3f &translation,
+                              bool relative) {
+    TranslatePoints(translation, vertices_, relative);
+    return *this;
+}
+
+MeshBase &MeshBase::Scale(const float scale, bool center) {
+    ScalePoints(scale, vertices_, center);
+    return *this;
+}
+
+MeshBase &MeshBase::Rotate(const Eigen::Matrix3f &R, bool center) {
+    RotatePoints(utility::GetStream(0), R, vertices_, center);
+    RotateNormals(utility::GetStream(0), R, vertex_normals_);
+    cudaDeviceSynchronize();
+    return *this;
+}
 
 MeshBase::MeshBase(Geometry::GeometryType type) : Geometry3D(type) {}
 

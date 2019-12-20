@@ -49,7 +49,11 @@ public:
     /// Assigns each point in the PointCloud the same color \param color.
     PointCloud &PaintUniformColor(const Eigen::Vector3f &color);
 
-    PointCloud& Transform(const Eigen::Matrix4f& transformation);
+    PointCloud& Transform(const Eigen::Matrix4f& transformation) override;
+    PointCloud& Translate(const Eigen::Vector3f &translation,
+                          bool relative = true) override;
+    PointCloud& Scale(const float scale, bool center = true) override;
+    PointCloud& Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     /// Remove all points fromt he point cloud that have a nan entry, or
     /// infinite entries.
