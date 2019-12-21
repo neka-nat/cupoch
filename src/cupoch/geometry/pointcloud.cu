@@ -1,4 +1,7 @@
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/image.h"
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
@@ -99,21 +102,8 @@ Eigen::Vector3f PointCloud::GetCenter() const {
     return ComputeCenter(points_);
 }
 
-PointCloud &PointCloud::NormalizeNormals() {
-    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
-    return *this;
-}
-
-PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
-    ResizeAndPaintUniformColor(colors_, points_.size(), color);
-    return *this;
-}
-
-PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
-    TransformPoints(utility::GetStream(0), transformation, points_);
-    TransformNormals(utility::GetStream(1), transformation, normals_);
-    cudaDeviceSynchronize();
-    return *this;
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
 PointCloud& PointCloud::Translate(const Eigen::Vector3f &translation,
@@ -130,7 +120,24 @@ PointCloud& PointCloud::Scale(const float scale, bool center) {
 PointCloud &PointCloud::Rotate(const Eigen::Matrix3f &R, bool center) {
     RotatePoints(utility::GetStream(0), R, points_, center);
     RotateNormals(utility::GetStream(1), R, normals_);
-    cudaDeviceSynchronize();
+    cudaSafeCall(cudaDeviceSynchronize());
+    return *this;
+}
+
+PointCloud &PointCloud::NormalizeNormals() {
+    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
+    return *this;
+}
+
+PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
+    ResizeAndPaintUniformColor(colors_, points_.size(), color);
+    return *this;
+}
+
+PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
+    TransformPoints(utility::GetStream(0), transformation, points_);
+    TransformNormals(utility::GetStream(1), transformation, normals_);
+    cudaSafeCall(cudaDeviceSynchronize());
     return *this;
 }
 

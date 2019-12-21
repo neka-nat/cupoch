@@ -133,9 +133,9 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
 
 # 3rd-party projects that are added with external_project_add will be installed
 # with this prefix. E.g.
-# - 3RDPARTY_INSTALL_PREFIX: Open3D/build/3rdparty_install
-# - Headers: Open3D/build/3rdparty_install/include/extern_lib.h
-# - Libraries: Open3D/build/3rdparty_install/lib/extern_lib.a
+# - 3RDPARTY_INSTALL_PREFIX: cupoch/build/3rdparty_install
+# - Headers: cupoch/build/3rdparty_install/include/extern_lib.h
+# - Libraries: cupoch/build/3rdparty_install/lib/extern_lib.a
 set(3RDPARTY_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/3rdparty_install")
 
 add_subdirectory(third_party)

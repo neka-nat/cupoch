@@ -24,7 +24,7 @@ void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud&
     if (has_colors) {
         thrust::gather(thrust::cuda::par.on(utility::GetStream(2)), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
     }
-    cudaDeviceSynchronize();
+    cudaSafeCall(cudaDeviceSynchronize());
 }
 
 struct compute_key_functor {
@@ -246,7 +246,7 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
                           output->colors_.begin(),
                           stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
     }
-    cudaDeviceSynchronize();
+    cudaSafeCall(cudaDeviceSynchronize());
     return output;
 }
 

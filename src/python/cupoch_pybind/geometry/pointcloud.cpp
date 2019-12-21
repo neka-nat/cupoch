@@ -54,5 +54,11 @@ void pybind_pointcloud(py::module &m) {
             .def("orient_normals_to_align_with_direction",
                  &geometry::PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
-                 "orientation_reference"_a = Eigen::Vector3f(0.0, 0.0, 1.0));
+                 "orientation_reference"_a = Eigen::Vector3f(0.0, 0.0, 1.0))
+            .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCANHost,
+                 "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
+                 "'A Density-Based Algorithm for Discovering Clusters in Large "
+                 "Spatial Databases with Noise', 1996. Returns a list of point "
+                 "labels, -1 indicates noise according to the algorithm.",
+                 "eps"_a, "min_points"_a, "print_progress"_a = false);
 }

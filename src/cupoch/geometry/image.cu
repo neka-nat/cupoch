@@ -39,6 +39,20 @@ struct horizontal_flip_functor {
     }
 };
 
+struct depth_to_float_functor {
+    depth_to_float_functor(int depth_scale, int depth_trunc, uint8_t* fimage)
+        : depth_scale_(depth_scale), depth_trunc_(depth_trunc), fimage_(fimage) {};
+    const int depth_scale_;
+    const int depth_trunc_;
+    uint8_t* fimage_;
+    __device__
+    void operator() (size_t idx) {
+        float *p = (float*)(fimage_ + idx * 4);
+        *p /= (float)depth_scale_;
+        if (*p >= depth_trunc_) *p = 0.0f;
+    }
+};
+
 }
 
 
@@ -80,6 +94,18 @@ bool Image::TestImageBoundary(float u,
                               float inner_margin /* = 0.0 */) const {
     return (u >= inner_margin && u < width_ - inner_margin &&
             v >= inner_margin && v < height_ - inner_margin);
+}
+
+std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
+        float depth_scale /* = 1000.0*/, float depth_trunc /* = 3.0*/) const {
+    // don't need warning message about image type
+    // as we call CreateFloatImage
+    auto output = CreateFloatImage();
+    depth_to_float_functor func(depth_scale, depth_trunc,
+                                thrust::raw_pointer_cast(output->data_.data()));
+    for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_),
+             func);
+    return output;
 }
 
 std::shared_ptr<Image> Image::FlipVertical() const {

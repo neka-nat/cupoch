@@ -1,7 +1,56 @@
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/console.h"
+
+#include <Eigen/Geometry>
 
 using namespace cupoch;
 using namespace cupoch::geometry;
+
+namespace {
+
+struct compute_triangle_normals_functor {
+    compute_triangle_normals_functor(const Eigen::Vector3f* vertices) : vertices_(vertices) {};
+    const Eigen::Vector3f* vertices_;
+    __device__
+    Eigen::Vector3f operator() (const Eigen::Vector3i& tri) const {
+        Eigen::Vector3f v01 = vertices_[tri(1)] - vertices_[tri(0)];
+        Eigen::Vector3f v02 = vertices_[tri(2)] - vertices_[tri(0)];
+        return v01.cross(v02);
+    }
+};
+
+__global__
+void compute_vertex_normals_kernel(const Eigen::Vector3i* triangles,
+                                   const Eigen::Vector3f* triangle_normals,
+                                   int data_size,
+                                   Eigen::Vector3f* vertex_normals) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= data_size) return;
+    auto &triangle = triangles[idx];
+    for (int k = 0; k < 3; ++k) {
+        atomicAdd(vertex_normals[triangle(0)].data() + k, triangle_normals[idx][k]);
+        atomicAdd(vertex_normals[triangle(1)].data() + k, triangle_normals[idx][k]);
+        atomicAdd(vertex_normals[triangle(2)].data() + k, triangle_normals[idx][k]);
+    }
+}
+
+struct compute_adjacency_matrix_functor {
+    compute_adjacency_matrix_functor(int* adjacency_matrix, size_t n_vertices)
+        : adjacency_matrix_(adjacency_matrix), n_vertices_(n_vertices) {};
+    int* adjacency_matrix_;
+    size_t n_vertices_;
+    __device__
+    void operator() (const Eigen::Vector3i& triangle) {
+        adjacency_matrix_[triangle(0) * n_vertices_ + triangle(1)] = 1;
+        adjacency_matrix_[triangle(0) * n_vertices_ + triangle(2)] = 1;
+        adjacency_matrix_[triangle(1) * n_vertices_ + triangle(0)] = 1;
+        adjacency_matrix_[triangle(1) * n_vertices_ + triangle(2)] = 1;
+        adjacency_matrix_[triangle(2) * n_vertices_ + triangle(0)] = 1;
+        adjacency_matrix_[triangle(2) * n_vertices_ + triangle(1)] = 1;
+    }
+};
+
+}
 
 TriangleMesh::TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}
 TriangleMesh::~TriangleMesh() {}
@@ -28,13 +77,13 @@ void TriangleMesh::SetTriangleNormals(const thrust::host_vector<Eigen::Vector3f>
     triangle_normals_ = triangle_normals;
 }
 
-thrust::host_vector<int> TriangleMesh::GetAdjacencyList() const {
-    thrust::host_vector<int> adjacency_list = adjacency_list_;
-    return adjacency_list;
+thrust::host_vector<int> TriangleMesh::GetAdjacencyMatrix() const {
+    thrust::host_vector<int> adjacency_matrix = adjacency_matrix_;
+    return adjacency_matrix;
 }
 
-void TriangleMesh::SetAdjacencyList(const thrust::host_vector<int>& adjacency_list) {
-    adjacency_list_ = adjacency_list;
+void TriangleMesh::SetAdjacencyMatrix(const thrust::host_vector<int>& adjacency_matrix) {
+    adjacency_matrix_ = adjacency_matrix;
 }
 
 thrust::host_vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
@@ -50,8 +99,92 @@ TriangleMesh &TriangleMesh::Clear() {
     MeshBase::Clear();
     triangles_.clear();
     triangle_normals_.clear();
-    adjacency_list_.clear();
+    adjacency_matrix_.clear();
     triangle_uvs_.clear();
     texture_.Clear();
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
+    if (mesh.IsEmpty()) return (*this);
+    size_t old_vert_num = vertices_.size();
+    MeshBase::operator+=(mesh);
+    size_t old_tri_num = triangles_.size();
+    size_t add_tri_num = mesh.triangles_.size();
+    size_t new_tri_num = old_tri_num + add_tri_num;
+    if ((!HasTriangles() || HasTriangleNormals()) &&
+        mesh.HasTriangleNormals()) {
+        triangle_normals_.resize(new_tri_num);
+        thrust::copy(mesh.triangle_normals_.begin(), mesh.triangle_normals_.end(),
+                     triangle_normals_.begin() + old_vert_num);
+    } else {
+        triangle_normals_.clear();
+    }
+    size_t n_tri_old = triangles_.size();
+    triangles_.resize(triangles_.size() + mesh.triangles_.size());
+    Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num,
+                                (int)old_vert_num);
+    thrust::transform(mesh.triangles_.begin(), mesh.triangles_.end(), triangles_.begin() + n_tri_old,
+                      [=] __device__ (const Eigen::Vector3i& tri) {return tri + index_shift;});
+    if (HasAdjacencyMatrix()) {
+        ComputeAdjacencyMatrix();
+    }
+    if (HasTriangleUvs() || HasTexture()) {
+        utility::LogError(
+                "[TriangleMesh] copy of uvs and texture is not implemented "
+                "yet");
+    }
+    return (*this);
+}
+
+TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const {
+    return (TriangleMesh(*this) += mesh);
+}
+
+TriangleMesh &TriangleMesh::NormalizeNormals() {
+    MeshBase::NormalizeNormals();
+    thrust::for_each(triangle_normals_.begin(), triangle_normals_.end(),
+                     [] __device__ (Eigen::Vector3f& nl) {
+                         nl.normalize();
+                         if (std::isnan(nl(0))) {
+                            nl = Eigen::Vector3f(0.0, 0.0, 1.0);
+                        }
+                     });
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeTriangleNormals(
+        bool normalized /* = true*/) {
+    triangle_normals_.resize(triangles_.size());
+    compute_triangle_normals_functor func(thrust::raw_pointer_cast(vertices_.data()));
+    thrust::transform(triangles_.begin(), triangles_.end(), triangle_normals_.begin(), func);
+    if (normalized) {
+        NormalizeNormals();
+    }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
+    if (HasTriangleNormals() == false) {
+        ComputeTriangleNormals(false);
+    }
+    vertex_normals_.resize(vertices_.size(), Eigen::Vector3f::Zero());
+    const int threads = 1024;
+    const int blocks = (triangles_.size() + threads - 1) / threads;
+    compute_vertex_normals_kernel<<<blocks, threads>>>(thrust::raw_pointer_cast(triangles_.data()),
+                                                       thrust::raw_pointer_cast(triangle_normals_.data()),
+                                                       triangles_.size(),
+                                                       thrust::raw_pointer_cast(vertex_normals_.data()));
+    if (normalized) {
+        NormalizeNormals();
+    }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
+    adjacency_matrix_.clear();
+    adjacency_matrix_.resize(vertices_.size() * vertices_.size(), 0);
+    compute_adjacency_matrix_functor func(thrust::raw_pointer_cast(adjacency_matrix_.data()), vertices_.size());
+    thrust::for_each(triangles_.begin(), triangles_.end(), func);
     return *this;
 }

@@ -6,16 +6,30 @@
 namespace cupoch {
 namespace geometry {
 
+class AxisAlignedBoundingBox;
+class OrientedBoundingBox;
+
 class Geometry3D : public Geometry {
 public:
-    ~Geometry3D() override {}
+    ~Geometry3D();
 
 protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    Geometry3D(GeometryType type) : Geometry(type, 3) {}
+    Geometry3D(GeometryType type);
 
+public:
+    Geometry3D& Clear() override = 0;
+    bool IsEmpty() const override = 0;
+    /// Returns min bounds for geometry coordinates.
+    virtual Eigen::Vector3f GetMinBound() const = 0;
+    /// Returns max bounds for geometry coordinates.
+    virtual Eigen::Vector3f GetMaxBound() const = 0;
+    /// Returns the center of the geometry coordinates.
+    virtual Eigen::Vector3f GetCenter() const = 0;
+    /// Returns an axis-aligned bounding box of the geometry.
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual Geometry3D& Transform(const Eigen::Matrix4f& transformation) = 0;
     /// \brief Apply translation to the geometry coordinates.
@@ -43,10 +57,12 @@ protected:
     /// geometry, i.e. relative to the origin.
     virtual Geometry3D& Rotate(const Eigen::Matrix3f& R,
                                bool center = true) = 0;
-public:
+
     Eigen::Vector3f ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMinBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const;
 
     Eigen::Vector3f ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMaxBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const;
 
     Eigen::Vector3f ComputeCenter(const thrust::device_vector<Eigen::Vector3f>& points) const;
 

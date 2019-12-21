@@ -68,7 +68,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const thrust::device_vector<Eigen
                                                              thrust::make_counting_iterator(corres.size()),
                                                              ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                              thrust::plus<Eigen::Vector3f>());
-    cudaDeviceSynchronize();
+    cudaSafeCall(cudaDeviceSynchronize());
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;

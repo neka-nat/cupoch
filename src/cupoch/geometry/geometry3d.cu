@@ -41,16 +41,27 @@ struct transform_normals_functor {
 };
 }
 
+Geometry3D::Geometry3D(GeometryType type) : Geometry(type, 3) {}
+Geometry3D::~Geometry3D() {}
+
 Eigen::Vector3f Geometry3D::ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
+    return ComputeMinBound(0, points);
+}
+
+Eigen::Vector3f Geometry3D::ComputeMinBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
-    return thrust::reduce(points.begin(), points.end(), init, elementwise_min_functor());
+    return thrust::reduce(thrust::cuda::par.on(stream), points.begin(), points.end(), init, elementwise_min_functor());
 }
 
 Eigen::Vector3f Geometry3D::ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
+    return ComputeMaxBound(0, points);
+}
+
+Eigen::Vector3f Geometry3D::ComputeMaxBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
-    return thrust::reduce(points.begin(), points.end(), init, elementwise_max_functor());
+    return thrust::reduce(thrust::cuda::par.on(stream), points.begin(), points.end(), init, elementwise_max_functor());
 }
 
 Eigen::Vector3f Geometry3D::ComputeCenter(const thrust::device_vector<Eigen::Vector3f>& points) const {

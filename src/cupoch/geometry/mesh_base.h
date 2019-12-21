@@ -46,12 +46,19 @@ public:
 public:
     virtual MeshBase &Clear() override;
     virtual bool IsEmpty() const override;
+    virtual Eigen::Vector3f GetMinBound() const override;
+    virtual Eigen::Vector3f GetMaxBound() const override;
+    virtual Eigen::Vector3f GetCenter() const override;
+    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual MeshBase &Transform(const Eigen::Matrix4f &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3f &translation,
                                 bool relative = true) override;
     virtual MeshBase &Scale(const float scale, bool center = true) override;
     virtual MeshBase &Rotate(const Eigen::Matrix3f &R,
                              bool center = true) override;
+
+    MeshBase &operator+=(const MeshBase &mesh);
+    MeshBase operator+(const MeshBase &mesh) const;
 
     __host__ __device__
     bool HasVertices() const { return vertices_.size() > 0; }
@@ -66,6 +73,14 @@ public:
     bool HasVertexColors() const {
         return vertices_.size() > 0 &&
                vertex_colors_.size() == vertices_.size();
+    }
+
+    MeshBase &NormalizeNormals();
+
+    /// Assigns each vertex in the TriangleMesh the same color \param color.
+    MeshBase &PaintUniformColor(const Eigen::Vector3f &color) {
+        ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
+        return *this;
     }
 
 protected:

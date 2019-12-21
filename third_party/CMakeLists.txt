@@ -6,6 +6,7 @@ if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
     pkg_search_module(GLFW            glfw3           QUIET)
     pkg_search_module(GLEW            glew            QUIET)
+    pkg_search_module(JSONCPP         jsoncpp>=1.7.0  QUIET)
     pkg_search_module(PNG             libpng>=1.6.0   QUIET)
     pkg_search_module(JPEG_TURBO      libturbojpeg    QUIET)
 endif (PKGCONFIG_FOUND)
@@ -68,6 +69,7 @@ file(GLOB_RECURSE CU_SOURCES flann/src/cpp/flann/*.cu)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DFLANN_USE_CUDA")
 cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
 target_include_directories(flann_cuda_s PUBLIC ${flann_INCLUDE_DIRS})
+set(FLANN_LIBRARIES flann_cuda_s)
 
 # GLEW
 if (BUILD_GLEW)
@@ -126,12 +128,40 @@ endif ()
 cuda_add_library(fmt fmt/src/format.cc fmt/src/posix.cc)
 target_include_directories(fmt PUBLIC fmt/include)
 set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
+set(fmt_LIBRARIES fmt)
+
+# JSONCPP
+if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    # It is a known bug that g++ on OSX only supports libstdc++
+    # The jsoncpp installed by brew by default is compiled with libc++
+    # If the two libraries are linked together, they break the build
+    # https://github.com/open-source-parsers/jsoncpp/issues/597
+    # https://github.com/IntelVCL/Open3D/issues/9
+    message(STATUS "Building JSONCPP from source, without installing headers")
+    add_subdirectory(jsoncpp)
+    set(BUILD_JSONCPP ON)
+else ()
+    if (BUILD_JSONCPP)
+        message(STATUS "Building JSONCPP from source (BUILD_JSONCPP=ON)")
+    elseif (JSONCPP_FOUND)
+        message(STATUS "Using installed JSONCPP ${JSONCPP_VERSION}")
+    else ()
+        message(STATUS "Unable to find JSONCPP installed in the system")
+        message(STATUS "Building JSONCPP from source")
+        set(BUILD_JSONCPP ON)
+    endif ()
+
+    if (BUILD_JSONCPP)
+        add_subdirectory(jsoncpp)
+    endif ()
+endif ()
 
 # liblzf
 file(GLOB LIBLZF_SOURCE_FILES "liblzf/*.c")
 add_library(liblzf ${LIBLZF_SOURCE_FILES})
 target_include_directories(liblzf PUBLIC liblzf)
 set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
+set(liblzf_LIBRARIES liblzf)
 
 # PNG
 if (BUILD_PNG)
@@ -185,6 +215,7 @@ set(tinyobjloader_LIBRARIES tinyobjloader)
 # rply
 add_library(rply rply/rply.c)
 set(rply_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rply)
+set(rply_LIBRARIES rply)
 
 # dlpack
 set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
@@ -211,6 +242,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${GLFW_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
      ${fmt_INCLUDE_DIRS}
+     ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
      ${dlpack_INCLUDE_DIRS}
      ${rmm_INCLUDE_DIRS}
@@ -220,10 +252,16 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
 
 # set 3RDPARTY_LIBRARIES
 list(APPEND 3RDPARTY_LIBRARIES
+     ${FLANN_LIBRARIES}
      ${GLEW_LIBRARIES}
      ${GLFW_LIBRARIES}
+     ${liblzf_LIBRARIES}
+     ${rply_LIBRARIES}
+     ${JSONCPP_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
+     ${fmt_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
+set(3RDPARTY_LIBRARIES ${3RDPARTY_LIBRARIES} PARENT_SCOPE)

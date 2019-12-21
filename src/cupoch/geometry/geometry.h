@@ -7,10 +7,20 @@ class Geometry {
 public:
     enum class GeometryType {
         Unspecified = 0,
+        /// PointCloud
         PointCloud = 1,
+        /// LineSet
+        LineSet = 4,
+        /// MeshBase
         MeshBase = 5,
+        /// TriangleMesh
         TriangleMesh = 6,
+        /// Image
         Image = 8,
+        /// OrientedBoundingBox
+        OrientedBoundingBox = 11,
+        /// AxisAlignedBoundingBox
+        AxisAlignedBoundingBox = 12,
     };
 
 public:

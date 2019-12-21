@@ -3,12 +3,26 @@
 #include <Eigen/Core>
 #include <thrust/functional.h>
 #include <thrust/iterator/zip_iterator.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/transform_iterator.h>
+#include <thrust/iterator/permutation_iterator.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <vector>
 #include <string>
 
 namespace thrust {
+
+template<>
+struct equal_to<Eigen::Vector2i> {
+    typedef Eigen::Vector2i first_argument_type;
+    typedef Eigen::Vector2i second_argument_type;
+    typedef bool result_type;
+    __thrust_exec_check_disable__
+    __host__ __device__ bool operator()(const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) const {
+        return (lhs[0] == rhs[0] && lhs[1] == rhs[1]);
+    }
+};
 
 template<>
 struct equal_to<Eigen::Vector3i> {

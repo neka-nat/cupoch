@@ -22,3 +22,10 @@ int cupoch::utility::GetDevice() {
 void cupoch::utility::SetDevice(int device_no) {
     cudaSetDevice(device_no);
 }
+
+void cupoch::utility::Error(const char *error_string, const char *file, const int line,
+           const char *func) {
+  std::cout << "Error: " << error_string << "\t" << file << ":" << line
+            << std::endl;
+  exit(0);
+}

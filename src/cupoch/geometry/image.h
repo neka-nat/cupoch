@@ -88,6 +88,14 @@ public:
         return width_ * num_of_channels_ * bytes_per_channel_;
     }
 
+    /// Return a gray scaled float type image.
+    std::shared_ptr<Image> CreateFloatImage(
+            Image::ColorToIntensityConversionType type =
+                    Image::ColorToIntensityConversionType::Weighted) const;
+
+    std::shared_ptr<Image> ConvertDepthToFloatImage(
+            float depth_scale = 1000.0, float depth_trunc = 3.0) const;
+
     /// Function to flip image horizontally (from left to right).
     std::shared_ptr<Image> FlipHorizontal() const;
     /// Function to flip image vertically (upside down).

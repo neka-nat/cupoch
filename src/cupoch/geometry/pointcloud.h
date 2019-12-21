@@ -6,7 +6,14 @@
 #include <thrust/host_vector.h>
 
 namespace cupoch {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}
+
 namespace geometry {
+
+class Image;
 
 class PointCloud : public Geometry3D {
 public:
@@ -24,12 +31,17 @@ public:
     void SetColors(const thrust::host_vector<Eigen::Vector3f>& colors);
     thrust::host_vector<Eigen::Vector3f> GetColors() const;
 
-    Eigen::Vector3f GetMinBound() const;
-    Eigen::Vector3f GetMaxBound() const;
-    Eigen::Vector3f GetCenter() const;
-
     PointCloud &Clear() override;
     bool IsEmpty() const override;
+    Eigen::Vector3f GetMinBound() const override;
+    Eigen::Vector3f GetMaxBound() const override;
+    Eigen::Vector3f GetCenter() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    PointCloud& Transform(const Eigen::Matrix4f& transformation) override;
+    PointCloud& Translate(const Eigen::Vector3f &translation,
+                          bool relative = true) override;
+    PointCloud& Scale(const float scale, bool center = true) override;
+    PointCloud& Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     __host__ __device__
     bool HasPoints() const { return !points_.empty(); }
@@ -48,12 +60,6 @@ public:
 
     /// Assigns each point in the PointCloud the same color \param color.
     PointCloud &PaintUniformColor(const Eigen::Vector3f &color);
-
-    PointCloud& Transform(const Eigen::Matrix4f& transformation) override;
-    PointCloud& Translate(const Eigen::Vector3f &translation,
-                          bool relative = true) override;
-    PointCloud& Scale(const float scale, bool center = true) override;
-    PointCloud& Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     /// Remove all points fromt he point cloud that have a nan entry, or
     /// infinite entries.
@@ -117,6 +123,25 @@ public:
     thrust::device_vector<int> ClusterDBSCAN(float eps,
                                              size_t min_points,
                                              bool print_progress = false) const;
+    thrust::host_vector<int> ClusterDBSCANHost(float eps,
+                                               size_t min_points,
+                                               bool print_progress = false) const;
+
+    /// Factory function to create a pointcloud from a depth image and a camera
+    /// model (PointCloudFactory.cpp)
+    /// The input depth image can be either a float image, or a uint16_t image.
+    /// In the latter case, the depth is scaled by 1 / depth_scale, and
+    /// truncated at depth_trunc distance. The depth image is also sampled with
+    /// stride, in order to support (fast) coarse point cloud extraction. Return
+    /// an empty pointcloud if the conversion fails.
+    static std::shared_ptr<PointCloud> CreateFromDepthImage(
+            const Image &depth,
+            const camera::PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4f &extrinsic = Eigen::Matrix4f::Identity(),
+            float depth_scale = 1000.0,
+            float depth_trunc = 1000.0,
+            int stride = 1);
+
 public:
     thrust::device_vector<Eigen::Vector3f> points_;
     thrust::device_vector<Eigen::Vector3f> normals_;
