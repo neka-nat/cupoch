@@ -10,8 +10,9 @@ class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 
 class Geometry3D : public Geometry {
-public:
-    ~Geometry3D();
+protected:
+    __host__ __device__
+    ~Geometry3D() {};
 
 protected:
     /// \brief Parameterized Constructor.

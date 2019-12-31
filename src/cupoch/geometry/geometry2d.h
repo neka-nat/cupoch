@@ -13,7 +13,7 @@ namespace geometry {
 /// Main class for 2D geometries, Derives all data from Geometry Base class.
 class Geometry2D : public Geometry {
 public:
-    ~Geometry2D() override {}
+    virtual ~Geometry2D() {}
 
 protected:
     /// \brief Parameterized Constructor.

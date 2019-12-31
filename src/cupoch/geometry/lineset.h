@@ -19,7 +19,7 @@ public:
     LineSet();
     LineSet(const thrust::device_vector<Eigen::Vector3f> &points,
             const thrust::device_vector<Eigen::Vector2i> &lines);
-    ~LineSet() override;
+    ~LineSet();
 
     void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);
     thrust::host_vector<Eigen::Vector3f> GetPoints() const;
@@ -51,7 +51,6 @@ public:
         return HasLines() && colors_.size() == lines_.size();
     }
 
-    __host__ __device__
     thrust::pair<Eigen::Vector3f, Eigen::Vector3f> GetLineCoordinate(
             size_t line_index) const;
 

@@ -32,7 +32,7 @@ public:
     enum class FilterScope { All, Color, Normal, Vertex };
 
     MeshBase();
-    ~MeshBase() override;
+    virtual ~MeshBase();
 
     thrust::host_vector<Eigen::Vector3f> GetVertices() const;
     void SetVertices(const thrust::host_vector<Eigen::Vector3f>& vertices);

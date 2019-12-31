@@ -70,7 +70,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(depth_size),
                       pointcloud->points_.begin(), func);
     auto end = thrust::remove_if(pointcloud->points_.begin(), pointcloud->points_.end(),
-                                 [] __device__ (const Eigen::Vector3f& pt) -> bool {return pt.array().isInf().any();});
+                                 [] __device__ (const Eigen::Vector3f& pt) -> bool {return Eigen::device_any(pt.array().isInf());});
     size_t n_result = thrust::distance(pointcloud->points_.begin(), end);
     pointcloud->points_.resize(n_result);
     return pointcloud;

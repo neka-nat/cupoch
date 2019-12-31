@@ -42,7 +42,6 @@ struct transform_normals_functor {
 }
 
 Geometry3D::Geometry3D(GeometryType type) : Geometry(type, 3) {}
-Geometry3D::~Geometry3D() {}
 
 Eigen::Vector3f Geometry3D::ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
     return ComputeMinBound(0, points);

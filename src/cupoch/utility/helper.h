@@ -59,6 +59,15 @@ inline bool operator<(const Eigen::Vector3i &lhs, const Eigen::Vector3i &rhs) {
     return false;
 }
 
+template<typename ArrayType>
+__host__ __device__
+bool device_any(const ArrayType& array) {
+    for (int i = 0; i < array.size(); ++i) {
+        if (array[i]) return true;
+    }
+    return false;
+}
+
 }
 
 namespace cupoch {

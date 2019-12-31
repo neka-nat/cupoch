@@ -1,5 +1,10 @@
 #pragma once
 
+#if !defined(__CUDACC__) && !defined(__host__) && !defined(__device__)
+#define __host__
+#define __device__
+#endif
+
 namespace cupoch {
 namespace geometry {
 
@@ -23,8 +28,9 @@ public:
         AxisAlignedBoundingBox = 12,
     };
 
-public:
-    virtual ~Geometry() {}
+protected:
+    __host__ __device__
+    ~Geometry() {}
 
 protected:
     Geometry(GeometryType type, int dimension)

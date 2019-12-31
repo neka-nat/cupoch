@@ -41,7 +41,8 @@ public:
           center_(center),
           R_(R),
           extent_(extent) {}
-    ~OrientedBoundingBox() override {}
+    __host__ __device__
+    ~OrientedBoundingBox() {}
 
 public:
     OrientedBoundingBox& Clear() override;
@@ -115,7 +116,8 @@ public:
           min_bound_(min_bound),
           max_bound_(max_bound),
           color_(0, 0, 0) {}
-    ~AxisAlignedBoundingBox() override {}
+    __host__ __device__
+    ~AxisAlignedBoundingBox() {}
 
 public:
     AxisAlignedBoundingBox& Clear() override;
