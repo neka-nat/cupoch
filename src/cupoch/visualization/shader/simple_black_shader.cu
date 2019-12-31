@@ -12,40 +12,33 @@ using namespace cupoch::visualization::glsl;
 namespace {
 
 struct copy_pointcloud_normal_functor {
-    copy_pointcloud_normal_functor(const Eigen::Vector3f* pointcloud_points,
-                                   const Eigen::Vector3f* pointcloud_normals,
-                                   Eigen::Vector3f* points, float line_length)
-                                   : pointcloud_points_(pointcloud_points), pointcloud_normals_(pointcloud_normals),
-                                     points_(points), line_length_(line_length) {};
-    const Eigen::Vector3f* pointcloud_points_;
-    const Eigen::Vector3f* pointcloud_normals_;
-    Eigen::Vector3f* points_;
+    copy_pointcloud_normal_functor(const Eigen::Vector3f* points,
+                                   const Eigen::Vector3f* normals, float line_length)
+                                   : points_(points), normals_(normals), line_length_(line_length) {};
+    const Eigen::Vector3f* points_;
+    const Eigen::Vector3f* normals_;
     const float line_length_;
     __device__
-    void operator() (size_t idx) {
-        const auto &point = pointcloud_points_[idx];
-        const auto &normal = pointcloud_normals_[idx];
-        points_[idx * 2] = point;
-        points_[idx * 2 + 1] = (point + normal * line_length_);
+    Eigen::Vector3f operator() (size_t idx) {
+        int i = idx / 2;
+        int j = idx % 2;
+        if (j == 0) {
+            return points_[i];
+        } else {
+            return points_[i] + normals_[i] * line_length_;
+        }
     }
 };
 
 struct copy_mesh_wireflame_functor {
-    copy_mesh_wireflame_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3i* triangles,
-                                Eigen::Vector3f* points)
-                                : vertices_(vertices), triangles_(triangles), points_(points) {};
+    copy_mesh_wireflame_functor(const Eigen::Vector3f* vertices, const int* triangles)
+                                : vertices_(vertices), triangles_(triangles) {};
     const Eigen::Vector3f* vertices_;
-    const Eigen::Vector3i* triangles_;
-    Eigen::Vector3f* points_;
+    const int* triangles_;
     __device__
-    void operator() (size_t idx) {
-        const auto &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-            const auto &vertex = vertices_[vi];
-            points_[k] = vertex;
-        }
+    Eigen::Vector3f operator() (size_t k) {
+        int vi = triangles_[k];
+        return vertices_[vi];
     }
 };
 
@@ -153,9 +146,9 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
     float line_length =
             option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
     copy_pointcloud_normal_functor func(thrust::raw_pointer_cast(pointcloud.points_.data()),
-                                        thrust::raw_pointer_cast(pointcloud.normals_.data()),
-                                        thrust::raw_pointer_cast(points.data()), line_length);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(pointcloud.points_.size()), func);
+                                        thrust::raw_pointer_cast(pointcloud.normals_.data()), line_length);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(pointcloud.points_.size() * 2),
+                      points.begin(), func);
     draw_arrays_mode_ = GL_LINES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
@@ -196,9 +189,9 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
     }
     points.resize(mesh.triangles_.size() * 3);
     copy_mesh_wireflame_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                     thrust::raw_pointer_cast(mesh.triangles_.data()),
-                                     thrust::raw_pointer_cast(points.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size()), func);
+                                     (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())));
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
+                      points.begin(), func);
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;

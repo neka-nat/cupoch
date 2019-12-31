@@ -15,40 +15,27 @@ namespace {
 
 struct copy_trianglemesh_functor {
     copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3f* vertex_normals,
-                              const Eigen::Vector3i* triangles, const Eigen::Vector3f* triangle_normals,
-                              const Eigen::Vector2f* triangle_uvs, Eigen::Vector3f* points,
-                              Eigen::Vector3f* normals, Eigen::Vector2f* uvs,
+                              const int* triangles, const Eigen::Vector3f* triangle_normals,
+                              const Eigen::Vector2f* triangle_uvs,
                               RenderOption::MeshShadeOption shade_option)
                               : vertices_(vertices), vertex_normals_(vertex_normals),
                                 triangles_(triangles), triangle_normals_(triangle_normals),
-                                triangle_uvs_(triangle_uvs), points_(points),
-                                normals_(normals), uvs_(uvs),
-                                shade_option_(shade_option) {};
+                                triangle_uvs_(triangle_uvs), shade_option_(shade_option) {};
     const Eigen::Vector3f* vertices_;
     const Eigen::Vector3f* vertex_normals_;
-    const Eigen::Vector3i* triangles_;
+    const int* triangles_;
     const Eigen::Vector3f* triangle_normals_;
     const Eigen::Vector2f* triangle_uvs_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector3f* normals_;
-    Eigen::Vector2f* uvs_;
-    RenderOption::MeshShadeOption shade_option_;
+    const RenderOption::MeshShadeOption shade_option_;
     __device__
-    void operator() (size_t idx) {
-        const auto &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-
-            points_[k] = vertices_[vi];
-            uvs_[k] = triangle_uvs_[k];
-
-            if (shade_option_ ==
-                RenderOption::MeshShadeOption::FlatShade) {
-                normals_[k] = triangle_normals_[idx];
-            } else {
-                normals_[k] = vertex_normals_[vi];
-            }
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector2f> operator() (size_t k) const {
+        int i = k / 3;
+        int vi = triangles_[k];
+        if (shade_option_ ==
+            RenderOption::MeshShadeOption::FlatShade) {
+            return thrust::make_tuple(vertices_[vi], triangle_normals_[i], triangle_uvs_[k]);
+        } else {
+            return thrust::make_tuple(vertices_[vi], vertex_normals_[vi], triangle_uvs_[k]);
         }
     }
 };
@@ -272,14 +259,13 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     uvs.resize(mesh.triangles_.size() * 3);
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
                                    thrust::raw_pointer_cast(mesh.vertex_normals_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangles_.data()),
+                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
                                    thrust::raw_pointer_cast(mesh.triangle_normals_.data()),
                                    thrust::raw_pointer_cast(mesh.triangle_uvs_.data()),
-                                   thrust::raw_pointer_cast(points.data()),
-                                   thrust::raw_pointer_cast(normals.data()),
-                                   thrust::raw_pointer_cast(uvs.data()), option.mesh_shade_option_);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator(mesh.triangles_.size()), func);
+                                   option.mesh_shade_option_);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
+                      make_tuple_iterator(points.begin(), normals.begin(), uvs.begin()), func);
 
     glGenTextures(1, &diffuse_texture_);
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);

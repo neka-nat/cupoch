@@ -5,6 +5,7 @@
 #include "cupoch/geometry/image.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
+#include "cupoch/utility/range.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -24,70 +25,53 @@ uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
     }
 }
 
-struct copy_gray_image_functor {
-    copy_gray_image_functor(const uint8_t* gray, uint8_t* data) : gray_(gray), data_(data) {};
-    const uint8_t* gray_;
-    uint8_t* data_;
-    __device__
-    void operator() (size_t idx) {
-        data_[idx * 3] = gray_[idx];
-        data_[idx * 3 + 1] = gray_[idx];
-        data_[idx * 3 + 2] = gray_[idx];
-    }
-};
-
 struct copy_float_gray_image_functor {
-    copy_float_gray_image_functor(const uint8_t* gray, uint8_t* data) : gray_(gray), data_(data) {};
+    copy_float_gray_image_functor(const uint8_t* gray) : gray_(gray) {};
     const uint8_t* gray_;
-    uint8_t* data_;
     __device__
-    void operator() (size_t idx) {
+    uint8_t operator() (size_t k) const {
+        int idx = k / 3;
         float *p = (float *)(gray_ + idx * 4);
         uint8_t color = ConvertColorFromFloatToUnsignedChar(*p);
-        data_[idx * 3] = color;
-        data_[idx * 3 + 1] = color;
-        data_[idx * 3 + 2] = color;
+        return color;
     }
 };
 
 struct copy_float_rgb_image_functor {
-    copy_float_rgb_image_functor(const uint8_t* rgb, uint8_t* data) : rgb_(rgb), data_(data) {};
+    copy_float_rgb_image_functor(const uint8_t* rgb) : rgb_(rgb) {};
     const uint8_t* rgb_;
-    uint8_t* data_;
     __device__
-    void operator() (size_t idx) {
+    uint8_t operator() (size_t idx) const {
         float *p = (float *)(rgb_ + idx * 4);
-        data_[idx] = ConvertColorFromFloatToUnsignedChar(*p);
+        return ConvertColorFromFloatToUnsignedChar(*p);
     }
 };
 
 struct copy_int16_rgb_image_functor {
-    copy_int16_rgb_image_functor(const uint8_t* rgb, uint8_t* data) : rgb_(rgb), data_(data) {};
+    copy_int16_rgb_image_functor(const uint8_t* rgb) : rgb_(rgb) {};
     const uint8_t* rgb_;
-    uint8_t* data_;
     __device__
-    void operator() (size_t idx) {
+    uint8_t operator() (size_t idx) const {
         uint16_t *p = (uint16_t *)(rgb_ + idx * 2);
-        data_[idx] = (uint8_t)((*p) & 0xff);
+        return (uint8_t)((*p) & 0xff);
     }
 };
 
 struct copy_depth_image_functor {
-    copy_depth_image_functor(const uint8_t* depth, uint8_t* data, int max_depth)
-        : depth_(depth), data_(data), max_depth_(max_depth) {};
+    copy_depth_image_functor(const uint8_t* depth, int max_depth)
+        : depth_(depth), max_depth_(max_depth) {};
     const uint8_t* depth_;
-    uint8_t* data_;
     const int max_depth_;
     const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
     __device__
-    void operator() (size_t idx) {
+    uint8_t operator() (size_t k) const {
         thrust::minimum<float> min;
-        uint16_t *p = (uint16_t *)(depth_ + idx * 2);
+        int i = k / 3;
+        int j = k % 3;
+        uint16_t *p = (uint16_t *)(depth_ + i * 2);
         float depth = min(float(*p) / float(max_depth_), 1.0);
         Eigen::Vector3f color = global_color_map_.get()->GetColor(depth);
-        data_[idx * 3] = (uint8_t)(color(0) * 255);
-        data_[idx * 3 + 1] = (uint8_t)(color(1) * 255);
-        data_[idx * 3 + 2] = (uint8_t)(color(2) * 255);
+        return (uint8_t)(color(j) * 255);
     }
 };
 
@@ -260,39 +244,37 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
         render_image.Prepare(image.width_, image.height_, 3, 1);
         if (image.num_of_channels_ == 1 && image.bytes_per_channel_ == 1) {
             // grayscale image
-            copy_gray_image_functor func(thrust::raw_pointer_cast(image.data_.data()),
-                                         thrust::raw_pointer_cast(render_image.data_.data()));
-            thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                             thrust::make_counting_iterator<size_t>(image.height_ * image.width_), func);
+            thrust::repeated_range<thrust::device_vector<uint8_t>::const_iterator> range(image.data_.begin(), image.data_.end(), 3);
+            thrust::copy(range.begin(), range.end(), render_image.data_.begin());
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 4) {
             // grayscale image with floating point per channel
-            copy_float_gray_image_functor func(thrust::raw_pointer_cast(image.data_.data()),
-                                               thrust::raw_pointer_cast(render_image.data_.data()));
-            thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                             thrust::make_counting_iterator<size_t>(image.height_ * image.width_), func);
+            copy_float_gray_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              render_image.data_.begin(), func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 4) {
             // RGB image with floating point per channel
-            copy_float_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()),
-                                              thrust::raw_pointer_cast(render_image.data_.data()));
-            thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                             thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3), func);
+            copy_float_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              render_image.data_.begin(), func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 2) {
             // image with RGB channels, each channel is a 16-bit integer
-            copy_int16_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()),
-                                              thrust::raw_pointer_cast(render_image.data_.data()));
-            thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                             thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3), func);
+            copy_int16_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              render_image.data_.begin(), func);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 2) {
             // depth image, one channel of 16-bit integer
             const int max_depth = option.image_max_depth_;
-            copy_depth_image_functor func(thrust::raw_pointer_cast(image.data_.data()),
-                                          thrust::raw_pointer_cast(render_image.data_.data()), max_depth);
-            thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                             thrust::make_counting_iterator<size_t>(image.height_ * image.width_), func);
+            copy_depth_image_functor func(thrust::raw_pointer_cast(image.data_.data()), max_depth);
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              render_image.data_.begin(), func);
         }
     }
 

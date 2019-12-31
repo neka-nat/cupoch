@@ -96,6 +96,45 @@ bool Image::TestImageBoundary(float u,
             v >= inner_margin && v < height_ - inner_margin);
 }
 
+std::pair<bool, float> Image::FloatValueAt(float u, float v) const {
+    if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
+        (u < 0.0 || u > (float)(width_ - 1) || v < 0.0 ||
+         v > (float)(height_ - 1))) {
+        return std::make_pair(false, 0.0);
+    }
+    int ui = std::max(std::min((int)u, width_ - 2), 0);
+    int vi = std::max(std::min((int)v, height_ - 2), 0);
+    float pu = u - ui;
+    float pv = v - vi;
+    float value[4] = {*PointerAt<float>(ui, vi), *PointerAt<float>(ui, vi + 1),
+                      *PointerAt<float>(ui + 1, vi),
+                      *PointerAt<float>(ui + 1, vi + 1)};
+    return std::make_pair(true,
+                          (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
+                                  (value[2] * (1 - pv) + value[3] * pv) * pu);
+}
+
+template <typename T>
+T *Image::PointerAt(int u, int v) const {
+    return (T *)(thrust::raw_pointer_cast(data_.data()) + (v * width_ + u) * sizeof(T));
+}
+
+template float *Image::PointerAt<float>(int u, int v) const;
+template int *Image::PointerAt<int>(int u, int v) const;
+template uint8_t *Image::PointerAt<uint8_t>(int u, int v) const;
+template uint16_t *Image::PointerAt<uint16_t>(int u, int v) const;
+
+template <typename T>
+T *Image::PointerAt(int u, int v, int ch) const {
+    return (T *)(thrust::raw_pointer_cast(data_.data()) +
+                 ((v * width_ + u) * num_of_channels_ + ch) * sizeof(T));
+}
+
+template float *Image::PointerAt<float>(int u, int v, int ch) const;
+template int *Image::PointerAt<int>(int u, int v, int ch) const;
+template uint8_t *Image::PointerAt<uint8_t>(int u, int v, int ch) const;
+template uint16_t *Image::PointerAt<uint16_t>(int u, int v, int ch) const;
+
 std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
         float depth_scale /* = 1000.0*/, float depth_trunc /* = 3.0*/) const {
     // don't need warning message about image type

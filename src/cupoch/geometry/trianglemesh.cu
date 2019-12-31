@@ -1,5 +1,6 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/range.h"
 
 #include <Eigen/Geometry>
 
@@ -18,21 +19,6 @@ struct compute_triangle_normals_functor {
         return v01.cross(v02);
     }
 };
-
-__global__
-void compute_vertex_normals_kernel(const Eigen::Vector3i* triangles,
-                                   const Eigen::Vector3f* triangle_normals,
-                                   int data_size,
-                                   Eigen::Vector3f* vertex_normals) {
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= data_size) return;
-    auto &triangle = triangles[idx];
-    for (int k = 0; k < 3; ++k) {
-        atomicAdd(vertex_normals[triangle(0)].data() + k, triangle_normals[idx][k]);
-        atomicAdd(vertex_normals[triangle(1)].data() + k, triangle_normals[idx][k]);
-        atomicAdd(vertex_normals[triangle(2)].data() + k, triangle_normals[idx][k]);
-    }
-}
 
 struct compute_adjacency_matrix_functor {
     compute_adjacency_matrix_functor(int* adjacency_matrix, size_t n_vertices)
@@ -168,13 +154,14 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     if (HasTriangleNormals() == false) {
         ComputeTriangleNormals(false);
     }
-    vertex_normals_.resize(vertices_.size(), Eigen::Vector3f::Zero());
-    const int threads = 1024;
-    const int blocks = (triangles_.size() + threads - 1) / threads;
-    compute_vertex_normals_kernel<<<blocks, threads>>>(thrust::raw_pointer_cast(triangles_.data()),
-                                                       thrust::raw_pointer_cast(triangle_normals_.data()),
-                                                       triangles_.size(),
-                                                       thrust::raw_pointer_cast(vertex_normals_.data()));
+    vertex_normals_.resize(vertices_.size());
+    thrust::repeated_range<thrust::device_vector<Eigen::Vector3f>::iterator> range(triangle_normals_.begin(), triangle_normals_.end(), 3);
+    thrust::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() * 3);
+    thrust::device_vector<int> key_out(vertices_.size());
+    thrust::copy(range.begin(), range.end(), nm_thrice.begin());
+    int* tri_ptr = (int*)(thrust::raw_pointer_cast(triangles_.data()));
+    thrust::sort_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin());
+    thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(), key_out.begin(), vertex_normals_.begin());
     if (normalized) {
         NormalizeNormals();
     }

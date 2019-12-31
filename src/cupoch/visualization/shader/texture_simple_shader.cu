@@ -12,24 +12,16 @@ using namespace cupoch::visualization::glsl;
 namespace {
 
 struct copy_trianglemesh_functor {
-    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3i* triangles,
-                              const Eigen::Vector2f* triangle_uvs, Eigen::Vector3f* points, Eigen::Vector2f* uvs)
-                              : vertices_(vertices), triangles_(triangles), triangle_uvs_(triangle_uvs),
-                                points_(points), uvs_(uvs) {};
+    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const int* triangles,
+                              const Eigen::Vector2f* triangle_uvs)
+                              : vertices_(vertices), triangles_(triangles), triangle_uvs_(triangle_uvs) {};
     const Eigen::Vector3f* vertices_;
-    const Eigen::Vector3i* triangles_;
+    const int* triangles_;
     const Eigen::Vector2f* triangle_uvs_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector2f* uvs_;
     __device__
-    void operator() (size_t idx) {
-        const auto &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-            points_[k] = vertices_[vi];
-            uvs_[k] = triangle_uvs_[k];
-        }
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector2f> operator() (size_t k) const {
+        int vi = triangles_[k];
+        return thrust::make_tuple(vertices_[vi], triangle_uvs_[k]);
     }
 };
 
@@ -168,12 +160,11 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
     points.resize(mesh.triangles_.size() * 3);
     uvs.resize(mesh.triangles_.size() * 3);
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangles_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangle_uvs_.data()),
-                                   thrust::raw_pointer_cast(points.data()),
-                                   thrust::raw_pointer_cast(uvs.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator(mesh.triangles_.size()), func);
+                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
+                                   thrust::raw_pointer_cast(mesh.triangle_uvs_.data()));
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(mesh.triangles_.size() * 3),
+                      make_tuple_iterator(points.begin(), uvs.begin()), func);
 
     glGenTextures(1, &texture_);
     glBindTexture(GL_TEXTURE_2D, texture_buffer_);

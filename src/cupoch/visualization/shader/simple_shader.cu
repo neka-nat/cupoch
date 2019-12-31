@@ -58,25 +58,21 @@ struct copy_pointcloud_functor{
 
 struct copy_lineset_functor {
     copy_lineset_functor(const thrust::pair<Eigen::Vector3f, Eigen::Vector3f>* line_coords,
-                         const Eigen::Vector3f* line_colors,
-                         Eigen::Vector3f* points, Eigen::Vector3f* colors, bool has_colors)
-        : line_coords_(line_coords), points_(points), colors_(colors), has_colors_(has_colors) {};
+                         const Eigen::Vector3f* line_colors, bool has_colors)
+        : line_coords_(line_coords), line_colors_(line_colors), has_colors_(has_colors) {};
     const thrust::pair<Eigen::Vector3f, Eigen::Vector3f>* line_coords_;
     const Eigen::Vector3f* line_colors_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector3f* colors_;
     const bool has_colors_;
     __device__
-    void operator() (size_t idx) {
-        points_[idx * 2] = line_coords_[idx].first;
-        points_[idx * 2 + 1] = line_coords_[idx].second;
-        Eigen::Vector3f color_tmp;
-        if (has_colors_) {
-            color_tmp = line_colors_[idx];
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
+        int i = k / 2;
+        int j = k % 2;
+        Eigen::Vector3f color_tmp = (has_colors_) ? line_colors_[i] : Eigen::Vector3f::Zero();
+        if (j == 0) {
+            return thrust::make_tuple(line_coords_[i].first, color_tmp);
         } else {
-            color_tmp = Eigen::Vector3f::Zero();
+            return thrust::make_tuple(line_coords_[i].second, color_tmp);
         }
-        colors_[idx * 2] = colors_[idx * 2 + 1] = color_tmp;
     }
 };
 
@@ -90,59 +86,50 @@ struct line_coordinates_functor {
 };
 
 struct copy_trianglemesh_functor {
-    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3i* triangles,
+    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const int* triangles,
                               const Eigen::Vector3f* vertex_colors,
-                              Eigen::Vector3f* points, Eigen::Vector3f* colors,
                               bool has_vertex_colors, RenderOption::MeshColorOption color_option,
                               const Eigen::Vector3f& default_mesh_color, const ViewControl& view)
-                              : vertices_(vertices), triangles_(triangles), vertex_colors_(vertex_colors),
-                                points_(points), colors_(colors), has_vertex_colors_(has_vertex_colors),
+                              : vertices_(vertices), triangles_(triangles),
+                                vertex_colors_(vertex_colors), has_vertex_colors_(has_vertex_colors),
                                 color_option_(color_option), default_mesh_color_(default_mesh_color), view_(view) {};
     const Eigen::Vector3f* vertices_;
-    const Eigen::Vector3i* triangles_;
+    const int* triangles_;
     const Eigen::Vector3f* vertex_colors_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector3f* colors_;
     const bool has_vertex_colors_;
     const RenderOption::MeshColorOption color_option_;
     const Eigen::Vector3f default_mesh_color_;
     const ViewControl view_;
     const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
     __device__
-    void operator() (size_t idx) {
-        const auto &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-            const auto& vertex = vertices_[vi];
-            points_[k] = vertex;
-
-            Eigen::Vector3f color_tmp;
-            switch (color_option_) {
-                case RenderOption::MeshColorOption::XCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetXPercentage(vertex(0)));
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
+        size_t vi = triangles_[k];
+        const auto& vertex = vertices_[vi];
+        Eigen::Vector3f color_tmp;
+        switch (color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetXPercentage(vertex(0)));
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetYPercentage(vertex(1)));
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetZPercentage(vertex(2)));
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (has_vertex_colors_) {
+                    color_tmp = vertex_colors_[vi];
                     break;
-                case RenderOption::MeshColorOption::YCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetYPercentage(vertex(1)));
-                    break;
-                case RenderOption::MeshColorOption::ZCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetZPercentage(vertex(2)));
-                    break;
-                case RenderOption::MeshColorOption::Color:
-                    if (has_vertex_colors_) {
-                        color_tmp = vertex_colors_[vi];
-                        break;
-                    }
-                case RenderOption::MeshColorOption::Default:
-                default:
-                    color_tmp = default_mesh_color_;
-                    break;
-            }
-            colors_[k] = color_tmp;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                color_tmp = default_mesh_color_;
+                break;
         }
+        return thrust::make_tuple(vertex, color_tmp);
     }
 
 };
@@ -309,10 +296,9 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     thrust::transform(lineset->lines_.begin(), lineset->lines_.end(),
                       line_coords.begin(), func_line);
     copy_lineset_functor func_cp(thrust::raw_pointer_cast(line_coords.data()),
-                                 thrust::raw_pointer_cast(lineset->colors_.data()),
-                                 thrust::raw_pointer_cast(points.data()),
-                                 thrust::raw_pointer_cast(colors.data()), lineset->HasColors());
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lineset->lines_.size()), func_cp);
+                                 thrust::raw_pointer_cast(lineset->colors_.data()), lineset->HasColors());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lineset->lines_.size() * 2),
+                      make_tuple_iterator(points.begin(), colors.begin()), func_cp);
     draw_arrays_mode_ = GL_LINES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
@@ -365,13 +351,12 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
     colors.resize(mesh.triangles_.size() * 3);
 
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangles_.data()),
+                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
                                    thrust::raw_pointer_cast(mesh.vertex_colors_.data()),
-                                   thrust::raw_pointer_cast(points.data()),
-                                   thrust::raw_pointer_cast(colors.data()),
                                    mesh.HasVertexColors(), option.mesh_color_option_,
                                    option.default_mesh_color_, view);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size()), func);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size() * 3),
+                      make_tuple_iterator(points.begin(), colors.begin()), func);
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;

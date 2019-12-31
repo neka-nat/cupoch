@@ -88,10 +88,25 @@ public:
         return width_ * num_of_channels_ * bytes_per_channel_;
     }
 
+    /// Function to access the bilinear interpolated float value of a
+    /// (single-channel) float image.
+    /// Returns a tuple, where the first bool indicates if the u,v coordinates
+    /// are within the image dimensions, and the second float value is the
+    /// interpolated pixel value.
+    std::pair<bool, float> FloatValueAt(float u, float v) const;
+
     /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(
             Image::ColorToIntensityConversionType type =
                     Image::ColorToIntensityConversionType::Weighted) const;
+
+    /// Function to access the raw data of a single-channel Image.
+    template <typename T>
+    T *PointerAt(int u, int v) const;
+
+    /// Function to access the raw data of a multi-channel Image.
+    template <typename T>
+    T *PointerAt(int u, int v, int ch) const;
 
     std::shared_ptr<Image> ConvertDepthToFloatImage(
             float depth_scale = 1000.0, float depth_trunc = 3.0) const;

@@ -12,32 +12,25 @@ namespace {
 
 struct copy_trianglemesh_functor {
     copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3f* vertex_normals,
-                              const Eigen::Vector3i* triangles, const Eigen::Vector3f* triangle_normals,
-                              Eigen::Vector3f* points, Eigen::Vector3f* normals,
+                              const int* triangles, const Eigen::Vector3f* triangle_normals,
                               RenderOption::MeshShadeOption shade_option)
                               : vertices_(vertices), vertex_normals_(vertex_normals),
                                 triangles_(triangles), triangle_normals_(triangle_normals),
-                                points_(points), normals_(normals), shade_option_(shade_option) {};
+                                shade_option_(shade_option) {};
     const Eigen::Vector3f* vertices_;
     const Eigen::Vector3f* vertex_normals_;
-    const Eigen::Vector3i* triangles_;
+    const int* triangles_;
     const Eigen::Vector3f* triangle_normals_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector3f* normals_;
-    RenderOption::MeshShadeOption shade_option_;
+    const RenderOption::MeshShadeOption shade_option_;
     __device__
-    void operator() (size_t idx) const {
-        const auto &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-            const auto &vertex = vertices_[vi];
-            points_[k] = vertex;
-            if (shade_option_ == RenderOption::MeshShadeOption::FlatShade) {
-                normals_[k] = triangle_normals_[idx];
-            } else {
-                normals_[k] = vertex_normals_[vi];
-            }
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
+        int i = k / 3;
+        int vi = triangles_[k];
+        const auto &vertex = vertices_[vi];
+        if (shade_option_ == RenderOption::MeshShadeOption::FlatShade) {
+            return thrust::make_tuple(vertex, triangle_normals_[i]);
+        } else {
+            return thrust::make_tuple(vertex, vertex_normals_[vi]);
         }
     }
 };
@@ -224,11 +217,11 @@ bool NormalShaderForTriangleMesh::PrepareBinding(
     normals.resize(mesh.triangles_.size() * 3);
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
                                    thrust::raw_pointer_cast(mesh.vertex_normals_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangles_.data()),
+                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
                                    thrust::raw_pointer_cast(mesh.triangle_normals_.data()),
-                                   thrust::raw_pointer_cast(points.data()),
-                                   thrust::raw_pointer_cast(normals.data()), option.mesh_shade_option_);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size()), func);
+                                   option.mesh_shade_option_);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size() * 3),
+                      make_tuple_iterator(points.begin(), normals.begin()), func);
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;

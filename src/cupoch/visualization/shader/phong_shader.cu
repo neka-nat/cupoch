@@ -52,26 +52,21 @@ struct copy_pointcloud_functor{
 };
 
 struct copy_trianglemesh_functor {
-    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3i* triangles,
+    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const int* triangles,
                               const Eigen::Vector3f* triangle_normals, const Eigen::Vector3f* vertex_normals,
                               const Eigen::Vector3f* vertex_colors,
-                              Eigen::Vector3f* points, Eigen::Vector3f* normals, Eigen::Vector3f* colors,
                               bool has_vertex_colors, RenderOption::MeshColorOption color_option,
                               RenderOption::MeshShadeOption shade_option, const Eigen::Vector3f& default_mesh_color,
                               const ViewControl& view)
                               : vertices_(vertices), triangles_(triangles), triangle_normals_(triangle_normals),
-                                vertex_normals_(vertex_normals), vertex_colors_(vertex_colors),
-                                points_(points), normals_(normals), colors_(colors), has_vertex_colors_(has_vertex_colors),
+                                vertex_normals_(vertex_normals), vertex_colors_(vertex_colors), has_vertex_colors_(has_vertex_colors),
                                 color_option_(color_option), shade_option_(shade_option),
                                 default_mesh_color_(default_mesh_color), view_(view) {};
     const Eigen::Vector3f* vertices_;
-    const Eigen::Vector3i* triangles_;
+    const int* triangles_;
     const Eigen::Vector3f* triangle_normals_;
     const Eigen::Vector3f* vertex_normals_;
     const Eigen::Vector3f* vertex_colors_;
-    Eigen::Vector3f* points_;
-    Eigen::Vector3f* normals_;
-    Eigen::Vector3f* colors_;
     const bool has_vertex_colors_;
     const RenderOption::MeshColorOption color_option_;
     const RenderOption::MeshShadeOption shade_option_;
@@ -79,46 +74,41 @@ struct copy_trianglemesh_functor {
     const ViewControl view_;
     const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
     __device__
-    void operator() (size_t idx) {
-        const Eigen::Vector3i &triangle = triangles_[idx];
-        for (size_t j = 0; j < 3; j++) {
-            size_t k = idx * 3 + j;
-            size_t vi = triangle(j);
-            const Eigen::Vector3f &vertex = vertices_[vi];
-            points_[k] = vertex;
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>operator() (size_t k) const {
+        int idx = k / 3;
+        int vi = triangles_[k];
+        const Eigen::Vector3f &vertex = vertices_[vi];
 
-            Eigen::Vector3f color_tmp;
-            switch (color_option_) {
-                case RenderOption::MeshColorOption::XCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetXPercentage(vertex(0)));
+        Eigen::Vector3f color_tmp;
+        switch (color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetXPercentage(vertex(0)));
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetYPercentage(vertex(1)));
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                color_tmp = global_color_map_.get()->GetColor(
+                            view_.GetBoundingBox().GetZPercentage(vertex(2)));
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (has_vertex_colors_) {
+                    color_tmp = vertex_colors_[vi];
                     break;
-                case RenderOption::MeshColorOption::YCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetYPercentage(vertex(1)));
-                    break;
-                case RenderOption::MeshColorOption::ZCoordinate:
-                    color_tmp = global_color_map_.get()->GetColor(
-                                view_.GetBoundingBox().GetZPercentage(vertex(2)));
-                    break;
-                case RenderOption::MeshColorOption::Color:
-                    if (has_vertex_colors_) {
-                        color_tmp = vertex_colors_[vi];
-                        break;
-                    }
-                case RenderOption::MeshColorOption::Default:
-                default:
-                    color_tmp = default_mesh_color_;
-                    break;
-            }
-            colors_[k] = color_tmp;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                color_tmp = default_mesh_color_;
+                break;
+        }
 
-            if (shade_option_ ==
-                RenderOption::MeshShadeOption::FlatShade) {
-                normals_[k] = triangle_normals_[idx];
-            } else {
-                normals_[k] = vertex_normals_[vi];
-            }
+        if (shade_option_ ==
+            RenderOption::MeshShadeOption::FlatShade) {
+            return thrust::make_tuple(vertex, triangle_normals_[idx], color_tmp);
+        } else {
+            return thrust::make_tuple(vertex, vertex_normals_[vi], color_tmp);
         }
     }
 
@@ -380,17 +370,15 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
     colors.resize(mesh.triangles_.size() * 3);
 
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangles_.data()),
+                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
                                    thrust::raw_pointer_cast(mesh.triangle_normals_.data()),
                                    thrust::raw_pointer_cast(mesh.vertex_normals_.data()),
                                    thrust::raw_pointer_cast(mesh.vertex_colors_.data()),
-                                   thrust::raw_pointer_cast(points.data()),
-                                   thrust::raw_pointer_cast(normals.data()),
-                                   thrust::raw_pointer_cast(colors.data()),
                                    mesh.HasVertexColors(), option.mesh_color_option_,
                                    option.mesh_shade_option_,
                                    option.default_mesh_color_, view);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size()), func);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size() * 3),
+                      make_tuple_iterator(points.begin(), normals.begin(), colors.begin()), func);
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(points.size());
     return true;
