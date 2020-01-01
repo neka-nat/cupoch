@@ -2,6 +2,8 @@
 
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/utility/console.h"
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 namespace cupoch {
 namespace visualization {
@@ -22,6 +24,10 @@ bool ShaderWrapper::Render(const geometry::Geometry &geometry,
         return false;
     }
     return RenderGeometry(geometry, option, view);
+}
+
+void ShaderWrapper::Unmap(size_t n_resource) {
+    cudaSafeCall(cudaGraphicsUnmapResources(n_resource, cuda_graphics_resources_));
 }
 
 void ShaderWrapper::InvalidateGeometry() {

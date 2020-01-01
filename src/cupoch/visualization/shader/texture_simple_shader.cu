@@ -57,22 +57,29 @@ bool TextureSimpleShader::BindGeometry(const geometry::Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    thrust::device_vector<Eigen::Vector3f> points;
-    thrust::device_vector<Eigen::Vector2f> uvs;
-    if (PrepareBinding(geometry, option, view, points, uvs) == false) {
-        PrintShaderWarning("Binding failed when preparing data.");
-        return false;
-    }
+    const size_t num_data_size = GetDataSize(geometry);
 
     // Create buffers and bind the geometry
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-                 thrust::raw_pointer_cast(points.data()), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
     glGenBuffers(1, &vertex_uv_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(Eigen::Vector2f),
-                 thrust::raw_pointer_cast(uvs.data()), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector2f), 0, GL_STATIC_DRAW);
+    Eigen::Vector3f* raw_points_ptr;
+    Eigen::Vector2f* raw_uvs_ptr;
+    size_t n_bytes;
+    cudaSafeCall(cudaGraphicsMapResources(2, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_uvs_ptr, &n_bytes, cuda_graphics_resources_[1]));
+    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
+    thrust::device_ptr<Eigen::Vector2f> dev_uvs_ptr = thrust::device_pointer_cast(raw_uvs_ptr);
+
+    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_uvs_ptr) == false) {
+        PrintShaderWarning("Binding failed when preparing data.");
+        return false;
+    }
+    Unmap(2);
     bound_ = true;
     return true;
 }
@@ -144,8 +151,8 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points,
-        thrust::device_vector<Eigen::Vector2f> &uvs) {
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector2f> &uvs) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -157,14 +164,12 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    points.resize(mesh.triangles_.size() * 3);
-    uvs.resize(mesh.triangles_.size() * 3);
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
                                    (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
                                    thrust::raw_pointer_cast(mesh.triangle_uvs_.data()));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(mesh.triangles_.size() * 3),
-                      make_tuple_iterator(points.begin(), uvs.begin()), func);
+                      make_tuple_iterator(points, uvs), func);
 
     glGenTextures(1, &texture_);
     glBindTexture(GL_TEXTURE_2D, texture_buffer_);
@@ -218,6 +223,10 @@ bool TextureSimpleShaderForTriangleMesh::PrepareBinding(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
     return true;
+}
+
+size_t TextureSimpleShaderForTriangleMesh::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <vector>
+#include <thrust/device_ptr.h>
 
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
@@ -35,17 +35,15 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                thrust::device_vector<Eigen::Vector3f> &points,
-                                thrust::device_vector<Eigen::Vector3f> &colors) = 0;
-
+                                thrust::device_ptr<Eigen::Vector3f> &points,
+                                thrust::device_ptr<Eigen::Vector3f> &colors) = 0;
+    virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
     GLuint vertex_color_;
     GLuint vertex_color_buffer_;
     GLuint MVP_;
-    cudaGraphicsResource *cuda_graphics_resource_position_ = NULL;
-    cudaGraphicsResource *cuda_graphics_resource_color_ = NULL;
 };
 
 class SimpleShaderForPointCloud : public SimpleShader {
@@ -59,8 +57,9 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 class SimpleShaderForAxisAlignedBoundingBox : public SimpleShader {
@@ -75,8 +74,9 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 class SimpleShaderForTriangleMesh : public SimpleShader {
@@ -91,8 +91,9 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 }  // namespace glsl

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
 
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
@@ -35,9 +35,9 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                thrust::device_vector<Eigen::Vector3f> &points,
-                                thrust::device_vector<Eigen::Vector3f> &normals) = 0;
-
+                                thrust::device_ptr<Eigen::Vector3f> &points,
+                                thrust::device_ptr<Eigen::Vector3f> &normals) = 0;
+    virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
@@ -59,8 +59,9 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &normals) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &normals) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 class NormalShaderForTriangleMesh : public NormalShader {
@@ -75,8 +76,9 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &normals) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &normals) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 }  // namespace glsl

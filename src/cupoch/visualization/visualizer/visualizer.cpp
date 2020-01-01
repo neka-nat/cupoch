@@ -2,8 +2,6 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -54,7 +52,6 @@ bool Visualizer::CreateVisualizerWindow(
         const int left /* = 50*/,
         const int top /* = 50*/,
         const bool visible /* = true*/) {
-    cudaSafeCall(cudaGLSetGLDevice(utility::GetDevice()));
     glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
     if (!GLFWEnvironmentSingleton::InitGLFW()) {
         utility::LogWarning("Failed to initialize GLFW");
@@ -78,6 +75,29 @@ bool Visualizer::CreateVisualizerWindow(
     glfwSetWindowPos(window_, left, top);
     glfwSetWindowUserPointer(window_, this);
 
+
+    glfwMakeContextCurrent(window_);
+    glfwSwapInterval(1);
+
+    if (InitOpenGL() == false) {
+        return false;
+    }
+
+    if (InitViewControl() == false) {
+        return false;
+    }
+
+    if (InitRenderOption() == false) {
+        return false;
+    }
+
+    int window_width, window_height;
+    glfwGetFramebufferSize(window_, &window_width, &window_height);
+    WindowResizeCallback(window_, window_width, window_height);
+
+    UpdateWindowTitle();
+
+    is_initialized_ = true;
     return true;
 }
 
@@ -90,6 +110,17 @@ void Visualizer::DestroyVisualizerWindow() {
 void Visualizer::RegisterAnimationCallback(
         std::function<bool(Visualizer *)> callback_func) {
     animation_callback_func_ = callback_func;
+}
+
+bool Visualizer::InitViewControl() {
+    view_control_ptr_ = std::unique_ptr<ViewControl>(new ViewControl);
+    ResetViewPoint();
+    return true;
+}
+
+bool Visualizer::InitRenderOption() {
+    render_option_ptr_ = std::unique_ptr<RenderOption>(new RenderOption);
+    return true;
 }
 
 void Visualizer::UpdateWindowTitle() {
@@ -206,6 +237,40 @@ bool Visualizer::AddGeometry(
     return UpdateGeometry();
 }
 
+bool Visualizer::RemoveGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr,
+        bool reset_bounding_box) {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    std::shared_ptr<glsl::GeometryRenderer> geometry_renderer_delete = NULL;
+    for (auto &geometry_renderer_ptr : geometry_renderer_ptrs_) {
+        if (geometry_renderer_ptr->GetGeometry() == geometry_ptr)
+            geometry_renderer_delete = geometry_renderer_ptr;
+    }
+    if (geometry_renderer_delete == NULL) return false;
+    geometry_renderer_ptrs_.erase(geometry_renderer_delete);
+    geometry_ptrs_.erase(geometry_ptr);
+    if (reset_bounding_box) {
+        ResetViewPoint(true);
+    }
+    utility::LogDebug(
+            "Remove geometry and update bounding box to {}",
+            view_control_ptr_->GetBoundingBox().GetPrintInfo().c_str());
+    return UpdateGeometry();
+}
+
+bool Visualizer::ClearGeometries() {
+    if (is_initialized_ == false) {
+        return false;
+    }
+    glfwMakeContextCurrent(window_);
+    geometry_renderer_ptrs_.clear();
+    geometry_ptrs_.clear();
+    return UpdateGeometry();
+}
+
 bool Visualizer::UpdateGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     glfwMakeContextCurrent(window_);
@@ -223,3 +288,61 @@ bool Visualizer::UpdateGeometry(
 void Visualizer::UpdateRender() {is_redraw_required_ = true;}
 
 bool Visualizer::HasGeometry() const {return !geometry_ptrs_.empty();}
+
+void Visualizer::PrintVisualizerHelp() {
+    // clang-format off
+    utility::LogInfo("  -- Mouse view control --");
+    utility::LogInfo("    Left button + drag         : Rotate.");
+    utility::LogInfo("    Ctrl + left button + drag  : Translate.");
+    utility::LogInfo("    Wheel button + drag        : Translate.");
+    utility::LogInfo("    Shift + left button + drag : Roll.");
+    utility::LogInfo("    Wheel                      : Zoom in/out.");
+    utility::LogInfo("");
+    utility::LogInfo("  -- Keyboard view control --");
+    utility::LogInfo("    [/]          : Increase/decrease field of view.");
+    utility::LogInfo("    R            : Reset view point.");
+    utility::LogInfo("    Ctrl/Cmd + C : Copy current view status into the clipboard.");
+    utility::LogInfo("    Ctrl/Cmd + V : Paste view status from clipboard.");
+    utility::LogInfo("");
+    utility::LogInfo("  -- General control --");
+    utility::LogInfo("    Q, Esc       : Exit window.");
+    utility::LogInfo("    H            : Print help message.");
+    utility::LogInfo("    P, PrtScn    : Take a screen capture.");
+    utility::LogInfo("    D            : Take a depth capture.");
+    utility::LogInfo("    O            : Take a capture of current rendering settings.");
+    utility::LogInfo("");
+    utility::LogInfo("  -- Render mode control --");
+    utility::LogInfo("    L            : Turn on/off lighting.");
+    utility::LogInfo("    +/-          : Increase/decrease point size.");
+    utility::LogInfo("    Ctrl + +/-   : Increase/decrease width of geometry::LineSet.");
+    utility::LogInfo("    N            : Turn on/off point cloud normal rendering.");
+    utility::LogInfo("    S            : Toggle between mesh flat shading and smooth shading.");
+    utility::LogInfo("    W            : Turn on/off mesh wireframe.");
+    utility::LogInfo("    B            : Turn on/off back face rendering.");
+    utility::LogInfo("    I            : Turn on/off image zoom in interpolation.");
+    utility::LogInfo("    T            : Toggle among image render:");
+    utility::LogInfo("                   no stretch / keep ratio / freely stretch.");
+    utility::LogInfo("");
+    utility::LogInfo("  -- Color control --");
+    utility::LogInfo("    0..4,9       : Set point cloud color option.");
+    utility::LogInfo("                   0 - Default behavior, render point color.");
+    utility::LogInfo("                   1 - Render point color.");
+    utility::LogInfo("                   2 - x coordinate as color.");
+    utility::LogInfo("                   3 - y coordinate as color.");
+    utility::LogInfo("                   4 - z coordinate as color.");
+    utility::LogInfo("                   9 - normal as color.");
+    utility::LogInfo("    Ctrl + 0..4,9: Set mesh color option.");
+    utility::LogInfo("                   0 - Default behavior, render uniform gray color.");
+    utility::LogInfo("                   1 - Render point color.");
+    utility::LogInfo("                   2 - x coordinate as color.");
+    utility::LogInfo("                   3 - y coordinate as color.");
+    utility::LogInfo("                   4 - z coordinate as color.");
+    utility::LogInfo("                   9 - normal as color.");
+    utility::LogInfo("    Shift + 0..4 : Color map options.");
+    utility::LogInfo("                   0 - Gray scale color.");
+    utility::LogInfo("                   1 - JET color map.");
+    utility::LogInfo("                   2 - SUMMER color map.");
+    utility::LogInfo("                   3 - WINTER color map.");
+    utility::LogInfo("                   4 - HOT color map.");
+    utility::LogInfo("");
+}

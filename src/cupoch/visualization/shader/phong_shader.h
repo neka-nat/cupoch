@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <thrust/device_vector.h>
+#include <thrust/device_ptr.h>
 
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
@@ -35,10 +35,10 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                thrust::device_vector<Eigen::Vector3f> &points,
-                                thrust::device_vector<Eigen::Vector3f> &normals,
-                                thrust::device_vector<Eigen::Vector3f> &colors) = 0;
-
+                                thrust::device_ptr<Eigen::Vector3f> &points,
+                                thrust::device_ptr<Eigen::Vector3f> &normals,
+                                thrust::device_ptr<Eigen::Vector3f> &colors) = 0;
+    virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 
@@ -79,9 +79,10 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &normals,
-                        thrust::device_vector<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &normals,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 class PhongShaderForTriangleMesh : public PhongShader {
@@ -95,9 +96,10 @@ protected:
     bool PrepareBinding(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view,
-                        thrust::device_vector<Eigen::Vector3f> &points,
-                        thrust::device_vector<Eigen::Vector3f> &normals,
-                        thrust::device_vector<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &normals,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
 }  // namespace glsl

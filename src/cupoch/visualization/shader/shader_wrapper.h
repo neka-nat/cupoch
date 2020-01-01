@@ -56,6 +56,8 @@ protected:
                                 const ViewControl &view) = 0;
     virtual void UnbindGeometry() = 0;
 
+    virtual void Unmap(size_t n_resource);
+    virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
 protected:
     bool ValidateShader(GLuint shader_index);
     bool ValidateProgram(GLuint program_index);
@@ -73,6 +75,7 @@ protected:
     GLsizei draw_arrays_size_ = 0;
     bool compiled_ = false;
     bool bound_ = false;
+    cudaGraphicsResource_t cuda_graphics_resources_[3] = {NULL, NULL, NULL};
 
     void SetShaderName(const std::string &shader_name) {
         shader_name_ = shader_name;

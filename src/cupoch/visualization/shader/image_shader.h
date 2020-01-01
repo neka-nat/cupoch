@@ -1,6 +1,7 @@
 #pragma once
 
-#include "cupoch/geometry/image.h"
+#include <thrust/device_ptr.h>
+
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
 namespace cupoch {
@@ -33,8 +34,10 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                geometry::Image &image) = 0;
-
+                                thrust::device_ptr<uint8_t> &image) = 0;
+    virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetDataHeight(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetDataWidth(const geometry::Geometry &geometry) const = 0;
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
@@ -58,7 +61,10 @@ protected:
     virtual bool PrepareBinding(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view,
-                                geometry::Image &render_image) final;
+                                thrust::device_ptr<uint8_t> &render_image) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
+    size_t GetDataHeight(const geometry::Geometry &geometry) const final;
+    size_t GetDataWidth(const geometry::Geometry &geometry) const final;
 };
 
 }  // namespace glsl

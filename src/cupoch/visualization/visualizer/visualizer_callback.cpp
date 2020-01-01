@@ -9,3 +9,8 @@ void Visualizer::WindowRefreshCallback(GLFWwindow *window) {
         is_redraw_required_ = false;
     }
 }
+
+void Visualizer::WindowResizeCallback(GLFWwindow *window, int w, int h) {
+    view_control_ptr_->ChangeWindowSize(w, h);
+    is_redraw_required_ = true;
+}

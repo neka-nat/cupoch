@@ -130,6 +130,15 @@ public:
     void ResetViewPoint(bool reset_bounding_box = false);
 
 protected:
+    /// Function to initialize OpenGL
+    virtual bool InitOpenGL();
+
+    /// Function to initialize ViewControl
+    virtual bool InitViewControl();
+
+    /// Function to initialize RenderOption
+    virtual bool InitRenderOption();
+
     /// Function to do the main rendering
     /// The function first sets view point, then draw geometry (pointclouds and
     /// meshes individually).
@@ -137,6 +146,7 @@ protected:
     
     // callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
+    virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
 
 protected:
     // window

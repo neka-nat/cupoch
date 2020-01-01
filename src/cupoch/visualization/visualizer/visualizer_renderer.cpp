@@ -1,8 +1,36 @@
 #include "cupoch/visualization/visualizer/visualizer.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/console.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
+
+bool Visualizer::InitOpenGL() {
+    glewExperimental = true;
+    if (glewInit() != GLEW_OK) {
+        utility::LogWarning("Failed to initialize GLEW.");
+        return false;
+    }
+
+    glGenVertexArrays(1, &vao_id_);
+    glBindVertexArray(vao_id_);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST);
+    glClearDepth(1.0f);
+
+    // pixel alignment
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // polygon rendering
+    glEnable(GL_CULL_FACE);
+
+    // glReadPixels always read front buffer
+    glReadBuffer(GL_FRONT);
+
+    return true;
+}
 
 void Visualizer::Render() {
     glfwMakeContextCurrent(window_);

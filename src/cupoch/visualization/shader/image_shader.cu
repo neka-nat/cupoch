@@ -106,11 +106,8 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    geometry::Image render_image;
-    if (PrepareBinding(geometry, option, view, render_image) == false) {
-        PrintShaderWarning("Binding failed when preparing data.");
-        return false;
-    }
+    const size_t num_data_height = GetDataHeight(geometry);
+    const size_t num_data_width = GetDataWidth(geometry);
 
     // Create buffers and bind the geometry
     const GLfloat vertex_position_buffer_data[18] = {
@@ -132,9 +129,8 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
 
     glGenTextures(1, &image_texture_buffer_);
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, render_image.width_,
-                 render_image.height_, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                 thrust::raw_pointer_cast(render_image.data_.data()));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, num_data_width,
+                 num_data_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
     if (option.interpolation_option_ ==
         RenderOption::TextureInterpolationOption::Nearest) {
@@ -147,6 +143,17 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
+    uint8_t* raw_render_image_ptr;
+    size_t n_bytes;
+    cudaSafeCall(cudaGraphicsMapResources(1, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_render_image_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    thrust::device_ptr<uint8_t> dev_render_image_ptr = thrust::device_pointer_cast(raw_render_image_ptr);
+    if (PrepareBinding(geometry, option, view, dev_render_image_ptr) == false) {
+        PrintShaderWarning("Binding failed when preparing data.");
+        return false;
+    }
+
+    Unmap(1);
     bound_ = true;
     return true;
 }
@@ -227,7 +234,7 @@ bool ImageShaderForImage::PrepareRendering(const geometry::Geometry &geometry,
 bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
                                          const RenderOption &option,
                                          const ViewControl &view,
-                                         geometry::Image &render_image) {
+                                         thrust::device_ptr<uint8_t> &render_image) {
     if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
         PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
@@ -239,34 +246,33 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
     }
 
     if (image.num_of_channels_ == 3 && image.bytes_per_channel_ == 1) {
-        render_image = image;
+        thrust::copy(image.data_.begin(), image.data_.end(), render_image);
     } else {
-        render_image.Prepare(image.width_, image.height_, 3, 1);
         if (image.num_of_channels_ == 1 && image.bytes_per_channel_ == 1) {
             // grayscale image
             thrust::repeated_range<thrust::device_vector<uint8_t>::const_iterator> range(image.data_.begin(), image.data_.end(), 3);
-            thrust::copy(range.begin(), range.end(), render_image.data_.begin());
+            thrust::copy(range.begin(), range.end(), render_image);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 4) {
             // grayscale image with floating point per channel
             copy_float_gray_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
                               thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
-                              render_image.data_.begin(), func);
+                              render_image, func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 4) {
             // RGB image with floating point per channel
             copy_float_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
                               thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
-                              render_image.data_.begin(), func);
+                              render_image, func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 2) {
             // image with RGB channels, each channel is a 16-bit integer
             copy_int16_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
                               thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
-                              render_image.data_.begin(), func);
+                              render_image, func);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 2) {
             // depth image, one channel of 16-bit integer
@@ -274,11 +280,23 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
             copy_depth_image_functor func(thrust::raw_pointer_cast(image.data_.data()), max_depth);
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
                               thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
-                              render_image.data_.begin(), func);
+                              render_image, func);
         }
     }
 
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = 6;
     return true;
+}
+
+size_t ImageShaderForImage::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::Image &)geometry).data_.size();
+}
+
+size_t ImageShaderForImage::GetDataHeight(const geometry::Geometry &geometry) const {
+    return ((const geometry::Image &)geometry).height_;
+}
+
+size_t ImageShaderForImage::GetDataWidth(const geometry::Geometry &geometry) const {
+    return ((const geometry::Image &)geometry).width_;
 }

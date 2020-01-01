@@ -11,5 +11,5 @@ macro(EXAMPLE_CPP EXAMPLE_CPP_NAME)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/examples")
 endmacro(EXAMPLE_CPP)
 
-EXAMPLE_CPP(pointcloud cupoch_geometry cupoch_io)
-EXAMPLE_CPP(registration cupoch_registration cupoch_io)
+EXAMPLE_CPP(pointcloud cupoch_visualization cupoch_geometry cupoch_io)
+EXAMPLE_CPP(registration cupoch_visualization cupoch_registration cupoch_io)

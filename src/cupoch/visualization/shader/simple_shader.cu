@@ -165,24 +165,33 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    thrust::device_vector<Eigen::Vector3f> points;
-    thrust::device_vector<Eigen::Vector3f> colors;
-    if (PrepareBinding(geometry, option, view, points, colors) == false) {
+    const size_t num_data_size = GetDataSize(geometry);
+
+    // Create buffers and bind the geometry
+    glGenBuffers(1, &vertex_position_buffer_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
+    glGenBuffers(1, &vertex_color_buffer_);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1], vertex_color_buffer_, cudaGraphicsMapFlagsNone));
+
+    Eigen::Vector3f* raw_points_ptr;
+    Eigen::Vector3f* raw_colors_ptr;
+    size_t n_bytes;
+    cudaSafeCall(cudaGraphicsMapResources(2, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_colors_ptr, &n_bytes, cuda_graphics_resources_[1]));
+    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
+    thrust::device_ptr<Eigen::Vector3f> dev_colors_ptr = thrust::device_pointer_cast(raw_colors_ptr);
+
+    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_colors_ptr) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
 
-    // Create buffers and bind the geometry
-    cudaGraphicsGLRegisterBuffer(&cuda_graphics_resource_position_, vertex_position_buffer_, cudaGraphicsMapFlagsNone);
-    glGenBuffers(1, &vertex_position_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-                 thrust::raw_pointer_cast(points.data()), GL_STATIC_DRAW);
-    cudaGraphicsGLRegisterBuffer(&cuda_graphics_resource_color_, vertex_color_buffer_, cudaGraphicsMapFlagsNone);
-    glGenBuffers(1, &vertex_color_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(Eigen::Vector3f),
-                 thrust::raw_pointer_cast(colors.data()), GL_STATIC_DRAW);
+    Unmap(2);
     bound_ = true;
     return true;
 }
@@ -235,8 +244,8 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points,
-        thrust::device_vector<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -248,15 +257,17 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    points.resize(pointcloud.points_.size());
-    colors.resize(pointcloud.points_.size());
     copy_pointcloud_functor func(pointcloud.HasColors(), option.point_color_option_, view);
     thrust::transform(make_tuple_iterator(pointcloud.points_.begin(), pointcloud.colors_.begin()),
                       make_tuple_iterator(pointcloud.points_.end(), pointcloud.colors_.end()),
-                      make_tuple_iterator(points.begin(), colors.begin()), func);
+                      make_tuple_iterator(points, colors), func);
     draw_arrays_mode_ = GL_POINTS;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(pointcloud.points_.size());
     return true;
+}
+
+size_t SimpleShaderForPointCloud::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::PointCloud &)geometry).points_.size();
 }
 
 bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
@@ -279,8 +290,8 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points,
-        thrust::device_vector<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
         PrintShaderWarning(
@@ -289,8 +300,6 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     }
     auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             (const geometry::AxisAlignedBoundingBox &)geometry);
-    points.resize(lineset->lines_.size() * 2);
-    colors.resize(lineset->lines_.size() * 2);
     thrust::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(lineset->lines_.size());
     line_coordinates_functor func_line(thrust::raw_pointer_cast(lineset->points_.data()));
     thrust::transform(lineset->lines_.begin(), lineset->lines_.end(),
@@ -298,10 +307,16 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     copy_lineset_functor func_cp(thrust::raw_pointer_cast(line_coords.data()),
                                  thrust::raw_pointer_cast(lineset->colors_.data()), lineset->HasColors());
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lineset->lines_.size() * 2),
-                      make_tuple_iterator(points.begin(), colors.begin()), func_cp);
+                      make_tuple_iterator(points, colors), func_cp);
     draw_arrays_mode_ = GL_LINES;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(lineset->lines_.size() * 2);
     return true;
+}
+
+size_t SimpleShaderForAxisAlignedBoundingBox::GetDataSize(const geometry::Geometry &geometry) const {
+    auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
+        (const geometry::AxisAlignedBoundingBox &)geometry);
+    return lineset->lines_.size() * 2;
 }
 
 bool SimpleShaderForTriangleMesh::PrepareRendering(
@@ -334,8 +349,8 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points,
-        thrust::device_vector<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -347,8 +362,6 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Binding failed with empty triangle mesh.");
         return false;
     }
-    points.resize(mesh.triangles_.size() * 3);
-    colors.resize(mesh.triangles_.size() * 3);
 
     copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
                                    (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
@@ -356,8 +369,12 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                                    mesh.HasVertexColors(), option.mesh_color_option_,
                                    option.default_mesh_color_, view);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(mesh.triangles_.size() * 3),
-                      make_tuple_iterator(points.begin(), colors.begin()), func);
+                      make_tuple_iterator(points, colors), func);
     draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
     return true;
+}
+
+size_t SimpleShaderForTriangleMesh::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }

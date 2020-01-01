@@ -1,4 +1,5 @@
 #include "cupoch/utility/platform.h"
+#include <cuda_gl_interop.h>
 #include <mutex>
 
 using namespace cupoch;
@@ -24,8 +25,8 @@ void cupoch::utility::SetDevice(int device_no) {
 }
 
 void cupoch::utility::Error(const char *error_string, const char *file, const int line,
-           const char *func) {
-  std::cout << "Error: " << error_string << "\t" << file << ":" << line
-            << std::endl;
-  exit(0);
+                            const char *func) {
+    std::cout << "Error: " << error_string << "\t" << file << ":" << line
+              << std::endl;
+    exit(0);
 }

@@ -4,6 +4,8 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -72,18 +74,26 @@ bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
     UnbindGeometry();
 
     // Prepare data to be passed to GPU
-    thrust::device_vector<Eigen::Vector3f> points;
-    if (PrepareBinding(geometry, option, view, points) == false) {
-        PrintShaderWarning("Binding failed when preparing data.");
-        return false;
-    }
+    const size_t num_data_size = GetDataSize(geometry);
 
     // Create buffers and bind the geometry
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Eigen::Vector3f),
-                 thrust::raw_pointer_cast(points.data()), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
 
+    Eigen::Vector3f* raw_points_ptr;
+    size_t n_bytes;
+    cudaSafeCall(cudaGraphicsMapResources(3, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
+
+    if (PrepareBinding(geometry, option, view, dev_points_ptr) == false) {
+        PrintShaderWarning("Binding failed when preparing data.");
+        return false;
+    }
+
+    Unmap(1);
     bound_ = true;
     return true;
 }
@@ -130,7 +140,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points) {
+        thrust::device_ptr<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -142,16 +152,19 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    points.resize(pointcloud.points_.size() * 2);
     float line_length =
             option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
     copy_pointcloud_normal_functor func(thrust::raw_pointer_cast(pointcloud.points_.data()),
                                         thrust::raw_pointer_cast(pointcloud.normals_.data()), line_length);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(pointcloud.points_.size() * 2),
-                      points.begin(), func);
+                      points, func);
     draw_arrays_mode_ = GL_LINES;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(pointcloud.points_.size() * 2);
     return true;
+}
+
+size_t SimpleBlackShaderForPointCloudNormal::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::PointCloud &)geometry).points_.size();
 }
 
 bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
@@ -175,7 +188,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
-        thrust::device_vector<Eigen::Vector3f> &points) {
+        thrust::device_ptr<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -187,12 +200,15 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
         PrintShaderWarning("Binding failed with empty geometry::TriangleMesh.");
         return false;
     }
-    points.resize(mesh.triangles_.size() * 3);
     copy_mesh_wireflame_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
                                      (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())));
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
-                      points.begin(), func);
+                      points, func);
     draw_arrays_mode_ = GL_TRIANGLES;
-    draw_arrays_size_ = GLsizei(points.size());
+    draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
     return true;
+}
+
+size_t SimpleBlackShaderForTriangleMeshWireFrame::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }
