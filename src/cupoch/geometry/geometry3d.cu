@@ -1,4 +1,5 @@
 #include "cupoch/geometry/geometry3d.h"
+#include <Eigen/Dense>
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -158,4 +159,60 @@ void Geometry3D::RotateNormals(cudaStream_t stream, const Eigen::Matrix3f& R,
                                thrust::device_vector<Eigen::Vector3f>& normals) const {
     thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(),
                      [=] __device__ (Eigen::Vector3f& normal) {normal = R * normal;});
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromXYZ(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixX(rotation(0)) *
+           cupoch::utility::RotationMatrixY(rotation(1)) *
+           cupoch::utility::RotationMatrixZ(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromYZX(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixY(rotation(0)) *
+           cupoch::utility::RotationMatrixZ(rotation(1)) *
+           cupoch::utility::RotationMatrixX(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromZXY(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixZ(rotation(0)) *
+           cupoch::utility::RotationMatrixX(rotation(1)) *
+           cupoch::utility::RotationMatrixY(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromXZY(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixX(rotation(0)) *
+           cupoch::utility::RotationMatrixZ(rotation(1)) *
+           cupoch::utility::RotationMatrixY(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromZYX(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixZ(rotation(0)) *
+           cupoch::utility::RotationMatrixY(rotation(1)) *
+           cupoch::utility::RotationMatrixX(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromYXZ(
+        const Eigen::Vector3f& rotation) {
+    return cupoch::utility::RotationMatrixY(rotation(0)) *
+           cupoch::utility::RotationMatrixX(rotation(1)) *
+           cupoch::utility::RotationMatrixZ(rotation(2));
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromAxisAngle(
+        const Eigen::Vector3f& rotation) {
+    const float phi = rotation.norm();
+    return Eigen::AngleAxisf(phi, rotation / phi).toRotationMatrix();
+}
+
+Eigen::Matrix3f Geometry3D::GetRotationMatrixFromQuaternion(
+        const Eigen::Vector4f& rotation) {
+    return Eigen::Quaternionf(rotation(0), rotation(1), rotation(2),
+                              rotation(3))
+            .normalized()
+            .toRotationMatrix();
 }

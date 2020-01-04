@@ -24,11 +24,11 @@ tf = np.identity(4)
 measure_time(pc_cpu, "transform", "CPU", tf)
 measure_time(pc_gpu, "transform", "GPU", tf)
 
-# measure_time(pc_cpu, "estimate_normals", "CPU")
+measure_time(pc_cpu, "estimate_normals", "CPU")
 measure_time(pc_gpu, "estimate_normals", "GPU")
 
-measure_time(o3d, "voxel_down_sample", "CPU", pc_cpu, 0.005)
+measure_time(pc_cpu, "voxel_down_sample", "CPU", 0.005)
 measure_time(pc_gpu, "voxel_down_sample", "GPU", 0.005)
 
-# measure_time(o3d, "statistical_outlier_removal", "CPU", pc_cpu, 20, 2.0)
+measure_time(pc_cpu, "remove_statistical_outlier", "CPU", 20, 2.0)
 measure_time(pc_gpu, "remove_statistical_outlier", "GPU", 20, 2.0)

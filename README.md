@@ -10,7 +10,7 @@ Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 * 3D data processing using CUDA
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
-* Interactive GUI (based on [imgui](https://github.com/ocornut/imgui))
+* Interactive GUI (based on OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
 * Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
 
 ## Installation

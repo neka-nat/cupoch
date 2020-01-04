@@ -138,6 +138,8 @@ public:
 
     void ResetViewPoint(bool reset_bounding_box = false);
 
+    const std::string &GetWindowName() const { return window_name_; }
+
 protected:
     /// Function to initialize OpenGL
     virtual bool InitOpenGL();

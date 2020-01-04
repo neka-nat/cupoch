@@ -15,7 +15,7 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
 )
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
-                      cupoch_io cupoch_geometry cupoch_utility
+                      cupoch_visualization cupoch_io cupoch_geometry cupoch_utility
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
 
 # At `make`: cupoch.so (or the equivalents) will be created at

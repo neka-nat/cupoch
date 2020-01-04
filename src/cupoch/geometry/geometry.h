@@ -28,9 +28,9 @@ public:
         AxisAlignedBoundingBox = 12,
     };
 
-protected:
+public:
     __host__ __device__
-    ~Geometry() {}
+    ~Geometry() {} // non-virtual
 
 protected:
     Geometry(GeometryType type, int dimension)

@@ -7,7 +7,6 @@ verify_ssl = true
 
 [packages]
 numpy = "*"
-open3d-python = "*"
+"open3d" = "*"
 
 [requires]
-

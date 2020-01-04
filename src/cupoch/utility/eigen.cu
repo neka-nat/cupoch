@@ -109,3 +109,24 @@ template thrust::tuple<bool, Eigen::Matrix<float, 6, 1>> cupoch::utility::SolveL
 template thrust::tuple<Eigen::Matrix6f, Eigen::Vector6f, float> cupoch::utility::ComputeJTJandJTr(
     jacobian_residual_functor<Eigen::Vector6f>& f,
     int iteration_num, bool verbose);
+
+Eigen::Matrix3f cupoch::utility::RotationMatrixX(float radians) {
+    Eigen::Matrix3f rot;
+    rot << 1, 0, 0, 0, std::cos(radians), -std::sin(radians), 0,
+            std::sin(radians), std::cos(radians);
+    return rot;
+}
+
+Eigen::Matrix3f cupoch::utility::RotationMatrixY(float radians) {
+    Eigen::Matrix3f rot;
+    rot << std::cos(radians), 0, std::sin(radians), 0, 1, 0, -std::sin(radians),
+            0, std::cos(radians);
+    return rot;
+}
+
+Eigen::Matrix3f cupoch::utility::RotationMatrixZ(float radians) {
+    Eigen::Matrix3f rot;
+    rot << std::cos(radians), -std::sin(radians), 0, std::sin(radians),
+            std::cos(radians), 0, 0, 0, 1;
+    return rot;
+}

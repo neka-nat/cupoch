@@ -62,13 +62,10 @@ endif ()
 
 set(flann_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/flann/src/cpp)
 
-file(GLOB_RECURSE C_SOURCES flann/src/cpp/flann/flann.cpp)
-file(GLOB_RECURSE CPP_SOURCES flann/src/cpp/flann/flann_cpp.cpp)
 file(GLOB_RECURSE CU_SOURCES flann/src/cpp/flann/*.cu)
-
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DFLANN_USE_CUDA")
 cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
-target_include_directories(flann_cuda_s PUBLIC ${flann_INCLUDE_DIRS})
+target_include_directories(flann_cuda_s PRIVATE ${flann_INCLUDE_DIRS})
+target_compile_definitions(flann_cuda_s PRIVATE -DFLANN_USE_CUDA)
 set(FLANN_LIBRARIES flann_cuda_s)
 
 # GLEW

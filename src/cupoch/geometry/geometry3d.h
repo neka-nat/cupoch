@@ -10,9 +10,9 @@ class AxisAlignedBoundingBox;
 class OrientedBoundingBox;
 
 class Geometry3D : public Geometry {
-protected:
+public:
     __host__ __device__
-    ~Geometry3D() {};
+    ~Geometry3D() {}; // non-virtual
 
 protected:
     /// \brief Parameterized Constructor.
@@ -59,6 +59,32 @@ public:
     virtual Geometry3D& Rotate(const Eigen::Matrix3f& R,
                                bool center = true) = 0;
 
+    /// Get Rotation Matrix from XYZ RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromXYZ(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from YZX RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromYZX(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from ZXY RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromZXY(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from XZY RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromXZY(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from ZYX RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromZYX(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from YXZ RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromYXZ(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from AxisAngle RotationType.
+    static Eigen::Matrix3f GetRotationMatrixFromAxisAngle(
+            const Eigen::Vector3f& rotation);
+    /// Get Rotation Matrix from Quaternion.
+    static Eigen::Matrix3f GetRotationMatrixFromQuaternion(
+            const Eigen::Vector4f& rotation);
+
+public:
     Eigen::Vector3f ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const;
     Eigen::Vector3f ComputeMinBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const;
 

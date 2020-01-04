@@ -3,9 +3,6 @@
 #include <Eigen/Core>
 #include <thrust/functional.h>
 #include <thrust/iterator/zip_iterator.h>
-#include <thrust/iterator/counting_iterator.h>
-#include <thrust/iterator/transform_iterator.h>
-#include <thrust/iterator/permutation_iterator.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <vector>
@@ -162,10 +159,30 @@ thrust::zip_iterator<thrust::tuple<Args...> > make_tuple_iterator(Args&... args)
 
 namespace utility {
 
+/// Function to split a string, mimics boost::split
+/// http://stackoverflow.com/questions/236129/split-a-string-in-c
 void SplitString(std::vector<std::string>& tokens,
                  const std::string& str,
                  const std::string& delimiters = " ",
                  bool trim_empty_str = true);
+
+/// String util: find length of current word staring from a position
+/// By default, alpha numeric chars and chars in valid_chars are considered
+/// as valid charactors in a word
+size_t WordLength(const std::string& doc,
+                  size_t start_pos,
+                  const std::string& valid_chars = "_");
+
+std::string& LeftStripString(std::string& str,
+                             const std::string& chars = "\t\n\v\f\r ");
+
+std::string& RightStripString(std::string& str,
+                              const std::string& chars = "\t\n\v\f\r ");
+
+/// Strip empty charactors in front and after string. Similar to Python's
+/// str.strip()
+std::string& StripString(std::string& str,
+                         const std::string& chars = "\t\n\v\f\r ");
 
 
 template<typename T>

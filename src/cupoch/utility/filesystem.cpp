@@ -57,6 +57,16 @@ std::string GetFileParentDirectory(const std::string &filename) {
     }
 }
 
+std::string GetWorkingDirectory() {
+    char buff[PATH_MAX + 1];
+    getcwd(buff, PATH_MAX + 1);
+    return std::string(buff);
+}
+
+bool ChangeWorkingDirectory(const std::string &directory) {
+    return (chdir(directory.c_str()) == 0);
+}
+
 FILE *FOpen(const std::string &filename, const std::string &mode) {
     FILE *fp;
 #ifndef _WIN32

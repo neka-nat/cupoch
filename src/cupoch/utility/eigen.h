@@ -53,5 +53,9 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
         int iteration_num,
         bool verbose = true);
 
+Eigen::Matrix3f RotationMatrixX(float radians);
+Eigen::Matrix3f RotationMatrixY(float radians);
+Eigen::Matrix3f RotationMatrixZ(float radians);
+
 }  // namespace utility
 }  // namespace cupoch

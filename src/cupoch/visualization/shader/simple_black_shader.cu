@@ -84,7 +84,7 @@ bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
 
     Eigen::Vector3f* raw_points_ptr;
     size_t n_bytes;
-    cudaSafeCall(cudaGraphicsMapResources(3, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsMapResources(1, cuda_graphics_resources_));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
     thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
 

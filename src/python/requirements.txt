@@ -1,2 +1,2 @@
 numpy
-open3d-python
+open3d
