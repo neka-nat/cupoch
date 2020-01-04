@@ -124,6 +124,15 @@ public:
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
 
+    void CaptureScreenImage(const std::string &filename = "",
+                            bool do_render = true);
+
+    void CaptureDepthImage(const std::string &filename = "",
+                           bool do_render = true,
+                           double depth_scale = 1000.0);
+
+    void CaptureRenderOption(const std::string &filename = "");
+
     ViewControl &GetViewControl() { return *view_control_ptr_; }
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
 
@@ -143,10 +152,23 @@ protected:
     /// The function first sets view point, then draw geometry (pointclouds and
     /// meshes individually).
     virtual void Render();
-    
+
+    void CopyViewStatusToClipboard();
+
+    void CopyViewStatusFromClipboard();
+
     // callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
     virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
+    virtual void MouseMoveCallback(GLFWwindow *window, double x, double y);
+    virtual void MouseScrollCallback(GLFWwindow *window, double x, double y);
+    virtual void MouseButtonCallback(GLFWwindow *window,
+                                     int button,
+                                     int action,
+                                     int mods);
+    virtual void KeyPressCallback(
+            GLFWwindow *window, int key, int scancode, int action, int mods);
+    virtual void WindowCloseCallback(GLFWwindow *window);
 
 protected:
     // window

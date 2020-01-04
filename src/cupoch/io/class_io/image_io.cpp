@@ -5,10 +5,10 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 
-using namespace cupoch;
-using namespace cupoch::io;
+namespace cupoch {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
@@ -28,8 +28,16 @@ static const std::unordered_map<
                 {"jpeg", WriteImageToJPG},
         };
 
+static const std::unordered_map<
+        std::string,
+        std::function<bool(const std::string &, const HostImage &, int)>>
+        file_extension_to_host_image_write_function{
+                {"png", WriteHostImageToPNG},
+        };
+
 }  // unnamed namespace
 
+namespace io {
 
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename) {
@@ -73,3 +81,25 @@ bool WriteImage(const std::string &filename,
     }
     return map_itr->second(filename, image, quality);
 }
+
+bool WriteImage(const std::string &filename,
+                const HostImage &image,
+                int quality /* = 90*/) {
+    std::string filename_ext =
+            utility::filesystem::GetFileExtensionInLowerCase(filename);
+    if (filename_ext.empty()) {
+        utility::LogWarning(
+                "Write geometry::Image failed: unknown file extension.");
+        return false;
+    }
+    auto map_itr = file_extension_to_host_image_write_function.find(filename_ext);
+    if (map_itr == file_extension_to_host_image_write_function.end()) {
+        utility::LogWarning(
+                "Write geometry::Image failed: unknown file extension.");
+        return false;
+    }
+    return map_itr->second(filename, image, quality);
+}
+
+}  // namespace io
+}  // namespace cupoch

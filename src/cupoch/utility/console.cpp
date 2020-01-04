@@ -1,6 +1,9 @@
 #include "cupoch/utility/console.h"
 
 #include <cstdio>
+#include <ctime>
+
+#include <fmt/chrono.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -37,6 +40,11 @@ void Logger::ResetConsoleColor() {
 #else
     printf("%c[0;m", 0x1B);
 #endif
+}
+
+std::string GetCurrentTimeStamp() {
+    std::time_t t = std::time(nullptr);
+    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
 }
 
 }  // namespace utility

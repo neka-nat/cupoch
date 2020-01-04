@@ -75,6 +75,66 @@ bool Visualizer::CreateVisualizerWindow(
     glfwSetWindowPos(window_, left, top);
     glfwSetWindowUserPointer(window_, this);
 
+#ifdef __APPLE__
+    // Some hacks to get pixel_to_screen_coordinate_
+    glfwSetWindowSize(window_, 100, 100);
+    glfwSetWindowPos(window_, 100, 100);
+    int pixel_width_in_osx, pixel_height_in_osx;
+    glfwGetFramebufferSize(window_, &pixel_width_in_osx, &pixel_height_in_osx);
+    if (pixel_width_in_osx > 0) {
+        pixel_to_screen_coordinate_ = 100.0 / (double)pixel_width_in_osx;
+    } else {
+        pixel_to_screen_coordinate_ = 1.0;
+    }
+    glfwSetWindowSize(window_, std::round(width * pixel_to_screen_coordinate_),
+                      std::round(height * pixel_to_screen_coordinate_));
+    glfwSetWindowPos(window_, std::round(left * pixel_to_screen_coordinate_),
+                     std::round(top * pixel_to_screen_coordinate_));
+#endif  //__APPLE__
+
+    auto window_refresh_callback = [](GLFWwindow *window) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->WindowRefreshCallback(window);
+    };
+    glfwSetWindowRefreshCallback(window_, window_refresh_callback);
+
+    auto window_resize_callback = [](GLFWwindow *window, int w, int h) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->WindowResizeCallback(window, w, h);
+    };
+    glfwSetFramebufferSizeCallback(window_, window_resize_callback);
+
+    auto mouse_move_callback = [](GLFWwindow *window, double x, double y) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->MouseMoveCallback(window, x, y);
+    };
+    glfwSetCursorPosCallback(window_, mouse_move_callback);
+
+    auto mouse_scroll_callback = [](GLFWwindow *window, double x, double y) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->MouseScrollCallback(window, x, y);
+    };
+    glfwSetScrollCallback(window_, mouse_scroll_callback);
+
+    auto mouse_button_callback = [](GLFWwindow *window, int button, int action,
+                                    int mods) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->MouseButtonCallback(window, button, action, mods);
+    };
+    glfwSetMouseButtonCallback(window_, mouse_button_callback);
+
+    auto key_press_callback = [](GLFWwindow *window, int key, int scancode,
+                                 int action, int mods) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->KeyPressCallback(window, key, scancode, action, mods);
+    };
+    glfwSetKeyCallback(window_, key_press_callback);
+
+    auto window_close_callback = [](GLFWwindow *window) {
+        static_cast<Visualizer *>(glfwGetWindowUserPointer(window))
+                ->WindowCloseCallback(window);
+    };
+    glfwSetWindowCloseCallback(window_, window_close_callback);
 
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);

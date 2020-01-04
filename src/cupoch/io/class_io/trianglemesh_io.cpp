@@ -3,10 +3,10 @@
 #include "cupoch/utility/console.h"
 #include <unordered_map>
 
-using namespace cupoch;
-using namespace cupoch::io;
+namespace cupoch {
 
 namespace {
+using namespace io;
 
 static const std::unordered_map<
         std::string,
@@ -34,6 +34,7 @@ static const std::unordered_map<
 
 }  // unnamed namespace
 
+namespace io {
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
@@ -105,3 +106,6 @@ bool WriteTriangleMesh(const std::string &filename,
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
 }
+
+}  // namespace io
+}  // namespace cupoch

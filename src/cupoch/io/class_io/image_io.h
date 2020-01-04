@@ -13,6 +13,17 @@ public:
     void FromDevice(const geometry::Image& image);
     void ToDevice(geometry::Image& image) const;
     void Clear();
+    HostImage& Prepare(int width,
+                       int height,
+                       int num_of_channels,
+                       int bytes_per_channel);
+    int BytesPerLine() const {
+        return width_ * num_of_channels_ * bytes_per_channel_;
+    }
+    int width_ = 0;
+    int height_ = 0;
+    int num_of_channels_ = 0;
+    int bytes_per_channel_ = 0;
     thrust::host_vector<uint8_t> data_;
 };
 
@@ -34,12 +45,18 @@ bool ReadImage(const std::string &filename, geometry::Image &image);
 bool WriteImage(const std::string &filename,
                 const geometry::Image &image,
                 int quality = 90);
+bool WriteImage(const std::string &filename,
+                const HostImage &image,
+                int quality = 90);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality);
+bool WriteHostImageToPNG(const std::string &filename,
+                         const HostImage &image,
+                         int quality);
 
 bool ReadImageFromJPG(const std::string &filename, geometry::Image &image);
 

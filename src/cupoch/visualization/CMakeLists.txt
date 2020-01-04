@@ -26,5 +26,5 @@ file(GLOB_RECURSE VISUALIZATION_CUDA_SOURCE_FILES "*.cu")
 
 # create object library
 cuda_add_library(cupoch_visualization ${VISUALIZATION_CUDA_SOURCE_FILES} ${VISUALIZATION_CPP_SOURCE_FILES})
-target_link_libraries(cupoch_visualization cupoch_geometry cupoch_camera ${3RDPARTY_LIBRARIES})
+target_link_libraries(cupoch_visualization cupoch_geometry cupoch_io cupoch_camera ${3RDPARTY_LIBRARIES})
 add_dependencies(cupoch_visualization shader_file_target)

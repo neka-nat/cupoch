@@ -279,5 +279,7 @@ private:
     bool active_;
 };
 
+std::string GetCurrentTimeStamp();
+
 }  // namespace utility
 }  // namespace cupoch
