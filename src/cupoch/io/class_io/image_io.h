@@ -1,9 +1,14 @@
 #pragma once
 
 #include <string>
-#include "cupoch/geometry/image.h"
+#include <thrust/host_vector.h>
 
 namespace cupoch {
+
+namespace geometry {
+class Image;
+}
+
 namespace io {
 
 class HostImage {

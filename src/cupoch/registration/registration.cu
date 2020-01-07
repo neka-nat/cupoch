@@ -56,10 +56,9 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     auto end = thrust::remove_if(thrust::cuda::par.on(utility::GetStream(1)),
                                  result.correspondence_set_.begin(), result.correspondence_set_.end(),
                                  [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
-    cudaStreamSynchronize(utility::GetStream(1));
     int n_out = thrust::distance(result.correspondence_set_.begin(), end);
     result.correspondence_set_.resize(n_out);
-    cudaDeviceSynchronize();
+    cudaSafeCall(cudaDeviceSynchronize());
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;

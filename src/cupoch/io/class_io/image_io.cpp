@@ -1,4 +1,5 @@
 #include "cupoch/io/class_io/image_io.h"
+#include "cupoch/geometry/image.h"
 
 #include <unordered_map>
 

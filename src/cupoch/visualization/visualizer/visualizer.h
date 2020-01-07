@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <unordered_map>
 
-#include "cupoch/geometry/geometry.h"
 #include "cupoch/visualization/shader/geometry_renderer.h"
 #include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/visualization/visualizer/render_option.h"
@@ -16,6 +15,7 @@
 namespace cupoch {
 
 namespace geometry {
+class Geometry;
 class TriangleMesh;
 class Image;
 }  // namespace geometry

@@ -20,6 +20,8 @@ if __name__ == "__main__":
     elapsed_time = time.time() - start
     print(reg_p2p.transformation)
     print("ICP (CPU) [sec]:", elapsed_time)
+    source_cpu.transform(reg_p2p.transformation)
+    o3d.visualization.draw_geometries([source_cpu, target_cpu])
 
     start = time.time()
     reg_p2p = cph.registration.registration_icp(
@@ -28,5 +30,6 @@ if __name__ == "__main__":
     elapsed_time = time.time() - start
     print(reg_p2p.transformation)
     print("ICP (GPU) [sec]:", elapsed_time)
+    source_gpu.transform(reg_p2p.transformation)
     cph.visualization.draw_geometries([source_gpu, target_gpu])
 

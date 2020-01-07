@@ -152,7 +152,6 @@ bool KDTreeFlann::SetRawData(const thrust::device_vector<T> &data) {
     flann_dataset_.reset(new flann::Matrix<float>((float*)thrust::raw_pointer_cast(data_.data()),
                                                   dataset_size_, dimension_, sizeof(float) * 4));
     flann::KDTreeCuda3dIndexParams index_params;
-    index_params["input_is_gpu_float4"] = true;
     flann_index_.reset(new flann::KDTreeCuda3dIndex<flann::L2<float>>(
             *flann_dataset_, index_params));
     flann_index_->buildIndex();

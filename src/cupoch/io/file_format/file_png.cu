@@ -1,6 +1,7 @@
 #include <png.h>
 
 #include "cupoch/io/class_io/image_io.h"
+#include "cupoch/geometry/image.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
