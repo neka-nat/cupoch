@@ -8,9 +8,7 @@
 #include <unordered_map>
 
 #include "cupoch/visualization/shader/geometry_renderer.h"
-#include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/visualization/visualizer/render_option.h"
-#include "cupoch/visualization/visualizer/view_control.h"
 
 namespace cupoch {
 
@@ -21,6 +19,7 @@ class Image;
 }  // namespace geometry
 
 namespace visualization {
+class ViewControl;
 
 class Visualizer {
 public:
@@ -123,6 +122,8 @@ public:
     virtual void PrintVisualizerHelp();
     virtual void UpdateWindowTitle();
     virtual void BuildUtilities();
+
+    virtual void RenderImGui();
 
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);

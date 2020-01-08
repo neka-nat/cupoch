@@ -1,4 +1,5 @@
 #include "cupoch/visualization/visualizer/visualizer.h"
+#include "cupoch/visualization/utility/color_map.h"
 
 #include "cupoch/utility/console.h"
 

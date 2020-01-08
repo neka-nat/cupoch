@@ -149,7 +149,7 @@ public:
 
 public:
     // global options
-    Eigen::Vector3f background_color_ = Eigen::Vector3f::Ones();
+    Eigen::Vector3f background_color_ = Eigen::Vector3f::Zero();
     TextureInterpolationOption interpolation_option_ =
             TextureInterpolationOption::Nearest;
     DepthFunc depthFunc_ = DepthFunc::Less;

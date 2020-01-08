@@ -4,7 +4,7 @@
 #include "cupoch/visualization/shader/simple_shader.h"
 #include "cupoch/visualization/shader/phong_shader.h"
 #include "cupoch/visualization/shader/normal_shader.h"
-#include "cupoch/visualization/shader/simple_black_shader.h"
+#include "cupoch/visualization/shader/simple_white_shader.h"
 #include "cupoch/visualization/shader/image_shader.h"
 #include "cupoch/visualization/shader/texture_simple_shader.h"
 #include "cupoch/visualization/shader/texture_phong_shader.h"
@@ -67,7 +67,7 @@ protected:
     SimpleShaderForPointCloud simple_point_shader_;
     PhongShaderForPointCloud phong_point_shader_;
     NormalShaderForPointCloud normal_point_shader_;
-    SimpleBlackShaderForPointCloudNormal simpleblack_normal_shader_;
+    SimpleWhiteShaderForPointCloudNormal simplewhite_normal_shader_;
 };
 
 class TriangleMeshRenderer : public GeometryRenderer {
@@ -86,7 +86,7 @@ protected:
     PhongShaderForTriangleMesh phong_mesh_shader_;
     TexturePhongShaderForTriangleMesh texture_phong_mesh_shader_;
     NormalShaderForTriangleMesh normal_mesh_shader_;
-    SimpleBlackShaderForTriangleMeshWireFrame simpleblack_wireframe_shader_;
+    SimpleWhiteShaderForTriangleMeshWireFrame simplewhite_wireframe_shader_;
 };
 
 class CoordinateFrameRenderer : public GeometryRenderer {

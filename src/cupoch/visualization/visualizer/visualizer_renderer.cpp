@@ -4,6 +4,9 @@
 #include "cupoch/io/class_io/ijson_convertible_io.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/console.h"
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_glfw.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;

@@ -1,12 +1,12 @@
 #pragma once
 #include "cupoch/utility/platform.h"
+#include <vector>
+#include <string>
 #include <Eigen/Core>
 #include <thrust/functional.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
-#include <vector>
-#include <string>
 
 namespace thrust {
 

@@ -1,4 +1,4 @@
-#include "cupoch/visualization/shader/simple_black_shader.h"
+#include "cupoch/visualization/shader/simple_white_shader.h"
 
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
@@ -46,9 +46,9 @@ struct copy_mesh_wireflame_functor {
 
 }
 
-bool SimpleBlackShader::Compile() {
-    if (CompileShaders(simple_black_vertex_shader, NULL,
-                       simple_black_fragment_shader) == false) {
+bool SimpleWhiteShader::Compile() {
+    if (CompileShaders(simple_white_vertex_shader, NULL,
+                       simple_white_fragment_shader) == false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -57,12 +57,12 @@ bool SimpleBlackShader::Compile() {
     return true;
 }
 
-void SimpleBlackShader::Release() {
+void SimpleWhiteShader::Release() {
     UnbindGeometry();
     ReleaseProgram();
 }
 
-bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
+bool SimpleWhiteShader::BindGeometry(const geometry::Geometry &geometry,
                                      const RenderOption &option,
                                      const ViewControl &view) {
     // If there is already geometry, we first unbind it.
@@ -98,7 +98,7 @@ bool SimpleBlackShader::BindGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-bool SimpleBlackShader::RenderGeometry(const geometry::Geometry &geometry,
+bool SimpleWhiteShader::RenderGeometry(const geometry::Geometry &geometry,
                                        const RenderOption &option,
                                        const ViewControl &view) {
     if (PrepareRendering(geometry, option, view) == false) {
@@ -115,14 +115,14 @@ bool SimpleBlackShader::RenderGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-void SimpleBlackShader::UnbindGeometry() {
+void SimpleWhiteShader::UnbindGeometry() {
     if (bound_) {
         glDeleteBuffers(1, &vertex_position_buffer_);
         bound_ = false;
     }
 }
 
-bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
+bool SimpleWhiteShaderForPointCloudNormal::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -136,7 +136,7 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareRendering(
     return true;
 }
 
-bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
+bool SimpleWhiteShaderForPointCloudNormal::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
@@ -163,11 +163,11 @@ bool SimpleBlackShaderForPointCloudNormal::PrepareBinding(
     return true;
 }
 
-size_t SimpleBlackShaderForPointCloudNormal::GetDataSize(const geometry::Geometry &geometry) const {
-    return ((const geometry::PointCloud &)geometry).points_.size();
+size_t SimpleWhiteShaderForPointCloudNormal::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::PointCloud &)geometry).points_.size() * 2;
 }
 
-bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
+bool SimpleWhiteShaderForTriangleMeshWireFrame::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -184,7 +184,7 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareRendering(
     return true;
 }
 
-bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
+bool SimpleWhiteShaderForTriangleMeshWireFrame::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
@@ -209,6 +209,6 @@ bool SimpleBlackShaderForTriangleMeshWireFrame::PrepareBinding(
     return true;
 }
 
-size_t SimpleBlackShaderForTriangleMeshWireFrame::GetDataSize(const geometry::Geometry &geometry) const {
+size_t SimpleWhiteShaderForTriangleMeshWireFrame::GetDataSize(const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }

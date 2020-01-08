@@ -20,7 +20,7 @@ bool PointCloudRenderer::Render(const RenderOption &option,
         }
         if (option.point_show_normal_) {
             success &=
-                    simpleblack_normal_shader_.Render(pointcloud, option, view);
+                    simplewhite_normal_shader_.Render(pointcloud, option, view);
         }
     } else {
         success &= simple_point_shader_.Render(pointcloud, option, view);
@@ -42,7 +42,7 @@ bool PointCloudRenderer::UpdateGeometry() {
     simple_point_shader_.InvalidateGeometry();
     phong_point_shader_.InvalidateGeometry();
     normal_point_shader_.InvalidateGeometry();
-    simpleblack_normal_shader_.InvalidateGeometry();
+    simplewhite_normal_shader_.InvalidateGeometry();
     return true;
 }
 
@@ -71,7 +71,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
         }
     }
     if (option.mesh_show_wireframe_) {
-        success &= simpleblack_wireframe_shader_.Render(mesh, option, view);
+        success &= simplewhite_wireframe_shader_.Render(mesh, option, view);
     }
     return success;
 }
@@ -92,7 +92,7 @@ bool TriangleMeshRenderer::UpdateGeometry() {
     phong_mesh_shader_.InvalidateGeometry();
     texture_phong_mesh_shader_.InvalidateGeometry();
     normal_mesh_shader_.InvalidateGeometry();
-    simpleblack_wireframe_shader_.InvalidateGeometry();
+    simplewhite_wireframe_shader_.InvalidateGeometry();
     return true;
 }
 

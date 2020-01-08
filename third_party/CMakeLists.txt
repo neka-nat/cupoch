@@ -229,8 +229,12 @@ set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
 # imgui
 add_library(imgui STATIC imgui/imgui.cpp
             imgui/imgui_draw.cpp
-            imgui/imgui_widgets.cpp)
-set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+            imgui/imgui_widgets.cpp
+            imgui/examples/imgui_impl_glfw.cpp
+            imgui/examples/imgui_impl_opengl3.cpp)
+target_include_directories(imgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
+set(imgui_LIBRARIES imgui)
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
@@ -260,6 +264,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
+     ${imgui_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)

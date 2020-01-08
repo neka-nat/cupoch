@@ -10,12 +10,12 @@ namespace visualization {
 
 namespace glsl {
 
-class SimpleBlackShader : public ShaderWrapper {
+class SimpleWhiteShader : public ShaderWrapper {
 public:
-    ~SimpleBlackShader() override { Release(); }
+    ~SimpleWhiteShader() override { Release(); }
 
 protected:
-    SimpleBlackShader(const std::string &name) : ShaderWrapper(name) {
+    SimpleWhiteShader(const std::string &name) : ShaderWrapper(name) {
         Compile();
     }
 
@@ -45,10 +45,10 @@ protected:
     GLuint MVP_;
 };
 
-class SimpleBlackShaderForPointCloudNormal : public SimpleBlackShader {
+class SimpleWhiteShaderForPointCloudNormal : public SimpleWhiteShader {
 public:
-    SimpleBlackShaderForPointCloudNormal()
-        : SimpleBlackShader("SimpleBlackShaderForPointCloudNormal") {}
+    SimpleWhiteShaderForPointCloudNormal()
+        : SimpleWhiteShader("SimpleWhiteShaderForPointCloudNormal") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,
@@ -61,10 +61,10 @@ protected:
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
-class SimpleBlackShaderForTriangleMeshWireFrame : public SimpleBlackShader {
+class SimpleWhiteShaderForTriangleMeshWireFrame : public SimpleWhiteShader {
 public:
-    SimpleBlackShaderForTriangleMeshWireFrame()
-        : SimpleBlackShader("SimpleBlackShaderForTriangleMeshWireFrame") {}
+    SimpleWhiteShaderForTriangleMeshWireFrame()
+        : SimpleWhiteShader("SimpleWhiteShaderForTriangleMeshWireFrame") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,

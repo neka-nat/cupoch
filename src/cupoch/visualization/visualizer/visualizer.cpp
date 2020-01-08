@@ -3,6 +3,10 @@
 #include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_glfw.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
+
 using namespace cupoch;
 using namespace cupoch::visualization;
 
@@ -157,12 +161,23 @@ bool Visualizer::CreateVisualizerWindow(
 
     UpdateWindowTitle();
 
+    const char* glsl_version = "#version 130";
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+    // Setup ImGui binding
+    ImGui_ImplGlfw_InitForOpenGL(window_, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
     is_initialized_ = true;
     return true;
 }
 
 void Visualizer::DestroyVisualizerWindow() {
     is_initialized_ = false;
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glDeleteVertexArrays(1, &vao_id_);
     glfwDestroyWindow(window_);
 }
@@ -219,7 +234,22 @@ void Visualizer::Run() {
             // and the redraw event should be triggered.
             UpdateRender();
         }
+        RenderImGui();
     }
+}
+
+void Visualizer::RenderImGui() {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    {
+        ImGui::Begin("Infomation");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::End();
+    }
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(window_);
 }
 
 void Visualizer::Close() {

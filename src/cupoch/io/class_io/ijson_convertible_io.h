@@ -2,9 +2,12 @@
 
 #include <string>
 
-#include "cupoch/utility/ijson_convertible.h"
-
 namespace cupoch {
+
+namespace utility {
+class IJsonConvertible;
+}
+
 namespace io {
 
 /// The general entrance for reading an IJsonConvertible from a file

@@ -8,5 +8,6 @@ verify_ssl = true
 [packages]
 numpy = "*"
 "open3d" = "*"
+matplotlib = "*"
 
 [requires]
