@@ -22,7 +22,7 @@ struct copy_pointcloud_functor{
     const bool has_colors_;
     const RenderOption::PointColorOption color_option_;
     const ViewControl view_;
-    const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
+    const ColorMap* global_color_map_ = thrust::raw_pointer_cast(GetGlobalColorMap());
     __device__
     thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& pt_cl) {
         const Eigen::Vector3f &point = thrust::get<0>(pt_cl);
@@ -30,15 +30,15 @@ struct copy_pointcloud_functor{
         Eigen::Vector3f color_tmp;
         switch (color_option_) {
             case RenderOption::PointColorOption::XCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
+                color_tmp = global_color_map_->GetColor(
                             view_.GetBoundingBox().GetXPercentage(point(0)));
                 break;
             case RenderOption::PointColorOption::YCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
+                color_tmp = global_color_map_->GetColor(
                             view_.GetBoundingBox().GetYPercentage(point(1)));
                 break;
             case RenderOption::PointColorOption::ZCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
+                color_tmp = global_color_map_->GetColor(
                             view_.GetBoundingBox().GetZPercentage(point(2)));
                 break;
             case RenderOption::PointColorOption::Color:
@@ -47,7 +47,7 @@ struct copy_pointcloud_functor{
                 if (has_colors_) {
                     color_tmp = color;
                 } else {
-                    color_tmp = global_color_map_.get()->GetColor(
+                    color_tmp = global_color_map_->GetColor(
                                 view_.GetBoundingBox().GetZPercentage(point(2)));
                 }
                 break;
