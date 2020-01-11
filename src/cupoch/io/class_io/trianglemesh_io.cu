@@ -1,4 +1,5 @@
 #include "cupoch/io/class_io/trianglemesh_io.h"
+#include "cupoch/geometry/trianglemesh.h"
 
 using namespace cupoch;
 using namespace cupoch::io;

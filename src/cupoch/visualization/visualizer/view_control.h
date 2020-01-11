@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cupoch/camera/pinhole_camera_parameters.h"
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/visualization/utility/gl_helper.h"
 #include "cupoch/visualization/visualizer/view_parameters.h"

@@ -8,11 +8,14 @@
 #include <pybind11/pybind11.h>  // Include first to suppress compiler warnings
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <thrust/host_vector.h>
-#include "cupoch/utility/eigen.h"
 
 namespace py = pybind11;
 using namespace py::literals;
+
+namespace thrust {
+// forward declaration of host_vector
+template<typename T, typename Alloc> class host_vector;
+}
 
 // some helper functions
 namespace pybind11 {
@@ -36,6 +39,6 @@ void bind_copy_functions(Class_ &cl) {
 }  // namespace detail
 }  // namespace pybind11
 
-PYBIND11_MAKE_OPAQUE(thrust::host_vector<int>);
-PYBIND11_MAKE_OPAQUE(thrust::host_vector<float>);
-PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<int, std::allocator<int>>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<float, std::allocator<float>>);
+PYBIND11_MAKE_OPAQUE(thrust::host_vector<Eigen::Vector3f, std::allocator<Eigen::Vector3f>>);

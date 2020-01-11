@@ -1,5 +1,5 @@
 #include "cupoch/geometry/pointcloud.h"
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/utility/console.h"

@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 #include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/helper.h"
@@ -33,6 +34,7 @@ public:
 
     MeshBase();
     virtual ~MeshBase();
+    MeshBase(const MeshBase& other);
 
     thrust::host_vector<Eigen::Vector3f> GetVertices() const;
     void SetVertices(const thrust::host_vector<Eigen::Vector3f>& vertices);
@@ -88,6 +90,12 @@ protected:
     MeshBase(Geometry::GeometryType type);
     MeshBase(Geometry::GeometryType type,
              const thrust::device_vector<Eigen::Vector3f> &vertices);
+    MeshBase(Geometry::GeometryType type,
+             const thrust::device_vector<Eigen::Vector3f> &vertices,
+             const thrust::device_vector<Eigen::Vector3f> &vertex_normals,
+             const thrust::device_vector<Eigen::Vector3f> &vertex_colors);
+    MeshBase(Geometry::GeometryType type,
+             const thrust::host_vector<Eigen::Vector3f> &vertices);
 public:
     thrust::device_vector<Eigen::Vector3f> vertices_;
     thrust::device_vector<Eigen::Vector3f> vertex_normals_;

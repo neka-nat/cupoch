@@ -2,7 +2,7 @@ set(PACKAGE_NAME cupoch)
 
 file(GLOB_RECURSE PY_ALL_SOURCE_FILES "cupoch_pybind/*.cpp")
 
-pybind11_add_module(${PACKAGE_NAME}
+add_library(${PACKAGE_NAME} SHARED
     ${PY_ALL_SOURCE_FILES}
 )
 
@@ -11,24 +11,30 @@ target_include_directories(${PACKAGE_NAME} PRIVATE
 )
 # Suppress Pybind11 warnings
 target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
-    ${PYBIND11_INCLUDE_DIR}
+    ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
                       cupoch_visualization cupoch_io cupoch_geometry cupoch_utility
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
 
+set_target_properties(${PACKAGE_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
+set_target_properties(${PACKAGE_NAME} PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
+set_target_properties(${PACKAGE_NAME} PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+set_target_properties(${PACKAGE_NAME} PROPERTIES CUDA_VISIBILITY_PRESET "hidden")
+target_compile_options(${PACKAGE_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${PYBIND11_CPP_STANDARD}>)
+
 # At `make`: cupoch.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default locaiton is `build/lib/python`
 set(PYTHON_COMPILED_MODULE_DIR "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/python")
 set_target_properties(${PACKAGE_NAME} PROPERTIES
-                      FOLDER "Python"
+                      FOLDER "python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
 
 # Use `make python-package` to create the python package in the build directory
 # The python package will be created at PYTHON_PACKAGE_DIR. It contains:
-# 1) Pure-python code and misc files, copied from src/Python/package
+# 1) Pure-python code and misc files, copied from src/python/package
 # 2) The compiled python-C++ module, i.e. cupoch.so (or the equivalents)
 # 3) Configured files and supporting files
 # Note: `make python-package` clears PYTHON_COMPILED_MODULE_DIR first every time

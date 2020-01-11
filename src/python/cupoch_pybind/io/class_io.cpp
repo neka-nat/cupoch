@@ -1,12 +1,82 @@
 #include "cupoch_pybind/io/io.h"
+#include "cupoch_pybind/docstring.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/image.h"
+#include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/io/class_io/pointcloud_io.h"
+#include "cupoch/io/class_io/image_io.h"
+#include "cupoch/io/class_io/trianglemesh_io.h"
 
 #include <string>
 
 using namespace cupoch;
 
+// IO functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"filename", "Path to file."},
+                // Write options
+                {"compressed",
+                 "Set to ``True`` to write in compressed format."},
+                {"format",
+                 "The format of the input file. When not specified or set as "
+                 "``auto``, the format is inferred from file extension name."},
+                {"remove_nan_points",
+                 "If true, all points that include a NaN are removed from "
+                 "the PointCloud."},
+                {"remove_infinite_points",
+                 "If true, all points that include an infinite value are "
+                 "removed from the PointCloud."},
+                {"quality", "Quality of the output file."},
+                {"write_ascii",
+                 "Set to ``True`` to output in ascii format, otherwise binary "
+                 "format will be used."},
+                {"write_vertex_normals",
+                 "Set to ``False`` to not write any vertex normals, even if "
+                 "present on the mesh"},
+                {"write_vertex_colors",
+                 "Set to ``False`` to not write any vertex colors, even if "
+                 "present on the mesh"},
+                // Entities
+                {"config", "AzureKinectSensor's config file."},
+                {"pointcloud", "The ``PointCloud`` object for I/O"},
+                {"mesh", "The ``TriangleMesh`` object for I/O"},
+                {"line_set", "The ``LineSet`` object for I/O"},
+                {"image", "The ``Image`` object for I/O"},
+                {"voxel_grid", "The ``VoxelGrid`` object for I/O"},
+                {"trajectory",
+                 "The ``PinholeCameraTrajectory`` object for I/O"},
+                {"intrinsic", "The ``PinholeCameraIntrinsic`` object for I/O"},
+                {"parameters",
+                 "The ``PinholeCameraParameters`` object for I/O"},
+                {"pose_graph", "The ``PoseGraph`` object for I/O"},
+                {"feature", "The ``Feature`` object for I/O"},
+                {"print_progress",
+                 "If set to true a progress bar is visualized in the console"},
+};
+
 void pybind_class_io(py::module &m_io) {
+    // cupoch::geometry::Image
+    m_io.def("read_image",
+             [](const std::string &filename) {
+                 geometry::Image image;
+                 io::ReadImage(filename, image);
+                 return image;
+             },
+             "Function to read Image from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_image",
+             [](const std::string &filename, const geometry::Image &image,
+                int quality) {
+                 return io::WriteImage(filename, image, quality);
+             },
+             "Function to write Image to file", "filename"_a, "image"_a,
+             "quality"_a = 90);
+    docstring::FunctionDocInject(m_io, "write_image",
+                                 map_shared_argument_docstrings);
+
     // cupoch::geometry::PointCloud
     m_io.def("read_point_cloud",
              [](const std::string &filename, const std::string &format,
@@ -20,6 +90,8 @@ void pybind_class_io(py::module &m_io) {
              "Function to read PointCloud from file", "filename"_a,
              "format"_a = "auto", "remove_nan_points"_a = true,
              "remove_infinite_points"_a = true, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_point_cloud",
+                                 map_shared_argument_docstrings);
 
     m_io.def("write_point_cloud",
              [](const std::string &filename,
@@ -31,4 +103,35 @@ void pybind_class_io(py::module &m_io) {
              "Function to write PointCloud to file", "filename"_a,
              "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
              "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    // cupoch::geometry::TriangleMesh
+    m_io.def("read_triangle_mesh",
+             [](const std::string &filename, bool print_progress) {
+                 geometry::TriangleMesh mesh;
+                 io::ReadTriangleMesh(filename, mesh, print_progress);
+                 return mesh;
+             },
+             "Function to read TriangleMesh from file", "filename"_a,
+             "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_triangle_mesh",
+             [](const std::string &filename, const geometry::TriangleMesh &mesh,
+                bool write_ascii, bool compressed, bool write_vertex_normals,
+                bool write_vertex_colors, bool write_triangle_uvs,
+                bool print_progress) {
+                 return io::WriteTriangleMesh(
+                         filename, mesh, write_ascii, compressed,
+                         write_vertex_normals, write_vertex_colors,
+                         write_triangle_uvs, print_progress);
+             },
+             "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+             "write_ascii"_a = false, "compressed"_a = false,
+             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+             "write_triangle_uvs"_a = true, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
 }

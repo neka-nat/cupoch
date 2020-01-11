@@ -1,11 +1,16 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <string>
-
+#include <thrust/host_vector.h>
 #include "cupoch/io/class_io/image_io.h"
-#include "cupoch/geometry/trianglemesh.h"
 
 namespace cupoch {
+
+namespace geometry {
+class TriangleMesh;
+}
+
 namespace io {
 
 struct HostTriangleMesh {

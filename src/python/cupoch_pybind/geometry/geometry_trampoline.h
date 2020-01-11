@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/geometry/geometry2d.h"
 #include "cupoch/geometry/geometry3d.h"

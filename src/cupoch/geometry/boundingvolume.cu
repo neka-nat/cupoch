@@ -1,4 +1,4 @@
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/platform.h"

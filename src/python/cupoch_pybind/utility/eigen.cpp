@@ -321,7 +321,7 @@ Example usage
             m, "Matrix4fVector", "thrust::host_vector<Eigen::Matrix4f>");
     matrix4fvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
-                return "Convert float64 numpy array of shape ``(n, 4, 4)`` to "
+                return "Convert float32 numpy array of shape ``(n, 4, 4)`` to "
                        "Cupoch format.";
             }),
             py::none(), py::none(), "");

@@ -8,7 +8,38 @@ add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
 )
 
-project(cupoch)
+# central location for specifying the Cupoch version
+file(STRINGS "src/cupoch/version.txt" CUPOCH_VERSION_READ)
+foreach(ver ${CUPOCH_VERSION_READ})
+  if (ver MATCHES "CUPOCH_VERSION_(MAJOR|MINOR|PATCH|TWEAK) +([^ ]+)$")
+    set(CUPOCH_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
+  endif()
+endforeach()
+string(CONCAT CUPOCH_VERSION "${CUPOCH_VERSION_MAJOR}"
+                             ".${CUPOCH_VERSION_MINOR}"
+                             ".${CUPOCH_VERSION_PATCH}"
+                             ".${CUPOCH_VERSION_TWEAK}")
+project(cupoch VERSION ${CUPOCH_VERSION})
+message(STATUS "cupoch ${PROJECT_VERSION}")
+
+# npm version has to be MAJOR.MINOR.PATCH
+string(CONCAT PROJECT_VERSION_THREE_NUMBER "${CUPOCH_VERSION_MAJOR}"
+                                           ".${CUPOCH_VERSION_MINOR}"
+                                           ".${CUPOCH_VERSION_PATCH}")
+
+# PyPI package name controls specifies the repository name on PyPI. The default
+# name is "cupoch". 
+if(NOT DEFINED PYPI_PACKAGE_NAME)
+    set(PYPI_PACKAGE_NAME "cupoch")
+endif()
+
+# set additional info
+set(PROJECT_EMAIL   "nekanat.stock@gmail.com")
+set(PROJECT_HOME    "https://github.com/neka-nat/cupoch")
+set(PROJECT_DOCS    "https://github.com/neka-nat/cupoch")
+set(PROJECT_CODE    "https://github.com/neka-nat/cupoch")
+set(PROJECT_ISSUES  "https://github.com/neka-nat/cupoch/issues")
+
 
 if(WIN32 AND NOT CYGWIN)
     set(DEF_INSTALL_CMAKE_DIR CMake)
@@ -101,6 +132,9 @@ elseif (UNIX)
     # enable c++11
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
+    if (NOT BUILD_SHARED_LIBS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
+    endif (NOT BUILD_SHARED_LIBS)
     add_compile_options(-Wno-deprecated-declarations)
     add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake

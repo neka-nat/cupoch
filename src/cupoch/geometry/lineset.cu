@@ -1,5 +1,5 @@
 #include "cupoch/geometry/lineset.h"
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 
 #include <numeric>
 
@@ -11,6 +11,14 @@ LineSet::LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
 LineSet::LineSet(const thrust::device_vector<Eigen::Vector3f> &points,
                  const thrust::device_vector<Eigen::Vector2i> &lines)
     : Geometry3D(Geometry::GeometryType::LineSet), points_(points), lines_(lines) {}
+
+LineSet::LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
+                 const thrust::host_vector<Eigen::Vector2i> &lines)
+    : Geometry3D(Geometry::GeometryType::LineSet), points_(points), lines_(lines) {}
+
+LineSet::LineSet(const LineSet &other)
+    : Geometry3D(Geometry::GeometryType::LineSet), points_(other.points_),
+      lines_(other.lines_), colors_(other.colors_) {}
 
 LineSet::~LineSet() {}
 

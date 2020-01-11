@@ -1,5 +1,5 @@
-#include "cupoch/geometry/mesh_base.h"
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/meshbase.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/utility/platform.h"
 
 using namespace cupoch;
@@ -7,6 +7,9 @@ using namespace cupoch::geometry;
 
 MeshBase::MeshBase() : Geometry3D(Geometry::GeometryType::MeshBase) {}
 MeshBase::~MeshBase() {}
+MeshBase::MeshBase(const MeshBase& other)
+    : Geometry3D(Geometry::GeometryType::MeshBase), vertices_(other.vertices_),
+      vertex_normals_(other.vertex_normals_), vertex_colors_(other.vertex_colors_) {}
 
 thrust::host_vector<Eigen::Vector3f> MeshBase::GetVertices() const {
     thrust::host_vector<Eigen::Vector3f> vertices = vertices_;
@@ -124,4 +127,15 @@ MeshBase::MeshBase(Geometry::GeometryType type) : Geometry3D(type) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
          const thrust::device_vector<Eigen::Vector3f> &vertices)
+    : Geometry3D(type), vertices_(vertices) {}
+
+MeshBase::MeshBase(Geometry::GeometryType type,
+                   const thrust::device_vector<Eigen::Vector3f> &vertices,
+                   const thrust::device_vector<Eigen::Vector3f> &vertex_normals,
+                   const thrust::device_vector<Eigen::Vector3f> &vertex_colors)
+    : Geometry3D(type), vertices_(vertices),
+      vertex_normals_(vertex_normals), vertex_colors_(vertex_colors) {}
+
+MeshBase::MeshBase(Geometry::GeometryType type,
+         const thrust::host_vector<Eigen::Vector3f> &vertices)
     : Geometry3D(type), vertices_(vertices) {}

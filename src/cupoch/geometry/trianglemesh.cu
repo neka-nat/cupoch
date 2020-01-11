@@ -45,6 +45,15 @@ TriangleMesh::TriangleMesh(const thrust::device_vector<Eigen::Vector3f> &vertice
                            const thrust::device_vector<Eigen::Vector3i> &triangles)
     : MeshBase(Geometry::GeometryType::TriangleMesh, vertices), triangles_(triangles) {}
 
+TriangleMesh::TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
+                           const thrust::host_vector<Eigen::Vector3i> &triangles)
+    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices), triangles_(triangles) {}
+
+TriangleMesh::TriangleMesh(const geometry::TriangleMesh& other)
+    : MeshBase(Geometry::GeometryType::TriangleMesh, other.vertices_, other.vertex_normals_, other.vertex_colors_),
+      triangles_(other.triangles_), triangle_normals_(other.triangle_normals_),
+      adjacency_matrix_(other.adjacency_matrix_), triangle_uvs_(other.triangle_uvs_) {}
+
 thrust::host_vector<Eigen::Vector3i> TriangleMesh::GetTriangles() const {
     thrust::host_vector<Eigen::Vector3i> triangles = triangles_;
     return triangles;

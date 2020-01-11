@@ -1,6 +1,5 @@
 #pragma once
 #include <Eigen/Core>
-#include <thrust/functional.h>
 #include <thrust/tuple.h>
 
 namespace Eigen {

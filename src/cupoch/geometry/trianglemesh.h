@@ -1,5 +1,5 @@
 #pragma once
-#include "cupoch/geometry/mesh_base.h"
+#include "cupoch/geometry/meshbase.h"
 #include "cupoch/geometry/image.h"
 
 
@@ -11,6 +11,9 @@ public:
     TriangleMesh();
     TriangleMesh(const thrust::device_vector<Eigen::Vector3f> &vertices,
                  const thrust::device_vector<Eigen::Vector3i> &triangles);
+    TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
+                 const thrust::host_vector<Eigen::Vector3i> &triangles);
+    TriangleMesh(const geometry::TriangleMesh& other);
     ~TriangleMesh() override;
 
     thrust::host_vector<Eigen::Vector3i> GetTriangles() const;

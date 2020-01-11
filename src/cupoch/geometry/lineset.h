@@ -3,6 +3,7 @@
 #include <Eigen/Core>
 #include <memory>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 #include "cupoch/geometry/geometry3d.h"
 
@@ -19,6 +20,9 @@ public:
     LineSet();
     LineSet(const thrust::device_vector<Eigen::Vector3f> &points,
             const thrust::device_vector<Eigen::Vector2i> &lines);
+    LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
+            const thrust::host_vector<Eigen::Vector2i> &lines);
+    LineSet(const LineSet &other);
     ~LineSet();
 
     void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);

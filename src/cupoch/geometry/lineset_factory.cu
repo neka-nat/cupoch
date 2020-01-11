@@ -1,6 +1,6 @@
 #include <Eigen/Dense>
 
-#include "cupoch/geometry/bounding_volume.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/lineset.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"

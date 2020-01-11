@@ -1,6 +1,8 @@
 #include "cupoch_pybind/geometry/geometry.h"
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
+#include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
 
@@ -16,12 +18,17 @@ void pybind_pointcloud(py::module &m) {
     pointcloud
             .def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
                  "Create a PointCloud from points", "points"_a)
-            .def_property("host_points", &geometry::PointCloud::GetPoints,
-                                         &geometry::PointCloud::SetPoints)
-            .def_property("host_normals", &geometry::PointCloud::GetNormals,
-                                          &geometry::PointCloud::SetNormals)
-            .def_property("host_colors", &geometry::PointCloud::GetColors,
-                                         &geometry::PointCloud::SetColors)
+            .def("__repr__",
+                 [](const geometry::PointCloud &pcd) {
+                     return std::string("geometry::PointCloud with ") +
+                            std::to_string(pcd.points_.size()) + " points.";
+                 })
+            .def_property("points", &geometry::PointCloud::GetPoints,
+                                    &geometry::PointCloud::SetPoints)
+            .def_property("normals", &geometry::PointCloud::GetNormals,
+                                     &geometry::PointCloud::SetNormals)
+            .def_property("colors", &geometry::PointCloud::GetColors,
+                                    &geometry::PointCloud::SetColors)
             .def("has_points", &geometry::PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &geometry::PointCloud::HasNormals,
@@ -33,11 +40,33 @@ void pybind_pointcloud(py::module &m) {
             .def("transform", &geometry::PointCloud::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
+            .def("paint_uniform_color",
+                 &geometry::PointCloud::PaintUniformColor, "color"_a,
+                 "Assigns each point in the PointCloud the same color.")
+            .def("select_down_sample", &geometry::PointCloud::SelectDownSample,
+                 "Function to select points from input pointcloud into output "
+                 "pointcloud. ``indices``: "
+                 "Indices of points to be selected. ``invert``: Set to "
+                 "``True`` to "
+                 "invert the selection of indices.",
+                 "indices"_a, "invert"_a = false)
             .def("voxel_down_sample", &geometry::PointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "
                  "a voxel",
                  "voxel_size"_a)
+            .def("uniform_down_sample",
+                 &geometry::PointCloud::UniformDownSample,
+                 "Function to downsample input pointcloud into output "
+                 "pointcloud "
+                 "uniformly. The sample is performed in the order of the "
+                 "points with "
+                 "the 0-th point always chosen, not at random.",
+                 "every_k_points"_a)
+            .def("remove_none_finite_points",
+                 &geometry::PointCloud::RemoveNoneFinitePoints,
+                 "Function to remove none-finite points from the PointCloud",
+                 "remove_nan"_a = true, "remove_infinite"_a = true)
             .def("remove_radius_outlier",
                  &geometry::PointCloud::RemoveRadiusOutliersHost,
                  "Function to remove points that have less than nb_points"
@@ -62,5 +91,72 @@ void pybind_pointcloud(py::module &m) {
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
-                 "eps"_a, "min_points"_a, "print_progress"_a = false);
+                 "eps"_a, "min_points"_a, "print_progress"_a = false)
+            .def_static(
+                    "create_from_depth_image",
+                    &geometry::PointCloud::CreateFromDepthImage,
+                    R"(Factory function to create a pointcloud from a depth image and a
+        camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
+        point is:
+              - z = d / depth_scale
+              - x = (u - cx) * z / fx
+              - y = (v - cy) * z / fy
+        )",
+                    "depth"_a, "intrinsic"_a,
+                    "extrinsic"_a = Eigen::Matrix4f::Identity(),
+                    "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
+                    "stride"_a = 1);
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
+    docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color", "RGB color for the PointCloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_down_sample",
+            {{"indices", "Indices of points to be selected."},
+             {"invert",
+              "Set to ``True`` to invert the selection of indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample",
+            {{"voxel_size", "Voxel size to downsample into."},
+             {"invert", "set to ``True`` to invert the selection of indices"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "uniform_down_sample",
+            {{"every_k_points",
+              "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_none_finite_points",
+            {{"remove_nan", "Remove NaN values from the PointCloud"},
+             {"remove_infinite",
+              "Remove infinite values from the PointCloud"}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_radius_outlier",
+            {{"nb_points", "Number of points within the radius."},
+             {"radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_statistical_outlier",
+            {{"nb_neighbors", "Number of neighbors around the target point."},
+             {"std_ratio", "Standard deviation ratio."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "estimate_normals",
+            {{"search_param",
+              "The KDTree search parameters for neighborhood search."},
+             {"fast_normal_computation",
+              "If true, the normal estiamtion uses a non-iterative method to "
+              "extract the eigenvector from the covariance matrix. This is "
+              "faster, but is not as numerical stable."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_to_align_with_direction",
+            {{"orientation_reference",
+              "Normals are oriented with respect to orientation_reference."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "cluster_dbscan",
+            {{"eps",
+              "Density parameter that is used to find neighbouring points."},
+             {"min_points", "Minimum number of points to form a cluster."},
+             {"print_progress",
+              "If true the progress is visualized in the console."}});
+    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
 }
