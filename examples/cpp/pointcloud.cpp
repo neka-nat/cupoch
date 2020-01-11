@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
     if (argc < 2) {utility::LogInfo("Need an argument of point cloud file name."); return 0;}
     auto pcd = io::CreatePointCloudFromFile(argv[1]);
-    // pcd->EstimateNormals();
+    pcd->EstimateNormals();
     visualization::DrawGeometries({pcd});
     return 0;
 }

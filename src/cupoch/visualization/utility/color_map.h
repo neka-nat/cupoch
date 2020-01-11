@@ -17,7 +17,9 @@ public:
     };
 
 public:
+    __host__ __device__
     ColorMap() {}
+    __host__ __device__
     virtual ~ColorMap() {}
 
 public:
@@ -48,14 +50,20 @@ protected:
 class ColorMapGray final : public ColorMap {
 public:
     __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final;
+    Eigen::Vector3f GetColor(float value) const final {
+        return Eigen::Vector3f(value, value, value);
+    }
 };
 
 /// See Matlab's Jet colormap
 class ColorMapJet final : public ColorMap {
 public:
     __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final;
+    Eigen::Vector3f GetColor(float value) const final {
+        return Eigen::Vector3f(JetBase(value * 2.0 - 1.5),   // red
+                               JetBase(value * 2.0 - 1.0),   // green
+                               JetBase(value * 2.0 - 0.5));  // blue
+    }
 
 protected:
     __host__ __device__
@@ -78,25 +86,66 @@ protected:
 class ColorMapSummer final : public ColorMap {
 public:
     __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final;
+    Eigen::Vector3f GetColor(float value) const final {
+        return Eigen::Vector3f(Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+                           Interpolate(value, 0.5, 0.0, 1.0, 1.0), 0.4);
+    }
 };
 
 /// See Matlab's Winter colormap
 class ColorMapWinter final : public ColorMap {
 public:
     __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final;
+    Eigen::Vector3f GetColor(float value) const final {
+        return Eigen::Vector3f(0.0, Interpolate(value, 0.0, 0.0, 1.0, 1.0),
+                               Interpolate(value, 1.0, 0.0, 0.5, 1.0));
+    }
 };
 
 class ColorMapHot final : public ColorMap {
 public:
     __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final;
+    Eigen::Vector3f GetColor(float value) const final {
+        Eigen::Vector3f edges[4] = {
+                Eigen::Vector3f(1.0, 1.0, 1.0),
+                Eigen::Vector3f(1.0, 1.0, 0.0),
+                Eigen::Vector3f(1.0, 0.0, 0.0),
+                Eigen::Vector3f(0.0, 0.0, 0.0),
+        };
+        if (value < 0.0) {
+            return edges[0];
+        } else if (value < 1.0 / 3.0) {
+            return Interpolate(value, edges[0], 0.0, edges[1], 1.0 / 3.0);
+        } else if (value < 2.0 / 3.0) {
+            return Interpolate(value, edges[1], 1.0 / 3.0, edges[2], 2.0 / 3.0);
+        } else if (value < 1.0) {
+            return Interpolate(value, edges[2], 2.0 / 3.0, edges[3], 1.0);
+        } else {
+            return edges[3];
+        }
+    }
 };
 
 /// Interface functions
-const thrust::device_ptr<const ColorMap> GetGlobalColorMap();
-void SetGlobalColorMap(ColorMap::ColorMapOption option);
+__host__ __device__
+inline Eigen::Vector3f GetColorMapColor(float value, ColorMap::ColorMapOption option) {
+    switch (option) {
+        case ColorMap::ColorMapOption::Gray:
+            return ColorMapGray().GetColor(value);
+        case ColorMap::ColorMapOption::Summer:
+            return ColorMapSummer().GetColor(value);
+        case ColorMap::ColorMapOption::Winter:
+            return ColorMapWinter().GetColor(value);
+        case ColorMap::ColorMapOption::Hot:
+            return ColorMapHot().GetColor(value);
+        case ColorMap::ColorMapOption::Jet:
+        default:
+            return ColorMapJet().GetColor(value);
+    }
+}
+
+ColorMap::ColorMapOption GetGlobalColorMapOption();
+void SetGlobalColorMapOption(ColorMap::ColorMapOption option);
 
 }  // namespace visualization
 }  // namespace cupoch

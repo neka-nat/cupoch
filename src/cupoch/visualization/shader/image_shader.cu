@@ -62,7 +62,7 @@ struct copy_depth_image_functor {
         : depth_(depth), max_depth_(max_depth) {};
     const uint8_t* depth_;
     const int max_depth_;
-    const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
+    const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
     uint8_t operator() (size_t k) const {
         thrust::minimum<float> min;
@@ -70,7 +70,7 @@ struct copy_depth_image_functor {
         int j = k % 3;
         uint16_t *p = (uint16_t *)(depth_ + i * 2);
         float depth = min(float(*p) / float(max_depth_), 1.0);
-        Eigen::Vector3f color = global_color_map_.get()->GetColor(depth);
+        Eigen::Vector3f color = GetColorMapColor(depth, colormap_option_);
         return (uint8_t)(color(j) * 255);
     }
 };

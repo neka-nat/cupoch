@@ -223,7 +223,7 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Mesh color set to DEFAULT.");
             } else if (mods & GLFW_MOD_SHIFT) {
-                SetGlobalColorMap(ColorMap::ColorMapOption::Gray);
+                SetGlobalColorMapOption(ColorMap::ColorMapOption::Gray);
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Color map set to GRAY.");
             } else {
@@ -240,7 +240,7 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Mesh color set to COLOR.");
             } else if (mods & GLFW_MOD_SHIFT) {
-                SetGlobalColorMap(ColorMap::ColorMapOption::Jet);
+                SetGlobalColorMapOption(ColorMap::ColorMapOption::Jet);
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Color map set to JET.");
             } else {
@@ -257,7 +257,7 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Mesh color set to X.");
             } else if (mods & GLFW_MOD_SHIFT) {
-                SetGlobalColorMap(ColorMap::ColorMapOption::Summer);
+                SetGlobalColorMapOption(ColorMap::ColorMapOption::Summer);
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Color map set to SUMMER.");
             } else {
@@ -274,7 +274,7 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Mesh color set to Y.");
             } else if (mods & GLFW_MOD_SHIFT) {
-                SetGlobalColorMap(ColorMap::ColorMapOption::Winter);
+                SetGlobalColorMapOption(ColorMap::ColorMapOption::Winter);
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Color map set to WINTER.");
             } else {
@@ -291,7 +291,7 @@ void Visualizer::KeyPressCallback(
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Mesh color set to Z.");
             } else if (mods & GLFW_MOD_SHIFT) {
-                SetGlobalColorMap(ColorMap::ColorMapOption::Hot);
+                SetGlobalColorMapOption(ColorMap::ColorMapOption::Hot);
                 UpdateGeometry();
                 utility::LogDebug("[Visualizer] Color map set to HOT.");
             } else {

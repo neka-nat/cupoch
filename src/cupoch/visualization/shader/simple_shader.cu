@@ -7,6 +7,7 @@
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/visualizer/render_option.h"
 #include "cupoch/visualization/utility/color_map.h"
+#include <thrust/iterator/constant_iterator.h>
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
@@ -22,7 +23,7 @@ struct copy_pointcloud_functor{
     const bool has_colors_;
     const RenderOption::PointColorOption color_option_;
     const ViewControl view_;
-    const ColorMap* global_color_map_ = thrust::raw_pointer_cast(GetGlobalColorMap());
+    const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
     thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& pt_cl) {
         const Eigen::Vector3f &point = thrust::get<0>(pt_cl);
@@ -30,16 +31,13 @@ struct copy_pointcloud_functor{
         Eigen::Vector3f color_tmp;
         switch (color_option_) {
             case RenderOption::PointColorOption::XCoordinate:
-                color_tmp = global_color_map_->GetColor(
-                            view_.GetBoundingBox().GetXPercentage(point(0)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(point(0)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::YCoordinate:
-                color_tmp = global_color_map_->GetColor(
-                            view_.GetBoundingBox().GetYPercentage(point(1)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(point(1)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::ZCoordinate:
-                color_tmp = global_color_map_->GetColor(
-                            view_.GetBoundingBox().GetZPercentage(point(2)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
@@ -47,8 +45,7 @@ struct copy_pointcloud_functor{
                 if (has_colors_) {
                     color_tmp = color;
                 } else {
-                    color_tmp = global_color_map_->GetColor(
-                                view_.GetBoundingBox().GetZPercentage(point(2)));
+                    color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
                 }
                 break;
         }
@@ -100,7 +97,7 @@ struct copy_trianglemesh_functor {
     const RenderOption::MeshColorOption color_option_;
     const Eigen::Vector3f default_mesh_color_;
     const ViewControl view_;
-    const thrust::device_ptr<const ColorMap> global_color_map_ = GetGlobalColorMap();
+    const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
     thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
         size_t vi = triangles_[k];
@@ -108,16 +105,13 @@ struct copy_trianglemesh_functor {
         Eigen::Vector3f color_tmp;
         switch (color_option_) {
             case RenderOption::MeshColorOption::XCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
-                            view_.GetBoundingBox().GetXPercentage(vertex(0)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertex(0)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::YCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
-                            view_.GetBoundingBox().GetYPercentage(vertex(1)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertex(1)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::ZCoordinate:
-                color_tmp = global_color_map_.get()->GetColor(
-                            view_.GetBoundingBox().GetZPercentage(vertex(2)));
+                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertex(2)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (has_vertex_colors_) {
@@ -258,9 +252,17 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         return false;
     }
     copy_pointcloud_functor func(pointcloud.HasColors(), option.point_color_option_, view);
-    thrust::transform(make_tuple_iterator(pointcloud.points_.begin(), pointcloud.colors_.begin()),
-                      make_tuple_iterator(pointcloud.points_.end(), pointcloud.colors_.end()),
-                      make_tuple_iterator(points, colors), func);
+    if (pointcloud.HasColors()) {
+        thrust::transform(make_tuple_iterator(pointcloud.points_.begin(), pointcloud.colors_.begin()),
+                          make_tuple_iterator(pointcloud.points_.end(), pointcloud.colors_.end()),
+                          make_tuple_iterator(points, colors), func);
+    } else {
+        thrust::transform(make_tuple_iterator(pointcloud.points_.begin(),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                          make_tuple_iterator(pointcloud.points_.end(),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                          make_tuple_iterator(points, colors), func);
+    }
     draw_arrays_mode_ = GL_POINTS;
     draw_arrays_size_ = GLsizei(pointcloud.points_.size());
     return true;
