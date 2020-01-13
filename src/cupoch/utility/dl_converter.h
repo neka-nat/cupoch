@@ -7,8 +7,11 @@
 namespace cupoch {
 namespace utility {
 
-void ToDLPack(const thrust::device_vector<Eigen::Vector3f>& src, DLManagedTensor** dst);
-void FromDLPack(const DLManagedTensor* src, const thrust::device_vector<Eigen::Vector3f>& dst);
+template<typename T, int Dim>
+DLManagedTensor* ToDLPack(const thrust::device_vector<Eigen::Matrix<T, Dim, 1>>& src);
+
+template<typename T, int Dim>
+thrust::device_vector<Eigen::Matrix<T, Dim, 1>> FromDLPack(const DLManagedTensor* src);
 
 }
 }

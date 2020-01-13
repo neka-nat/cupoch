@@ -2,6 +2,7 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/filesystem.h"
 #include "cupoch/utility/console.h"
+#include <Eigen/Geometry>
 #include <unordered_map>
 
 namespace cupoch {
@@ -32,6 +33,33 @@ static const std::unordered_map<
                 {"ply", WriteTriangleMeshToPLY},
                 {"obj", WriteTriangleMeshToOBJ},
         };
+
+// Reference: https://stackoverflow.com/a/43896965
+bool IsPointInsidePolygon(const Eigen::MatrixX2f &polygon, double x, double y) {
+    bool inside = false;
+    for (int i = 0; i < polygon.rows(); ++i) {
+        // i and j are the indices of the first and second vertices.
+        int j = (i + 1) % polygon.rows();
+
+        // The vertices of the edge that will be checked.
+        float vx0 = polygon(i, 0);
+        float vy0 = polygon(i, 1);
+        float vx1 = polygon(j, 0);
+        float vy1 = polygon(j, 1);
+
+        // Check whether the edge intersects a line from (-inf,y) to (x,y).
+        // First, check if the line crosses the horizontal line at y in either
+        // direction.
+        if (((vy0 <= y) && (vy1 > y)) || ((vy1 <= y) && (vy0 > y))) {
+            // If so, get the point where it crosses that line.
+            float cross = (vx1 - vx0) * (y - vy0) / (vy1 - vy0) + vx0;
+
+            // Finally, check if it crosses to the left of the test point.
+            if (cross < x) inside = !inside;
+        }
+    }
+    return inside;
+}
 
 }  // unnamed namespace
 
@@ -106,6 +134,75 @@ bool WriteTriangleMesh(const std::string &filename,
             "Write geometry::TriangleMesh: {:d} triangles and {:d} vertices.",
             (int)mesh.triangles_.size(), (int)mesh.vertices_.size());
     return success;
+}
+
+bool AddTrianglesByEarClipping(HostTriangleMesh &mesh,
+                               std::vector<unsigned int> &indices) {
+    int n = int(indices.size());
+    Eigen::Vector3f face_normal = Eigen::Vector3f::Zero();
+    if (n > 3) {
+        for (int i = 0; i < n; i++) {
+            const Eigen::Vector3f &v1 = mesh.vertices_[indices[(i + 1) % n]] -
+                                        mesh.vertices_[indices[i % n]];
+            const Eigen::Vector3f &v2 = mesh.vertices_[indices[(i + 2) % n]] -
+                                        mesh.vertices_[indices[(i + 1) % n]];
+            face_normal += v1.cross(v2);
+        }
+        float l = std::sqrt(face_normal.dot(face_normal));
+        face_normal *= (1.0 / l);
+    }
+
+    bool found_ear = true;
+    while (n > 3) {
+        if (!found_ear) {
+            // If no ear is found after all indices are looped through, the
+            // polygon is not triangulable.
+            return false;
+        }
+
+        found_ear = false;
+        for (int i = 1; i < n - 2; i++) {
+            const Eigen::Vector3f &v1 =
+                    mesh.vertices_[indices[i]] - mesh.vertices_[indices[i - 1]];
+            const Eigen::Vector3f &v2 =
+                    mesh.vertices_[indices[i + 1]] - mesh.vertices_[indices[i]];
+            bool is_convex = (face_normal.dot(v1.cross(v2)) > 0.0);
+            bool is_ear = true;
+            if (is_convex) {
+                // If convex, check if vertex is an ear
+                // (no vertices within triangle v[i-1], v[i], v[i+1])
+                Eigen::MatrixX2f polygon(3, 2);
+                for (int j = 0; j < 3; j++) {
+                    polygon(j, 0) = mesh.vertices_[indices[i + j - 1]](0);
+                    polygon(j, 1) = mesh.vertices_[indices[i + j - 1]](1);
+                }
+
+                for (int j = 0; j < n; j++) {
+                    if (j == i - 1 || j == i || j == i + 1) {
+                        continue;
+                    }
+                    const Eigen::Vector3f &v = mesh.vertices_[indices[j]];
+                    if (IsPointInsidePolygon(polygon, v(0), v(1))) {
+                        is_ear = false;
+                        break;
+                    }
+                }
+
+                if (is_ear) {
+                    found_ear = true;
+                    mesh.triangles_.push_back(Eigen::Vector3i(
+                            indices[i - 1], indices[i], indices[i + 1]));
+                    indices.erase(indices.begin() + i);
+                    n = int(indices.size());
+                    break;
+                }
+            }
+        }
+    }
+    mesh.triangles_.push_back(
+            Eigen::Vector3i(indices[0], indices[1], indices[2]));
+
+    return true;
 }
 
 }  // namespace io

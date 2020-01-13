@@ -1,27 +1,48 @@
 #include "cupoch/utility/dl_converter.h"
 #include "cupoch/utility/platform.h"
-#include <dlpack/contrib/dlpack/dlpackcpp.h>
+#include <type_traits>
 
 using namespace cupoch;
 using namespace cupoch::utility;
+
 namespace {
+
+template<typename T>
+DLDataTypeCode GetDLDataTypeCode() {
+    if (std::is_same<T, int>::value) {
+        return DLDataTypeCode::kDLInt;
+    } else if (std::is_same<T, char>::value) {
+        return DLDataTypeCode::kDLInt;
+    } else if (std::is_same<T, float>::value) {
+        return DLDataTypeCode::kDLFloat;
+    } else if (std::is_same<T, double>::value) {
+        return DLDataTypeCode::kDLFloat;
+    } else {
+        throw std::logic_error("Invalid data type.");
+    }
+}
+
+template<typename T, int Dim>
 struct DeviceVectorDLMTensor {
-    thrust::device_vector<Eigen::Vector3f> handle;
+    thrust::device_vector<Eigen::Matrix<T, Dim, 1>> handle;
     DLManagedTensor tensor;
 };
 
+template<typename T, int Dim>
 void deleter(DLManagedTensor* arg) {
-    delete static_cast<DeviceVectorDLMTensor*>(arg->manager_ctx);
+    delete[] arg->dl_tensor.shape;
+    delete[] arg->dl_tensor.strides;
+    delete static_cast<DeviceVectorDLMTensor<T, Dim>*>(arg->manager_ctx);
 }
 
 }
 
-
-void cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Vector3f>& src, DLManagedTensor** dst) {
-    DeviceVectorDLMTensor* dvdl(new DeviceVectorDLMTensor);
+template<typename T, int Dim>
+DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Matrix<T, Dim, 1>>& src) {
+    DeviceVectorDLMTensor<T, Dim>* dvdl(new DeviceVectorDLMTensor<T, Dim>);
     dvdl->handle = src;
     dvdl->tensor.manager_ctx = dvdl;
-    dvdl->tensor.deleter = &deleter;
+    dvdl->tensor.deleter = &deleter<T, Dim>;
     dvdl->tensor.dl_tensor.data = const_cast<void*>((const void*)(thrust::raw_pointer_cast(src.data())));
     int64_t device_id = GetDevice();
     DLContext ctx;
@@ -31,20 +52,48 @@ void cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Vector3f>& src
     dvdl->tensor.dl_tensor.ndim = 2;
     DLDataType dtype;
     dtype.lanes = 1;
-    dtype.bits = sizeof(float) * 8;
-    dtype.code = DLDataTypeCode::kDLFloat;
+    dtype.bits = sizeof(T) * 8;
+    dtype.code = GetDLDataTypeCode<T>();
     dvdl->tensor.dl_tensor.dtype = dtype;
     int64_t* shape = new int64_t[2];
     shape[0] = src.size();
-    shape[1] = 3;
+    shape[1] = Dim;
     int64_t* strides = new int64_t[2];
-    shape[0] = sizeof(float) * 3;
-    shape[1] = sizeof(float);
+    strides[0] = sizeof(T) * Dim;
+    strides[1] = sizeof(T);
     dvdl->tensor.dl_tensor.shape = shape;
     dvdl->tensor.dl_tensor.strides = strides;
     dvdl->tensor.dl_tensor.byte_offset = 0;
-    *dst = &(dvdl->tensor);
+    return &(dvdl->tensor);
 }
 
-void cupoch::utility::FromDLPack(const DLManagedTensor* src, const thrust::device_vector<Eigen::Vector3f>& dst) {
+template DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Matrix<float, 3, 1>>& src);
+template DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Matrix<int, 2, 1>>& src);
+template DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Matrix<int, 3, 1>>& src);
+
+template<>
+thrust::device_vector<Eigen::Matrix<float, 3, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
+    thrust::device_vector<Eigen::Matrix<float, 3, 1>> data;
+    auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<float, 3, 1>*)src->dl_tensor.data);
+    data.begin() = base_ptr;
+    data.end() = base_ptr + src->dl_tensor.shape[0];
+    return data;
+}
+
+template<>
+thrust::device_vector<Eigen::Matrix<int, 2, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
+    thrust::device_vector<Eigen::Matrix<int, 2, 1>> data;
+    auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<int, 2, 1>*)src->dl_tensor.data);
+    data.begin() = base_ptr;
+    data.end() = base_ptr + src->dl_tensor.shape[0];
+    return data;
+}
+
+template<>
+thrust::device_vector<Eigen::Matrix<int, 3, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
+    thrust::device_vector<Eigen::Matrix<int, 3, 1>> data;
+    auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<int, 3, 1>*)src->dl_tensor.data);
+    data.begin() = base_ptr;
+    data.end() = base_ptr + src->dl_tensor.shape[0];
+    return data;
 }

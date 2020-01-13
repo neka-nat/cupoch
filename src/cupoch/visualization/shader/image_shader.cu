@@ -6,6 +6,8 @@
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/utility/range.h"
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -131,6 +133,7 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, num_data_width,
                  num_data_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], image_texture_buffer_, cudaGraphicsMapFlagsNone));
 
     if (option.interpolation_option_ ==
         RenderOption::TextureInterpolationOption::Nearest) {

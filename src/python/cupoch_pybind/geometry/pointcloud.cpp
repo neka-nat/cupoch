@@ -2,6 +2,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
+#include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
@@ -29,6 +30,7 @@ void pybind_pointcloud(py::module &m) {
                                      &geometry::PointCloud::SetNormals)
             .def_property("colors", &geometry::PointCloud::GetColors,
                                     &geometry::PointCloud::SetColors)
+            .def("to_points_dlpack", [](geometry::PointCloud &pcd) {return dlpack::ToDLpackCapsule(pcd.points_);})
             .def("has_points", &geometry::PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &geometry::PointCloud::HasNormals,
