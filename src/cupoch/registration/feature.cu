@@ -1,5 +1,6 @@
 #include <Eigen/Geometry>
 #include "cupoch/registration/feature.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/utility/console.h"
 

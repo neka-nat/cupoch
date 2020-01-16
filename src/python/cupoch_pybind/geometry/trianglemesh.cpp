@@ -1,6 +1,7 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch_pybind/dl_converter.h"
 #include "cupoch/utility/console.h"
 
 #include "cupoch_pybind/docstring.h"
@@ -124,7 +125,13 @@ void pybind_trianglemesh(py::module &m) {
             .def_property("triangle_uvs", &geometry::TriangleMesh::GetTriangleUVs,
                                           &geometry::TriangleMesh::SetTriangleUVs)
             .def_readwrite("texture", &geometry::TriangleMesh::texture_,
-                           "cupoch.geometry.Image: The texture image.");
+                           "cupoch.geometry.Image: The texture image.")
+            .def("to_vertices_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertices_);})
+            .def("to_vertex_normals_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertex_normals_);})
+            .def("to_vertex_colors_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertex_colors_);})
+            .def("from_vertices_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertices_);})
+            .def("from_vertex_normals_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_normals_);})
+            .def("from_vertex_colors_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_colors_);});
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_adjacency_matrix");
     docstring::ClassMethodDocInject(m, "TriangleMesh",

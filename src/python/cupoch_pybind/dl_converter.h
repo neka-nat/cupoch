@@ -10,5 +10,7 @@ namespace dlpack {
 
 py::capsule ToDLpackCapsule(thrust::device_vector<Eigen::Vector3f>& src);
 
+void FromDLpackCapsule(py::capsule dlpack, thrust::device_vector<Eigen::Vector3f>& dst);
+
 }
 }

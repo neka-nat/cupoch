@@ -4,9 +4,7 @@
 #include <memory>
 
 #include "cupoch/geometry/kdtree_search_param.h"
-#include "cupoch/geometry/pointcloud.h"
-#include "cupoch/utility/eigen.h"
-#include "cupoch/utility/helper.h"
+#include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
 namespace flann {
@@ -21,16 +19,18 @@ class KDTreeCuda3dIndex;
 namespace cupoch {
 namespace geometry {
 
+class Geometry;
+
 class KDTreeFlann {
 public:
     KDTreeFlann();
-    KDTreeFlann(const PointCloud &data);
+    KDTreeFlann(const Geometry &geometry);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
 public:
-    bool SetGeometry(const PointCloud &geometry);
+    bool SetGeometry(const Geometry &geometry);
 
     template <typename T>
     int Search(const thrust::device_vector<T> &query,
@@ -56,6 +56,12 @@ public:
                      int max_nn,
                      thrust::device_vector<int> &indices,
                      thrust::device_vector<float> &distance2) const;
+
+    template <typename T>
+    int Search(const T &query,
+               const KDTreeSearchParam &param,
+               thrust::host_vector<int> &indices,
+               thrust::host_vector<float> &distance2) const;
 
     template <typename T>
     int SearchKNN(const T &query,

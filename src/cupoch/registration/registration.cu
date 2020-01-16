@@ -1,4 +1,5 @@
 #include "cupoch/registration/registration.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/console.h"

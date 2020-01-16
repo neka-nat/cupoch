@@ -1,5 +1,7 @@
-#include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/geometry/geometry.h"
+#include "cupoch_pybind/geometry/geometry.h"
+#include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
 
@@ -74,4 +76,82 @@ void pybind_kdtreeflann(py::module &m) {
             .def_readwrite(
                     "max_nn", &geometry::KDTreeSearchParamHybrid::max_nn_,
                     "At maximum, ``max_nn`` neighbors will be searched.");
+
+    // cupoch.geometry.KDTreeFlann
+    static const std::unordered_map<std::string, std::string>
+            map_kd_tree_flann_method_docs = {
+                    {"query", "The input query point."},
+                    {"radius", "Search radius."},
+                    {"max_nn",
+                     "At maximum, ``max_nn`` neighbors will be searched."},
+                    {"knn", "``knn`` neighbors will be searched."},
+                    {"feature", "Feature data."},
+                    {"data", "Matrix data."}};
+    py::class_<geometry::KDTreeFlann, std::shared_ptr<geometry::KDTreeFlann>>
+            kdtreeflann(m, "KDTreeFlann",
+                        "KDTree with FLANN for nearest neighbor search.");
+    kdtreeflann.def(py::init<>())
+            .def(py::init<const geometry::Geometry &>(), "geometry"_a)
+            .def("set_geometry", &geometry::KDTreeFlann::SetGeometry,
+                 "geometry"_a)
+            .def("search_vector_3f",
+                 [](const geometry::KDTreeFlann &tree,
+                    const Eigen::Vector3f &query,
+                    const geometry::KDTreeSearchParam &param) {
+                     thrust::host_vector<int> indices;
+                     thrust::host_vector<float> distance2;
+                     int k = tree.Search(query, param, indices, distance2);
+                     if (k < 0)
+                         throw std::runtime_error("search_vector_3f() error!");
+                     return std::make_tuple(k, indices, distance2);
+                 },
+                 "query"_a, "search_param"_a)
+            .def("search_knn_vector_3f",
+                 [](const geometry::KDTreeFlann &tree,
+                    const Eigen::Vector3f &query, int knn) {
+                     thrust::host_vector<int> indices;
+                     thrust::host_vector<float> distance2;
+                     int k = tree.SearchKNN(query, knn, indices, distance2);
+                     if (k < 0)
+                         throw std::runtime_error(
+                                 "search_knn_vector_3f() error!");
+                     return std::make_tuple(k, indices, distance2);
+                 },
+                 "query"_a, "knn"_a)
+            .def("search_radius_vector_3f",
+                 [](const geometry::KDTreeFlann &tree,
+                    const Eigen::Vector3f &query, float radius) {
+                     thrust::host_vector<int> indices;
+                     thrust::host_vector<float> distance2;
+                     int k = tree.SearchRadius(query, radius, indices,
+                                               distance2);
+                     if (k < 0)
+                         throw std::runtime_error(
+                                 "search_radius_vector_3f() error!");
+                     return std::make_tuple(k, indices, distance2);
+                 },
+                 "query"_a, "radius"_a)
+            .def("search_hybrid_vector_3f",
+                 [](const geometry::KDTreeFlann &tree,
+                    const Eigen::Vector3f &query, float radius, int max_nn) {
+                     thrust::host_vector<int> indices;
+                     thrust::host_vector<float> distance2;
+                     int k = tree.SearchHybrid(query, radius, max_nn, indices,
+                                               distance2);
+                     if (k < 0)
+                         throw std::runtime_error(
+                                 "search_hybrid_vector_3f() error!");
+                     return std::make_tuple(k, indices, distance2);
+                 },
+                 "query"_a, "radius"_a, "max_nn"_a);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_3f",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_knn_vector_3f",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_radius_vector_3f",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_vector_3f",
+                                    map_kd_tree_flann_method_docs);
+    docstring::ClassMethodDocInject(m, "KDTreeFlann", "set_geometry",
+                                    map_kd_tree_flann_method_docs);
 }

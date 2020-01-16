@@ -31,7 +31,6 @@ struct DeviceVectorDLMTensor {
 template<typename T, int Dim>
 void deleter(DLManagedTensor* arg) {
     delete[] arg->dl_tensor.shape;
-    delete[] arg->dl_tensor.strides;
     delete static_cast<DeviceVectorDLMTensor<T, Dim>*>(arg->manager_ctx);
 }
 
@@ -58,11 +57,8 @@ DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Ma
     int64_t* shape = new int64_t[2];
     shape[0] = src.size();
     shape[1] = Dim;
-    int64_t* strides = new int64_t[2];
-    strides[0] = sizeof(T) * Dim;
-    strides[1] = sizeof(T);
     dvdl->tensor.dl_tensor.shape = shape;
-    dvdl->tensor.dl_tensor.strides = strides;
+    dvdl->tensor.dl_tensor.strides = nullptr;
     dvdl->tensor.dl_tensor.byte_offset = 0;
     return &(dvdl->tensor);
 }
@@ -72,28 +68,22 @@ template DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<
 template DLManagedTensor* cupoch::utility::ToDLPack(const thrust::device_vector<Eigen::Matrix<int, 3, 1>>& src);
 
 template<>
-thrust::device_vector<Eigen::Matrix<float, 3, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
-    thrust::device_vector<Eigen::Matrix<float, 3, 1>> data;
+void cupoch::utility::FromDLPack(const DLManagedTensor* src, thrust::device_vector<Eigen::Matrix<float, 3, 1>>& dst) {
+    dst.resize(src->dl_tensor.shape[0]);
     auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<float, 3, 1>*)src->dl_tensor.data);
-    data.begin() = base_ptr;
-    data.end() = base_ptr + src->dl_tensor.shape[0];
-    return data;
+    thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
 }
 
 template<>
-thrust::device_vector<Eigen::Matrix<int, 2, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
-    thrust::device_vector<Eigen::Matrix<int, 2, 1>> data;
+void cupoch::utility::FromDLPack(const DLManagedTensor* src, thrust::device_vector<Eigen::Matrix<int, 2, 1>>& dst) {
+    dst.resize(src->dl_tensor.shape[0]);
     auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<int, 2, 1>*)src->dl_tensor.data);
-    data.begin() = base_ptr;
-    data.end() = base_ptr + src->dl_tensor.shape[0];
-    return data;
+    thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
 }
 
 template<>
-thrust::device_vector<Eigen::Matrix<int, 3, 1>> cupoch::utility::FromDLPack(const DLManagedTensor* src) {
-    thrust::device_vector<Eigen::Matrix<int, 3, 1>> data;
+void cupoch::utility::FromDLPack(const DLManagedTensor* src, thrust::device_vector<Eigen::Matrix<int, 3, 1>>& dst) {
+    dst.resize(src->dl_tensor.shape[0]);
     auto base_ptr = thrust::device_pointer_cast((Eigen::Matrix<int, 3, 1>*)src->dl_tensor.data);
-    data.begin() = base_ptr;
-    data.end() = base_ptr + src->dl_tensor.shape[0];
-    return data;
+    thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
 }

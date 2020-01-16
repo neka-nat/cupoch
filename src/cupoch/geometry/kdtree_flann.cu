@@ -2,6 +2,10 @@
 #include "cupoch/geometry/kdtree_flann.h"
 #define FLANN_USE_CUDA
 #include <flann/flann.hpp>
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/eigen.h"
+#include "cupoch/utility/helper.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -21,12 +25,23 @@ struct convert_float4_functor {
 
 KDTreeFlann::KDTreeFlann() {}
 
-KDTreeFlann::KDTreeFlann(const PointCloud &data) {SetGeometry(data);}
+KDTreeFlann::KDTreeFlann(const Geometry &data) {SetGeometry(data);}
 
 KDTreeFlann::~KDTreeFlann() {}
 
-bool KDTreeFlann::SetGeometry(const PointCloud &geometry) {
-    return SetRawData(geometry.points_);
+bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
+    switch (geometry.GetGeometryType()) {
+        case Geometry::GeometryType::PointCloud:
+            return SetRawData(((const PointCloud &)geometry).points_);
+        case Geometry::GeometryType::TriangleMesh:
+            return SetRawData(((const TriangleMesh &)geometry).vertices_);
+        case Geometry::GeometryType::Image:
+        case Geometry::GeometryType::Unspecified:
+        default:
+            utility::LogWarning(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+            return false;
+    }
 }
 
 template <typename T>
@@ -159,6 +174,20 @@ bool KDTreeFlann::SetRawData(const thrust::device_vector<T> &data) {
 }
 
 template <typename T>
+int KDTreeFlann::Search(const T &query,
+                        const KDTreeSearchParam &param,
+                        thrust::host_vector<int> &indices,
+                        thrust::host_vector<float> &distance2) const {
+    thrust::device_vector<T> query_dv(1, query);
+    thrust::device_vector<int> indices_dv;
+    thrust::device_vector<float> distance2_dv;
+    auto result = Search<T>(query_dv, param, indices_dv, distance2_dv);
+    indices = indices_dv;
+    distance2 = distance2_dv;
+    return result;
+}
+
+template <typename T>
 int KDTreeFlann::SearchKNN(const T &query,
                            int knn,
                            thrust::host_vector<int> &indices,
@@ -222,6 +251,11 @@ template int KDTreeFlann::SearchHybrid<Eigen::Vector3f>(
         int max_nn,
         thrust::device_vector<int> &indices,
         thrust::device_vector<float> &distance2) const;
+template int KDTreeFlann::Search<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        const KDTreeSearchParam &param,
+        thrust::host_vector<int> &indices,
+        thrust::host_vector<float> &distance2) const;
 template int KDTreeFlann::SearchKNN<Eigen::Vector3f>(
         const Eigen::Vector3f &query,
         int knn,

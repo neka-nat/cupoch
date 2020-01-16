@@ -11,7 +11,7 @@ template<typename T, int Dim>
 DLManagedTensor* ToDLPack(const thrust::device_vector<Eigen::Matrix<T, Dim, 1>>& src);
 
 template<typename T, int Dim>
-thrust::device_vector<Eigen::Matrix<T, Dim, 1>> FromDLPack(const DLManagedTensor* src);
+void FromDLPack(const DLManagedTensor* src, thrust::device_vector<Eigen::Matrix<T, Dim, 1>>& dst);
 
 }
 }
