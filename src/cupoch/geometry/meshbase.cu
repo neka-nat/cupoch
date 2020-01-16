@@ -11,6 +11,13 @@ MeshBase::MeshBase(const MeshBase& other)
     : Geometry3D(Geometry::GeometryType::MeshBase), vertices_(other.vertices_),
       vertex_normals_(other.vertex_normals_), vertex_colors_(other.vertex_colors_) {}
 
+MeshBase& MeshBase::operator=(const MeshBase& other) {
+    vertices_ = other.vertices_;
+    vertex_normals_ = other.vertex_normals_;
+    vertex_colors_ = other.vertex_colors_;
+    return *this;
+}
+
 thrust::host_vector<Eigen::Vector3f> MeshBase::GetVertices() const {
     thrust::host_vector<Eigen::Vector3f> vertices = vertices_;
     return vertices;

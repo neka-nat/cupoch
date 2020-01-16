@@ -198,7 +198,7 @@ protected:
     std::unique_ptr<RenderOption> render_option_ptr_;
 
     // geometry to be rendered
-    std::unordered_set<std::shared_ptr<const geometry::Geometry>>
+    std::unordered_map<std::shared_ptr<const geometry::Geometry>, bool>
             geometry_ptrs_;
 
     // geometry renderers

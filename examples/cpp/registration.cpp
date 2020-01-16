@@ -8,6 +8,7 @@ int main(int argc, char *argv[]) {
 
     auto source = std::make_shared<geometry::PointCloud>();
     auto target = std::make_shared<geometry::PointCloud>();
+    auto result = std::make_shared<geometry::PointCloud>();
     if (io::ReadPointCloud(argv[1], *source)) {
         utility::LogInfo("Successfully read {}", argv[1]);
     } else {
@@ -24,6 +25,8 @@ int main(int argc, char *argv[]) {
                                 0.0, 0.0, 0.0, 1.0).finished();
     auto res = registration::RegistrationICP(*source, *target, 0.02, init);
     std::cout << res.transformation_ << std::endl;
-    visualization::DrawGeometries({source});
+    *result = *source;
+    result->Transform(res.transformation_);
+    visualization::DrawGeometries({source, target, result});
     return 0;
 }

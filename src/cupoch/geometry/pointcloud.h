@@ -21,6 +21,7 @@ public:
     PointCloud(const thrust::host_vector<Eigen::Vector3f>& points);
     PointCloud(const PointCloud& other);
     ~PointCloud();
+    PointCloud& operator=(const PointCloud& other);
 
     void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);
     thrust::host_vector<Eigen::Vector3f> GetPoints() const;

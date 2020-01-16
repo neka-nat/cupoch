@@ -54,6 +54,13 @@ PointCloud::PointCloud(const PointCloud& other) : Geometry3D(Geometry::GeometryT
 
 PointCloud::~PointCloud() {}
 
+PointCloud& PointCloud::operator=(const PointCloud& other) {
+    points_ = other.points_;
+    normals_ = other.normals_;
+    colors_ = other.colors_;
+    return *this;
+}
+
 void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f>& points) {
     points_ = points;
 }

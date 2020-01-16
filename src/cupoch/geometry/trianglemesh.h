@@ -15,6 +15,7 @@ public:
                  const thrust::host_vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const geometry::TriangleMesh& other);
     ~TriangleMesh() override;
+    TriangleMesh& operator=(const TriangleMesh& other);
 
     thrust::host_vector<Eigen::Vector3i> GetTriangles() const;
     void SetTriangles(const thrust::host_vector<Eigen::Vector3i>& triangles);

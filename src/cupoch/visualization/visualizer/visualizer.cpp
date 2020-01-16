@@ -242,11 +242,21 @@ void Visualizer::RenderImGui() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    bool status_changed = false;
     {
+        ImGui::SetNextWindowPos(ImVec2(10, 10));
         ImGui::Begin("Infomation");
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                    1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Visible");
+        int count = 0;
+        for (auto &geometry_ptr : geometry_ptrs_) {
+            status_changed |= ImGui::Checkbox(("Geometry " + std::to_string(count)).c_str(), &geometry_ptr.second);
+            ++count;
+        }
         ImGui::End();
     }
+    if (status_changed) UpdateRender();
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window_);
@@ -316,7 +326,7 @@ bool Visualizer::AddGeometry(
         return false;
     }
     geometry_renderer_ptrs_.insert(renderer_ptr);
-    geometry_ptrs_.insert(geometry_ptr);
+    geometry_ptrs_[geometry_ptr] = true;
     if (reset_bounding_box) {
         view_control_ptr_->FitInGeometry(*geometry_ptr);
         ResetViewPoint();

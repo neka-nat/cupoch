@@ -35,6 +35,7 @@ public:
     MeshBase();
     virtual ~MeshBase();
     MeshBase(const MeshBase& other);
+    MeshBase& operator=(const MeshBase& other);
 
     thrust::host_vector<Eigen::Vector3f> GetVertices() const;
     void SetVertices(const thrust::host_vector<Eigen::Vector3f>& vertices);

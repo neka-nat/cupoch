@@ -54,6 +54,15 @@ TriangleMesh::TriangleMesh(const geometry::TriangleMesh& other)
       triangles_(other.triangles_), triangle_normals_(other.triangle_normals_),
       adjacency_matrix_(other.adjacency_matrix_), triangle_uvs_(other.triangle_uvs_) {}
 
+TriangleMesh& TriangleMesh::operator=(const TriangleMesh& other) {
+    MeshBase::operator=(other);
+    triangles_ = other.triangles_;
+    triangle_normals_ = other.triangle_normals_;
+    adjacency_matrix_ = other.adjacency_matrix_;
+    triangle_uvs_ = other.triangle_uvs_;
+    return *this;
+}
+
 thrust::host_vector<Eigen::Vector3i> TriangleMesh::GetTriangles() const {
     thrust::host_vector<Eigen::Vector3i> triangles = triangles_;
     return triangles;
