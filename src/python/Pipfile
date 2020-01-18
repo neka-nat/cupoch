@@ -10,5 +10,7 @@ numpy = "*"
 "open3d" = "*"
 matplotlib = "*"
 torch = "==1.2.0"
+wheel = "*"
+twine = "*"
 
 [requires]
