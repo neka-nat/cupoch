@@ -19,7 +19,7 @@ This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.0.
 You can install cupoch using pip.
 
 ```
-pip install cupoch
+pip install https://github.com/neka-nat/cupoch/releases/download/v0.0.1/cupoch-0.0.1.0-cp36-cp36m-linux_x86_64.whl
 ```
 
 Or install cupoch from source.

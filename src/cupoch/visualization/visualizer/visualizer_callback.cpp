@@ -9,6 +9,7 @@ using namespace cupoch::visualization;
 void Visualizer::WindowRefreshCallback(GLFWwindow *window) {
     if (is_redraw_required_) {
         Render();
+        RenderImGui();
         is_redraw_required_ = false;
     }
 }
