@@ -232,7 +232,8 @@ add_library(imgui STATIC imgui/imgui.cpp
             imgui/imgui_widgets.cpp
             imgui/examples/imgui_impl_glfw.cpp
             imgui/examples/imgui_impl_opengl3.cpp)
-target_include_directories(imgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+target_include_directories(imgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui
+                           ${GLFW_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 set(imgui_LIBRARIES imgui)
 
@@ -249,6 +250,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
+     ${googletest_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES

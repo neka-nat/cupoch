@@ -4,6 +4,8 @@
 
 # CUDA-based 3D Data Processing Library
 
+[![Build Status](https://travis-ci.com/neka-nat/cupoch.svg?branch=master)](https://travis-ci.com/neka-nat/cupoch)
+
 Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 ## Core Features
