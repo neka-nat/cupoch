@@ -22,6 +22,12 @@ struct jacobian_residual_functor {
     virtual void operator() (int i, VecType& vec, float& r) const = 0;
 };
 
+template <typename VecType, int NumJ>
+struct multiple_jacobians_residuals_functor {
+    __device__
+    virtual void operator() (int i, VecType J_r[NumJ], float r[NumJ]) const = 0;
+};
+
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:
 /// https://eigen.tuxfamily.org/dox/group__TutorialGeometry.html#TutorialGeoTransform
@@ -46,9 +52,20 @@ thrust::tuple<bool, Eigen::Matrix4f> SolveJacobianSystemAndObtainExtrinsicMatrix
 /// Output: JTJ, JTr, sum of r^2
 /// Note: f takes index of row, and outputs corresponding residual and row
 /// vector.
-template <typename MatType, typename VecType>
+template <typename MatType, typename VecType, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
-        jacobian_residual_functor<VecType>& f,
+        const FuncType& f,
+        int iteration_num,
+        bool verbose = true);
+
+/// Function to compute JTJ and Jtr
+/// Input: function pointer f and total number of rows of Jacobian matrix
+/// Output: JTJ, JTr, sum of r^2
+/// Note: f takes index of row, and outputs corresponding residual and row
+/// vector.
+template <typename MatType, typename VecType, int NumJ, typename FuncType>
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
+        const FuncType& f,
         int iteration_num,
         bool verbose = true);
 
@@ -58,3 +75,5 @@ Eigen::Matrix3f RotationMatrixZ(float radians);
 
 }  // namespace utility
 }  // namespace cupoch
+
+#include "cupoch/utility/eigen.inl"

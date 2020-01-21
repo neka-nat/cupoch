@@ -1,7 +1,9 @@
 #include "cupoch_pybind/registration/registration.h"
 #include "cupoch/registration/registration.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/registration/colored_icp.h"
 #include "cupoch/utility/console.h"
+#include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
 
@@ -209,6 +211,17 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a =
                   registration::TransformationEstimationPointToPoint(),
           "criteria"_a = registration::ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m, "registration_icp",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_colored_icp", &registration::RegistrationColoredICP,
+          "Function for Colored ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init"_a = Eigen::Matrix4f::Identity(),
+          "criteria"_a = registration::ICPConvergenceCriteria(),
+          "lambda_geometric"_a = 0.968);
+    docstring::FunctionDocInject(m, "registration_colored_icp",
+                                 map_shared_argument_docstrings);
 }
 
 void pybind_registration(py::module &m) {

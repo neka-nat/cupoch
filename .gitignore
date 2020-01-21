@@ -1,2 +1,4 @@
 build/*
+*.nvp
 shader.h
+imgui.ini

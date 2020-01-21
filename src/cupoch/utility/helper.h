@@ -1,5 +1,4 @@
 #pragma once
-#include "cupoch/utility/platform.h"
 #include <vector>
 #include <string>
 #include <Eigen/Core>
@@ -7,6 +6,7 @@
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
+#include "cupoch/utility/platform.h"
 
 namespace thrust {
 
@@ -183,7 +183,6 @@ std::string& RightStripString(std::string& str,
 /// str.strip()
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
-
 
 template<typename T>
 void CopyToDeviceMultiStream(const thrust::host_vector<T>& src, thrust::device_vector<T>& dst,

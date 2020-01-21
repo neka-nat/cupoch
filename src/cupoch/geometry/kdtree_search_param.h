@@ -3,7 +3,7 @@
 namespace cupoch {
 namespace geometry {
 
-static const int NUM_MAX_NN = 50;
+static const int NUM_MAX_NN = 100;
 typedef Eigen::Matrix<int, NUM_MAX_NN, 1, Eigen::DontAlign> KNNIndices;
 
 class KDTreeSearchParam {

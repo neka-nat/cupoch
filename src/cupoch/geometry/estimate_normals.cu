@@ -275,9 +275,24 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     thrust::device_vector<int> indices;
     thrust::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
+    int knn;
+    switch(search_param.GetSearchType()) {
+        case KDTreeSearchParam::SearchType::Knn:
+            knn = ((const KDTreeSearchParamKNN &)search_param).knn_;
+            break;
+        case KDTreeSearchParam::SearchType::Radius:
+            knn = NUM_MAX_NN;
+            break;
+        case KDTreeSearchParam::SearchType::Hybrid:
+            knn = ((const KDTreeSearchParamHybrid &)search_param).max_nn_;
+            break;
+        default:
+            utility::LogError("Unknown search param type.");
+            return false;
+    }
     compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
                                 thrust::raw_pointer_cast(indices.data()),
-                                ((const KDTreeSearchParamKNN &)search_param).knn_);
+                                knn);
     thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator((int)points_.size()),
                       normals_.begin(), func);
     return true;

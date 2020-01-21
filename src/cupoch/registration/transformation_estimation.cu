@@ -45,7 +45,7 @@ struct pt2pl_jacobian_residual_functor : public utility::jacobian_residual_funct
                                     const Eigen::Vector3f* target_points,
                                     const Eigen::Vector3f* target_normals,
                                     const Eigen::Vector2i* corres)
-        : source_(source), target_points_(target_points), target_normals_(target_normals) {};
+        : source_(source), target_points_(target_points), target_normals_(target_normals), corres_(corres) {};
     const Eigen::Vector3f* source_;
     const Eigen::Vector3f* target_points_;
     const Eigen::Vector3f* target_normals_;
@@ -112,7 +112,7 @@ Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
                                          thrust::raw_pointer_cast(target.normals_.data()),
                                          thrust::raw_pointer_cast(corres.data()));
     thrust::tie(JTJ, JTr, r2) =
-            utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f>(
+            utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f, pt2pl_jacobian_residual_functor>(
                 func, (int)corres.size());
 
     bool is_success;
