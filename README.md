@@ -1,10 +1,11 @@
 <p align="center">
-<img src="docs/_static/cupoch_logo.png" width="320" />
+<img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/cupoch_logo.png" width="320" />
 </p>
 
 # CUDA-based 3D Data Processing Library
 
 [![Build Status](https://travis-ci.com/neka-nat/cupoch.svg?branch=master)](https://travis-ci.com/neka-nat/cupoch)
+[![PyPI version](https://badge.fury.io/py/cupoch.svg)](https://badge.fury.io/py/cupoch)
 
 Cupoch is a library that implements rapid 3D data processing using CUDA.
 
@@ -21,7 +22,7 @@ This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.0.
 You can install cupoch using pip.
 
 ```
-pip install https://github.com/neka-nat/cupoch/releases/download/v0.0.1/cupoch-0.0.1.0-cp36-cp36m-linux_x86_64.whl
+pip install cupoch
 ```
 
 Or install cupoch from source.
@@ -41,4 +42,4 @@ The environment tested on has the following specs:
 * Nvidia GTX1070 GPU
 * OMP_NUM_THREAD=1
 
-![speedup](docs/_static/speedup.png)
+![speedup](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/speedup.png)
