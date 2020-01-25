@@ -1,3 +1,2 @@
 numpy
-open3d
 wheel

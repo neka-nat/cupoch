@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "tests/test_utility/unit_test.h"
 #include <thrust/unique.h>
 
@@ -460,7 +461,7 @@ TEST(PointCloud, CropPointCloud) {
 
     Vector3f minBound(200.0, 200.0, 200.0);
     Vector3f maxBound(800.0, 800.0, 800.0);
-    auto output_pc = pc.Crop(minBound, maxBound);
+    auto output_pc = pc.Crop(geometry::AxisAlignedBoundingBox(minBound, maxBound));
 
     ExpectLE(minBound, output_pc->GetPoints());
     ExpectGE(maxBound, output_pc->GetPoints());

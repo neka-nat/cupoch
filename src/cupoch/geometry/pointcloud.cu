@@ -12,23 +12,6 @@ using namespace cupoch::geometry;
 
 namespace {
 
-struct cropped_copy_functor {
-    cropped_copy_functor(const Eigen::Vector3f &min_bound, const Eigen::Vector3f &max_bound)
-        : min_bound_(min_bound), max_bound_(max_bound) {};
-    const Eigen::Vector3f min_bound_;
-    const Eigen::Vector3f max_bound_;
-    __device__
-    bool operator()(const Eigen::Vector3f& pt) {
-        if (pt[0] >= min_bound_[0] && pt[0] <= max_bound_[0] &&
-            pt[1] >= min_bound_[1] && pt[1] <= max_bound_[1] &&
-            pt[2] >= min_bound_[2] && pt[2] <= max_bound_[2]) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-};
-
 struct check_nan_functor {
     check_nan_functor(bool remove_nan, bool remove_infinite)
         : remove_nan_(remove_nan), remove_infinite_(remove_infinite) {};
@@ -148,52 +131,14 @@ PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
     return *this;
 }
 
-std::shared_ptr<PointCloud> PointCloud::Crop(const Eigen::Vector3f &min_bound,
-                                             const Eigen::Vector3f &max_bound) const {
-    auto output = std::make_shared<PointCloud>();
-    if (min_bound[0] > max_bound[0] ||
-        min_bound[1] > max_bound[1] ||
-        min_bound[2] > max_bound[2]) {
-        utility::LogWarning(
-                "[CropPointCloud] Illegal boundary clipped all points.\n");
-        return output;
+std::shared_ptr<PointCloud> PointCloud::Crop(
+        const AxisAlignedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
+        utility::LogError(
+                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong bounds.");
     }
-
-    bool has_normal = HasNormals();
-    bool has_color = HasColors();
-    output->points_.resize(points_.size());
-    cropped_copy_functor func(min_bound, max_bound);
-    size_t n_out = 0;
-    if (!has_normal && !has_color) {
-        auto end = thrust::copy_if(points_.begin(), points_.end(), output->points_.begin(), func);
-        n_out = thrust::distance(output->points_.begin(), end);
-    } else if (has_normal && !has_color) {
-        output->normals_.resize(points_.size());
-        auto begin = make_tuple_iterator(output->points_.begin(), output->normals_.begin());
-        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), normals_.begin()),
-                                   make_tuple_iterator(points_.end(), normals_.end()), points_.begin(),
-                                   begin, func);
-        n_out = thrust::distance(begin, end);
-    } else if (!has_normal && has_color) {
-        output->colors_.resize(points_.size());
-        auto begin = make_tuple_iterator(output->points_.begin(), output->colors_.begin());
-        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), colors_.begin()),
-                                   make_tuple_iterator(points_.end(), colors_.end()), points_.begin(),
-                                   begin, func);
-        n_out = thrust::distance(begin, end);
-    } else {
-        output->normals_.resize(points_.size());
-        output->colors_.resize(points_.size());
-        auto begin = make_tuple_iterator(output->points_.begin(), output->normals_.begin(), output->colors_.begin());
-        auto end = thrust::copy_if(make_tuple_iterator(points_.begin(), normals_.begin(), colors_.begin()),
-                                   make_tuple_iterator(points_.end(), normals_.end(), colors_.end()), points_.begin(),
-                                   begin, func);
-        n_out = thrust::distance(begin, end);
-    }
-    output->points_.resize(n_out);
-    if (has_normal) output->normals_.resize(n_out);
-    if (has_color) output->colors_.resize(n_out);
-    return output;
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
 PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infinite) {

@@ -101,8 +101,7 @@ public:
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
-    std::shared_ptr<PointCloud> Crop(const Eigen::Vector3f &min_bound,
-                                     const Eigen::Vector3f &max_bound) const;
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox& bbox) const;
 
     /// Function to compute the normals of a point cloud
     /// \param cloud is the input point cloud. It also stores the output

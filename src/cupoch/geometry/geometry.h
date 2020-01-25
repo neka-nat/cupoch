@@ -26,6 +26,8 @@ public:
         TriangleMesh = 6,
         /// Image
         Image = 8,
+        /// RGBDImage
+        RGBDImage = 9,
         /// OrientedBoundingBox
         OrientedBoundingBox = 11,
         /// AxisAlignedBoundingBox

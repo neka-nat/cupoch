@@ -70,6 +70,13 @@ void pybind_pointcloud(py::module &m) {
                  "points with "
                  "the 0-th point always chosen, not at random.",
                  "every_k_points"_a)
+            .def("crop",
+                 (std::shared_ptr<geometry::PointCloud>(
+                         geometry::PointCloud::*)(
+                         const geometry::AxisAlignedBoundingBox &) const) &
+                         geometry::PointCloud::Crop,
+                 "Function to crop input pointcloud into output pointcloud",
+                 "bounding_box"_a)
             .def("remove_none_finite_points",
                  &geometry::PointCloud::RemoveNoneFinitePoints,
                  "Function to remove none-finite points from the PointCloud",

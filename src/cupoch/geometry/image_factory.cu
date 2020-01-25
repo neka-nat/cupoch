@@ -1,4 +1,5 @@
 #include "cupoch/geometry/image.h"
+#include "cupoch/utility/console.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -85,4 +86,33 @@ std::shared_ptr<Image> Image::CreateFloatImage(
     thrust::for_each(thrust::make_counting_iterator<size_t>(0), 
                      thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return fimage;
+}
+
+ImagePyramid Image::CreatePyramid(size_t num_of_levels,
+                                  bool with_gaussian_filter /*= true*/) const {
+    std::vector<std::shared_ptr<Image>> pyramid_image;
+    pyramid_image.clear();
+    if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4)) {
+        utility::LogError("[CreateImagePyramid] Unsupported image format.");
+    }
+
+    for (size_t i = 0; i < num_of_levels; i++) {
+        if (i == 0) {
+            std::shared_ptr<Image> input_copy_ptr = std::make_shared<Image>();
+            *input_copy_ptr = *this;
+            pyramid_image.push_back(input_copy_ptr);
+        } else {
+            if (with_gaussian_filter) {
+                // https://en.wikipedia.org/wiki/Pyramid_(image_processing)
+                auto level_b = pyramid_image[i - 1]->Filter(
+                        Image::FilterType::Gaussian3);
+                auto level_bd = level_b->Downsample();
+                pyramid_image.push_back(level_bd);
+            } else {
+                auto level_d = pyramid_image[i - 1]->Downsample();
+                pyramid_image.push_back(level_d);
+            }
+        }
+    }
+    return pyramid_image;
 }

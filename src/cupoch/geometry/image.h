@@ -1,9 +1,15 @@
 #pragma once
 #include "cupoch/geometry/geometry2d.h"
 #include <thrust/device_vector.h>
+#include <vector>
 
 namespace cupoch {
 namespace geometry {
+
+class Image;
+
+/// Typedef and functions for ImagePyramid.
+typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 
 /// \class Image
 ///
@@ -41,6 +47,7 @@ public:
         Sobel3Dy
     };
 
+public:
     Image();
     ~Image() override;
 
@@ -100,21 +107,46 @@ public:
             Image::ColorToIntensityConversionType type =
                     Image::ColorToIntensityConversionType::Weighted) const;
 
-    /// Function to access the raw data of a single-channel Image.
-    template <typename T>
-    T *PointerAt(int u, int v) const;
-
-    /// Function to access the raw data of a multi-channel Image.
-    template <typename T>
-    T *PointerAt(int u, int v, int ch) const;
-
     std::shared_ptr<Image> ConvertDepthToFloatImage(
             float depth_scale = 1000.0, float depth_trunc = 3.0) const;
+
+    std::shared_ptr<Image> Transpose() const;
 
     /// Function to flip image horizontally (from left to right).
     std::shared_ptr<Image> FlipHorizontal() const;
     /// Function to flip image vertically (upside down).
     std::shared_ptr<Image> FlipVertical() const;
+
+    /// Function to filter image with pre-defined filtering type.
+    std::shared_ptr<Image> Filter(Image::FilterType type) const;
+
+    /// Function to filter image with arbitrary dx, dy separable filters.
+    std::shared_ptr<Image> Filter(const thrust::device_vector<float> &dx,
+                                  const thrust::device_vector<float> &dy) const;
+
+    std::shared_ptr<Image> FilterHorizontal(
+            const thrust::device_vector<float> &kernel) const;
+
+    /// Function to 2x image downsample using simple 2x2 averaging.
+    std::shared_ptr<Image> Downsample() const;
+
+    /// Function to linearly transform pixel intensities
+    /// image_new = scale * image + offset.
+    Image &LinearTransform(float scale = 1.0, float offset = 0.0);
+
+    /// Function to clipping pixel intensities.
+    ///
+    /// \param min is lower bound.
+    /// \param max is upper bound.
+    Image &ClipIntensity(float min = 0.0, float max = 1.0);
+
+    /// Function to filter image pyramid.
+    static ImagePyramid FilterPyramid(const ImagePyramid &input,
+                                      Image::FilterType type);
+
+    /// Function to create image pyramid.
+    ImagePyramid CreatePyramid(size_t num_of_levels,
+                               bool with_gaussian_filter = true) const;
 
 protected:
     void AllocateDataBuffer();
@@ -131,6 +163,18 @@ public:
     /// Image storage buffer.
     thrust::device_vector<uint8_t> data_;
 };
+
+template <typename T>
+__host__ __device__
+T *PointerAt(const uint8_t* data, int width, int u, int v) {
+    return (T *)(data + (v * width + u) * sizeof(T));
+}
+
+template <typename T>
+__host__ __device__
+T *PointerAt(const uint8_t* data, int width, int num_of_channels, int u, int v, int ch) {
+    return (T *)(data + ((v * width + u) * num_of_channels + ch) * sizeof(T));
+}
 
 }
 }
