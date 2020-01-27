@@ -3,8 +3,8 @@
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/rgbdimage.h"
 
-using namespace cupoch;
-using namespace cupoch::odometry;
+namespace cupoch {
+namespace odometry {
 
 namespace {
 
@@ -16,8 +16,8 @@ const float LAMBDA_HYBRID_DEPTH = 0.968;
 __device__
 void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
             int row,
-            Eigen::Vector6f* J_r,
-            float* r,
+            Eigen::Vector6f J_r[2],
+            float r[2],
             const uint8_t* source_color,
             const uint8_t* source_depth,
             const uint8_t* target_color,
@@ -58,13 +58,15 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     J_r[0](4) = c1;
     J_r[0](5) = c2;
     r[0] = diff;
+    J_r[1].setZero();
+    r[1] = 0.0;
 }
 
 __device__
 void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
             int row,
-            Eigen::Vector6f* J_r,
-            float* r,
+            Eigen::Vector6f J_r[2],
+            float r[2],
             const uint8_t* source_color,
             const uint8_t* source_depth,
             const uint8_t* target_color,
@@ -132,4 +134,7 @@ void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     J_r[1](5) = sqrt_lamba_dep * (d2 - 1.0f);
     float r_geo = sqrt_lamba_dep * diff_geo;
     r[1] = r_geo;
+}
+
+}
 }

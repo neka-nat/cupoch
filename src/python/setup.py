@@ -68,6 +68,7 @@ setup(
     keywords="3D reconstruction point cloud mesh RGB-D visualization",
     license="MIT",
     long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     # Name of the package on PyPI
     name="@PYPI_PACKAGE_NAME@",
     packages=[

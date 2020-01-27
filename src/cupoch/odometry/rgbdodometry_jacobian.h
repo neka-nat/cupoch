@@ -8,13 +8,14 @@ namespace cupoch {
 
 namespace odometry {
 
-typedef thrust::device_vector<Eigen::Vector4i, utility::Vector4i_allocator>
-        CorrespondenceSetPixelWise;
+typedef thrust::device_vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian {
 public:
+    __host__ __device__
     RGBDOdometryJacobian() {}
+    __host__ __device__
     virtual ~RGBDOdometryJacobian() {}
 
 public:
@@ -25,8 +26,8 @@ public:
     __device__
     virtual void ComputeJacobianAndResidual(
             int row,
-            Eigen::Vector6f* J_r,
-            float* r,
+            Eigen::Vector6f J_r[2],
+            float r[2],
             const uint8_t* source_color,
             const uint8_t* source_depth,
             const uint8_t* target_color,
@@ -50,15 +51,17 @@ public:
 /// In ICCV Workshops, 2011.
 class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 public:
+    __host__ __device__
     RGBDOdometryJacobianFromColorTerm() {}
+    __host__ __device__
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
     __device__
     void ComputeJacobianAndResidual(
             int row,
-            Eigen::Vector6f* J_r,
-            float* r,
+            Eigen::Vector6f J_r[2],
+            float r[2],
             const uint8_t* source_color,
             const uint8_t* source_depth,
             const uint8_t* target_color,
@@ -81,15 +84,17 @@ public:
 /// anonymous submission
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
+    __host__ __device__
     RGBDOdometryJacobianFromHybridTerm() {}
+    __host__ __device__
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
     __device__
     void ComputeJacobianAndResidual(
             int row,
-            Eigen::Vector6f* J_r,
-            float* r,
+            Eigen::Vector6f J_r[2],
+            float r[2],
             const uint8_t* source_color,
             const uint8_t* source_depth,
             const uint8_t* target_color,
@@ -107,3 +112,5 @@ public:
 
 }  // namespace odometry
 }  // namespace cupoch
+
+#include "cupoch/odometry/rgbdodometry_jacobian.inl"

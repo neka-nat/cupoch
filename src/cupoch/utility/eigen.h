@@ -16,8 +16,6 @@ typedef Eigen::Matrix<float, 6, 6, Eigen::DontAlign> Matrix6f_u;
 namespace cupoch {
 namespace utility {
 
-using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
-
 template <typename VecType>
 struct jacobian_residual_functor {
     __device__
