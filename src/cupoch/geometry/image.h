@@ -140,6 +140,12 @@ public:
     /// \param max is upper bound.
     Image &ClipIntensity(float min = 0.0, float max = 1.0);
 
+    /// Function to change data types of image
+    /// crafted for specific usage such as
+    /// single channel float image -> 8-bit RGB or 16-bit depth image.
+    template <typename T>
+    std::shared_ptr<Image> CreateImageFromFloatImage() const;
+
     /// Function to filter image pyramid.
     static ImagePyramid FilterPyramid(const ImagePyramid &input,
                                       Image::FilterType type);

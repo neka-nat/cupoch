@@ -275,6 +275,136 @@ TEST(Image, CreateFloatImage_3_4_Equal) {
     TEST_CreateFloatImage(3, 4, ref, ConversionType::Equal);
 }
 
+TEST(Image, ConvertDepthToFloatImage) {
+    // reference data used to validate the creation of the float image
+    uint8_t raw_ref[] = {
+            208, 254, 91,  58,  103, 154, 205, 57,  59,  147, 76,  58,  236,
+            175, 80,  58,  232, 127, 110, 58,  103, 154, 77,  57,  62,  195,
+            174, 57,  139, 118, 72,  58,  22,  236, 143, 57,  66,  243, 16,
+            58,  161, 199, 248, 57,  134, 123, 36,  58,  255, 53,  191, 57,
+            93,  164, 5,   58,  161, 199, 120, 58,  20,  135, 111, 58,  222,
+            137, 38,  58,  79,  25,  59,  58,  198, 8,   20,  57,  126, 80,
+            30,  58,  5,   150, 131, 55,  249, 213, 122, 57,  101, 207, 11,
+            57,  68,  190, 82,  58,  214, 94,  32,  57};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+    geometry::Image image;
+
+    // test image dimensions
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+    int float_num_of_channels = 1;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+
+    thrust::host_vector<uint8_t> data(image.data_.size());
+    Rand(data, 0, 255, 0);
+    image.SetData(data);
+
+    auto float_image = image.ConvertDepthToFloatImage();
+
+    EXPECT_FALSE(float_image->IsEmpty());
+    EXPECT_EQ(width, float_image->width_);
+    EXPECT_EQ(height, float_image->height_);
+    EXPECT_EQ(float_num_of_channels, float_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(float)), float_image->bytes_per_channel_);
+    ExpectEQ(ref, float_image->GetData());
+}
+
+TEST(Image, TransposeUint8) {
+    // reference data used to validate the creation of the float image
+    // clang-format off
+    uint8_t raw_input[] = {
+        0,  1,  2,  3,  4,  5,
+        6,  7,  8,  9,  10, 11,
+        12, 13, 14, 15, 16, 17
+    };
+    thrust::host_vector<uint8_t> input;
+    for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
+    uint8_t raw_transposed_ref[] = {
+        0,  6,  12,
+        1,  7,  13,
+        2,  8,  14,
+        3,  9,  15,
+        4,  10, 16,
+        5,  11, 17
+    };
+    thrust::host_vector<uint8_t> transposed_ref;
+    for (int i = 0; i < 18; ++i) transposed_ref.push_back(raw_transposed_ref[i]);
+    // clang-format on
+
+    geometry::Image image;
+
+    int width = 6;
+    int height = 3;
+    int num_of_channels = 1;
+    int bytes_per_channel = 1;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    image.SetData(input);
+
+    auto transposed_image = image.Transpose();
+    EXPECT_FALSE(transposed_image->IsEmpty());
+    EXPECT_EQ(height, transposed_image->width_);
+    EXPECT_EQ(width, transposed_image->height_);
+    EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(uint8_t)), transposed_image->bytes_per_channel_);
+    ExpectEQ(transposed_ref, transposed_image->GetData());
+}
+
+TEST(Image, TransposeFloat) {
+    // reference data used to validate the creation of the float image
+    // clang-format off
+    float raw_input[] = {
+        0,  1,  2,  3,  4,  5,
+        6,  7,  8,  9,  10, 11,
+        12, 13, 14, 15, 16, 17
+    };
+    thrust::host_vector<float> input;
+    for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
+    float raw_transposed_ref[] = {
+        0,  6,  12,
+        1,  7,  13,
+        2,  8,  14,
+        3,  9,  15,
+        4,  10, 16,
+        5,  11, 17
+    };
+    thrust::host_vector<float> transposed_ref;
+    for (int i = 0; i < 18; ++i) transposed_ref.push_back(raw_transposed_ref[i]);
+    // clang-format on
+
+    geometry::Image image;
+
+    int width = 6;
+    int height = 3;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    const uint8_t* input_uint8_ptr =
+            reinterpret_cast<const uint8_t*>(input.data());
+    thrust::host_vector<uint8_t> input_uint8(input_uint8_ptr, input_uint8_ptr + image.data_.size());
+    image.SetData(input_uint8);
+
+    auto transposed_image = image.Transpose();
+    EXPECT_FALSE(transposed_image->IsEmpty());
+    EXPECT_EQ(height, transposed_image->width_);
+    EXPECT_EQ(width, transposed_image->height_);
+    EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
+    EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
+
+    thrust::host_vector<uint8_t> transposed_host_data = transposed_image->GetData();
+    const float* transpose_image_floats =
+            reinterpret_cast<const float*>(transposed_host_data.data());
+    thrust::host_vector<float> transpose_image_data(
+            transpose_image_floats,
+            transpose_image_floats + transposed_ref.size());
+    ExpectEQ(transposed_ref, transpose_image_data);
+}
+
 TEST(Image, FlipVerticalImage) {
     // reference data used to validate the creation of the float image
     // clang-format off
@@ -349,4 +479,195 @@ TEST(Image, FlipHorizontalImage) {
     EXPECT_EQ(num_of_channels, flip_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(uint8_t)), flip_image->bytes_per_channel_);
     ExpectEQ(flipped, flip_image->GetData());
+}
+
+void TEST_Filter(const thrust::host_vector<uint8_t>& ref,
+                 const geometry::Image::FilterType& filter) {
+    geometry::Image image;
+
+    // test image dimensions
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+
+    thrust::host_vector<uint8_t> data(image.data_.size());
+    Rand(data, 0, 255, 0);
+    image.SetData(data);
+
+    auto float_image = image.CreateFloatImage();
+
+    auto output = float_image->Filter(filter);
+
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->GetData());
+}
+
+TEST(Image, Filter_Gaussian3) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            41,  194, 49,  204, 116, 56,  130, 211, 198, 225, 181, 232, 198,
+            225, 53,  233, 198, 225, 181, 232, 177, 94,  205, 232, 47,  90,
+            77,  233, 240, 252, 4,   233, 93,  130, 114, 232, 93,  130, 242,
+            231, 177, 94,  77,  233, 47,  90,  205, 233, 72,  89,  77,  233,
+            6,   134, 220, 88,  128, 234, 129, 89,  60,  96,  205, 232, 167,
+            91,  77,  233, 2,   196, 171, 233, 229, 149, 243, 233, 12,  159,
+            128, 233, 36,  49,  20,  226, 223, 39,  141, 226, 137, 164, 52,
+            234, 108, 176, 182, 234, 146, 238, 64,  234};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    TEST_Filter(ref, FilterType::Gaussian3);
+}
+
+TEST(Image, Filter_Gaussian5) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            61,  94,  205, 231, 230, 96,  109, 232, 15,  16,  218, 232, 2,
+            118, 3,   233, 160, 185, 166, 232, 61,  94,  205, 232, 46,  125,
+            35,  233, 60,  145, 12,  233, 110, 3,   165, 232, 122, 145, 23,
+            232, 223, 6,   26,  233, 24,  249, 119, 233, 159, 37,  94,  233,
+            235, 229, 13,  233, 99,  24,  143, 232, 40,  96,  205, 232, 206,
+            73,  101, 233, 15,  186, 202, 233, 62,  231, 242, 233, 76,  236,
+            159, 233, 35,  111, 205, 231, 102, 26,  76,  233, 254, 241, 44,
+            234, 33,  174, 126, 234, 84,  234, 47,  234};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    TEST_Filter(ref, FilterType::Gaussian5);
+}
+
+TEST(Image, Filter_Gaussian7) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            71,  19,  68,  232, 29,  11,  169, 232, 178, 140, 214, 232, 35,
+            21,  214, 232, 245, 42,  147, 232, 65,  168, 175, 232, 125, 101,
+            5,   233, 242, 119, 15,  233, 60,  92,  246, 232, 131, 231, 154,
+            232, 225, 75,  240, 232, 84,  18,  69,  233, 128, 68,  108, 233,
+            67,  141, 98,  233, 63,  199, 27,  233, 109, 191, 244, 232, 122,
+            49,  127, 233, 20,  166, 194, 233, 176, 46,  222, 233, 33,  207,
+            168, 233, 186, 237, 232, 232, 98,  40,  161, 233, 128, 206, 18,
+            234, 109, 135, 55,  234, 187, 97,  17,  234};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    TEST_Filter(ref, FilterType::Gaussian7);
+}
+
+TEST(Image, Filter_Sobel3Dx) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            172, 2,   109, 77,  136, 55,  130, 213, 198, 225, 181, 234, 254,
+            55,  130, 85,  198, 225, 181, 106, 122, 87,  205, 234, 134, 196,
+            102, 99,  177, 184, 144, 106, 254, 55,  2,   86,  93,  130, 242,
+            105, 122, 87,  77,  235, 138, 196, 230, 99,  72,  89,  77,  107,
+            214, 220, 163, 90,  34,  71,  135, 90,  231, 88,  205, 234, 63,
+            133, 106, 99,  73,  45,  10,  235, 101, 207, 174, 232, 44,  100,
+            107, 107, 28,  239, 8,   228, 119, 32,  52,  97,  114, 163, 52,
+            236, 140, 27,  131, 233, 33,  139, 48,  108};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    TEST_Filter(ref, FilterType::Sobel3Dx);
+}
+
+TEST(Image, Filter_Sobel3Dy) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            151, 248, 205, 205, 67,  56,  130, 213, 93,  130, 242, 105, 93,
+            130, 114, 106, 93,  130, 242, 105, 177, 94,  205, 234, 47,  90,
+            77,  235, 177, 184, 144, 234, 93,  130, 114, 106, 93,  130, 242,
+            105, 108, 57,  173, 217, 91,  238, 228, 216, 254, 55,  2,   86,
+            214, 220, 163, 90,  108, 154, 117, 91,  38,  93,  205, 106, 183,
+            88,  77,  107, 189, 46,  10,  235, 229, 149, 243, 235, 12,  159,
+            128, 235, 189, 150, 69,  227, 36,  53,  188, 227, 97,  219, 112,
+            235, 229, 149, 243, 235, 12,  159, 128, 235};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    TEST_Filter(ref, FilterType::Sobel3Dy);
+}
+
+TEST(Image, FilterHorizontal) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {
+            187, 139, 149, 203, 171, 101, 199, 202, 93,  130, 242, 232, 93,
+            130, 114, 233, 93,  130, 242, 232, 134, 91,  243, 204, 79,  56,
+            130, 212, 254, 55,  2,   213, 254, 55,  130, 212, 94,  58,  24,
+            196, 177, 94,  205, 233, 47,  90,  77,  234, 72,  89,  205, 233,
+            49,  169, 99,  88,  49,  169, 227, 87,  109, 57,  173, 216, 60,
+            247, 230, 215, 97,  137, 95,  192, 72,  188, 163, 89,  108, 154,
+            117, 90,  211, 150, 69,  226, 40,  53,  188, 226, 97,  219, 112,
+            234, 229, 149, 243, 234, 12,  159, 128, 234};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
+
+    geometry::Image image;
+
+    // test image dimensions
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+
+    thrust::host_vector<uint8_t> data(image.data_.size());
+    Rand(data, 0, 255, 0);
+    image.SetData(data);
+
+    auto float_image = image.CreateFloatImage();
+
+    thrust::host_vector<float> Gaussian3(3);
+    Gaussian3[0] = 0.25;
+    Gaussian3[1] = 0.5;
+    Gaussian3[2] = 0.25;
+
+    auto output = float_image->FilterHorizontal(Gaussian3);
+
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ(width, output->width_);
+    EXPECT_EQ(height, output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->GetData());
+}
+
+TEST(Image, Downsample) {
+    // reference data used to validate the filtering of an image
+    uint8_t raw_ref[] = {172, 41, 59,  204, 93, 130, 242, 232,
+                         22,  91, 205, 233, 49, 169, 227, 87};
+    thrust::host_vector<uint8_t> ref;
+    for (int i = 0; i < 16; ++i) ref.push_back(raw_ref[i]);
+
+    geometry::Image image;
+
+    // test image dimensions
+    int width = 5;
+    int height = 5;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+
+    thrust::host_vector<uint8_t> data(image.data_.size());
+    Rand(data, 0, 255, 0);
+    image.SetData(data);
+
+    auto float_image = image.CreateFloatImage();
+
+    auto output = float_image->Downsample();
+
+    EXPECT_FALSE(output->IsEmpty());
+    EXPECT_EQ((int)(width / 2), output->width_);
+    EXPECT_EQ((int)(height / 2), output->height_);
+    EXPECT_EQ(num_of_channels, output->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, output->bytes_per_channel_);
+    ExpectEQ(ref, output->GetData());
 }

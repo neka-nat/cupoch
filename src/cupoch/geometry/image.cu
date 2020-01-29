@@ -124,20 +124,21 @@ struct linear_transform_functor {
 };
 
 struct downsample_functor {
-    downsample_functor(const uint8_t* src, int width,
-                       uint8_t* dst)
-        : src_(src), width_(width), dst_(dst) {};
+    downsample_functor(const uint8_t* src, int src_width,
+                       uint8_t* dst, int dst_width)
+        : src_(src), src_width_(src_width), dst_(dst), dst_width_(dst_width) {};
     const uint8_t* src_;
-    const int width_;
+    const int src_width_;
     uint8_t* dst_;
+    const int dst_width_;
     __device__
     void operator() (size_t idx) {
-        const int y = idx / width_;
-        const int x = idx % width_;
-        float *p1 = (float*)(src_ + (y * 2 * width_ + x * 2) * sizeof(float));
-        float *p2 = (float*)(src_ + (y * 2 * width_ + x * 2 + 1) * sizeof(float));
-        float *p3 = (float*)(src_ + ((y * 2 + 1) * width_ + x * 2) * sizeof(float));
-        float *p4 = (float*)(src_ + ((y * 2 + 1) * width_ + x * 2 + 1) * sizeof(float));
+        const int y = idx / dst_width_;
+        const int x = idx % dst_width_;
+        float *p1 = (float*)(src_ + (y * 2 * src_width_ + x * 2) * sizeof(float));
+        float *p2 = (float*)(src_ + (y * 2 * src_width_ + x * 2 + 1) * sizeof(float));
+        float *p3 = (float*)(src_ + ((y * 2 + 1) * src_width_ + x * 2) * sizeof(float));
+        float *p4 = (float*)(src_ + ((y * 2 + 1) * src_width_ + x * 2 + 1) * sizeof(float));
         float *p = (float*)(dst_ + idx * sizeof(float));
         *p = (*p1 + *p2 + *p3 + *p4) / 4.0f;
     }
@@ -165,7 +166,7 @@ struct filter_horizontal_functor {
             int x_shift = x + i;
             if (x_shift < 0) x_shift = 0;
             if (x_shift > width_ - 1) x_shift = width_ - 1;
-            float *pi = (float*)(dst_ + (y * width_ + x_shift) * sizeof(float));
+            float *pi = (float*)(src_ + (y * width_ + x_shift) * sizeof(float));
             temp += (*pi * kernel_[i + half_kernel_size_]);
         }
         *po = temp;
@@ -298,7 +299,7 @@ Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
         utility::LogError("[ClipIntensity] Unsupported image format.");
     }
     clip_intensity_functor func(thrust::raw_pointer_cast(data_.data()), min, max);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return *this;
 }
 
@@ -307,7 +308,7 @@ Image &Image::LinearTransform(float scale, float offset /* = 0.0*/) {
         utility::LogError("[LinearTransform] Unsupported image format.");
     }
     linear_transform_functor func(thrust::raw_pointer_cast(data_.data()), scale, offset);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return *this;
 }
 
@@ -320,10 +321,10 @@ std::shared_ptr<Image> Image::Downsample() const {
     int half_height = (int)floor((float)height_ / 2.0);
     output->Prepare(half_width, half_height, 1, 4);
 
-    downsample_functor func(thrust::raw_pointer_cast(data_.data()),
-                            output->width_,
-                            thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(output->data_.size()), func);
+    downsample_functor func(thrust::raw_pointer_cast(data_.data()), width_,
+                            thrust::raw_pointer_cast(output->data_.data()), output->width_);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(output->width_ * output->height_), func);
     return output;
 }
 
@@ -344,7 +345,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
                                    thrust::raw_pointer_cast(kernel.data()),
                                    half_kernel_size,
                                    thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return output;
 }
 
@@ -395,7 +396,7 @@ std::shared_ptr<Image> Image::Transpose() const {
                            width_, in_bytes_per_line, out_bytes_per_line,
                            bytes_per_pixel,
                            thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return output;
 }
 
@@ -406,7 +407,7 @@ std::shared_ptr<Image> Image::FlipVertical() const {
     vertical_flip_functor func(thrust::raw_pointer_cast(data_.data()), width_, height_,
                                num_of_channels_ * bytes_per_channel_,
                                thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return output;
 }
 
@@ -417,7 +418,7 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
     horizontal_flip_functor func(thrust::raw_pointer_cast(data_.data()), width_,
                                  num_of_channels_ * bytes_per_channel_,
                                  thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(data_.size()), func);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return output;
 }
 

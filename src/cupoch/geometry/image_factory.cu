@@ -71,6 +71,19 @@ struct make_float_image_functor {
     }
 };
 
+template<typename T>
+struct restore_from_float_image_functor {
+    restore_from_float_image_functor(const float* src, uint8_t* dst)
+        : src_(src), dst_(dst) {};
+    const float* src_;
+    uint8_t* dst_;
+    __device__
+    void operator() (size_t idx) {
+        if (sizeof(T) == 1) *(dst_ + idx) = static_cast<T>(*(src_ + idx) * 255.0f);
+        if (sizeof(T) == 2) *(dst_ + idx) = static_cast<T>(*(src_ + idx));
+    }
+};
+
 }
 
 std::shared_ptr<Image> Image::CreateFloatImage(
@@ -87,6 +100,26 @@ std::shared_ptr<Image> Image::CreateFloatImage(
                      thrust::make_counting_iterator<size_t>(width_ * height_), func);
     return fimage;
 }
+
+template <typename T>
+std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
+    auto output = std::make_shared<Image>();
+    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
+        utility::LogError(
+                "[CreateImageFromFloatImage] Unsupported image format.");
+    }
+
+    output->Prepare(width_, height_, num_of_channels_, sizeof(T));
+    restore_from_float_image_functor<T> func((const float*)thrust::raw_pointer_cast(data_.data()),
+                                             thrust::raw_pointer_cast(output->data_.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
+    return output;
+}
+
+template std::shared_ptr<Image> Image::CreateImageFromFloatImage<uint8_t>()
+        const;
+template std::shared_ptr<Image> Image::CreateImageFromFloatImage<uint16_t>()
+        const;
 
 ImagePyramid Image::CreatePyramid(size_t num_of_levels,
                                   bool with_gaussian_filter /*= true*/) const {
