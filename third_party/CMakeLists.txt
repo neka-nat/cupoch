@@ -160,6 +160,9 @@ target_include_directories(liblzf PUBLIC liblzf)
 set(liblzf_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/liblzf)
 set(liblzf_LIBRARIES liblzf)
 
+# tritriintersect
+set(tomasakeninemoeller_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/tomasakeninemoeller")
+
 # PNG
 if (BUILD_PNG)
     message(STATUS "Building LIBPNG from source (BUILD_PNG=ON)")
@@ -248,6 +251,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${fmt_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
+     ${tomasakeninemoeller_INCLUDE_DIRS}
      ${dlpack_INCLUDE_DIRS}
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}

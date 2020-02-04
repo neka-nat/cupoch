@@ -68,6 +68,33 @@ public:
     /// Function to compute adjacency matrix, call before adjacency matrix is needed
     TriangleMesh &ComputeAdjacencyMatrix();
 
+    /// Function that returns a list of triangles that are intersecting the
+    /// mesh.
+    thrust::device_vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
+
+    /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
+    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// distance from the center to the mesh vertices.
+    static std::shared_ptr<TriangleMesh> CreateTetrahedron(float radius = 1.0);
+
+    /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
+    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// distance from the center to the mesh vertices.
+    static std::shared_ptr<TriangleMesh> CreateOctahedron(float radius = 1.0);
+
+    /// Factory function to create an icosahedron mesh
+    /// (trianglemeshfactory.cpp). the mesh centroid will be at (0,0,0) and
+    /// \param radius defines the distance from the center to the mesh vertices.
+    static std::shared_ptr<TriangleMesh> CreateIcosahedron(float radius = 1.0);
+
+    /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
+    /// The left bottom corner on the front will be placed at (0, 0, 0).
+    /// The \param width is x-directional length, and \param height and \param
+    /// depth are y- and z-directional lengths respectively.
+    static std::shared_ptr<TriangleMesh> CreateBox(float width = 1.0,
+                                                   float height = 1.0,
+                                                   float depth = 1.0);
+
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with \param radius will be centered at (0, 0, 0).
     /// Its axis is aligned with z-axis.

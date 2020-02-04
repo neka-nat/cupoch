@@ -1,6 +1,8 @@
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/intersection_test.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/range.h"
+#include <thrust/iterator/discard_iterator.h>
 
 #include <Eigen/Geometry>
 
@@ -33,6 +35,46 @@ struct compute_adjacency_matrix_functor {
         adjacency_matrix_[triangle(1) * n_vertices_ + triangle(2)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(0)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(1)] = 1;
+    }
+};
+
+struct check_self_intersecting_triangles{
+    check_self_intersecting_triangles(const Eigen::Vector3i* triangles,
+                                      const Eigen::Vector3f* vertices,
+                                      int n_triangles)
+                                      : triangles_(triangles), vertices_(vertices),
+                                        n_triangles_(n_triangles) {};
+    const Eigen::Vector3i* triangles_;
+    const Eigen::Vector3f* vertices_;
+    const int n_triangles_;
+    __device__
+    Eigen::Vector2i operator() (size_t idx) const {
+        int tidx0 = idx / n_triangles_;
+        int tidx1 = idx % n_triangles_;
+        if (tidx0 >= tidx1 || tidx0 == n_triangles_ - 1) {
+            return Eigen::Vector2i(-1, -1);
+        }
+        const Eigen::Vector3i &tria_p = triangles_[tidx0];
+        const Eigen::Vector3f &p0 = vertices_[tria_p(0)];
+        const Eigen::Vector3f &p1 = vertices_[tria_p(1)];
+        const Eigen::Vector3f &p2 = vertices_[tria_p(2)];
+        const Eigen::Vector3i &tria_q = triangles_[tidx1];
+        // check if neighbour triangle
+        if (tria_p(0) == tria_q(0) || tria_p(0) == tria_q(1) ||
+            tria_p(0) == tria_q(2) || tria_p(1) == tria_q(0) ||
+            tria_p(1) == tria_q(1) || tria_p(1) == tria_q(2) ||
+            tria_p(2) == tria_q(0) || tria_p(2) == tria_q(1) ||
+            tria_p(2) == tria_q(2)) {
+            return Eigen::Vector2i(-1, -1);
+        }
+        // check for intersection
+        const Eigen::Vector3f &q0 = vertices_[tria_q(0)];
+        const Eigen::Vector3f &q1 = vertices_[tria_q(1)];
+        const Eigen::Vector3f &q2 = vertices_[tria_q(2)];
+        if (intersection_test::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+            return Eigen::Vector2i(tidx0, tidx1);
+        }
+        return Eigen::Vector2i(-1, -1);
     }
 };
 
@@ -175,11 +217,11 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     vertex_normals_.resize(vertices_.size());
     thrust::repeated_range<thrust::device_vector<Eigen::Vector3f>::iterator> range(triangle_normals_.begin(), triangle_normals_.end(), 3);
     thrust::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() * 3);
-    thrust::device_vector<int> key_out(vertices_.size());
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
     int* tri_ptr = (int*)(thrust::raw_pointer_cast(triangles_.data()));
     thrust::sort_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin());
-    thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(), key_out.begin(), vertex_normals_.begin());
+    thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(),
+                          thrust::make_discard_iterator(), vertex_normals_.begin());
     if (normalized) {
         NormalizeNormals();
     }
@@ -192,4 +234,20 @@ TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
     compute_adjacency_matrix_functor func(thrust::raw_pointer_cast(adjacency_matrix_.data()), vertices_.size());
     thrust::for_each(triangles_.begin(), triangles_.end(), func);
     return *this;
+}
+
+thrust::device_vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
+        const {
+    const size_t n_triangles2 = triangles_.size() * triangles_.size();
+    thrust::device_vector<Eigen::Vector2i> self_intersecting_triangles(n_triangles2);
+    check_self_intersecting_triangles func(thrust::raw_pointer_cast(triangles_.data()),
+                                           thrust::raw_pointer_cast(vertices_.data()),
+                                           triangles_.size());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_triangles2),
+                      self_intersecting_triangles.begin(), func);
+    auto end = thrust::remove_if(self_intersecting_triangles.begin(), self_intersecting_triangles.end(),
+                                 [] __device__ (const Eigen::Vector2i& idxs) {return idxs[0] < 0;});
+    self_intersecting_triangles.resize(thrust::distance(self_intersecting_triangles.begin(), end));
+    return self_intersecting_triangles;
 }

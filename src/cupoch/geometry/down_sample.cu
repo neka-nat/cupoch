@@ -4,6 +4,7 @@
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
 #include <thrust/gather.h>
+#include <thrust/iterator/discard_iterator.h>
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -46,18 +47,17 @@ int CalcAverageByKey(thrust::device_vector<Eigen::Vector3i>& keys,
     const size_t n = keys.size();
     thrust::sort_by_key(keys.begin(), keys.end(), buf_begins);
 
-    thrust::device_vector<Eigen::Vector3i> keys_out(n);
     thrust::device_vector<int> counts(n);
     auto end1 = thrust::reduce_by_key(keys.begin(), keys.end(),
                                       thrust::make_constant_iterator(1),
-                                      keys_out.begin(), counts.begin());
+                                      thrust::make_discard_iterator(), counts.begin());
     int n_out = thrust::distance(counts.begin(), end1.second);
     counts.resize(n_out);
 
     thrust::equal_to<Eigen::Vector3i> binary_pred;
     add_tuple_functor<Args...> add_func;
     auto end2 = thrust::reduce_by_key(keys.begin(), keys.end(), buf_begins,
-                                      keys_out.begin(), output_begins,
+                                      thrust::make_discard_iterator(), output_begins,
                                       binary_pred, add_func);
 
     devided_tuple_functor<Args...> dv_func;
