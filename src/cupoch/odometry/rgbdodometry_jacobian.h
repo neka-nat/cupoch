@@ -13,8 +13,13 @@ typedef thrust::device_vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian {
 public:
+    enum OdometryJacobianType {
+        COLOR_TERM = 0,
+        HYBRID_TERM = 1,
+    };
+
     __host__ __device__
-    RGBDOdometryJacobian() {}
+    RGBDOdometryJacobian(OdometryJacobianType jacobian_type) : jacobian_type_(jacobian_type) {}
     __host__ __device__
     virtual ~RGBDOdometryJacobian() {}
 
@@ -23,7 +28,7 @@ public:
     /// the vector form of J_r is basically 6x1 matrix, but it can be
     /// easily extendable to 6xn matrix.
     /// See RGBDOdometryJacobianFromHybridTerm for this case.
-    __device__
+    __host__ __device__
     virtual void ComputeJacobianAndResidual(
             int row,
             Eigen::Vector6f J_r[2],
@@ -40,7 +45,8 @@ public:
             int width,
             const Eigen::Matrix3f &intrinsic,
             const Eigen::Matrix4f &extrinsic,
-            const Eigen::Vector4i* corresps) const = 0;
+            const Eigen::Vector4i* corresps) const {};
+    OdometryJacobianType jacobian_type_;
 };
 
 /// Class to compute Jacobian using color term
@@ -52,12 +58,12 @@ public:
 class RGBDOdometryJacobianFromColorTerm : public RGBDOdometryJacobian {
 public:
     __host__ __device__
-    RGBDOdometryJacobianFromColorTerm() {}
+    RGBDOdometryJacobianFromColorTerm() : RGBDOdometryJacobian(COLOR_TERM) {}
     __host__ __device__
     ~RGBDOdometryJacobianFromColorTerm() override {}
 
 public:
-    __device__
+    __host__ __device__
     void ComputeJacobianAndResidual(
             int row,
             Eigen::Vector6f J_r[2],
@@ -85,12 +91,12 @@ public:
 class RGBDOdometryJacobianFromHybridTerm : public RGBDOdometryJacobian {
 public:
     __host__ __device__
-    RGBDOdometryJacobianFromHybridTerm() {}
+    RGBDOdometryJacobianFromHybridTerm() : RGBDOdometryJacobian(HYBRID_TERM) {}
     __host__ __device__
     ~RGBDOdometryJacobianFromHybridTerm() override {}
 
 public:
-    __device__
+    __host__ __device__
     void ComputeJacobianAndResidual(
             int row,
             Eigen::Vector6f J_r[2],

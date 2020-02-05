@@ -1,4 +1,5 @@
 #include "cupoch/geometry/image.h"
+#include "cupoch/geometry/rgbdimage.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
@@ -6,7 +7,42 @@
 
 using namespace cupoch;
 
+// Image functions have similar arguments, thus the arg docstrings may be shared
+static const std::unordered_map<std::string, std::string>
+        map_shared_argument_docstrings = {
+                {"color", "The color image."},
+                {"convert_rgb_to_intensity",
+                 "Whether to convert RGB image to intensity image."},
+                {"depth", "The depth image."},
+                {"depth_scale",
+                 "The ratio to scale depth values. The depth values will first "
+                 "be scaled and then truncated."},
+                {"depth_trunc",
+                 "Depth values larger than ``depth_trunc`` gets truncated to "
+                 "0. The depth values will first be scaled and then "
+                 "truncated."},
+                {"filter_type", "The filter type to be applied."},
+                {"image", "The Image object."},
+                {"image_pyramid", "The ImagePyramid object"},
+                {"num_of_levels ", "Levels of the image pyramid"},
+                {"with_gaussian_filter",
+                 "When ``True``, image in the pyramid will first be filtered "
+                 "by a 3x3 Gaussian kernel before downsampling."}};
+
 void pybind_image(py::module &m) {
+    py::enum_<geometry::Image::FilterType> image_filter_type(m,
+                                                             "ImageFilterType");
+    image_filter_type.value("Gaussian3", geometry::Image::FilterType::Gaussian3)
+            .value("Gaussian5", geometry::Image::FilterType::Gaussian5)
+            .value("Gaussian7", geometry::Image::FilterType::Gaussian7)
+            .value("Sobel3dx", geometry::Image::FilterType::Sobel3Dx)
+            .value("Sobel3dy", geometry::Image::FilterType::Sobel3Dy)
+            .export_values();
+    image_filter_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for Image filter types.";
+            }),
+            py::none(), py::none(), "");
 
     py::class_<geometry::Image, PyGeometry2D<geometry::Image>,
                std::shared_ptr<geometry::Image>, geometry::Geometry2D>
@@ -59,10 +95,130 @@ void pybind_image(py::module &m) {
                             std::string(
                                     " channels.");
                  })
+            .def("filter",
+                 [](const geometry::Image &input,
+                    geometry::Image::FilterType filter_type) {
+                     if (input.num_of_channels_ != 1 ||
+                         input.bytes_per_channel_ != 4) {
+                         auto input_f = input.CreateFloatImage();
+                         auto output = input_f->Filter(filter_type);
+                         return *output;
+                     } else {
+                         auto output = input.Filter(filter_type);
+                         return *output;
+                     }
+                 },
+                 "Function to filter Image", "filter_type"_a)
             .def("flip_vertical", &geometry::Image::FlipVertical,
                  "Function to flip image vertically (upside down)")
             .def("flip_horizontal", &geometry::Image::FlipHorizontal,
-                 "Function to flip image horizontally (from left to right)");
+                 "Function to flip image horizontally (from left to right)")
+            .def("create_pyramid",
+                 [](const geometry::Image &input, size_t num_of_levels,
+                    bool with_gaussian_filter) {
+                     if (input.num_of_channels_ != 1 ||
+                         input.bytes_per_channel_ != 4) {
+                         auto input_f = input.CreateFloatImage();
+                         auto output = input_f->CreatePyramid(
+                                 num_of_levels, with_gaussian_filter);
+                         return output;
+                     } else {
+                         auto output = input.CreatePyramid(
+                                 num_of_levels, with_gaussian_filter);
+                         return output;
+                     }
+                 },
+                 "Function to create ImagePyramid", "num_of_levels"_a,
+                 "with_gaussian_filter"_a)
+            .def_static("filter_pyramid",
+                        [](const geometry::ImagePyramid &input,
+                           geometry::Image::FilterType filter_type) {
+                            auto output = geometry::Image::FilterPyramid(
+                                    input, filter_type);
+                            return output;
+                        },
+                        "Function to filter ImagePyramid", "image_pyramid"_a,
+                        "filter_type"_a);
+
+    docstring::ClassMethodDocInject(m, "Image", "filter",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "Image", "create_pyramid",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "Image", "filter_pyramid",
+                                    map_shared_argument_docstrings);
+
+    py::class_<geometry::RGBDImage, PyGeometry2D<geometry::RGBDImage>,
+               std::shared_ptr<geometry::RGBDImage>, geometry::Geometry2D>
+            rgbd_image(m, "RGBDImage",
+                       "RGBDImage is for a pair of registered color and depth "
+                       "images, viewed from the same view, of the same "
+                       "resolution. If you have other format, convert it "
+                       "first.");
+    py::detail::bind_default_constructor<geometry::RGBDImage>(rgbd_image);
+    rgbd_image
+            .def_readwrite("color", &geometry::RGBDImage::color_,
+                           "open3d.geometry.Image: The color image.")
+            .def_readwrite("depth", &geometry::RGBDImage::depth_,
+                           "open3d.geometry.Image: The depth image.")
+            .def("__repr__",
+                 [](const geometry::RGBDImage &rgbd_image) {
+                     return std::string("RGBDImage of size \n") +
+                            std::string("Color image : ") +
+                            std::to_string(rgbd_image.color_.width_) +
+                            std::string("x") +
+                            std::to_string(rgbd_image.color_.height_) +
+                            ", with " +
+                            std::to_string(rgbd_image.color_.num_of_channels_) +
+                            std::string(" channels.\n") +
+                            std::string("Depth image : ") +
+                            std::to_string(rgbd_image.depth_.width_) +
+                            std::string("x") +
+                            std::to_string(rgbd_image.depth_.height_) +
+                            ", with " +
+                            std::to_string(rgbd_image.depth_.num_of_channels_) +
+                            std::string(" channels.\n") +
+                            std::string(
+                                    "Use numpy.asarray to access buffer data.");
+                 })
+            .def_static("create_from_color_and_depth",
+                        &geometry::RGBDImage::CreateFromColorAndDepth,
+                        "Function to make RGBDImage from color and depth image",
+                        "color"_a, "depth"_a, "depth_scale"_a = 1000.0,
+                        "depth_trunc"_a = 3.0,
+                        "convert_rgb_to_intensity"_a = true)
+            .def_static("create_from_redwood_format",
+                        &geometry::RGBDImage::CreateFromRedwoodFormat,
+                        "Function to make RGBDImage (for Redwood format)",
+                        "color"_a, "depth"_a,
+                        "convert_rgb_to_intensity"_a = true)
+            .def_static("create_from_tum_format",
+                        &geometry::RGBDImage::CreateFromTUMFormat,
+                        "Function to make RGBDImage (for TUM format)",
+                        "color"_a, "depth"_a,
+                        "convert_rgb_to_intensity"_a = true)
+            .def_static("create_from_sun_format",
+                        &geometry::RGBDImage::CreateFromSUNFormat,
+                        "Function to make RGBDImage (for SUN format)",
+                        "color"_a, "depth"_a,
+                        "convert_rgb_to_intensity"_a = true)
+            .def_static("create_from_nyu_format",
+                        &geometry::RGBDImage::CreateFromNYUFormat,
+                        "Function to make RGBDImage (for NYU format)",
+                        "color"_a, "depth"_a,
+                        "convert_rgb_to_intensity"_a = true);
+
+    docstring::ClassMethodDocInject(m, "RGBDImage",
+                                    "create_from_color_and_depth",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDImage",
+                                    "create_from_redwood_format",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDImage", "create_from_tum_format",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDImage", "create_from_sun_format",
+                                    map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "RGBDImage", "create_from_nyu_format",
+                                    map_shared_argument_docstrings);
 }
 
 void pybind_image_methods(py::module &m) {}

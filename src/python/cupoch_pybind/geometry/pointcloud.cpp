@@ -1,6 +1,7 @@
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/rgbdimage.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 #include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/docstring.h"
@@ -119,58 +120,86 @@ void pybind_pointcloud(py::module &m) {
                     "depth"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4f::Identity(),
                     "depth_scale"_a = 1000.0, "depth_trunc"_a = 1000.0,
-                    "stride"_a = 1);
-    docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
-    docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
-    docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
-    docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
+                    "stride"_a = 1)
+            .def_static(
+                    "create_from_rgbd_image",
+                    &geometry::PointCloud::CreateFromRGBDImage,
+                    R"(Factory function to create a pointcloud from an RGB-D image and a
+        camera. Given depth value d at (u, v) image coordinate, the corresponding 3d
+        point is:
+              - z = d / depth_scale
+              - x = (u - cx) * z / fx
+              - y = (v - cy) * z / fy
+        )",
+                    "image"_a, "intrinsic"_a,
+                    "extrinsic"_a = Eigen::Matrix4f::Identity(),
+                    "project_valid_depth_only"_a = true);
+     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
+     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
+     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
+     docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "paint_uniform_color",
+             {{"color", "RGB color for the PointCloud."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "select_down_sample",
+             {{"indices", "Indices of points to be selected."},
+              {"invert",
+               "Set to ``True`` to invert the selection of indices."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "voxel_down_sample",
+             {{"voxel_size", "Voxel size to downsample into."},
+              {"invert", "set to ``True`` to invert the selection of indices"}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "uniform_down_sample",
+             {{"every_k_points",
+               "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "remove_none_finite_points",
+             {{"remove_nan", "Remove NaN values from the PointCloud"},
+              {"remove_infinite",
+               "Remove infinite values from the PointCloud"}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "remove_radius_outlier",
+             {{"nb_points", "Number of points within the radius."},
+              {"radius", "Radius of the sphere."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "remove_statistical_outlier",
+             {{"nb_neighbors", "Number of neighbors around the target point."},
+              {"std_ratio", "Standard deviation ratio."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "estimate_normals",
+             {{"search_param",
+               "The KDTree search parameters for neighborhood search."},
+              {"fast_normal_computation",
+               "If true, the normal estiamtion uses a non-iterative method to "
+               "extract the eigenvector from the covariance matrix. This is "
+               "faster, but is not as numerical stable."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "orient_normals_to_align_with_direction",
+             {{"orientation_reference",
+               "Normals are oriented with respect to orientation_reference."}});
+     docstring::ClassMethodDocInject(
+             m, "PointCloud", "cluster_dbscan",
+             {{"eps",
+               "Density parameter that is used to find neighbouring points."},
+              {"min_points", "Minimum number of points to form a cluster."},
+              {"print_progress",
+               "If true the progress is visualized in the console."}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "paint_uniform_color",
-            {{"color", "RGB color for the PointCloud."}});
+            m, "PointCloud", "create_from_depth_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "select_down_sample",
-            {{"indices", "Indices of points to be selected."},
-             {"invert",
-              "Set to ``True`` to invert the selection of indices."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "voxel_down_sample",
-            {{"voxel_size", "Voxel size to downsample into."},
-             {"invert", "set to ``True`` to invert the selection of indices"}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "uniform_down_sample",
-            {{"every_k_points",
-              "Sample rate, the selected point indices are [0, k, 2k, ...]"}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_none_finite_points",
-            {{"remove_nan", "Remove NaN values from the PointCloud"},
-             {"remove_infinite",
-              "Remove infinite values from the PointCloud"}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_radius_outlier",
-            {{"nb_points", "Number of points within the radius."},
-             {"radius", "Radius of the sphere."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_statistical_outlier",
-            {{"nb_neighbors", "Number of neighbors around the target point."},
-             {"std_ratio", "Standard deviation ratio."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "estimate_normals",
-            {{"search_param",
-              "The KDTree search parameters for neighborhood search."},
-             {"fast_normal_computation",
-              "If true, the normal estiamtion uses a non-iterative method to "
-              "extract the eigenvector from the covariance matrix. This is "
-              "faster, but is not as numerical stable."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "orient_normals_to_align_with_direction",
-            {{"orientation_reference",
-              "Normals are oriented with respect to orientation_reference."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "cluster_dbscan",
-            {{"eps",
-              "Density parameter that is used to find neighbouring points."},
-             {"min_points", "Minimum number of points to form a cluster."},
-             {"print_progress",
-              "If true the progress is visualized in the console."}});
-    docstring::ClassMethodDocInject(m, "PointCloud", "create_from_depth_image");
+            m, "PointCloud", "create_from_rgbd_image",
+            {
+                    {"project_valid_depth_only",
+                     "If this value is True, return point cloud, which doesn't "
+                     "have nan point. If this value is False, return point "
+                     "cloud, which has whole points"},
+            });
 }

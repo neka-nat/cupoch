@@ -41,6 +41,20 @@ void Rand(thrust::host_vector<Eigen::Vector3f>& v,
           const Eigen::Vector3f& vmax,
           const int& seed);
 
+// Initialize an Eigen::Vector4i vector.
+// Output range: [vmin:vmax].
+void Rand(thrust::host_vector<Eigen::Vector4i>& v,
+          const int& vmin,
+          const int& vmax,
+          const int& seed);
+
+// Initialize an Eigen::Vector4i vector.
+// Output range: [vmin:vmax].
+void Rand(thrust::host_vector<Eigen::Vector4i>& v,
+          const Eigen::Vector4i& vmin,
+          const Eigen::Vector4i& vmax,
+          const int& seed);
+
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 void Rand(thrust::host_vector<uint8_t>& v,

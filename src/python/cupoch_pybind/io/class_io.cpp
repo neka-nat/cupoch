@@ -1,8 +1,11 @@
 #include "cupoch_pybind/io/io.h"
 #include "cupoch_pybind/docstring.h"
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
+#include "cupoch/camera/pinhole_camera_parameters.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/io/class_io/ijson_convertible_io.h"
 #include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/io/class_io/trianglemesh_io.h"
@@ -133,5 +136,47 @@ void pybind_class_io(py::module &m_io) {
              "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
              "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
+    // cupoch::camera
+    m_io.def("read_pinhole_camera_intrinsic",
+             [](const std::string &filename) {
+                 camera::PinholeCameraIntrinsic intrinsic;
+                 io::ReadIJsonConvertible(filename, intrinsic);
+                 return intrinsic;
+             },
+             "Function to read PinholeCameraIntrinsic from file", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pinhole_camera_intrinsic",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_pinhole_camera_intrinsic",
+             [](const std::string &filename,
+                const camera::PinholeCameraIntrinsic &intrinsic) {
+                 return io::WriteIJsonConvertible(filename, intrinsic);
+             },
+             "Function to write PinholeCameraIntrinsic to file", "filename"_a,
+             "intrinsic"_a);
+    docstring::FunctionDocInject(m_io, "write_pinhole_camera_intrinsic",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("read_pinhole_camera_parameters",
+             [](const std::string &filename) {
+                 camera::PinholeCameraParameters parameters;
+                 io::ReadIJsonConvertible(filename, parameters);
+                 return parameters;
+             },
+             "Function to read PinholeCameraParameters from file",
+             "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_pinhole_camera_parameters",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_pinhole_camera_parameters",
+             [](const std::string &filename,
+                const camera::PinholeCameraParameters &parameters) {
+                 return io::WriteIJsonConvertible(filename, parameters);
+             },
+             "Function to write PinholeCameraParameters to file", "filename"_a,
+             "parameters"_a);
+    docstring::FunctionDocInject(m_io, "write_pinhole_camera_parameters",
                                  map_shared_argument_docstrings);
 }

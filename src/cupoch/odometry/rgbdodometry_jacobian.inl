@@ -13,8 +13,8 @@ const float LAMBDA_HYBRID_DEPTH = 0.968;
 
 }  // unnamed namespace
 
-__device__
-void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
+__host__ __device__
+inline void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
             int row,
             Eigen::Vector6f J_r[2],
             float r[2],
@@ -62,8 +62,8 @@ void RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     r[1] = 0.0;
 }
 
-__device__
-void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
+__host__ __device__
+inline void RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
             int row,
             Eigen::Vector6f J_r[2],
             float r[2],

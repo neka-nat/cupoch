@@ -2,6 +2,7 @@
 #include "cupoch_pybind/camera/camera.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/io/io.h"
+#include "cupoch_pybind/odometry/odometry.h"
 #include "cupoch_pybind/registration/registration.h"
 #include "cupoch_pybind/utility/utility.h"
 #include "cupoch_pybind/visualization/visualization.h"
@@ -14,5 +15,6 @@ PYBIND11_MODULE(cupoch, m) {
     pybind_geometry(m);
     pybind_io(m);
     pybind_registration(m);
+    pybind_odometry(m);
     pybind_visualization(m);
 }

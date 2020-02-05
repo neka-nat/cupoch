@@ -15,7 +15,7 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
 )
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
-                      cupoch_visualization cupoch_io cupoch_geometry cupoch_utility
+                      cupoch_visualization cupoch_io cupoch_odometry cupoch_geometry cupoch_utility
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
 
 set_target_properties(${PACKAGE_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")

@@ -17,13 +17,14 @@ class RGBDImage;
 namespace odometry {
 /// Function to estimate 6D odometry between two RGB-D images
 /// output: is_success, 4x4 motion matrix, 6x6 information matrix
-template <typename JacobianType>
 std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =
                 camera::PinholeCameraIntrinsic(),
         const Eigen::Matrix4f &odo_init = Eigen::Matrix4f::Identity(),
+        const RGBDOdometryJacobian &jacobian_method =
+                RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
 }  // namespace odometry

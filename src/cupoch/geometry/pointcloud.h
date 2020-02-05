@@ -14,6 +14,7 @@ class PinholeCameraIntrinsic;
 namespace geometry {
 
 class Image;
+class RGBDImage;
 
 class PointCloud : public Geometry3D {
 public:
@@ -141,6 +142,19 @@ public:
             float depth_scale = 1000.0,
             float depth_trunc = 1000.0,
             int stride = 1);
+
+    /// Factory function to create a pointcloud from an RGB-D image and a camera
+    /// model (PointCloudFactory.cpp)
+    /// Return an empty pointcloud if the conversion fails.
+    /// If \param project_valid_depth_only is true, return point cloud, which
+    /// doesn't
+    /// have nan point. If the value is false, return point cloud, which has
+    /// a point for each pixel, whereas invalid depth results in NaN points.
+    static std::shared_ptr<PointCloud> CreateFromRGBDImage(
+            const RGBDImage &image,
+            const camera::PinholeCameraIntrinsic &intrinsic,
+            const Eigen::Matrix4f &extrinsic = Eigen::Matrix4f::Identity(),
+            bool project_valid_depth_only = true);
 
 public:
     thrust::device_vector<Eigen::Vector3f> points_;

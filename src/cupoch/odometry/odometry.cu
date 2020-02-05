@@ -1,5 +1,6 @@
 #include "cupoch/odometry/odometry.h"
 
+#include <typeinfo>
 #include <Eigen/Dense>
 
 #include "cupoch/geometry/image.h"
@@ -625,11 +626,8 @@ std::tuple<bool, Eigen::Matrix4f> ComputeMultiscale(
     return std::make_tuple(true, result_odo);
 }
 
-}  // unnamed namespace
-
-
 template <typename JacobianType>
-std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
@@ -665,21 +663,43 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
     }
 }
 
-template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry<RGBDOdometryJacobianFromColorTerm>(
-        const geometry::RGBDImage &source,
-        const geometry::RGBDImage &target,
-        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
-        /*= camera::PinholeCameraIntrinsic()*/,
-        const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
-        const OdometryOption &option /*= OdometryOption()*/);
+template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT<RGBDOdometryJacobianFromColorTerm>(
+    const geometry::RGBDImage &source,
+    const geometry::RGBDImage &target,
+    const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
+    /*= camera::PinholeCameraIntrinsic()*/,
+    const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
+    const OdometryOption &option /*= OdometryOption()*/);
 
-template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry<RGBDOdometryJacobianFromHybridTerm>(
-        const geometry::RGBDImage &source,
-        const geometry::RGBDImage &target,
-        const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
-        /*= camera::PinholeCameraIntrinsic()*/,
-        const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
-        const OdometryOption &option /*= OdometryOption()*/);
+template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(
+    const geometry::RGBDImage &source,
+    const geometry::RGBDImage &target,
+    const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
+    /*= camera::PinholeCameraIntrinsic()*/,
+    const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
+    const OdometryOption &option /*= OdometryOption()*/);
+
+}  // unnamed namespace
+
+std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
+    const geometry::RGBDImage &source,
+    const geometry::RGBDImage &target,
+    const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
+    /*= camera::PinholeCameraIntrinsic()*/,
+    const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
+    const RGBDOdometryJacobian &jacobian_method
+    /*=RGBDOdometryJacobianFromHybridTerm*/,
+    const OdometryOption &option /*= OdometryOption()*/) {
+    if (jacobian_method.jacobian_type_ == RGBDOdometryJacobian::COLOR_TERM) {
+        return ComputeRGBDOdometryT<RGBDOdometryJacobianFromColorTerm>(source, target,
+                                                                       pinhole_camera_intrinsic,
+                                                                       odo_init, option);
+    } else {
+        return ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(source, target,
+                                                                        pinhole_camera_intrinsic,
+                                                                        odo_init, option);
+    }
+}
 
 }
 }
