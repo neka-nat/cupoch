@@ -13,7 +13,7 @@
 
 With Python version: * 3.6 * 3.7
 
-and CUDA version: * 10.0
+and CUDA version: * 10.0 * 10.1
 
 ## Resources
 
