@@ -36,6 +36,15 @@ cd build
 cmake ..; make install-pip-package -j
 ```
 
+### Installation for Jetson
+You can also install cupoch using pip on Jetson.
+Please set up Jetson using [jetcard](https://github.com/NVIDIA-AI-IOT/jetcard) and install some packages with apt.
+
+```
+sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
+pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.2/cupoch-0.0.2.0-cp36-cp36m-linux_aarch64.whl
+```
+
 ## Getting started
 The following demo shows ICP registration.
 You can write code that is almost compatible with open3d.
