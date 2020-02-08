@@ -19,7 +19,7 @@ Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 ## Installation
 
-This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.0/10.1.
+This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.0/10.1/10.2.
 You can install cupoch using pip.
 
 ```

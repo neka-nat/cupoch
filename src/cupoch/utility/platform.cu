@@ -1,4 +1,7 @@
 #include "cupoch/utility/platform.h"
+#if defined(__arm__) || defined(__aarch64__)
+#include <GL/gl.h>
+#endif
 #include <cuda_gl_interop.h>
 #include <mutex>
 
