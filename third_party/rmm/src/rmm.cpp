@@ -30,6 +30,7 @@
 
 
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cstddef>

@@ -70,7 +70,7 @@ void Logger::to_csv(std::ostream& csv) {
         << e.currentAllocations << ","
         << std::chrono::duration<double>(e.start - base_time).count() << ","
         << std::chrono::duration<double>(e.end - base_time).count() << ","
-        << elapsed.count() << "," << e.filename << ":" << e.line << std::endl;
+        << elapsed.count() << "," << e.filename.c_str() << ":" << e.line << std::endl;
   }
 }
 

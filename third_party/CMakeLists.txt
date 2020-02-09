@@ -227,6 +227,9 @@ add_library(rmm STATIC rmm/src/rmm.cpp
             rmm/src/mr/default_memory_resource.cpp)
 target_include_directories(rmm PUBLIC cnmem/include rmm/include)
 target_link_libraries(rmm ${CUDA_LIBRAIES})
+if (WIN32)
+  target_compile_definitions(rmm PRIVATE -DNOMINMAX)
+endif ()
 set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
 
 # imgui
