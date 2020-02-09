@@ -6,6 +6,7 @@
 
 [![Build Status](https://travis-ci.com/neka-nat/cupoch.svg?branch=master)](https://travis-ci.com/neka-nat/cupoch)
 [![PyPI version](https://badge.fury.io/py/cupoch.svg)](https://badge.fury.io/py/cupoch)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cupoch)
 [![Downloads](https://pepy.tech/badge/cupoch)](https://pepy.tech/project/cupoch)
 
 Cupoch is a library that implements rapid 3D data processing using CUDA.

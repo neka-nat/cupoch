@@ -11,7 +11,7 @@
 
 * Ubuntu 18.04
 
-With Python version: * 3.6 * 3.7
+With Python version: * 2.7 * 3.6 * 3.7
 
 and CUDA version: * 10.0 * 10.1 * 10.2
 
