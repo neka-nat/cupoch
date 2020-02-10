@@ -56,12 +56,12 @@ void pybind_lineset(py::module &m) {
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)
-            .def_property("points", &geometry::LineSet::GetPoints,
-                                    &geometry::LineSet::SetPoints)
-            .def_property("lines", &geometry::LineSet::GetLines,
-                                   &geometry::LineSet::SetLines)
-            .def_property("colors", &geometry::LineSet::GetColors,
-                                    &geometry::LineSet::SetColors);
+            .def_property("points", [] (geometry::LineSet &line) {return wrapper::device_vector_vector3f(line.points_);},
+                                    [] (geometry::LineSet &line, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(line.points_, vec);})
+            .def_property("lines", [] (geometry::LineSet &line) {return wrapper::device_vector_vector2i(line.lines_);},
+                                   [] (geometry::LineSet &line, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(line.lines_, vec);})
+            .def_property("colors", [] (geometry::LineSet &line) {return wrapper::device_vector_vector3f(line.colors_);},
+                                    [] (geometry::LineSet &line, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(line.colors_, vec);});
     docstring::ClassMethodDocInject(m, "LineSet", "has_colors");
     docstring::ClassMethodDocInject(m, "LineSet", "has_lines");
     docstring::ClassMethodDocInject(m, "LineSet", "has_points");

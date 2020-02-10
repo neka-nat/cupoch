@@ -10,6 +10,7 @@
 PYBIND11_MODULE(cupoch, m) {
     m.doc() = "CUDA-based 3D data processing library";
 
+    bind_device_vector_wrapper(m);
     pybind_utility(m);
     pybind_camera(m);
     pybind_geometry(m);

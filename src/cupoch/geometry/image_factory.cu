@@ -1,3 +1,4 @@
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/utility/console.h"
 
@@ -5,6 +6,25 @@ using namespace cupoch;
 using namespace cupoch::geometry;
 
 namespace {
+
+struct compute_camera_distance_functor {
+    compute_camera_distance_functor(uint8_t* data, int width,
+                                    const float* xx, const float* yy)
+                                    : data_(data), width_(width),
+                                      xx_(xx), yy_(yy) {};
+    uint8_t* data_;
+    const int width_;
+    const float* xx_;
+    const float* yy_;
+    __device__
+    void operator() (size_t idx) {
+        int i = idx / width_;
+        int j = idx % width_;
+        float *fp =
+                (float *)(data_ + idx * sizeof(float));
+        *fp = sqrtf(xx_[j] * xx_[j] + yy_[i] * yy_[i] + 1.0f);
+    }
+};
 
 struct make_float_image_functor {
     make_float_image_functor(const uint8_t* image, int num_of_channels,
@@ -84,6 +104,31 @@ struct restore_from_float_image_functor {
     }
 };
 
+}
+
+std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
+        const camera::PinholeCameraIntrinsic &intrinsic) {
+    auto fimage = std::make_shared<Image>();
+    fimage->Prepare(intrinsic.width_, intrinsic.height_, 1, 4);
+    float ffl_inv0 = 1.0f / (float)intrinsic.GetFocalLength().first;
+    float ffl_inv1 = 1.0f / (float)intrinsic.GetFocalLength().second;
+    float fpp0 = (float)intrinsic.GetPrincipalPoint().first;
+    float fpp1 = (float)intrinsic.GetPrincipalPoint().second;
+    thrust::device_vector<float> xx(intrinsic.width_);
+    thrust::device_vector<float> yy(intrinsic.height_);
+    thrust::tabulate(thrust::cuda::par.on(utility::GetStream(0)), xx.begin(), xx.end(),
+                     [=] __device__ (int idx) {return (idx - fpp0) * ffl_inv0;});
+    thrust::tabulate(thrust::cuda::par.on(utility::GetStream(1)), yy.begin(), yy.end(),
+                     [=] __device__ (int idx) {return (idx - fpp1) * ffl_inv1;});
+    cudaSafeCall(cudaDeviceSynchronize());
+    compute_camera_distance_functor func(thrust::raw_pointer_cast(fimage->data_.data()),
+                                         intrinsic.width_,
+                                         thrust::raw_pointer_cast(xx.data()),
+                                         thrust::raw_pointer_cast(yy.data()));
+    for_each(thrust::make_counting_iterator<size_t>(0),
+             thrust::make_counting_iterator<size_t>(intrinsic.height_ * intrinsic.width_),
+             func);
+    return fimage;
 }
 
 std::shared_ptr<Image> Image::CreateFloatImage(

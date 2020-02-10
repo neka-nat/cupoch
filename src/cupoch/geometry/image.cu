@@ -264,22 +264,10 @@ bool Image::TestImageBoundary(float u,
 }
 
 std::pair<bool, float> Image::FloatValueAt(float u, float v) const {
-    if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4) ||
-        (u < 0.0 || u > (float)(width_ - 1) || v < 0.0 ||
-         v > (float)(height_ - 1))) {
-        return std::make_pair(false, 0.0);
-    }
-    int ui = std::max(std::min((int)u, width_ - 2), 0);
-    int vi = std::max(std::min((int)v, height_ - 2), 0);
-    float pu = u - ui;
-    float pv = v - vi;
-    const uint8_t* data_ptr = thrust::raw_pointer_cast(data_.data());
-    float value[4] = {*PointerAt<float>(data_ptr, width_, ui, vi), *PointerAt<float>(data_ptr, width_, ui, vi + 1),
-                      *PointerAt<float>(data_ptr, width_, ui + 1, vi),
-                      *PointerAt<float>(data_ptr, width_, ui + 1, vi + 1)};
-    return std::make_pair(true,
-                          (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
-                                  (value[2] * (1 - pv) + value[3] * pv) * pu);
+    auto output = geometry::FloatValueAt(thrust::raw_pointer_cast(data_.data()),
+                                         u, v, width_, height_,
+                                         num_of_channels_, bytes_per_channel_);
+    return std::make_pair(output.first, output.second);
 }
 
 std::shared_ptr<Image> Image::ConvertDepthToFloatImage(

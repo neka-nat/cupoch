@@ -1,5 +1,6 @@
 add_subdirectory(camera)
 add_subdirectory(geometry)
+add_subdirectory(integration)
 add_subdirectory(io)
 add_subdirectory(odometry)
 add_subdirectory(registration)

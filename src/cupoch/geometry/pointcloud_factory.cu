@@ -70,10 +70,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
                                      camera_pose);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(depth_size),
                       pointcloud->points_.begin(), func);
-    auto end = thrust::remove_if(pointcloud->points_.begin(), pointcloud->points_.end(),
-                                 [] __device__ (const Eigen::Vector3f& pt) -> bool {return Eigen::device_any(pt.array().isInf());});
-    size_t n_result = thrust::distance(pointcloud->points_.begin(), end);
-    pointcloud->points_.resize(n_result);
+    pointcloud->RemoveNoneFinitePoints(true, true);
     return pointcloud;
 }
 
@@ -160,16 +157,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(num_valid_pixels),
                       make_tuple_iterator(pointcloud->points_.begin(), pointcloud->colors_.begin()), func);
-    auto begin = make_tuple_iterator(pointcloud->points_.begin(), pointcloud->colors_.begin());
-    auto end = thrust::remove_if(begin,
-                                 make_tuple_iterator(pointcloud->points_.end(), pointcloud->colors_.end()),
-                                 [] __device__ (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& x) {
-                                     Eigen::Vector3f cl = thrust::get<1>(x);
-                                     return (std::isinf(cl[0]) && std::isinf(cl[1]) && std::isinf(cl[2]));
-                                 });
-    size_t out_size = thrust::distance(begin, end);
-    pointcloud->points_.resize(out_size);
-    pointcloud->colors_.resize(out_size);
+                      auto begin = make_tuple_iterator(pointcloud->points_.begin(), pointcloud->colors_.begin());
+    pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, true);
     return pointcloud;
 }
 

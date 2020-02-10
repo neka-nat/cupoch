@@ -220,8 +220,10 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
     int* tri_ptr = (int*)(thrust::raw_pointer_cast(triangles_.data()));
     thrust::sort_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin());
-    thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(),
-                          thrust::make_discard_iterator(), vertex_normals_.begin());
+    auto end = thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(),
+                                     thrust::make_discard_iterator(), vertex_normals_.begin());
+    size_t n_out = thrust::distance(vertex_normals_.begin(), end.second);
+    vertex_normals_.resize(n_out);
     if (normalized) {
         NormalizeNormals();
     }

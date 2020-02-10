@@ -110,20 +110,20 @@ void pybind_trianglemesh(py::module &m) {
                         "rendered as red, green, and blue arrows respectively.",
                         "size"_a = 1.0,
                         "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_property("vertices", &geometry::TriangleMesh::GetVertices,
-                                      &geometry::TriangleMesh::SetVertices)
-            .def_property("vertex_normals", &geometry::TriangleMesh::GetVertexNormals,
-                                            &geometry::TriangleMesh::SetVertexNormals)
-            .def_property("vertex_colors", &geometry::TriangleMesh::GetVertexColors,
-                                           &geometry::TriangleMesh::SetVertexColors)
-            .def_property("triangles", &geometry::TriangleMesh::GetTriangles,
-                                       &geometry::TriangleMesh::SetTriangles)
-            .def_property("triangle_normals", &geometry::TriangleMesh::GetTriangleNormals,
-                                              &geometry::TriangleMesh::SetTriangleNormals)
-            .def_property("adjacency_matrix", &geometry::TriangleMesh::GetAdjacencyMatrix,
-                                              &geometry::TriangleMesh::SetAdjacencyMatrix)
-            .def_property("triangle_uvs", &geometry::TriangleMesh::GetTriangleUVs,
-                                          &geometry::TriangleMesh::SetTriangleUVs)
+            .def_property("vertices", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertices_);},
+                                      [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertices_, vec);})
+            .def_property("vertex_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_normals_);},
+                                            [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_normals_, vec);})
+            .def_property("vertex_colors", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_colors_);},
+                                           [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_colors_, vec);})
+            .def_property("triangles", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3i(mesh.triangles_);},
+                                       [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3i& vec) {wrapper::FromWrapper(mesh.triangles_, vec);})
+            .def_property("triangle_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.triangle_normals_);},
+                                              [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.triangle_normals_, vec);})
+            .def_property("adjacency_matrix", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_int(mesh.adjacency_matrix_);},
+                                              [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_int& vec) {wrapper::FromWrapper(mesh.adjacency_matrix_, vec);})
+            .def_property("triangle_uvs", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector2f(mesh.triangle_uvs_);},
+                                          [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector2f& vec) {wrapper::FromWrapper(mesh.triangle_uvs_, vec);})
             .def_readwrite("texture", &geometry::TriangleMesh::texture_,
                            "cupoch.geometry.Image: The texture image.")
             .def("to_vertices_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertices_);})

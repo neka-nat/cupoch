@@ -138,7 +138,9 @@ void pybind_image(py::module &m) {
                             return output;
                         },
                         "Function to filter ImagePyramid", "image_pyramid"_a,
-                        "filter_type"_a);
+                        "filter_type"_a)
+            .def_readonly("width", &geometry::Image::width_)
+            .def_readonly("height", &geometry::Image::height_);
 
     docstring::ClassMethodDocInject(m, "Image", "filter",
                                     map_shared_argument_docstrings);

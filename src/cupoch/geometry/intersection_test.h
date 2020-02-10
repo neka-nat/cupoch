@@ -14,6 +14,13 @@ namespace intersection_test {
                                    const Eigen::Vector3f& q0,
                                    const Eigen::Vector3f& q1,
                                    const Eigen::Vector3f& q2);
+
+    __host__ __device__
+    inline bool TriangleAABB(const Eigen::Vector3f& box_center,
+                             const Eigen::Vector3f& box_half_size,
+                             const Eigen::Vector3f& vert0,
+                             const Eigen::Vector3f& vert1,
+                             const Eigen::Vector3f& vert2);
 }
 
 }

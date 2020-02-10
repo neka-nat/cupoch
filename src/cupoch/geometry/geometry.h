@@ -18,6 +18,8 @@ public:
         Unspecified = 0,
         /// PointCloud
         PointCloud = 1,
+        /// VoxelGrid
+        VoxelGrid = 2,
         /// LineSet
         LineSet = 4,
         /// MeshBase

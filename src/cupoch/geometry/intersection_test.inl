@@ -32,6 +32,19 @@ bool TriangleTriangle3d(const Eigen::Vector3f& p0,
                             q1m.data(), q2m.data()) != 0;
 }
 
+bool TriangleAABB(const Eigen::Vector3f& box_center,
+                  const Eigen::Vector3f& box_half_size,
+                  const Eigen::Vector3f& vert0,
+                  const Eigen::Vector3f& vert1,
+                  const Eigen::Vector3f& vert2) {
+    float* tri_verts[3] = {const_cast<float*>(vert0.data()),
+                           const_cast<float*>(vert1.data()),
+                           const_cast<float*>(vert2.data())};
+    return triBoxOverlap(const_cast<float*>(box_center.data()),
+                         const_cast<float*>(box_half_size.data()),
+                         tri_verts) != 0;
+}
+
 }
 
 }

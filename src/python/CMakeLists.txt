@@ -6,6 +6,12 @@ add_library(${PACKAGE_NAME} SHARED
     ${PY_ALL_SOURCE_FILES}
 )
 
+cuda_add_library(cupoch_wrapper cupoch_pybind/device_vector_wrapper.cu)
+target_include_directories(cupoch_wrapper PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(cupoch_wrapper cupoch_geometry)
+
 target_include_directories(${PACKAGE_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -20,6 +26,7 @@ endif ()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
                       cupoch_visualization cupoch_io cupoch_odometry cupoch_geometry cupoch_utility
+                      cupoch_wrapper
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
 
 set_target_properties(${PACKAGE_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")

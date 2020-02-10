@@ -38,7 +38,7 @@
   if(x2>max) max=x2;
 
 __host__ __device__
-int planeBoxOverlap(float normal[3], float vert[3], float maxbox[3])	// -NJMP-
+inline int planeBoxOverlap(float normal[3], float vert[3], float maxbox[3])	// -NJMP-
 {
   int q;
   float vmin[3],vmax[3],v;
@@ -110,7 +110,7 @@ int planeBoxOverlap(float normal[3], float vert[3], float maxbox[3])	// -NJMP-
 	if(min>rad || max<-rad) return 0;
 
 __host__ __device__
-int triBoxOverlap(float boxcenter[3],float boxhalfsize[3],float** triverts)
+inline int triBoxOverlap(float boxcenter[3],float boxhalfsize[3],float** triverts)
 {
 
   /*    use separating axis theorem to test overlap between triangle and box */

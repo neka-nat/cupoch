@@ -4,6 +4,11 @@
 #include <vector>
 
 namespace cupoch {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}
+
 namespace geometry {
 
 class Image;
@@ -102,6 +107,17 @@ public:
     /// interpolated pixel value.
     std::pair<bool, float> FloatValueAt(float u, float v) const;
 
+    /// Factory function to create a float image composed of multipliers that
+    /// convert depth values into camera distances (ImageFactory.cpp)
+    /// The multiplier function M(u,v) is defined as:
+    /// M(u, v) = sqrt(1 + ((u - cx) / fx) ^ 2 + ((v - cy) / fy) ^ 2)
+    /// This function is used as a convenient function for performance
+    /// optimization in volumetric integration (see
+    /// Core/Integration/TSDFVolume.h).
+    static std::shared_ptr<Image>
+    CreateDepthToCameraDistanceMultiplierFloatImage(
+            const camera::PinholeCameraIntrinsic &intrinsic);
+
     /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(
             Image::ColorToIntensityConversionType type =
@@ -180,6 +196,26 @@ template <typename T>
 __host__ __device__
 T *PointerAt(const uint8_t* data, int width, int num_of_channels, int u, int v, int ch) {
     return (T *)(data + ((v * width + u) * num_of_channels + ch) * sizeof(T));
+}
+
+__host__ __device__
+inline thrust::pair<bool, float> FloatValueAt(const uint8_t* data, float u, float v, int width, int height,
+                                              int num_of_channels, int bytes_per_channel) {
+    if ((num_of_channels != 1) || (bytes_per_channel != 4) ||
+        (u < 0.0 || u > (float)(width - 1) || v < 0.0 ||
+         v > (float)(height - 1))) {
+        return thrust::make_pair(false, 0.0);
+    }
+    int ui = std::max(std::min((int)u, width - 2), 0);
+    int vi = std::max(std::min((int)v, height - 2), 0);
+    float pu = u - ui;
+    float pv = v - vi;
+    float value[4] = {*PointerAt<float>(data, width, ui, vi), *PointerAt<float>(data, width, ui, vi + 1),
+                      *PointerAt<float>(data, width, ui + 1, vi),
+                      *PointerAt<float>(data, width, ui + 1, vi + 1)};
+    return thrust::make_pair(true,
+                             (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
+                                     (value[2] * (1 - pv) + value[3] * pv) * pu);
 }
 
 }

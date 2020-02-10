@@ -25,12 +25,12 @@ void pybind_pointcloud(py::module &m) {
                      return std::string("geometry::PointCloud with ") +
                             std::to_string(pcd.points_.size()) + " points.";
                  })
-            .def_property("points", &geometry::PointCloud::GetPoints,
-                                    &geometry::PointCloud::SetPoints)
-            .def_property("normals", &geometry::PointCloud::GetNormals,
-                                     &geometry::PointCloud::SetNormals)
-            .def_property("colors", &geometry::PointCloud::GetColors,
-                                    &geometry::PointCloud::SetColors)
+            .def_property("points", [] (geometry::PointCloud &pcd) {return wrapper::device_vector_vector3f(pcd.points_);},
+                                    [] (geometry::PointCloud &pcd, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(pcd.points_, vec);})
+            .def_property("normals",[] (geometry::PointCloud &pcd) {return wrapper::device_vector_vector3f(pcd.normals_);},
+                                    [] (geometry::PointCloud &pcd, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(pcd.normals_, vec);})
+            .def_property("colors", [] (geometry::PointCloud &pcd) {return wrapper::device_vector_vector3f(pcd.colors_);},
+                                    [] (geometry::PointCloud &pcd, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(pcd.colors_, vec);})
             .def("to_points_dlpack", [](geometry::PointCloud &pcd) {return dlpack::ToDLpackCapsule(pcd.points_);})
             .def("to_normals_dlpack", [](geometry::PointCloud &pcd) {return dlpack::ToDLpackCapsule(pcd.normals_);})
             .def("to_colors_dlpack", [](geometry::PointCloud &pcd) {return dlpack::ToDLpackCapsule(pcd.colors_);})

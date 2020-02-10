@@ -12,5 +12,6 @@ matplotlib = "*"
 torch = "==1.2.0"
 wheel = "*"
 twine = "*"
+pyrealsense2 = "*"
 
 [requires]

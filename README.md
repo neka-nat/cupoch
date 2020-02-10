@@ -78,3 +78,7 @@ The environment tested on has the following specs:
 * OMP_NUM_THREAD=1
 
 ![speedup](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/speedup.png)
+
+## References
+
+* CUDA repository forked from Open3D, https://github.com/theNded/Open3D

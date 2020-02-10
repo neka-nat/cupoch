@@ -10,25 +10,17 @@
 
 namespace thrust {
 
-template<>
-struct equal_to<Eigen::Vector2i> {
-    typedef Eigen::Vector2i first_argument_type;
-    typedef Eigen::Vector2i second_argument_type;
+template<int Dim>
+struct equal_to<Eigen::Matrix<int, Dim, 1>> {
+    typedef Eigen::Matrix<int, Dim, 1> first_argument_type;
+    typedef Eigen::Matrix<int, Dim, 1> second_argument_type;
     typedef bool result_type;
     __thrust_exec_check_disable__
-    __host__ __device__ bool operator()(const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) const {
-        return (lhs[0] == rhs[0] && lhs[1] == rhs[1]);
-    }
-};
-
-template<>
-struct equal_to<Eigen::Vector3i> {
-    typedef Eigen::Vector3i first_argument_type;
-    typedef Eigen::Vector3i second_argument_type;
-    typedef bool result_type;
-    __thrust_exec_check_disable__
-    __host__ __device__ bool operator()(const Eigen::Vector3i &lhs, const Eigen::Vector3i &rhs) const {
-        return (lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2]);
+    __host__ __device__ bool operator()(const Eigen::Matrix<int, Dim, 1> &lhs, const Eigen::Matrix<int, Dim, 1> &rhs) const {
+        for (int i = 0; i < Dim; ++i) {
+            if (lhs[i] != rhs[i]) return false;
+        }
+        return true;
     }
 };
 
@@ -48,12 +40,28 @@ struct plus<thrust::tuple<MatType, VecType, float>> {
 
 namespace Eigen {
 
+template<int Dim>
 __host__ __device__
-inline bool operator<(const Eigen::Vector3i &lhs, const Eigen::Vector3i &rhs) {
-    if (lhs[0] != rhs[0]) return lhs[0] < rhs[0];
-    if (lhs[1] != rhs[1]) return lhs[1] < rhs[1];
-    if (lhs[2] != rhs[2]) return lhs[2] < rhs[2];
+bool operator<(const Eigen::Matrix<int, Dim, 1> &lhs, const Eigen::Matrix<int, Dim, 1> &rhs) {
+    for (int i = 0; i < Dim; ++i) {
+        if (lhs[i] != rhs[i]) return lhs[i] < rhs[i];
+    }
     return false;
+}
+
+__host__ __device__
+inline bool operator==(const Eigen::Vector3i &lhs, const Eigen::Vector3i &rhs) {
+    return (lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2]);
+}
+
+__host__ __device__
+inline bool operator!=(const Eigen::Vector3i &lhs, const Eigen::Vector3i &rhs) {
+    return (lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2]);
+}
+
+__host__ __device__
+inline bool operator!=(const Eigen::Vector3f &lhs, const Eigen::Vector3f &rhs) {
+    return (lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2]);
 }
 
 template<typename ArrayType>
