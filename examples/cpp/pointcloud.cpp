@@ -2,6 +2,7 @@
 
 int main(int argc, char *argv[]) {
     using namespace cupoch;
+    utility::InitializeCupoch();
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 

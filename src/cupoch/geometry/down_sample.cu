@@ -3,6 +3,7 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/range.h"
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
 
@@ -66,17 +67,6 @@ int CalcAverageByKey(utility::device_vector<Eigen::Vector3i>& keys,
                       dv_func);
     return n_out;
 }
-
-struct stride_copy_functor {
-    stride_copy_functor(const Eigen::Vector3f* data, int every_k_points)
-        : data_(data), every_k_points_(every_k_points) {};
-    const Eigen::Vector3f* data_;
-    const int every_k_points_;
-    __device__
-    Eigen::Vector3f operator() (int idx) const {
-        return data_[idx * every_k_points_];
-    }
-};
 
 struct has_radius_points_functor {
     has_radius_points_functor(const int* indices, int n_points, int knn)
@@ -230,21 +220,15 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     output->points_.resize(n_out);
     if (has_normals) output->normals_.resize(n_out);
     if (has_colors) output->colors_.resize(n_out);
-    thrust::transform(exec_policy_on(utility::GetStream(0)),
-                      thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
-                      output->points_.begin(),
-                      stride_copy_functor(thrust::raw_pointer_cast(output->points_.data()), every_k_points));
+    thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_points(points_.begin(), points_.end(), every_k_points);
+    thrust::copy(exec_policy_on(utility::GetStream(0)), range_points.begin(), range_points.end(), output->points_.begin());
     if (has_normals) {
-        thrust::transform(exec_policy_on(utility::GetStream(1)),
-                          thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
-                          output->normals_.begin(),
-                          stride_copy_functor(thrust::raw_pointer_cast(output->normals_.data()), every_k_points));
+        thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_normals(normals_.begin(), normals_.end(), every_k_points);
+        thrust::copy(exec_policy_on(utility::GetStream(1)), range_normals.begin(), range_normals.end(), output->normals_.begin());
     }
     if (has_colors) {
-        thrust::transform(exec_policy_on(utility::GetStream(2)),
-                          thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
-                          output->colors_.begin(),
-                          stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
+        thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_colors(colors_.begin(), colors_.end(), every_k_points);
+        thrust::copy(exec_policy_on(utility::GetStream(2)), range_colors.begin(), range_colors.end(), output->colors_.begin());
     }
     cudaSafeCall(cudaDeviceSynchronize());
     return output;
@@ -269,12 +253,6 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
     return std::make_tuple(SelectDownSample(indices), indices);
-}
-
-std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
-PointCloud::RemoveRadiusOutliersHost(size_t nb_points, float search_radius) const {
-    auto output = RemoveRadiusOutliers(nb_points, search_radius);
-    return std::make_tuple(std::get<0>(output), thrust::host_vector<size_t>(std::get<1>(output)));
 }
 
 std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
@@ -320,11 +298,4 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                indices.begin(), th_func);
     indices.resize(thrust::distance(indices.begin(), end));
     return std::make_tuple(SelectDownSample(indices), indices);
-}
-
-std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
-PointCloud::RemoveStatisticalOutliersHost(size_t nb_neighbors,
-    float std_ratio) const {
-    auto output = RemoveStatisticalOutliers(nb_neighbors, std_ratio);
-    return std::make_tuple(std::get<0>(output), thrust::host_vector<size_t>(std::get<1>(output)));
 }

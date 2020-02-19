@@ -33,6 +33,7 @@ template class device_vector_wrapper<Eigen::Vector3i>;
 template class device_vector_wrapper<Eigen::Vector2i>;
 template class device_vector_wrapper<float>;
 template class device_vector_wrapper<int>;
+template class device_vector_wrapper<size_t>;
 
 template<typename Type>
 void FromWrapper(utility::device_vector<Type>& dv, const device_vector_wrapper<Type>& vec) {
@@ -45,6 +46,7 @@ template void FromWrapper<Eigen::Vector3i>(utility::device_vector<Eigen::Vector3
 template void FromWrapper<Eigen::Vector2i>(utility::device_vector<Eigen::Vector2i>& dv, const device_vector_wrapper<Eigen::Vector2i>& vec);
 template void FromWrapper<float>(utility::device_vector<float>& dv, const device_vector_wrapper<float>& vec);
 template void FromWrapper<int>(utility::device_vector<int>& dv, const device_vector_wrapper<int>& vec);
+template void FromWrapper<size_t>(utility::device_vector<size_t>& dv, const device_vector_wrapper<size_t>& vec);
 
 }
 }

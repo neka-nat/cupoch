@@ -116,8 +116,8 @@ struct assign_cluster_functor {
 }
 
 utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
-                                                     size_t min_points,
-                                                     bool print_progress) const {
+                                                      size_t min_points,
+                                                      bool print_progress) const {
     KDTreeFlann kdtree(*this);
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
@@ -162,11 +162,3 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
                      assign_func);
     return labels;
 }
-
-thrust::host_vector<int> PointCloud::ClusterDBSCANHost(float eps,
-                                                       size_t min_points,
-                                                       bool print_progress) const {
-    auto dev_ans = ClusterDBSCAN(eps, min_points, print_progress);
-    thrust::host_vector<int> host_ans = dev_ans;
-    return host_ans;
- }

@@ -45,6 +45,8 @@ inline void bind_device_vector_wrapper(py::module &m) {
     dvf.def("cpu", &cupoch::wrapper::device_vector_wrapper<float>::cpu);
     py::class_<cupoch::wrapper::device_vector_wrapper<int>> dvi(m, "device_vector_int");
     dvi.def("cpu", &cupoch::wrapper::device_vector_wrapper<int>::cpu);
+    py::class_<cupoch::wrapper::device_vector_wrapper<size_t>> dvs(m, "device_vector_size_t");
+    dvs.def("cpu", &cupoch::wrapper::device_vector_wrapper<size_t>::cpu);
 }
 
 }  // namespace detail

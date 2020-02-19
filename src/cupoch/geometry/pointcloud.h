@@ -88,16 +88,8 @@ public:
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
 
-    std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
-    RemoveRadiusOutliersHost(size_t nb_points, float search_radius) const;
-
-
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
-
-    std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
-    RemoveStatisticalOutliersHost(size_t nb_neighbors, float std_ratio) const;
-
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
@@ -124,9 +116,6 @@ public:
     utility::device_vector<int> ClusterDBSCAN(float eps,
                                              size_t min_points,
                                              bool print_progress = false) const;
-    thrust::host_vector<int> ClusterDBSCANHost(float eps,
-                                               size_t min_points,
-                                               bool print_progress = false) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

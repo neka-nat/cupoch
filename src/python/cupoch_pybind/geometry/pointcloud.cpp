@@ -83,12 +83,18 @@ void pybind_pointcloud(py::module &m) {
                  "Function to remove none-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
             .def("remove_radius_outlier",
-                 &geometry::PointCloud::RemoveRadiusOutliersHost,
+                 [] (const geometry::PointCloud& pcd, size_t nb_points, float search_radius) {
+                      auto res = pcd.RemoveRadiusOutliers(nb_points, search_radius);
+                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::get<1>(res)));
+                 },
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a)
             .def("remove_statistical_outlier",
-                 &geometry::PointCloud::RemoveStatisticalOutliersHost,
+                 [] (const geometry::PointCloud& pcd, size_t nb_neighbors, float std_ratio) {
+                      auto res = pcd.RemoveStatisticalOutliers(nb_neighbors, std_ratio);
+                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::get<1>(res)));
+                 },
                  "Function to remove points that are further away from their "
                  "neighbors in average",
                  "nb_neighbors"_a, "std_ratio"_a)
@@ -101,7 +107,11 @@ void pybind_pointcloud(py::module &m) {
                  &geometry::PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
                  "orientation_reference"_a = Eigen::Vector3f(0.0, 0.0, 1.0))
-            .def("cluster_dbscan", &geometry::PointCloud::ClusterDBSCANHost,
+            .def("cluster_dbscan",
+                 [] (const geometry::PointCloud& pcd, float eps, size_t min_points, bool print_progress) {
+                      auto res = pcd.ClusterDBSCAN(eps, min_points, print_progress);
+                      return wrapper::device_vector_int(res);
+                 },
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
