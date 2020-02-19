@@ -15,4 +15,5 @@ int main(int argc, char **argv) {
     io::WriteImage("floatimage.png", *float_image->CreateImageFromFloatImage<uint8_t>());
     auto downsampled_image = float_image->Downsample();
     io::WriteImage("downsample.png", *downsampled_image->CreateImageFromFloatImage<uint8_t>());
+    visualization::DrawGeometries({color_image_8bit});
 }

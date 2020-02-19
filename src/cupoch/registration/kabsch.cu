@@ -1,6 +1,5 @@
 #include "cupoch/registration/kabsch.h"
 #include "cupoch/utility/svd3_cuda.h"
-#include "cupoch/utility/platform.h"
 #include <Eigen/Geometry>
 #include <thrust/reduce.h>
 #include <thrust/transform_reduce.h>
@@ -58,17 +57,14 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(const utility::device_vector<Eige
                                                thrust::raw_pointer_cast(corres.data()));
     extract_correspondence_functor<1> ex_func1(thrust::raw_pointer_cast(target.data()),
                                                thrust::raw_pointer_cast(corres.data()));
-    Eigen::Vector3f model_center = thrust::transform_reduce(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
-                                                            thrust::make_counting_iterator<size_t>(0),
+    Eigen::Vector3f model_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
                                                             thrust::make_counting_iterator(corres.size()),
                                                             ex_func0, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                             thrust::plus<Eigen::Vector3f>());
-    Eigen::Vector3f target_center = thrust::transform_reduce(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
-                                                             thrust::make_counting_iterator<size_t>(0),
+    Eigen::Vector3f target_center = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
                                                              thrust::make_counting_iterator(corres.size()),
                                                              ex_func1, Eigen::Vector3f(0.0, 0.0, 0.0),
                                                              thrust::plus<Eigen::Vector3f>());
-    cudaSafeCall(cudaDeviceSynchronize());
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;

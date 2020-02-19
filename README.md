@@ -15,6 +15,7 @@ Cupoch is a library that implements rapid 3D data processing using CUDA.
 
 * 3D data processing using CUDA
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
+* Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
 * Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
 
@@ -76,6 +77,13 @@ The environment tested on has the following specs:
 * Intel Core i7-7700HQ CPU
 * Nvidia GTX1070 GPU
 * OMP_NUM_THREAD=1
+
+You can get the result by running the example script in your environment.
+
+```
+cd examples/python/basic
+python benchmarks.py
+```
 
 ![speedup](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/speedup.png)
 

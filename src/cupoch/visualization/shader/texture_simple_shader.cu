@@ -4,6 +4,8 @@
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/utility/console.h"
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -63,9 +65,14 @@ bool TextureSimpleShader::BindGeometry(const geometry::Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &vertex_uv_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
     glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector2f), 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1], vertex_uv_buffer_, cudaGraphicsMapFlagsNone));
+
     Eigen::Vector3f* raw_points_ptr;
     Eigen::Vector2f* raw_uvs_ptr;
     size_t n_bytes;

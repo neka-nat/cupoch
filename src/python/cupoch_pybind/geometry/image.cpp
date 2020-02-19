@@ -159,9 +159,9 @@ void pybind_image(py::module &m) {
     py::detail::bind_default_constructor<geometry::RGBDImage>(rgbd_image);
     rgbd_image
             .def_readwrite("color", &geometry::RGBDImage::color_,
-                           "open3d.geometry.Image: The color image.")
+                           "cupoch.geometry.Image: The color image.")
             .def_readwrite("depth", &geometry::RGBDImage::depth_,
-                           "open3d.geometry.Image: The depth image.")
+                           "cupoch.geometry.Image: The depth image.")
             .def("__repr__",
                  [](const geometry::RGBDImage &rgbd_image) {
                      return std::string("RGBDImage of size \n") +

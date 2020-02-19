@@ -330,11 +330,9 @@ thrust::host_vector<bool> VoxelGrid::CheckIfIncluded(
     output.resize(queries.size());
     for (size_t i = 0; i < queries.size(); ++i) {
         auto query = GetVoxel(queries[i]);
-        auto itr = thrust::find(utility::exec_policy(utility::GetStream(i % utility::MAX_NUM_STREAMS))->on(utility::GetStream(i % utility::MAX_NUM_STREAMS)),
-                                voxels_keys_.begin(), voxels_keys_.end(), query);
+        auto itr = thrust::find(voxels_keys_.begin(), voxels_keys_.end(), query);
         output[i] = (itr != voxels_keys_.end());
     }
-    cudaSafeCall(cudaDeviceSynchronize());
     return output;
 }
 

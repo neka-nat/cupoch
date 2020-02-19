@@ -80,6 +80,7 @@ bool SimpleWhiteShader::BindGeometry(const geometry::Geometry &geometry,
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
     glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
 
     Eigen::Vector3f* raw_points_ptr;

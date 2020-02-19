@@ -37,8 +37,8 @@ public:
     static std::shared_ptr<RGBDImage> CreateFromColorAndDepth(
             const Image &color,
             const Image &depth,
-            double depth_scale = 1000.0,
-            double depth_trunc = 3.0,
+            float depth_scale = 1000.0,
+            float depth_trunc = 3.0,
             bool convert_rgb_to_intensity = true);
 
     /// Factory function to create an RGBD Image from Redwood dataset

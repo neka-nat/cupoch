@@ -411,14 +411,15 @@ struct preprocess_depth_functor {
     }
 };
 
-std::shared_ptr<geometry::Image> PreprocessDepth(
+std::shared_ptr<geometry::Image> PreprocessDepth(cudaStream_t stream,
         const geometry::Image &depth_orig, const OdometryOption &option) {
     std::shared_ptr<geometry::Image> depth_processed =
             std::make_shared<geometry::Image>();
     *depth_processed = depth_orig;
     preprocess_depth_functor func(thrust::raw_pointer_cast(depth_processed->data_.data()),
                                   option.min_depth_, option.max_depth_);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+    thrust::for_each(utility::exec_policy(stream)->on(stream),
+                     thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator<size_t>(depth_processed->width_ * depth_processed->height_), func);
     return depth_processed;
 }
@@ -457,8 +458,9 @@ InitializeRGBDOdometry(
             source.color_.Filter(geometry::Image::FilterType::Gaussian3);
     auto target_gray =
             target.color_.Filter(geometry::Image::FilterType::Gaussian3);
-    auto source_depth_preprocessed = PreprocessDepth(source.depth_, option);
-    auto target_depth_preprocessed = PreprocessDepth(target.depth_, option);
+    auto source_depth_preprocessed = PreprocessDepth(utility::GetStream(0), source.depth_, option);
+    auto target_depth_preprocessed = PreprocessDepth(utility::GetStream(1), target.depth_, option);
+    cudaSafeCall(cudaDeviceSynchronize());
     auto source_depth = source_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
     auto target_depth = target_depth_preprocessed->Filter(

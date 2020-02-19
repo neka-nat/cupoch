@@ -40,8 +40,8 @@ struct convert_nyu_format_functor {
 std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         const Image &color,
         const Image &depth,
-        double depth_scale /* = 1000.0*/,
-        double depth_trunc /* = 3.0*/,
+        float depth_scale /* = 1000.0*/,
+        float depth_trunc /* = 3.0*/,
         bool convert_rgb_to_intensity /* = true*/) {
     std::shared_ptr<RGBDImage> rgbd_image = std::make_shared<RGBDImage>();
     if (color.height_ != depth.height_ || color.width_ != depth.width_) {

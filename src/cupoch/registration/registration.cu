@@ -3,7 +3,6 @@
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/console.h"
-#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -46,20 +45,16 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                                1, indices, dists);
     extact_knn_distance_functor func(thrust::raw_pointer_cast(dists.data()));
     result.correspondence_set_.resize(n_pt);
-    const float error2 = thrust::transform_reduce(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
-                                                  thrust::make_counting_iterator(0),
+    const float error2 = thrust::transform_reduce(thrust::make_counting_iterator(0),
                                                   thrust::make_counting_iterator(n_pt),
                                                   func, 0.0f, thrust::plus<float>());
-    thrust::transform(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
-                      thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_pt),
+    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_pt),
                       result.correspondence_set_.begin(),
                       make_correspondence_pair_functor(thrust::raw_pointer_cast(indices.data())));
-    auto end = thrust::remove_if(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
-                                 result.correspondence_set_.begin(), result.correspondence_set_.end(),
+    auto end = thrust::remove_if(result.correspondence_set_.begin(), result.correspondence_set_.end(),
                                  [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
     int n_out = thrust::distance(result.correspondence_set_.begin(), end);
     result.correspondence_set_.resize(n_out);
-    cudaSafeCall(cudaDeviceSynchronize());
 
     if (result.correspondence_set_.empty()) {
         result.fitness_ = 0.0;
