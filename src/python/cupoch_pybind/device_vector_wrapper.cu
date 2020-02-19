@@ -7,11 +7,13 @@ namespace wrapper {
 template<typename Type>
 device_vector_wrapper<Type>::device_vector_wrapper() {};
 template<typename Type>
-device_vector_wrapper<Type>::device_vector_wrapper(const device_vector_wrapper<Type>& other) {data_ = other.data_;}
+device_vector_wrapper<Type>::device_vector_wrapper(const device_vector_wrapper<Type>& other) : data_(other.data_) {}
 template<typename Type>
-device_vector_wrapper<Type>::device_vector_wrapper(const thrust::host_vector<Type>& other) {data_ = other;}
+device_vector_wrapper<Type>::device_vector_wrapper(const thrust::host_vector<Type>& other) : data_(other) {}
 template<typename Type>
-device_vector_wrapper<Type>::device_vector_wrapper(const utility::device_vector<Type>& other) {data_ = other;}
+device_vector_wrapper<Type>::device_vector_wrapper(const utility::device_vector<Type>& other) : data_(other) {}
+template<typename Type>
+device_vector_wrapper<Type>::device_vector_wrapper(utility::device_vector<Type>&& other) noexcept: data_(std::move(other)) {}
 template<typename Type>
 device_vector_wrapper<Type>::~device_vector_wrapper() {};
 

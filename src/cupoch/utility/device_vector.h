@@ -12,7 +12,11 @@ namespace utility {
 #ifdef USE_RMM
 template<typename T>
 using device_vector = rmm::device_vector<T>;
-#define exec_policy_on(stream) (rmm::exec_policy(stream)->on(stream))
+
+inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
+    return rmm::exec_policy(stream);
+}
+
 inline void InitializeCupoch() {
     rmmOptions_t options{static_cast<rmmAllocationMode_t>(PoolAllocation | CudaManagedMemory), 0, true};
     rmmInitialize(&options);
@@ -21,7 +25,11 @@ inline void InitializeCupoch() {
 #else
 template<typename T>
 using device_vector = thrust::device_vector<T>;
-#define exec_policy_on(stream) (thrust::cuda::par.on(stream))
+
+inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
+    return &thrust::cuda::par;
+}
+
 inline void InitializeCupoch() {}
 
 #endif

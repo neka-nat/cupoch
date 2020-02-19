@@ -85,7 +85,7 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_radius_outlier",
                  [] (const geometry::PointCloud& pcd, size_t nb_points, float search_radius) {
                       auto res = pcd.RemoveRadiusOutliers(nb_points, search_radius);
-                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::get<1>(res)));
+                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::move(std::get<1>(res))));
                  },
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
@@ -93,7 +93,7 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_statistical_outlier",
                  [] (const geometry::PointCloud& pcd, size_t nb_neighbors, float std_ratio) {
                       auto res = pcd.RemoveStatisticalOutliers(nb_neighbors, std_ratio);
-                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::get<1>(res)));
+                      return std::make_tuple(std::get<0>(res), wrapper::device_vector_size_t(std::move(std::get<1>(res))));
                  },
                  "Function to remove points that are further away from their "
                  "neighbors in average",
@@ -110,7 +110,7 @@ void pybind_pointcloud(py::module &m) {
             .def("cluster_dbscan",
                  [] (const geometry::PointCloud& pcd, float eps, size_t min_points, bool print_progress) {
                       auto res = pcd.ClusterDBSCAN(eps, min_points, print_progress);
-                      return wrapper::device_vector_int(res);
+                      return wrapper::device_vector_int(std::move(res));
                  },
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "

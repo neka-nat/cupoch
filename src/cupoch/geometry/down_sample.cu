@@ -19,12 +19,15 @@ void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud&
     if (has_normals) dst.normals_.resize(indices.size());
     if (has_colors) dst.colors_.resize(indices.size());
     dst.points_.resize(indices.size());
-    thrust::gather(exec_policy_on(utility::GetStream(0)), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
+    thrust::gather(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                   indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
     if (has_normals) {
-        thrust::gather(exec_policy_on(utility::GetStream(1)), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
+        thrust::gather(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
+                       indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
     }
     if (has_colors) {
-        thrust::gather(exec_policy_on(utility::GetStream(2)), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
+        thrust::gather(utility::exec_policy(utility::GetStream(2))->on(utility::GetStream(2)),
+                       indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
     }
     cudaSafeCall(cudaDeviceSynchronize());
 }
@@ -221,14 +224,17 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     if (has_normals) output->normals_.resize(n_out);
     if (has_colors) output->colors_.resize(n_out);
     thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_points(points_.begin(), points_.end(), every_k_points);
-    thrust::copy(exec_policy_on(utility::GetStream(0)), range_points.begin(), range_points.end(), output->points_.begin());
+    thrust::copy(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 range_points.begin(), range_points.end(), output->points_.begin());
     if (has_normals) {
         thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_normals(normals_.begin(), normals_.end(), every_k_points);
-        thrust::copy(exec_policy_on(utility::GetStream(1)), range_normals.begin(), range_normals.end(), output->normals_.begin());
+        thrust::copy(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
+                     range_normals.begin(), range_normals.end(), output->normals_.begin());
     }
     if (has_colors) {
         thrust::strided_range<utility::device_vector<Eigen::Vector3f>::const_iterator> range_colors(colors_.begin(), colors_.end(), every_k_points);
-        thrust::copy(exec_policy_on(utility::GetStream(2)), range_colors.begin(), range_colors.end(), output->colors_.begin());
+        thrust::copy(utility::exec_policy(utility::GetStream(2))->on(utility::GetStream(2)),
+                     range_colors.begin(), range_colors.end(), output->colors_.begin());
     }
     cudaSafeCall(cudaDeviceSynchronize());
     return output;

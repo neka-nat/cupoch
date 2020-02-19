@@ -20,6 +20,7 @@ public:
     device_vector_wrapper(const device_vector_wrapper<Type>& other);
     device_vector_wrapper(const thrust::host_vector<Type>& other);
     device_vector_wrapper(const utility::device_vector<Type>& other);
+    device_vector_wrapper(utility::device_vector<Type>&& other) noexcept;
     ~device_vector_wrapper();
     device_vector_wrapper<Type> &operator=(const device_vector_wrapper<Type> &other);
     thrust::host_vector<Type> cpu() const;
