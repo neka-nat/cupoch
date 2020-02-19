@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv) {
     using namespace cupoch;
-    utility::InitializeCupoch();
+    utility::InitializeAllocator();
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 2) {utility::LogInfo("Need an argument of mesh file name."); return 0;}

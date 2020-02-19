@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[]) {
     using namespace cupoch;
-    utility::InitializeCupoch();
+    utility::InitializeAllocator();
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 3) {utility::LogInfo("Need two arguments of point cloud file name."); return 0;}

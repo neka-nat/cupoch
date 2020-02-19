@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
-    cupoch::utility::InitializeCupoch();
+    cupoch::utility::InitializeAllocator();
 
     return RUN_ALL_TESTS();
 }

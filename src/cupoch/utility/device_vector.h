@@ -17,9 +17,15 @@ inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return rmm::exec_policy(stream);
 }
 
-inline void InitializeCupoch() {
-    rmmOptions_t options{static_cast<rmmAllocationMode_t>(PoolAllocation | CudaManagedMemory), 0, true};
+inline void InitializeAllocator(rmmAllocationMode_t mode = CudaDefaultAllocation,
+                                size_t initial_pool_size = 0,
+                                bool logging = false,
+                                const std::vector<int>& devices = {}) {
+    static bool is_initialized = false;
+    if (is_initialized) rmmFinalize();
+    rmmOptions_t options = {mode, initial_pool_size, logging, devices};
     rmmInitialize(&options);
+    is_initialized = true;
 }
 
 #else
@@ -30,7 +36,10 @@ inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return &thrust::cuda::par;
 }
 
-inline void InitializeCupoch() {}
+inline void InitializeAllocator(rmmAllocationMode_t mode = CudaDefaultAllocation,
+                                size_t initial_pool_size = 0,
+                                bool logging = false,
+                                const std::vector<int>& devices = {}) {}
 
 #endif
 

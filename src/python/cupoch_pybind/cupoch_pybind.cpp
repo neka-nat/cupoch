@@ -10,7 +10,17 @@
 PYBIND11_MODULE(cupoch, m) {
     m.doc() = "CUDA-based 3D data processing library";
 
-    m.def("initialize", &cupoch::utility::InitializeCupoch);
+    py::enum_<rmmAllocationMode_t> rmm_mode(m, "AllocationMode",
+                                            py::arithmetic());
+     rmm_mode.value("CudaDefaultAllocation", CudaDefaultAllocation)
+             .value("PoolAllocation", PoolAllocation)
+             .value("CudaManagedMemory", CudaManagedMemory)
+             .export_values();
+    m.def("initialize_allocator", &cupoch::utility::InitializeAllocator,
+          py::arg("mode") = CudaDefaultAllocation,
+          py::arg("initial_pool_size") = 0,
+          py::arg("logging") = false,
+          py::arg("devices") = std::vector<int>());
     bind_device_vector_wrapper(m);
     pybind_utility(m);
     pybind_camera(m);
