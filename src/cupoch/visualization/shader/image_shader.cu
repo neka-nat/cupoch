@@ -253,7 +253,7 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
     } else {
         if (image.num_of_channels_ == 1 && image.bytes_per_channel_ == 1) {
             // grayscale image
-            thrust::repeated_range<thrust::device_vector<uint8_t>::const_iterator> range(image.data_.begin(), image.data_.end(), 3);
+            thrust::repeated_range<utility::device_vector<uint8_t>::const_iterator> range(image.data_.begin(), image.data_.end(), 3);
             thrust::copy(range.begin(), range.end(), render_image);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 4) {

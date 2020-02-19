@@ -9,8 +9,8 @@ namespace geometry {
 class TriangleMesh : public MeshBase {
 public:
     TriangleMesh();
-    TriangleMesh(const thrust::device_vector<Eigen::Vector3f> &vertices,
-                 const thrust::device_vector<Eigen::Vector3i> &triangles);
+    TriangleMesh(const utility::device_vector<Eigen::Vector3f> &vertices,
+                 const utility::device_vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
                  const thrust::host_vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const geometry::TriangleMesh& other);
@@ -70,7 +70,7 @@ public:
 
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
-    thrust::device_vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
+    utility::device_vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
@@ -151,10 +151,10 @@ public:
             const Eigen::Vector3f &origin = Eigen::Vector3f(0.0, 0.0, 0.0));
 
 public:
-    thrust::device_vector<Eigen::Vector3i> triangles_;
-    thrust::device_vector<Eigen::Vector3f> triangle_normals_;
-    thrust::device_vector<int> adjacency_matrix_;
-    thrust::device_vector<Eigen::Vector2f> triangle_uvs_;
+    utility::device_vector<Eigen::Vector3i> triangles_;
+    utility::device_vector<Eigen::Vector3f> triangle_normals_;
+    utility::device_vector<int> adjacency_matrix_;
+    utility::device_vector<Eigen::Vector2f> triangle_uvs_;
     Image texture_;
 };
 

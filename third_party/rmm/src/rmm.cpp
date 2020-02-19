@@ -98,21 +98,6 @@ rmmError_t rmmFree(void *ptr, cudaStream_t stream, const char* file, unsigned in
   return rmm::free(ptr, stream, file, line);
 }
 
-// Get the offset of ptr from its base allocation
-rmmError_t rmmGetAllocationOffset(ptrdiff_t *offset,
-                                  void *ptr,
-                                  cudaStream_t stream)
-{
-  void *base = (void*)0xffffffff;
-  CUresult res = cuMemGetAddressRange((CUdeviceptr*)&base, nullptr,
-                                      (CUdeviceptr)ptr);
-  if (res != CUDA_SUCCESS)
-    return RMM_ERROR_INVALID_ARGUMENT;
-  *offset = reinterpret_cast<ptrdiff_t>(ptr) -
-            reinterpret_cast<ptrdiff_t>(base);
-  return RMM_SUCCESS;
-}
-
 // Get amounts of free and total memory managed by a manager associated
 // with the stream.
 rmmError_t rmmGetInfo(size_t *freeSize, size_t *totalSize, cudaStream_t stream)

@@ -5,7 +5,7 @@
 #include <thrust/functional.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/platform.h"
 
 namespace thrust {
@@ -193,7 +193,7 @@ std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
 
 template<typename T>
-void CopyToDeviceMultiStream(const thrust::host_vector<T>& src, thrust::device_vector<T>& dst,
+void CopyToDeviceMultiStream(const thrust::host_vector<T>& src, utility::device_vector<T>& dst,
                              int n_stream = MAX_NUM_STREAMS) {
     const int step = src.size() / n_stream;
     int step_size = step * sizeof(T);
@@ -206,7 +206,7 @@ void CopyToDeviceMultiStream(const thrust::host_vector<T>& src, thrust::device_v
 }
 
 template<typename T>
-void CopyFromDeviceMultiStream(const thrust::device_vector<T>& src, thrust::host_vector<T>& dst,
+void CopyFromDeviceMultiStream(const utility::device_vector<T>& src, thrust::host_vector<T>& dst,
                                int n_stream = MAX_NUM_STREAMS) {
     const int step = src.size() / n_stream;
     int step_size = step * sizeof(T);

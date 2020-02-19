@@ -87,8 +87,8 @@ std::shared_ptr<Feature<33>> ComputeSPFHFeature(
     auto feature = std::make_shared<Feature<33>>();
     feature->Resize((int)input.points_.size());
 
-    thrust::device_vector<int> indices;
-    thrust::device_vector<float> distance2;
+    utility::device_vector<int> indices;
+    utility::device_vector<float> distance2;
     auto knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
     kdtree.SearchKNN(input.points_, knn,
                      indices, distance2);
@@ -157,8 +157,8 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
 
     geometry::KDTreeFlann kdtree(input);
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
-    thrust::device_vector<int> indices;
-    thrust::device_vector<float> distance2;
+    utility::device_vector<int> indices;
+    utility::device_vector<float> distance2;
     kdtree.SearchKNN(input.points_,
                      ((const geometry::KDTreeSearchParamKNN &)search_param).knn_,
                      indices, distance2);

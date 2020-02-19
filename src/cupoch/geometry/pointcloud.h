@@ -2,7 +2,7 @@
 #include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/eigen.h"
 #include "cupoch/geometry/kdtree_search_param.h"
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
 namespace cupoch {
@@ -72,7 +72,7 @@ public:
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
     /// Points with indices in \param indices are selected.
-    std::shared_ptr<PointCloud> SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert = false) const;
+    std::shared_ptr<PointCloud> SelectDownSample(const utility::device_vector<size_t> &indices, bool invert = false) const;
 
     /// Function to downsample \param input pointcloud into output pointcloud
     /// with a voxel \param voxel_size defines the resolution of the voxel grid,
@@ -85,14 +85,14 @@ public:
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
 
-    std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
+    std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
 
     std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
     RemoveRadiusOutliersHost(size_t nb_points, float search_radius) const;
 
 
-    std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
+    std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
 
     std::tuple<std::shared_ptr<PointCloud>, thrust::host_vector<size_t>>
@@ -121,7 +121,7 @@ public:
     /// in Large Spatial Databases with Noise", 1996
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
-    thrust::device_vector<int> ClusterDBSCAN(float eps,
+    utility::device_vector<int> ClusterDBSCAN(float eps,
                                              size_t min_points,
                                              bool print_progress = false) const;
     thrust::host_vector<int> ClusterDBSCANHost(float eps,
@@ -157,9 +157,9 @@ public:
             bool project_valid_depth_only = true);
 
 public:
-    thrust::device_vector<Eigen::Vector3f> points_;
-    thrust::device_vector<Eigen::Vector3f> normals_;
-    thrust::device_vector<Eigen::Vector3f> colors_;
+    utility::device_vector<Eigen::Vector3f> points_;
+    utility::device_vector<Eigen::Vector3f> normals_;
+    utility::device_vector<Eigen::Vector3f> colors_;
 };
 
 

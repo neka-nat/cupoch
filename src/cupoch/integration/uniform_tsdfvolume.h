@@ -58,7 +58,7 @@ public:
             const geometry::Image &depth_to_camera_distance_multiplier);
 
 public:
-    thrust::device_vector<geometry::TSDFVoxel> voxels_;
+    utility::device_vector<geometry::TSDFVoxel> voxels_;
     Eigen::Vector3f origin_;
     float length_;
     int resolution_;

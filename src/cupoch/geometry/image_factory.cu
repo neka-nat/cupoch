@@ -114,11 +114,11 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     float ffl_inv1 = 1.0f / (float)intrinsic.GetFocalLength().second;
     float fpp0 = (float)intrinsic.GetPrincipalPoint().first;
     float fpp1 = (float)intrinsic.GetPrincipalPoint().second;
-    thrust::device_vector<float> xx(intrinsic.width_);
-    thrust::device_vector<float> yy(intrinsic.height_);
-    thrust::tabulate(thrust::cuda::par.on(utility::GetStream(0)), xx.begin(), xx.end(),
+    utility::device_vector<float> xx(intrinsic.width_);
+    utility::device_vector<float> yy(intrinsic.height_);
+    thrust::tabulate(exec_policy_on(utility::GetStream(0)), xx.begin(), xx.end(),
                      [=] __device__ (int idx) {return (idx - fpp0) * ffl_inv0;});
-    thrust::tabulate(thrust::cuda::par.on(utility::GetStream(1)), yy.begin(), yy.end(),
+    thrust::tabulate(exec_policy_on(utility::GetStream(1)), yy.begin(), yy.end(),
                      [=] __device__ (int idx) {return (idx - fpp1) * ffl_inv1;});
     cudaSafeCall(cudaDeviceSynchronize());
     compute_camera_distance_functor func(thrust::raw_pointer_cast(fimage->data_.data()),

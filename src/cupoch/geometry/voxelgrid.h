@@ -2,7 +2,6 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <vector>
 
 #include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/console.h"
@@ -72,7 +71,7 @@ public:
 
     /// Add a voxel with specified grid index and color
     void AddVoxel(const Voxel &voxel);
-    void AddVoxels(const thrust::device_vector<Voxel> &voxels);
+    void AddVoxels(const utility::device_vector<Voxel> &voxels);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::array<Eigen::Vector3f, 8> GetVoxelBoundingPoints(
@@ -145,8 +144,8 @@ public:
 public:
     float voxel_size_ = 0.0;
     Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
-    thrust::device_vector<Eigen::Vector3i> voxels_keys_;
-    thrust::device_vector<Voxel> voxels_values_;
+    utility::device_vector<Eigen::Vector3i> voxels_keys_;
+    utility::device_vector<Voxel> voxels_values_;
 };
 
 }  // namespace geometry

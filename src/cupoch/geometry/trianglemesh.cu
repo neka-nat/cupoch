@@ -83,8 +83,8 @@ struct check_self_intersecting_triangles{
 TriangleMesh::TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}
 TriangleMesh::~TriangleMesh() {}
 
-TriangleMesh::TriangleMesh(const thrust::device_vector<Eigen::Vector3f> &vertices,
-                           const thrust::device_vector<Eigen::Vector3i> &triangles)
+TriangleMesh::TriangleMesh(const utility::device_vector<Eigen::Vector3f> &vertices,
+                           const utility::device_vector<Eigen::Vector3i> &triangles)
     : MeshBase(Geometry::GeometryType::TriangleMesh, vertices), triangles_(triangles) {}
 
 TriangleMesh::TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
@@ -215,8 +215,8 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
         ComputeTriangleNormals(false);
     }
     vertex_normals_.resize(vertices_.size());
-    thrust::repeated_range<thrust::device_vector<Eigen::Vector3f>::iterator> range(triangle_normals_.begin(), triangle_normals_.end(), 3);
-    thrust::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() * 3);
+    thrust::repeated_range<utility::device_vector<Eigen::Vector3f>::iterator> range(triangle_normals_.begin(), triangle_normals_.end(), 3);
+    utility::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() * 3);
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
     int* tri_ptr = (int*)(thrust::raw_pointer_cast(triangles_.data()));
     thrust::sort_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin());
@@ -238,10 +238,10 @@ TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
     return *this;
 }
 
-thrust::device_vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
+utility::device_vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const {
     const size_t n_triangles2 = triangles_.size() * triangles_.size();
-    thrust::device_vector<Eigen::Vector2i> self_intersecting_triangles(n_triangles2);
+    utility::device_vector<Eigen::Vector2i> self_intersecting_triangles(n_triangles2);
     check_self_intersecting_triangles func(thrust::raw_pointer_cast(triangles_.data()),
                                            thrust::raw_pointer_cast(vertices_.data()),
                                            triangles_.size());

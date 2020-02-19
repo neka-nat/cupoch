@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 
@@ -12,7 +12,7 @@ class PointCloud;
 
 namespace registration {
 
-typedef thrust::device_vector<Eigen::Vector2i> CorrespondenceSet;
+typedef utility::device_vector<Eigen::Vector2i> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,

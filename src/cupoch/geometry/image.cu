@@ -8,11 +8,11 @@ namespace {
 
 /// Isotropic 2D kernels are separable:
 /// two 1D kernels are applied in x and y direction.
-std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterKernel(Image::FilterType ftype) {
+std::pair<utility::device_vector<float>, utility::device_vector<float>> GetFilterKernel(Image::FilterType ftype) {
     switch (ftype) {
         case Image::FilterType::Gaussian3:
         {
-            thrust::device_vector<float> g3(3);
+            utility::device_vector<float> g3(3);
             g3[0] = 0.25;
             g3[1] = 0.5;
             g3[2] = 0.25;
@@ -20,7 +20,7 @@ std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterK
         }
         case Image::FilterType::Gaussian5:
         {
-            thrust::device_vector<float> g5(5);
+            utility::device_vector<float> g5(5);
             g5[0] = 0.0625;
             g5[1] = 0.25;
             g5[2] = 0.375;
@@ -30,7 +30,7 @@ std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterK
         }
         case Image::FilterType::Gaussian7:
         {
-            thrust::device_vector<float> g7(7);
+            utility::device_vector<float> g7(7);
             g7[0] = 0.03125;
             g7[1] = 0.109375;
             g7[2] = 0.21875;
@@ -42,8 +42,8 @@ std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterK
         }
         case Image::FilterType::Sobel3Dx:
         {
-            thrust::device_vector<float> s31(3);
-            thrust::device_vector<float> s32(3);
+            utility::device_vector<float> s31(3);
+            utility::device_vector<float> s32(3);
             s31[0] = -1.0;
             s31[1] = 0.0;
             s31[2] = 1.0;
@@ -54,8 +54,8 @@ std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterK
         }
         case Image::FilterType::Sobel3Dy:
         {
-            thrust::device_vector<float> s31(3);
-            thrust::device_vector<float> s32(3);
+            utility::device_vector<float> s31(3);
+            utility::device_vector<float> s32(3);
             s31[0] = -1.0;
             s31[1] = 0.0;
             s31[2] = 1.0;
@@ -67,7 +67,7 @@ std::pair<thrust::device_vector<float>, thrust::device_vector<float>> GetFilterK
         default:
         {
             utility::LogError("[Filter] Unsupported filter type.");
-            return std::make_pair(thrust::device_vector<float>(), thrust::device_vector<float>());
+            return std::make_pair(utility::device_vector<float>(), utility::device_vector<float>());
         }
     }
 }
@@ -317,7 +317,7 @@ std::shared_ptr<Image> Image::Downsample() const {
 }
 
 std::shared_ptr<Image> Image::FilterHorizontal(
-        const thrust::device_vector<float> &kernel) const {
+        const utility::device_vector<float> &kernel) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
@@ -358,8 +358,8 @@ ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
     return output;
 }
 
-std::shared_ptr<Image> Image::Filter(const thrust::device_vector<float> &dx,
-                                     const thrust::device_vector<float> &dy) const {
+std::shared_ptr<Image> Image::Filter(const utility::device_vector<float> &dx,
+                                     const utility::device_vector<float> &dy) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");

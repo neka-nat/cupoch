@@ -115,7 +115,7 @@ struct assign_cluster_functor {
 
 }
 
-thrust::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
+utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
                                                      size_t min_points,
                                                      bool print_progress) const {
     KDTreeFlann kdtree(*this);
@@ -123,14 +123,14 @@ thrust::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     utility::LogDebug("Precompute Neighbours");
     utility::ConsoleProgressBar progress_bar(
         points_.size(), "Precompute Neighbours", print_progress);
-    thrust::device_vector<int> indices;
-    thrust::device_vector<float> dists2;
+    utility::device_vector<int> indices;
+    utility::device_vector<float> dists2;
     kdtree.SearchRadius(points_, eps, indices, dists2);
 
     const size_t n_pt = points_.size();
-    thrust::device_vector<int> cluster_matrix(n_pt * n_pt);
-    thrust::device_vector<int> valid(n_pt);
-    thrust::device_vector<int> reroute(n_pt);
+    utility::device_vector<int> cluster_matrix(n_pt * n_pt);
+    utility::device_vector<int> valid(n_pt);
+    utility::device_vector<int> reroute(n_pt);
     initialize_cluster_matrix_functor func(thrust::raw_pointer_cast(indices.data()),
                                            thrust::raw_pointer_cast(dists2.data()),
                                            eps, n_pt,
@@ -153,7 +153,7 @@ thrust::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
         }
     }
 
-    thrust::device_vector<int> labels(points_.size(), -1);
+    utility::device_vector<int> labels(points_.size(), -1);
     assign_cluster_functor assign_func(thrust::raw_pointer_cast(cluster_matrix.data()),
                                        thrust::raw_pointer_cast(valid.data()),
                                        n_pt, min_points,

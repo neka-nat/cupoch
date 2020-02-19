@@ -44,34 +44,34 @@ struct transform_normals_functor {
 
 Geometry3D::Geometry3D(GeometryType type) : Geometry(type, 3) {}
 
-Eigen::Vector3f Geometry3D::ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeMinBound(const utility::device_vector<Eigen::Vector3f>& points) const {
     return ComputeMinBound(0, points);
 }
 
-Eigen::Vector3f Geometry3D::ComputeMinBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeMinBound(cudaStream_t stream, const utility::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
-    return thrust::reduce(thrust::cuda::par.on(stream), points.begin(), points.end(), init, elementwise_min_functor());
+    return thrust::reduce(exec_policy_on(stream), points.begin(), points.end(), init, elementwise_min_functor());
 }
 
-Eigen::Vector3f Geometry3D::ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeMaxBound(const utility::device_vector<Eigen::Vector3f>& points) const {
     return ComputeMaxBound(0, points);
 }
 
-Eigen::Vector3f Geometry3D::ComputeMaxBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeMaxBound(cudaStream_t stream, const utility::device_vector<Eigen::Vector3f>& points) const {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
-    return thrust::reduce(thrust::cuda::par.on(stream), points.begin(), points.end(), init, elementwise_max_functor());
+    return thrust::reduce(exec_policy_on(stream), points.begin(), points.end(), init, elementwise_max_functor());
 }
 
-Eigen::Vector3f Geometry3D::ComputeCenter(const thrust::device_vector<Eigen::Vector3f>& points) const {
+Eigen::Vector3f Geometry3D::ComputeCenter(const utility::device_vector<Eigen::Vector3f>& points) const {
     Eigen::Vector3f init = Eigen::Vector3f::Zero();
     if (points.empty()) return init;
     Eigen::Vector3f sum = thrust::reduce(points.begin(), points.end(), init, thrust::plus<Eigen::Vector3f>());
     return sum / points.size();
 }
 
-void Geometry3D::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f>& colors,
+void Geometry3D::ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f>& colors,
     const size_t size,
     const Eigen::Vector3f& color) {
     colors.resize(size);
@@ -90,29 +90,29 @@ void Geometry3D::ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3
 }
 
 void Geometry3D::TransformPoints(const Eigen::Matrix4f& transformation,
-                                 thrust::device_vector<Eigen::Vector3f>& points) {
+                                 utility::device_vector<Eigen::Vector3f>& points) {
     TransformPoints(0, transformation, points);
 }
 
 void Geometry3D::TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                                 thrust::device_vector<Eigen::Vector3f>& points) {
+                                 utility::device_vector<Eigen::Vector3f>& points) {
     transform_points_functor func(transformation);
-    thrust::for_each(thrust::cuda::par.on(stream), points.begin(), points.end(), func);
+    thrust::for_each(exec_policy_on(stream), points.begin(), points.end(), func);
 }
 
 void Geometry3D::TransformNormals(const Eigen::Matrix4f& transformation,
-                                  thrust::device_vector<Eigen::Vector3f>& normals) {
+                                  utility::device_vector<Eigen::Vector3f>& normals) {
     TransformNormals(0, transformation, normals);
 }
 
 void Geometry3D::TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                                  thrust::device_vector<Eigen::Vector3f>& normals) {
+                                  utility::device_vector<Eigen::Vector3f>& normals) {
     transform_normals_functor func(transformation);
-    thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(), func);
+    thrust::for_each(exec_policy_on(stream), normals.begin(), normals.end(), func);
 }
 
 void Geometry3D::TranslatePoints(const Eigen::Vector3f& translation,
-                                 thrust::device_vector<Eigen::Vector3f>& points,
+                                 utility::device_vector<Eigen::Vector3f>& points,
                                  bool relative) const {
     Eigen::Vector3f transform = translation;
     if (!relative) {
@@ -122,7 +122,7 @@ void Geometry3D::TranslatePoints(const Eigen::Vector3f& translation,
 }
 
 void Geometry3D::ScalePoints(const float scale,
-                             thrust::device_vector<Eigen::Vector3f>& points,
+                             utility::device_vector<Eigen::Vector3f>& points,
                              bool center) const {
     Eigen::Vector3f points_center(0, 0, 0);
     if (center && !points.empty()) {
@@ -133,31 +133,31 @@ void Geometry3D::ScalePoints(const float scale,
 }
 
 void Geometry3D::RotatePoints(const Eigen::Matrix3f& R,
-                              thrust::device_vector<Eigen::Vector3f>& points,
+                              utility::device_vector<Eigen::Vector3f>& points,
                               bool center) const {
     RotatePoints(0, R, points, center);
 }
 
 void Geometry3D::RotatePoints(cudaStream_t stream, const Eigen::Matrix3f& R,
-                              thrust::device_vector<Eigen::Vector3f>& points,
+                              utility::device_vector<Eigen::Vector3f>& points,
                               bool center) const {
     Eigen::Vector3f points_center(0, 0, 0);
     if (center && !points.empty()) {
         points_center = ComputeCenter(points);
     }
-    thrust::for_each(thrust::cuda::par.on(stream), points.begin(), points.end(),
+    thrust::for_each(exec_policy_on(stream), points.begin(), points.end(),
                      [=] __device__ (Eigen::Vector3f& pt) {pt = R * (pt - points_center) + points_center;});
 }
 
 
 void Geometry3D::RotateNormals(const Eigen::Matrix3f& R,
-                               thrust::device_vector<Eigen::Vector3f>& normals) const {
+                               utility::device_vector<Eigen::Vector3f>& normals) const {
     RotateNormals(0, R, normals);
 }
 
 void Geometry3D::RotateNormals(cudaStream_t stream, const Eigen::Matrix3f& R,
-                               thrust::device_vector<Eigen::Vector3f>& normals) const {
-    thrust::for_each(thrust::cuda::par.on(stream), normals.begin(), normals.end(),
+                               utility::device_vector<Eigen::Vector3f>& normals) const {
+    thrust::for_each(exec_policy_on(stream), normals.begin(), normals.end(),
                      [=] __device__ (Eigen::Vector3f& normal) {normal = R * normal;});
 }
 

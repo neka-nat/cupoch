@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
 #include "cupoch/geometry/geometry3d.h"
@@ -18,8 +18,8 @@ class TriangleMesh;
 class LineSet : public Geometry3D {
 public:
     LineSet();
-    LineSet(const thrust::device_vector<Eigen::Vector3f> &points,
-            const thrust::device_vector<Eigen::Vector2i> &lines);
+    LineSet(const utility::device_vector<Eigen::Vector3f> &points,
+            const utility::device_vector<Eigen::Vector2i> &lines);
     LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
             const thrust::host_vector<Eigen::Vector2i> &lines);
     LineSet(const LineSet &other);
@@ -70,7 +70,7 @@ public:
     static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
-            const thrust::device_vector<thrust::pair<int, int>> &correspondences);
+            const utility::device_vector<thrust::pair<int, int>> &correspondences);
 
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &box);
@@ -83,9 +83,9 @@ public:
             const TriangleMesh &mesh);
 
 public:
-    thrust::device_vector<Eigen::Vector3f> points_;
-    thrust::device_vector<Eigen::Vector2i> lines_;
-    thrust::device_vector<Eigen::Vector3f> colors_;
+    utility::device_vector<Eigen::Vector3f> points_;
+    utility::device_vector<Eigen::Vector2i> lines_;
+    utility::device_vector<Eigen::Vector3f> colors_;
 };
 
 }  // namespace geometry

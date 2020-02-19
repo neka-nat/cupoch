@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
 #include "cupoch/geometry/geometry3d.h"
@@ -90,17 +90,17 @@ protected:
     // Forward child class type to avoid indirect nonvirtual base
     MeshBase(Geometry::GeometryType type);
     MeshBase(Geometry::GeometryType type,
-             const thrust::device_vector<Eigen::Vector3f> &vertices);
+             const utility::device_vector<Eigen::Vector3f> &vertices);
     MeshBase(Geometry::GeometryType type,
-             const thrust::device_vector<Eigen::Vector3f> &vertices,
-             const thrust::device_vector<Eigen::Vector3f> &vertex_normals,
-             const thrust::device_vector<Eigen::Vector3f> &vertex_colors);
+             const utility::device_vector<Eigen::Vector3f> &vertices,
+             const utility::device_vector<Eigen::Vector3f> &vertex_normals,
+             const utility::device_vector<Eigen::Vector3f> &vertex_colors);
     MeshBase(Geometry::GeometryType type,
              const thrust::host_vector<Eigen::Vector3f> &vertices);
 public:
-    thrust::device_vector<Eigen::Vector3f> vertices_;
-    thrust::device_vector<Eigen::Vector3f> vertex_normals_;
-    thrust::device_vector<Eigen::Vector3f> vertex_colors_;
+    utility::device_vector<Eigen::Vector3f> vertices_;
+    utility::device_vector<Eigen::Vector3f> vertex_normals_;
+    utility::device_vector<Eigen::Vector3f> vertex_colors_;
 };
 
 }

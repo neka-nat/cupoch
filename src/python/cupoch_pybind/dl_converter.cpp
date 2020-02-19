@@ -5,7 +5,7 @@
 using namespace cupoch;
 using namespace cupoch::dlpack;
 
-py::capsule cupoch::dlpack::ToDLpackCapsule(thrust::device_vector<Eigen::Vector3f>& src) {
+py::capsule cupoch::dlpack::ToDLpackCapsule(utility::device_vector<Eigen::Vector3f>& src) {
     void const *managed_tensor = utility::ToDLPack(src);
 
     return py::capsule(managed_tensor, "dltensor", [](::PyObject *obj) {
@@ -20,7 +20,7 @@ py::capsule cupoch::dlpack::ToDLpackCapsule(thrust::device_vector<Eigen::Vector3
     });
 }
 
-void cupoch::dlpack::FromDLpackCapsule(py::capsule dlpack, thrust::device_vector<Eigen::Vector3f>& dst) {
+void cupoch::dlpack::FromDLpackCapsule(py::capsule dlpack, utility::device_vector<Eigen::Vector3f>& dst) {
     auto obj = py::cast<py::object>(dlpack);
     ::DLManagedTensor* managed_tensor = (::DLManagedTensor*)::PyCapsule_GetPointer(obj.ptr(), "dltensor");
     utility::FromDLPack<float, 3>(managed_tensor, dst);

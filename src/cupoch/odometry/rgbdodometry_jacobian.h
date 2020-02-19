@@ -2,13 +2,13 @@
 
 #include "cupoch/odometry/odometry_option.h"
 #include "cupoch/utility/eigen.h"
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 
 namespace odometry {
 
-typedef thrust::device_vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
+typedef utility::device_vector<Eigen::Vector4i> CorrespondenceSetPixelWise;
 
 /// Base class that computes Jacobian from two RGB-D images
 class RGBDOdometryJacobian {

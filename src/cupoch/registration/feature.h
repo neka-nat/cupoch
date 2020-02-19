@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 
 #include "cupoch/geometry/kdtree_search_param.h"
 
@@ -22,7 +22,7 @@ public:
     size_t Num() const { return data_.size(); };
 public:
     typedef Eigen::Matrix<float, Dim, 1> FeatureType;
-    thrust::device_vector<FeatureType> data_;
+    utility::device_vector<FeatureType> data_;
 };
 
 /// Function to compute FPFH feature for a point cloud

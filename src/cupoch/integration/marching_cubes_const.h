@@ -334,7 +334,7 @@ void SetConstants() {
         cudaSafeCall(cudaMemcpyToSymbol(tri_table, tri_table_host, sizeof(short) * 256 * 12 * 6));
         cudaSafeCall(cudaMemcpyToSymbol(shift, shift_host, sizeof(int) * 8 * 3));
         cudaSafeCall(cudaMemcpyToSymbol(edge_shift, edge_shift_host, sizeof(int) * 12 * 4));
-        cudaSafeCall(cudaMemcpyToSymbol(edge_to_vert_host, edge_to_vert, sizeof(int) * 12 * 2));
+        cudaSafeCall(cudaMemcpyToSymbol(edge_to_vert, edge_to_vert_host, sizeof(int) * 12 * 2));
     });
 }
 

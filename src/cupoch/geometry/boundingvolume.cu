@@ -153,11 +153,11 @@ std::array<Eigen::Vector3f, 8> OrientedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
-thrust::device_vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
-        const thrust::device_vector<Eigen::Vector3f>& points) const {
+utility::device_vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
+        const utility::device_vector<Eigen::Vector3f>& points) const {
     auto box_points = GetBoxPoints();
     check_within_oriented_bounding_box_functor func(thrust::raw_pointer_cast(points.data()), box_points);
-    thrust::device_vector<size_t> indices(points.size());
+    utility::device_vector<size_t> indices(points.size());
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points.size()),
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
@@ -262,7 +262,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::operator+=(
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
-        const thrust::device_vector<Eigen::Vector3f>& points) {
+        const utility::device_vector<Eigen::Vector3f>& points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
         box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
@@ -290,9 +290,9 @@ std::array<Eigen::Vector3f, 8> AxisAlignedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
-thrust::device_vector<size_t> AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
-        const thrust::device_vector<Eigen::Vector3f>& points) const {
-    thrust::device_vector<size_t> indices(points.size());
+utility::device_vector<size_t> AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
+        const utility::device_vector<Eigen::Vector3f>& points) const {
+    utility::device_vector<size_t> indices(points.size());
     check_within_axis_aligned_bounding_box_functor func(thrust::raw_pointer_cast(points.data()),
                                                         min_bound_, max_bound_);
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points.size()),

@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "cupoch/geometry/kdtree_search_param.h"
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
 namespace flann {
@@ -33,29 +33,29 @@ public:
     bool SetGeometry(const Geometry &geometry);
 
     template <typename T>
-    int Search(const thrust::device_vector<T> &query,
+    int Search(const utility::device_vector<T> &query,
                const KDTreeSearchParam &param,
-               thrust::device_vector<int> &indices,
-               thrust::device_vector<float> &distance2) const;
+               utility::device_vector<int> &indices,
+               utility::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const thrust::device_vector<T> &query,
+    int SearchKNN(const utility::device_vector<T> &query,
                   int knn,
-                  thrust::device_vector<int> &indices,
-                  thrust::device_vector<float> &distance2) const;
+                  utility::device_vector<int> &indices,
+                  utility::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchRadius(const thrust::device_vector<T> &query,
+    int SearchRadius(const utility::device_vector<T> &query,
                      float radius,
-                     thrust::device_vector<int> &indices,
-                     thrust::device_vector<float> &distance2) const;
+                     utility::device_vector<int> &indices,
+                     utility::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchHybrid(const thrust::device_vector<T> &query,
+    int SearchHybrid(const utility::device_vector<T> &query,
                      float radius,
                      int max_nn,
-                     thrust::device_vector<int> &indices,
-                     thrust::device_vector<float> &distance2) const;
+                     utility::device_vector<int> &indices,
+                     utility::device_vector<float> &distance2) const;
 
     template <typename T>
     int Search(const T &query,
@@ -84,10 +84,10 @@ public:
 
 private:
     template <typename T>
-    bool SetRawData(const thrust::device_vector<T> &data);
+    bool SetRawData(const utility::device_vector<T> &data);
 
 protected:
-    thrust::device_vector<float4> data_;
+    utility::device_vector<float4> data_;
     std::unique_ptr<flann::Matrix<float>> flann_dataset_;
     std::unique_ptr<flann::KDTreeCuda3dIndex<flann::L2<float>>> flann_index_;
     size_t dimension_ = 0;

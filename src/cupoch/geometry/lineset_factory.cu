@@ -32,16 +32,16 @@ struct convert_trianglemesh_line_functor {
 std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
-        const thrust::device_vector<thrust::pair<int, int>> &correspondences) {
+        const utility::device_vector<thrust::pair<int, int>> &correspondences) {
     auto lineset_ptr = std::make_shared<LineSet>();
     const size_t point0_size = cloud0.points_.size();
     const size_t point1_size = cloud1.points_.size();
     const size_t corr_size = correspondences.size();
     lineset_ptr->points_.resize(point0_size + point1_size);
     lineset_ptr->lines_.resize(corr_size);
-    thrust::copy_n(thrust::cuda::par.on(utility::GetStream(0)), cloud0.points_.begin(), point0_size, lineset_ptr->points_.begin());
-    thrust::copy_n(thrust::cuda::par.on(utility::GetStream(1)), cloud1.points_.begin(), point1_size, lineset_ptr->points_.begin() + point0_size);
-    thrust::transform(thrust::cuda::par.on(utility::GetStream(2)),
+    thrust::copy_n(exec_policy_on(utility::GetStream(0)), cloud0.points_.begin(), point0_size, lineset_ptr->points_.begin());
+    thrust::copy_n(exec_policy_on(utility::GetStream(1)), cloud1.points_.begin(), point1_size, lineset_ptr->points_.begin() + point0_size);
+    thrust::transform(exec_policy_on(utility::GetStream(2)),
                       correspondences.begin(), correspondences.end(),
                       lineset_ptr->lines_.begin(),
                       [=] __device__ (const thrust::pair<int, int>& corrs) {return Eigen::Vector2i(corrs.first, point0_size + corrs.second);});
@@ -56,12 +56,12 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
     lineset_ptr->lines_.resize(mesh.triangles_.size() * 3);
     convert_trianglemesh_line_functor func(thrust::raw_pointer_cast(mesh.triangles_.data()),
                                            thrust::raw_pointer_cast(lineset_ptr->lines_.data()));
-    thrust::copy(thrust::cuda::par.on(utility::GetStream(0)), mesh.vertices_.begin(),
+    thrust::copy(exec_policy_on(utility::GetStream(0)), mesh.vertices_.begin(),
                  mesh.vertices_.end(), lineset_ptr->points_.begin());
-    thrust::for_each(thrust::cuda::par.on(utility::GetStream(1)),
+    thrust::for_each(exec_policy_on(utility::GetStream(1)),
                      thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(mesh.triangles_.size()), func);
-    auto end = thrust::unique(thrust::cuda::par.on(utility::GetStream(1)),
+    auto end = thrust::unique(exec_policy_on(utility::GetStream(1)),
                               lineset_ptr->lines_.begin(), lineset_ptr->lines_.end());
     lineset_ptr->lines_.resize(thrust::distance(lineset_ptr->lines_.begin(), end));
     cudaSafeCall(cudaDeviceSynchronize());

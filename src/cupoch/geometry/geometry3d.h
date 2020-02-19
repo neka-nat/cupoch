@@ -1,7 +1,7 @@
 #pragma once
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/utility/eigen.h"
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 namespace geometry {
@@ -85,15 +85,15 @@ public:
             const Eigen::Vector4f& rotation);
 
 public:
-    Eigen::Vector3f ComputeMinBound(const thrust::device_vector<Eigen::Vector3f>& points) const;
-    Eigen::Vector3f ComputeMinBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMinBound(const utility::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMinBound(cudaStream_t stream, const utility::device_vector<Eigen::Vector3f>& points) const;
 
-    Eigen::Vector3f ComputeMaxBound(const thrust::device_vector<Eigen::Vector3f>& points) const;
-    Eigen::Vector3f ComputeMaxBound(cudaStream_t stream, const thrust::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMaxBound(const utility::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeMaxBound(cudaStream_t stream, const utility::device_vector<Eigen::Vector3f>& points) const;
 
-    Eigen::Vector3f ComputeCenter(const thrust::device_vector<Eigen::Vector3f>& points) const;
+    Eigen::Vector3f ComputeCenter(const utility::device_vector<Eigen::Vector3f>& points) const;
 
-    void ResizeAndPaintUniformColor(thrust::device_vector<Eigen::Vector3f>& colors,
+    void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f>& colors,
                                     const size_t size,
                                     const Eigen::Vector3f& color);
 
@@ -102,17 +102,17 @@ public:
     /// \param transformation 4x4 matrix for transformation.
     /// \param points A list of points to be transformed.
     void TransformPoints(const Eigen::Matrix4f& transformation,
-                         thrust::device_vector<Eigen::Vector3f>& points);
+                         utility::device_vector<Eigen::Vector3f>& points);
     void TransformPoints(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                         thrust::device_vector<Eigen::Vector3f>& points);
+                         utility::device_vector<Eigen::Vector3f>& points);
     /// \brief Transforms the normals with the transformation matrix.
     ///
     /// \param transformation 4x4 matrix for transformation.
     /// \param normals A list of normals to be transformed.
     void TransformNormals(const Eigen::Matrix4f& transformation,
-                          thrust::device_vector<Eigen::Vector3f>& normals);
+                          utility::device_vector<Eigen::Vector3f>& normals);
     void TransformNormals(cudaStream_t stream, const Eigen::Matrix4f& transformation,
-                          thrust::device_vector<Eigen::Vector3f>& normals);
+                          utility::device_vector<Eigen::Vector3f>& normals);
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D vector to transform the geometry.
@@ -121,7 +121,7 @@ public:
     /// \points. Otherwise, the center of the \points is moved to the \p
     /// translation.
     void TranslatePoints(const Eigen::Vector3f& translation,
-                         thrust::device_vector<Eigen::Vector3f>& points,
+                         utility::device_vector<Eigen::Vector3f>& points,
                          bool relative) const;
     /// \brief Scale the coordinates of all points by the scaling factor \p
     /// scale.
@@ -132,7 +132,7 @@ public:
     /// transformed. \param center If `true`, then the scale is applied to the
     /// centered geometry.
     void ScalePoints(const float scale,
-                     thrust::device_vector<Eigen::Vector3f>& points,
+                     utility::device_vector<Eigen::Vector3f>& points,
                      bool center) const;
     /// \brief Rotate all points with the rotation matrix \p R.
     ///
@@ -144,10 +144,10 @@ public:
     /// of the geometry. Otherwise, the rotation is directly applied to the
     /// geometry, i.e. relative to the origin.
     void RotatePoints(const Eigen::Matrix3f& R,
-                      thrust::device_vector<Eigen::Vector3f>& points,
+                      utility::device_vector<Eigen::Vector3f>& points,
                       bool center) const;
     void RotatePoints(cudaStream_t stream, const Eigen::Matrix3f& R,
-                      thrust::device_vector<Eigen::Vector3f>& points,
+                      utility::device_vector<Eigen::Vector3f>& points,
                       bool center) const;
     /// \brief Rotate all normals with the rotation matrix \p R.
     ///
@@ -156,9 +156,9 @@ public:
     /// defines the axis of rotation and the norm the angle around this axis.
     /// \param normals A list of normals to be transformed.
     void RotateNormals(const Eigen::Matrix3f& R,
-                       thrust::device_vector<Eigen::Vector3f>& normals) const;
+                       utility::device_vector<Eigen::Vector3f>& normals) const;
     void RotateNormals(cudaStream_t stream, const Eigen::Matrix3f& R,
-                       thrust::device_vector<Eigen::Vector3f>& normals) const;
+                       utility::device_vector<Eigen::Vector3f>& normals) const;
 };
 
 }

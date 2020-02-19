@@ -16,7 +16,7 @@ namespace {
 
 class PointCloudForColoredICP : public geometry::PointCloud {
 public:
-    thrust::device_vector<Eigen::Vector3f> color_gradient_;
+    utility::device_vector<Eigen::Vector3f> color_gradient_;
 };
 
 class TransformationEstimationForColoredICP : public TransformationEstimation {
@@ -116,8 +116,8 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
 
     size_t n_points = output->points_.size();
     output->color_gradient_.resize(n_points, Eigen::Vector3f::Zero());
-    thrust::device_vector<int> point_idx;
-    thrust::device_vector<float> point_squared_distance;
+    utility::device_vector<int> point_idx;
+    utility::device_vector<float> point_squared_distance;
     tree.SearchHybrid(output->points_, search_param.radius_, search_param.max_nn_,
                       point_idx, point_squared_distance);
     compute_color_gradient_functor func(thrust::raw_pointer_cast(output->points_.data()),

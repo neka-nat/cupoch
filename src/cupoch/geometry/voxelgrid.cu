@@ -247,8 +247,8 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         voxels_keys_.insert(voxels_keys_.end(), voxelgrid.voxels_keys_.begin(), voxelgrid.voxels_keys_.end());
         voxels_values_.insert(voxels_values_.end(), voxelgrid.voxels_values_.begin(), voxelgrid.voxels_values_.end());
         thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels_values_.begin());
-        thrust::device_vector<int> counts(voxels_keys_.size());
-        thrust::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
+        utility::device_vector<int> counts(voxels_keys_.size());
+        utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
         auto end1 = thrust::reduce_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                           thrust::make_constant_iterator(1),
                                           thrust::make_discard_iterator(), counts.begin());
@@ -285,7 +285,7 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_values_.resize(out_size);
 }
 
-void VoxelGrid::AddVoxels(const thrust::device_vector<Voxel> &voxels) {
+void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
     voxels_keys_.insert(voxels_keys_.end(),
                         thrust::make_transform_iterator(voxels.begin(), extract_grid_index_functor()),
                         thrust::make_transform_iterator(voxels.end(), extract_grid_index_functor()));
@@ -330,7 +330,7 @@ thrust::host_vector<bool> VoxelGrid::CheckIfIncluded(
     output.resize(queries.size());
     for (size_t i = 0; i < queries.size(); ++i) {
         auto query = GetVoxel(queries[i]);
-        auto itr = thrust::find(thrust::cuda::par.on(utility::GetStream(i % utility::MAX_NUM_STREAMS)),
+        auto itr = thrust::find(exec_policy_on(utility::GetStream(i % utility::MAX_NUM_STREAMS)),
                                 voxels_keys_.begin(), voxels_keys_.end(), query);
         output[i] = (itr != voxels_keys_.end());
     }

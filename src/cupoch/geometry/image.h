@@ -1,6 +1,6 @@
 #pragma once
 #include "cupoch/geometry/geometry2d.h"
-#include <thrust/device_vector.h>
+#include "cupoch/utility/device_vector.h"
 #include <vector>
 
 namespace cupoch {
@@ -137,11 +137,11 @@ public:
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
 
     /// Function to filter image with arbitrary dx, dy separable filters.
-    std::shared_ptr<Image> Filter(const thrust::device_vector<float> &dx,
-                                  const thrust::device_vector<float> &dy) const;
+    std::shared_ptr<Image> Filter(const utility::device_vector<float> &dx,
+                                  const utility::device_vector<float> &dy) const;
 
     std::shared_ptr<Image> FilterHorizontal(
-            const thrust::device_vector<float> &kernel) const;
+            const utility::device_vector<float> &kernel) const;
 
     /// Function to 2x image downsample using simple 2x2 averaging.
     std::shared_ptr<Image> Downsample() const;
@@ -183,7 +183,7 @@ public:
     /// Number of bytes per channel.
     int bytes_per_channel_ = 0;
     /// Image storage buffer.
-    thrust::device_vector<uint8_t> data_;
+    utility::device_vector<uint8_t> data_;
 };
 
 template <typename T>

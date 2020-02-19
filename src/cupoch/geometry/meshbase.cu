@@ -133,13 +133,13 @@ MeshBase &MeshBase::NormalizeNormals() {
 MeshBase::MeshBase(Geometry::GeometryType type) : Geometry3D(type) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
-         const thrust::device_vector<Eigen::Vector3f> &vertices)
+         const utility::device_vector<Eigen::Vector3f> &vertices)
     : Geometry3D(type), vertices_(vertices) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
-                   const thrust::device_vector<Eigen::Vector3f> &vertices,
-                   const thrust::device_vector<Eigen::Vector3f> &vertex_normals,
-                   const thrust::device_vector<Eigen::Vector3f> &vertex_colors)
+                   const utility::device_vector<Eigen::Vector3f> &vertices,
+                   const utility::device_vector<Eigen::Vector3f> &vertex_normals,
+                   const utility::device_vector<Eigen::Vector3f> &vertex_colors)
     : Geometry3D(type), vertices_(vertices),
       vertex_normals_(vertex_normals), vertex_colors_(vertex_colors) {}
 

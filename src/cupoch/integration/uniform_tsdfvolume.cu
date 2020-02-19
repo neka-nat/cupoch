@@ -455,6 +455,39 @@ UniformTSDFVolume::~UniformTSDFVolume() {}
 
 void UniformTSDFVolume::Reset() { voxels_.clear(); }
 
+void UniformTSDFVolume::Integrate(
+        const geometry::RGBDImage &image,
+        const camera::PinholeCameraIntrinsic &intrinsic,
+        const Eigen::Matrix4f &extrinsic) {
+    // This function goes through the voxels, and scan convert the relative
+    // depth/color value into the voxel.
+    // The following implementation is a highly optimized version.
+    if ((image.depth_.num_of_channels_ != 1) ||
+        (image.depth_.bytes_per_channel_ != 4) ||
+        (image.depth_.width_ != intrinsic.width_) ||
+        (image.depth_.height_ != intrinsic.height_) ||
+        (color_type_ == TSDFVolumeColorType::RGB8 &&
+         image.color_.num_of_channels_ != 3) ||
+        (color_type_ == TSDFVolumeColorType::RGB8 &&
+         image.color_.bytes_per_channel_ != 1) ||
+        (color_type_ == TSDFVolumeColorType::Gray32 &&
+         image.color_.num_of_channels_ != 1) ||
+        (color_type_ == TSDFVolumeColorType::Gray32 &&
+         image.color_.bytes_per_channel_ != 4) ||
+        (color_type_ != TSDFVolumeColorType::NoColor &&
+         image.color_.width_ != intrinsic.width_) ||
+        (color_type_ != TSDFVolumeColorType::NoColor &&
+         image.color_.height_ != intrinsic.height_)) {
+        utility::LogError(
+                "[UniformTSDFVolume::Integrate] Unsupported image format.");
+    }
+    auto depth2cameradistance =
+            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
+                    intrinsic);
+    IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
+                                                 *depth2cameradistance);
+}
+
 std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
     extract_pointcloud_functor func(thrust::raw_pointer_cast(voxels_.data()),
@@ -483,12 +516,12 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     size_t n_total = 8 * res3;
 
     // compute cube indices for each voxels
-    thrust::device_vector<float> fs(n_total);
-    thrust::device_vector<Eigen::Vector3f> cs(n_total);
-    thrust::device_vector<Eigen::Vector3i> keys(res3);
-    thrust::device_vector<Eigen::Vector3i> repeat_keys(n_total);
-    thrust::device_vector<int> cube_indices(n_total);
-    thrust::device_vector<int> cube_indices_out(res3);
+    utility::device_vector<float> fs(n_total);
+    utility::device_vector<Eigen::Vector3f> cs(n_total);
+    utility::device_vector<Eigen::Vector3i> keys(res3);
+    utility::device_vector<Eigen::Vector3i> repeat_keys(n_total);
+    utility::device_vector<int> cube_indices(n_total);
+    utility::device_vector<int> cube_indices_out(res3);
     extract_mesh_phase1_functor func1(thrust::raw_pointer_cast(voxels_.data()),
                                       resolution_, color_type_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
@@ -513,17 +546,17 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     cube_indices_out.resize(n_result1);
 
     // compute vertices and vertex_colors
-    thrust::repeated_range<thrust::device_vector<Eigen::Vector3i>::iterator> range_keys(keys.begin(),
+    thrust::repeated_range<utility::device_vector<Eigen::Vector3i>::iterator> range_keys(keys.begin(),
                                                                                         keys.end(), 12);
-    thrust::repeated_range<thrust::device_vector<int>::iterator> range_cube_indices(cube_indices_out.begin(),
+    thrust::repeated_range<utility::device_vector<int>::iterator> range_cube_indices(cube_indices_out.begin(),
                                                                                     cube_indices_out.end(), 12);
     size_t n_result2 = 12 * keys.size();
     mesh->vertices_.resize(n_result2);
     mesh->vertex_colors_.resize(n_result2);
-    thrust::device_vector<Eigen::Vector4i> edge_indices(n_result2);
+    utility::device_vector<Eigen::Vector4i> edge_indices(n_result2);
     cube_indices.resize(n_result2);
     repeat_keys.resize(n_result2);
-    thrust::device_vector<int> vert_no(n_result2);
+    utility::device_vector<int> vert_no(n_result2);
     extract_mesh_phase2_functor func2(origin_, voxel_length_,
                                       resolution_,
                                       thrust::raw_pointer_cast(fs.data()),
@@ -581,7 +614,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                                             mesh->vertex_colors_.begin()));
 
     // compute triangles
-    thrust::device_vector<int> seq(n_result4);
+    utility::device_vector<int> seq(n_result4);
     thrust::sequence(seq.begin(), seq.end(), 0);
     auto end4 = thrust::unique_by_key(repeat_keys.begin(), repeat_keys.end(),
                                       seq.begin());

@@ -12,18 +12,18 @@ using namespace cupoch::geometry;
 namespace {
 
 void SelectDownSampleImpl(const geometry::PointCloud& src, geometry::PointCloud& dst,
-                          const thrust::device_vector<size_t> &indices) {
+                          const utility::device_vector<size_t> &indices) {
     const bool has_normals = src.HasNormals();
     const bool has_colors = src.HasColors();
     if (has_normals) dst.normals_.resize(indices.size());
     if (has_colors) dst.colors_.resize(indices.size());
     dst.points_.resize(indices.size());
-    thrust::gather(thrust::cuda::par.on(utility::GetStream(0)), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
+    thrust::gather(exec_policy_on(utility::GetStream(0)), indices.begin(), indices.end(), src.points_.begin(), dst.points_.begin());
     if (has_normals) {
-        thrust::gather(thrust::cuda::par.on(utility::GetStream(1)), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
+        thrust::gather(exec_policy_on(utility::GetStream(1)), indices.begin(), indices.end(), src.normals_.begin(), dst.normals_.begin());
     }
     if (has_colors) {
-        thrust::gather(thrust::cuda::par.on(utility::GetStream(2)), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
+        thrust::gather(exec_policy_on(utility::GetStream(2)), indices.begin(), indices.end(), src.colors_.begin(), dst.colors_.begin());
     }
     cudaSafeCall(cudaDeviceSynchronize());
 }
@@ -42,12 +42,12 @@ struct compute_key_functor {
 
 template<typename OutputIterator, class... Args>
 __host__
-int CalcAverageByKey(thrust::device_vector<Eigen::Vector3i>& keys,
+int CalcAverageByKey(utility::device_vector<Eigen::Vector3i>& keys,
                      OutputIterator buf_begins, OutputIterator output_begins) {
     const size_t n = keys.size();
     thrust::sort_by_key(keys.begin(), keys.end(), buf_begins);
 
-    thrust::device_vector<int> counts(n);
+    utility::device_vector<int> counts(n);
     auto end1 = thrust::reduce_by_key(keys.begin(), keys.end(),
                                       thrust::make_constant_iterator(1),
                                       thrust::make_discard_iterator(), counts.begin());
@@ -125,14 +125,14 @@ struct check_distance_threshold_functor {
 
 }
 
-std::shared_ptr<PointCloud> PointCloud::SelectDownSample(const thrust::device_vector<size_t> &indices, bool invert) const {
+std::shared_ptr<PointCloud> PointCloud::SelectDownSample(const utility::device_vector<size_t> &indices, bool invert) const {
     auto output = std::make_shared<PointCloud>();
 
     if (invert) {
         size_t n_out = points_.size() - indices.size();
-        thrust::device_vector<size_t> sorted_indices = indices;
+        utility::device_vector<size_t> sorted_indices = indices;
         thrust::sort(sorted_indices.begin(), sorted_indices.end());
-        thrust::device_vector<size_t> inv_indices(n_out);
+        utility::device_vector<size_t> inv_indices(n_out);
         thrust::set_difference(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
                                sorted_indices.begin(), sorted_indices.end(), inv_indices.begin());
         SelectDownSampleImpl(*this, *output, inv_indices);
@@ -162,22 +162,22 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const 
     const bool has_normals = HasNormals();
     const bool has_colors = HasColors();
     compute_key_functor ck_func(voxel_min_bound, voxel_size);
-    thrust::device_vector<Eigen::Vector3i> keys(n);
+    utility::device_vector<Eigen::Vector3i> keys(n);
     thrust::transform(points_.begin(), points_.end(), keys.begin(), ck_func);
 
-    thrust::device_vector<Eigen::Vector3f> sorted_points = points_;
+    utility::device_vector<Eigen::Vector3f> sorted_points = points_;
     output->points_.resize(n);
     if (!has_normals && !has_colors) {
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
+        typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f>(keys,
                     make_tuple_iterator(sorted_points.begin()),
                     make_tuple_iterator(output->points_.begin()));
         output->points_.resize(n_out);
     } else if (has_normals && !has_colors) {
-        thrust::device_vector<Eigen::Vector3f> sorted_normals = normals_;
+        utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         output->normals_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
+        typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator, utility::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(keys,
                     make_tuple_iterator(sorted_points.begin(), sorted_normals.begin()),
@@ -186,9 +186,9 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const 
         output->normals_.resize(n_out);
         thrust::for_each(output->normals_.begin(), output->normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
     } else if (!has_normals && has_colors) {
-        thrust::device_vector<Eigen::Vector3f> sorted_colors = colors_;
+        utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         output->colors_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
+        typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator, utility::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(keys,
                     make_tuple_iterator(sorted_points.begin(), sorted_colors.begin()),
@@ -196,11 +196,11 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(float voxel_size) const 
         output->points_.resize(n_out);
         output->colors_.resize(n_out);
     } else {
-        thrust::device_vector<Eigen::Vector3f> sorted_normals = normals_;
-        thrust::device_vector<Eigen::Vector3f> sorted_colors = colors_;
+        utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
+        utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         output->normals_.resize(n);
         output->colors_.resize(n);
-        typedef thrust::tuple<thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator, thrust::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
+        typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator, utility::device_vector<Eigen::Vector3f>::iterator, utility::device_vector<Eigen::Vector3f>::iterator> IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>(keys,
                     make_tuple_iterator(sorted_points.begin(), sorted_normals.begin(), sorted_colors.begin()),
@@ -230,18 +230,18 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     output->points_.resize(n_out);
     if (has_normals) output->normals_.resize(n_out);
     if (has_colors) output->colors_.resize(n_out);
-    thrust::transform(thrust::cuda::par.on(utility::GetStream(0)),
+    thrust::transform(exec_policy_on(utility::GetStream(0)),
                       thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                       output->points_.begin(),
                       stride_copy_functor(thrust::raw_pointer_cast(output->points_.data()), every_k_points));
     if (has_normals) {
-        thrust::transform(thrust::cuda::par.on(utility::GetStream(1)),
+        thrust::transform(exec_policy_on(utility::GetStream(1)),
                           thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                           output->normals_.begin(),
                           stride_copy_functor(thrust::raw_pointer_cast(output->normals_.data()), every_k_points));
     }
     if (has_colors) {
-        thrust::transform(thrust::cuda::par.on(utility::GetStream(2)),
+        thrust::transform(exec_policy_on(utility::GetStream(2)),
                           thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_out),
                           output->colors_.begin(),
                           stride_copy_functor(thrust::raw_pointer_cast(output->colors_.data()), every_k_points));
@@ -250,7 +250,7 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     return output;
 }
 
-std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
+std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
 PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
@@ -259,11 +259,11 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-    thrust::device_vector<int> tmp_indices;
-    thrust::device_vector<float> dist;
+    utility::device_vector<int> tmp_indices;
+    utility::device_vector<float> dist;
     kdtree.SearchRadius(points_, search_radius, tmp_indices, dist);
     const size_t n_pt = points_.size();
-    thrust::device_vector<size_t> indices(n_pt);
+    utility::device_vector<size_t> indices(n_pt);
     has_radius_points_functor func(thrust::raw_pointer_cast(tmp_indices.data()), nb_points, NUM_MAX_NN);
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_pt),
                                indices.begin(), func);
@@ -277,7 +277,7 @@ PointCloud::RemoveRadiusOutliersHost(size_t nb_points, float search_radius) cons
     return std::make_tuple(std::get<0>(output), thrust::host_vector<size_t>(std::get<1>(output)));
 }
 
-std::tuple<std::shared_ptr<PointCloud>, thrust::device_vector<size_t>>
+std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       float std_ratio) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
@@ -287,15 +287,15 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     }
     if (points_.empty()) {
         return std::make_tuple(std::make_shared<PointCloud>(),
-                               thrust::device_vector<size_t>());
+                               utility::device_vector<size_t>());
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     const int n_pt = points_.size();
-    thrust::device_vector<float> avg_distances(n_pt);
-    thrust::device_vector<size_t> indices(n_pt);
-    thrust::device_vector<int> tmp_indices;
-    thrust::device_vector<float> dist;
+    utility::device_vector<float> avg_distances(n_pt);
+    utility::device_vector<size_t> indices(n_pt);
+    utility::device_vector<int> tmp_indices;
+    utility::device_vector<float> dist;
     kdtree.SearchKNN(points_, int(nb_neighbors), tmp_indices, dist);
     average_distance_functor avg_func(thrust::raw_pointer_cast(dist.data()), nb_neighbors);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator((size_t)n_pt),
@@ -303,7 +303,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     const size_t valid_distances = thrust::count_if(avg_distances.begin(), avg_distances.end(), [] __device__ (float x) {return (x >= 0.0);});
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
-                               thrust::device_vector<size_t>());
+                               utility::device_vector<size_t>());
     }
     float cloud_mean = thrust::reduce(avg_distances.begin(), avg_distances.end(), 0.0,
             [] __device__ (float const &x, float const &y) { return (y > 0) ? x + y : x; });

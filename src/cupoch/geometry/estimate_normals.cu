@@ -272,8 +272,8 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-    thrust::device_vector<int> indices;
-    thrust::device_vector<float> distance2;
+    utility::device_vector<int> indices;
+    utility::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
     int knn;
     switch(search_param.GetSearchType()) {

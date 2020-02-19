@@ -435,7 +435,6 @@ inline bool CheckRGBDImagePair(const geometry::RGBDImage &source,
             CheckImagePair(source.depth_, target.depth_) &&
             CheckImagePair(source.color_, source.depth_) &&
             CheckImagePair(target.color_, target.depth_) &&
-            CheckImagePair(source.color_, target.color_) &&
             source.color_.num_of_channels_ == 1 &&
             source.depth_.num_of_channels_ == 1 &&
             target.color_.num_of_channels_ == 1 &&

@@ -58,6 +58,7 @@ option(BUILD_PNG                 "Build png from source"                    OFF)
 option(BUILD_JPEG                "Build jpeg-turbo from source"             ON)
 option(BUILD_PYBIND11            "Build pybind11 from source"               ON)
 option(BUILD_PYTHON_MODULE       "Build the python module"                  ON)
+option(USE_RMM                   "Use rmm library(fast memory allocator)"   ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -159,6 +160,9 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     -Xcudafe "--diag_suppress=partial_override"
     -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
     ${CUDA_ARCH})
+if (USE_RMM)
+    add_definitions(-DUSE_RMM)
+endif ()
 
 # 3rd-party projects that are added with external_project_add will be installed
 # with this prefix. E.g.

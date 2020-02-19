@@ -156,8 +156,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
-    thrust::device_vector<Eigen::Vector3i> voxels_keys(input.points_.size());
-    thrust::device_vector<geometry::Voxel> voxels_values(input.points_.size());
+    utility::device_vector<Eigen::Vector3i> voxels_keys(input.points_.size());
+    utility::device_vector<geometry::Voxel> voxels_values(input.points_.size());
     bool has_colors = input.HasColors();
     create_from_pointcloud_functor func(min_bound, voxel_size, has_colors);
     if (!has_colors) {
@@ -169,7 +169,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     }
     thrust::sort_by_key(voxels_keys.begin(), voxels_keys.end(), voxels_values.begin());
 
-    thrust::device_vector<int> counts(voxels_keys.size());
+    utility::device_vector<int> counts(voxels_keys.size());
     auto end = thrust::reduce_by_key(voxels_keys.begin(), voxels_keys.end(),
                                       thrust::make_constant_iterator(1),
                                       thrust::make_discard_iterator(), counts.begin());

@@ -67,8 +67,8 @@ public:
     std::array<Eigen::Vector3f, 8> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
-    thrust::device_vector<size_t> GetPointIndicesWithinBoundingBox(
-            const thrust::device_vector<Eigen::Vector3f>& points) const;
+    utility::device_vector<size_t> GetPointIndicesWithinBoundingBox(
+            const utility::device_vector<Eigen::Vector3f>& points) const;
 
     /// Returns an oriented bounding box from the AxisAlignedBoundingBox.
     ///
@@ -171,8 +171,8 @@ public:
     /// Return indices to points that are within the bounding box.
     ///
     /// \param points A list of points.
-    thrust::device_vector<size_t> GetPointIndicesWithinBoundingBox(
-            const thrust::device_vector<Eigen::Vector3f>& points) const;
+    utility::device_vector<size_t> GetPointIndicesWithinBoundingBox(
+            const utility::device_vector<Eigen::Vector3f>& points) const;
 
     /// Returns the 3D dimensions of the bounding box in string format.
     std::string GetPrintInfo() const;
@@ -181,7 +181,7 @@ public:
     ///
     /// \param points A list of points.
     static AxisAlignedBoundingBox CreateFromPoints(
-            const thrust::device_vector<Eigen::Vector3f>& points);
+            const utility::device_vector<Eigen::Vector3f>& points);
 
 public:
     /// The lower x, y, z bounds of the bounding box.

@@ -225,12 +225,14 @@ add_library(rmm STATIC rmm/src/rmm.cpp
             rmm/src/memory_manager.cpp
             cnmem/src/cnmem.cpp
             rmm/src/mr/default_memory_resource.cpp)
-target_include_directories(rmm PUBLIC cnmem/include rmm/include)
-target_link_libraries(rmm ${CUDA_LIBRAIES})
+target_include_directories(rmm PRIVATE cnmem/include rmm/include)
+target_link_libraries(rmm ${CUDA_LIBRARIES})
 if (WIN32)
   target_compile_definitions(rmm PRIVATE -DNOMINMAX)
 endif ()
+set(cnmem_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cnmem/include)
 set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
+set(rmm_LIBRARIES rmm)
 
 # imgui
 add_library(imgui STATIC imgui/imgui.cpp
@@ -256,6 +258,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${liblzf_INCLUDE_DIRS}
      ${tomasakeninemoeller_INCLUDE_DIRS}
      ${dlpack_INCLUDE_DIRS}
+     ${cnmem_INCLUDE_DIRS}
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
@@ -276,6 +279,8 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
      ${imgui_LIBRARIES}
+     ${rmm_LIBRARIES}
+     ${CUDA_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
