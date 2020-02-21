@@ -45,6 +45,7 @@ protected:
     GLuint vertex_UV_buffer_;
     GLuint image_texture_;
     GLuint image_texture_buffer_;
+    GLuint image_pixel_buffer_;
     GLuint vertex_scale_;
 
     gl_helper::GLVector3f vertex_scale_data_;

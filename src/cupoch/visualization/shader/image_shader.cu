@@ -133,7 +133,6 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, num_data_width,
                  num_data_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], image_texture_buffer_, cudaGraphicsMapFlagsNone));
 
     if (option.interpolation_option_ ==
         RenderOption::TextureInterpolationOption::Nearest) {
@@ -146,6 +145,12 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
+    glGenBuffers(1, &image_pixel_buffer_);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, image_pixel_buffer_);
+    size_t data_size = GetDataSize(geometry);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], image_pixel_buffer_, cudaGraphicsMapFlagsNone));
     uint8_t* raw_render_image_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(1, cuda_graphics_resources_));
@@ -169,10 +174,16 @@ bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
         return false;
     }
 
+    const size_t num_data_height = GetDataHeight(geometry);
+    const size_t num_data_width = GetDataWidth(geometry);
     glUseProgram(program_);
     glUniform3fv(vertex_scale_, 1, vertex_scale_data_.data());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, image_pixel_buffer_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, num_data_width, num_data_height,
+                    GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glUniform1i(image_texture_, 0);
     glEnableVertexAttribArray(vertex_position_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -189,6 +200,8 @@ bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
 
 void ImageShader::UnbindGeometry() {
     if (bound_) {
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+        glDeleteBuffers(1, &image_pixel_buffer_);
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_UV_buffer_);
         glDeleteTextures(1, &image_texture_buffer_);

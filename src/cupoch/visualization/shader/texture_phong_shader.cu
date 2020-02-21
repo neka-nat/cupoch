@@ -174,6 +174,9 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
 
 void TexturePhongShader::UnbindGeometry() {
     if (bound_) {
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[2]));
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_normal_buffer_);
         glDeleteBuffers(1, &vertex_uv_buffer_);

@@ -215,6 +215,8 @@ bool SimpleShader::RenderGeometry(const geometry::Geometry &geometry,
 
 void SimpleShader::UnbindGeometry() {
     if (bound_) {
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_color_buffer_);
         bound_ = false;
