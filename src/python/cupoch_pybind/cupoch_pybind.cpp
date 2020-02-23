@@ -1,4 +1,5 @@
 #include "cupoch_pybind/cupoch_pybind.h"
+#include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/camera/camera.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/io/io.h"
@@ -21,6 +22,14 @@ PYBIND11_MODULE(cupoch, m) {
           py::arg("initial_pool_size") = 0,
           py::arg("logging") = false,
           py::arg("devices") = std::vector<int>());
+    cupoch::docstring::FunctionDocInject(
+            m, "initialize_allocator",
+            {
+                {"mode", "Allocation strategy to use"},
+                {"initial_pool_size", "When pool suballocation is enabled, this is the initial pool size in bytes"},
+                {"logging", "Enable logging memory manager events"},
+                {"devices", "List of GPU device IDs to register"},
+            });
     bind_device_vector_wrapper(m);
     pybind_utility(m);
     pybind_camera(m);

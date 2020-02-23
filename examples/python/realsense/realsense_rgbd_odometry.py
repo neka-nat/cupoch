@@ -2,6 +2,9 @@ import sys
 import pyrealsense2 as rs
 import numpy as np
 from enum import IntEnum
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib.animation as animation
 
 from datetime import datetime
 
@@ -63,13 +66,20 @@ if __name__ == "__main__":
     align_to = rs.stream.color
     align = rs.align(align_to)
 
+    fig = plt.figure()
+    ax = p3.Axes3D(fig)
+
     # Streaming loop
     prev_rgbd_image = None
     option = x3d.odometry.OdometryOption()
     cur_trans = np.identity(4)
-    frame_count = 0
+    path = []
+    path.append(cur_trans[:3, 3].tolist())
+    line = ax.plot(*list(zip(*path)), 'r-')[0]
+    pos = ax.plot(*list(zip(*path)), 'yo')[0]
     try:
-        while True:
+        def update_odom(frame):
+            global prev_rgbd_image, cur_trans
 
             dt = datetime.now()
 
@@ -87,7 +97,7 @@ if __name__ == "__main__":
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
-                continue
+                return
 
             depth_image = x3d.geometry.Image(
                 np.array(aligned_depth_frame.get_data()))
@@ -100,16 +110,23 @@ if __name__ == "__main__":
             if not prev_rgbd_image is None:
                 res, odo_trans, _ = x3d.odometry.compute_rgbd_odometry(
                                 prev_rgbd_image, rgbd_image, intrinsic,
-                                cur_trans, x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                                np.identity(4), x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
                 if res:
-                    cur_trans = odo_trans
+                    cur_trans = np.matmul(cur_trans, odo_trans)
 
             prev_rgbd_image = rgbd_image
             process_time = datetime.now() - dt
             print("FPS: " + str(1 / process_time.total_seconds()))
             print(cur_trans)
-            frame_count += 1
+            path.append(cur_trans[:3, 3])
+            data = list(zip(*path))
+            line.set_data(data[:2])
+            line.set_3d_properties(data[2])
+            pos.set_data([cur_trans[0, 3]], [cur_trans[1, 3]])
+            pos.set_3d_properties(cur_trans[2, 3])
+
+        anim = animation.FuncAnimation(fig, update_odom, interval=10)
+        plt.show()
 
     finally:
         pipeline.stop()
-    vis.destroy_window()
