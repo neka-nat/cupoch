@@ -84,6 +84,6 @@ FILE *FOpen(const std::string &filename, const std::string &mode) {
     return fp;
 }
 
-}
-}
-}
+}  // namespace filesystem
+}  // namespace utility
+}  // namespace cupoch

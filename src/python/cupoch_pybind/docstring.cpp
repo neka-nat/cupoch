@@ -1,3 +1,5 @@
+#include "cupoch_pybind/docstring.h"
+
 #include <regex>
 #include <sstream>
 #include <string>
@@ -7,7 +9,6 @@
 
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
-#include "cupoch_pybind/docstring.h"
 
 namespace cupoch {
 namespace docstring {

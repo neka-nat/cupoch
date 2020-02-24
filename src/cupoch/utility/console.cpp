@@ -1,9 +1,9 @@
 #include "cupoch/utility/console.h"
 
+#include <fmt/chrono.h>
+
 #include <cstdio>
 #include <ctime>
-
-#include <fmt/chrono.h>
 
 #ifdef _WIN32
 #include <windows.h>

@@ -10,17 +10,18 @@ namespace cupoch {
 namespace utility {
 
 #ifdef USE_RMM
-template<typename T>
+template <typename T>
 using device_vector = rmm::device_vector<T>;
 
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return rmm::exec_policy(stream);
 }
 
-inline void InitializeAllocator(rmmAllocationMode_t mode = CudaDefaultAllocation,
-                                size_t initial_pool_size = 0,
-                                bool logging = false,
-                                const std::vector<int>& devices = {}) {
+inline void InitializeAllocator(
+        rmmAllocationMode_t mode = CudaDefaultAllocation,
+        size_t initial_pool_size = 0,
+        bool logging = false,
+        const std::vector<int> &devices = {}) {
     static bool is_initialized = false;
     if (is_initialized) rmmFinalize();
     rmmOptions_t options = {mode, initial_pool_size, logging, devices};
@@ -29,19 +30,20 @@ inline void InitializeAllocator(rmmAllocationMode_t mode = CudaDefaultAllocation
 }
 
 #else
-template<typename T>
+template <typename T>
 using device_vector = thrust::device_vector<T>;
 
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return &thrust::cuda::par;
 }
 
-inline void InitializeAllocator(rmmAllocationMode_t mode = CudaDefaultAllocation,
-                                size_t initial_pool_size = 0,
-                                bool logging = false,
-                                const std::vector<int>& devices = {}) {}
+inline void InitializeAllocator(
+        rmmAllocationMode_t mode = CudaDefaultAllocation,
+        size_t initial_pool_size = 0,
+        bool logging = false,
+        const std::vector<int> &devices = {}) {}
 
 #endif
 
-}
-}
+}  // namespace utility
+}  // namespace cupoch

@@ -37,15 +37,14 @@ public:
     };
 
 public:
-    __host__ __device__
-    ~Geometry() {} // non-virtual
+    __host__ __device__ ~Geometry() {}  // non-virtual
 
 protected:
     Geometry(GeometryType type, int dimension)
         : geometry_type_(type), dimension_(dimension) {}
 
 public:
-    virtual Geometry& Clear() = 0;
+    virtual Geometry &Clear() = 0;
     virtual bool IsEmpty() const = 0;
     GeometryType GetGeometryType() const { return geometry_type_; }
     int Dimension() const { return dimension_; }

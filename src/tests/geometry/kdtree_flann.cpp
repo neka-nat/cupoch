@@ -1,8 +1,10 @@
 #include "cupoch/geometry/kdtree_flann.h"
+
+#include <thrust/remove.h>
+#include <thrust/sort.h>
+
 #include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
-#include <thrust/sort.h>
-#include <thrust/remove.h>
 
 using namespace Eigen;
 using namespace cupoch;
@@ -12,18 +14,14 @@ using namespace unit_test;
 namespace {
 
 struct is_minus_one_functor {
-    bool operator() (int x) const {
-        return (x == -1);
-    }
+    bool operator()(int x) const { return (x == -1); }
 };
 
 struct is_inf_functor {
-    bool operator() (float x) const {
-        return std::isinf(x);
-    }
+    bool operator()(float x) const { return std::isinf(x); }
 };
 
-}
+}  // namespace
 
 TEST(KDTreeFlann, SearchKNN) {
     thrust::host_vector<int> ref_indices;
@@ -33,7 +31,8 @@ TEST(KDTreeFlann, SearchKNN) {
     for (int i = 0; i < 30; ++i) ref_indices.push_back(indices0[i]);
 
     thrust::host_vector<float> ref_distance2;
-    float distances0[] = {0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
+    float distances0[] = {
+            0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
             10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
             16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
             23.692427, 23.809303, 24.104578, 25.005770, 26.952710, 27.487888,
@@ -77,11 +76,11 @@ TEST(KDTreeFlann, SearchRadius) {
     for (int i = 0; i < 21; ++i) ref_indices.push_back(indices0[i]);
 
     thrust::host_vector<float> ref_distance2;
-    float distances0[] = {
-            0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
-            10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
-            16.851978, 17.073435, 18.254518, 20.019994, 21.496347, 23.077277,
-            23.692427, 23.809303, 24.104578};
+    float distances0[] = {0.000000,  4.684353,  4.996539,  9.191849,  10.034604,
+                          10.466745, 10.649751, 11.434066, 12.089195, 13.345638,
+                          13.696270, 14.016148, 16.851978, 17.073435, 18.254518,
+                          20.019994, 21.496347, 23.077277, 23.692427, 23.809303,
+                          24.104578};
     for (int i = 0; i < 21; ++i) ref_distance2.push_back(distances0[i]);
 
     int size = 100;
@@ -121,8 +120,7 @@ TEST(KDTreeFlann, SearchRadius) {
 
 TEST(KDTreeFlann, SearchHybrid) {
     thrust::host_vector<int> ref_indices;
-    int indices0[] = {27, 48, 4,  77, 90, 7,  54, 17,
-                     76, 38, 39, 60, 15, 84, 11};
+    int indices0[] = {27, 48, 4, 77, 90, 7, 54, 17, 76, 38, 39, 60, 15, 84, 11};
     for (int i = 0; i < 15; ++i) ref_indices.push_back(indices0[i]);
 
     thrust::host_vector<float> ref_distance2;
@@ -152,7 +150,7 @@ TEST(KDTreeFlann, SearchHybrid) {
     thrust::host_vector<float> distance2;
 
     int result = kdtree.SearchHybrid<Vector3f>(query, radius, max_nn, indices,
-                                                 distance2);
+                                               distance2);
 
     EXPECT_EQ(result, 15);
 

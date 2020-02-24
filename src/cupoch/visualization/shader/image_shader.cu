@@ -17,7 +17,7 @@ namespace {
 
 __device__
 uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
-    if (std::isnan(color)) {
+    if (isnan(color)) {
         return 0;
     } else {
         thrust::minimum<float> min;

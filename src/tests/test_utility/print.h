@@ -1,9 +1,10 @@
 #pragma once
 
+#include <thrust/host_vector.h>
+
 #include <Eigen/Core>
 #include <iomanip>
 #include <iostream>
-#include <thrust/host_vector.h>
 
 namespace unit_test {
 // tab size used for formatting ref data.
@@ -69,11 +70,11 @@ void Print(const thrust::host_vector<Eigen::Matrix<T, M, N>>& v,
 
 // Print a vector of Matrix<T, M, N> that uses the Eigen::aligned_allocator.
 template <class T, int M, int N>
-void Print(
-        const thrust::host_vector<Eigen::Matrix<T, M, N>,
-                                  Eigen::aligned_allocator<Eigen::Matrix<T, M, N>>>& v,
-        const int& tabs = 1,
-        const char& terminator = ';') {
+void Print(const thrust::host_vector<
+                   Eigen::Matrix<T, M, N>,
+                   Eigen::aligned_allocator<Eigen::Matrix<T, M, N>>>& v,
+           const int& tabs = 1,
+           const char& terminator = ';') {
     std::cout << std::setw(tabs * TAB_SIZE) << "{";
     std::cout << std::endl;
     for (size_t i = 0; i < v.size(); i++) {

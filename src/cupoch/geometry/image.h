@@ -1,7 +1,8 @@
 #pragma once
+#include <vector>
+
 #include "cupoch/geometry/geometry2d.h"
 #include "cupoch/utility/device_vector.h"
-#include <vector>
 
 namespace cupoch {
 
@@ -62,7 +63,7 @@ public:
     Eigen::Vector2f GetMaxBound() const override;
 
     thrust::host_vector<uint8_t> GetData() const;
-    void SetData(const thrust::host_vector<uint8_t>& data);
+    void SetData(const thrust::host_vector<uint8_t> &data);
 
     /// \brief Test if coordinate `(u, v)` is located in the inner_marge of the
     /// image.
@@ -81,11 +82,10 @@ public:
     }
 
     /// \brief Prepare Image properties and allocate Image buffer.
-    __host__ __device__
-    Image &Prepare(int width,
-                   int height,
-                   int num_of_channels,
-                   int bytes_per_channel) {
+    __host__ __device__ Image &Prepare(int width,
+                                       int height,
+                                       int num_of_channels,
+                                       int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
@@ -95,8 +95,7 @@ public:
     }
 
     /// \brief Returns data size per line (row, or the width) in bytes.
-    __host__ __device__
-    int BytesPerLine() const {
+    __host__ __device__ int BytesPerLine() const {
         return width_ * num_of_channels_ * bytes_per_channel_;
     }
 
@@ -137,8 +136,9 @@ public:
     std::shared_ptr<Image> Filter(Image::FilterType type) const;
 
     /// Function to filter image with arbitrary dx, dy separable filters.
-    std::shared_ptr<Image> Filter(const utility::device_vector<float> &dx,
-                                  const utility::device_vector<float> &dy) const;
+    std::shared_ptr<Image> Filter(
+            const utility::device_vector<float> &dx,
+            const utility::device_vector<float> &dy) const;
 
     std::shared_ptr<Image> FilterHorizontal(
             const utility::device_vector<float> &kernel) const;
@@ -187,20 +187,28 @@ public:
 };
 
 template <typename T>
-__host__ __device__
-T *PointerAt(const uint8_t* data, int width, int u, int v) {
+__host__ __device__ T *PointerAt(const uint8_t *data, int width, int u, int v) {
     return (T *)(data + (v * width + u) * sizeof(T));
 }
 
 template <typename T>
-__host__ __device__
-T *PointerAt(const uint8_t* data, int width, int num_of_channels, int u, int v, int ch) {
+__host__ __device__ T *PointerAt(const uint8_t *data,
+                                 int width,
+                                 int num_of_channels,
+                                 int u,
+                                 int v,
+                                 int ch) {
     return (T *)(data + ((v * width + u) * num_of_channels + ch) * sizeof(T));
 }
 
-__host__ __device__
-inline thrust::pair<bool, float> FloatValueAt(const uint8_t* data, float u, float v, int width, int height,
-                                              int num_of_channels, int bytes_per_channel) {
+__host__ __device__ inline thrust::pair<bool, float> FloatValueAt(
+        const uint8_t *data,
+        float u,
+        float v,
+        int width,
+        int height,
+        int num_of_channels,
+        int bytes_per_channel) {
     if ((num_of_channels != 1) || (bytes_per_channel != 4) ||
         (u < 0.0 || u > (float)(width - 1) || v < 0.0 ||
          v > (float)(height - 1))) {
@@ -210,13 +218,14 @@ inline thrust::pair<bool, float> FloatValueAt(const uint8_t* data, float u, floa
     int vi = std::max(std::min((int)v, height - 2), 0);
     float pu = u - ui;
     float pv = v - vi;
-    float value[4] = {*PointerAt<float>(data, width, ui, vi), *PointerAt<float>(data, width, ui, vi + 1),
+    float value[4] = {*PointerAt<float>(data, width, ui, vi),
+                      *PointerAt<float>(data, width, ui, vi + 1),
                       *PointerAt<float>(data, width, ui + 1, vi),
                       *PointerAt<float>(data, width, ui + 1, vi + 1)};
-    return thrust::make_pair(true,
-                             (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
-                                     (value[2] * (1 - pv) + value[3] * pv) * pu);
+    return thrust::make_pair(
+            true, (value[0] * (1 - pv) + value[1] * pv) * (1 - pu) +
+                          (value[2] * (1 - pv) + value[3] * pv) * pu);
 }
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

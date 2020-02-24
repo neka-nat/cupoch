@@ -1,9 +1,10 @@
 #pragma once
+#include <thrust/host_vector.h>
+
 #include "cupoch/geometry/geometry3d.h"
-#include "cupoch/utility/eigen.h"
 #include "cupoch/geometry/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
-#include <thrust/host_vector.h>
+#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 
@@ -19,18 +20,18 @@ class RGBDImage;
 class PointCloud : public Geometry3D {
 public:
     PointCloud();
-    PointCloud(const thrust::host_vector<Eigen::Vector3f>& points);
-    PointCloud(const PointCloud& other);
+    PointCloud(const thrust::host_vector<Eigen::Vector3f> &points);
+    PointCloud(const PointCloud &other);
     ~PointCloud();
-    PointCloud& operator=(const PointCloud& other);
+    PointCloud &operator=(const PointCloud &other);
 
-    void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);
+    void SetPoints(const thrust::host_vector<Eigen::Vector3f> &points);
     thrust::host_vector<Eigen::Vector3f> GetPoints() const;
 
-    void SetNormals(const thrust::host_vector<Eigen::Vector3f>& normals);
+    void SetNormals(const thrust::host_vector<Eigen::Vector3f> &normals);
     thrust::host_vector<Eigen::Vector3f> GetNormals() const;
 
-    void SetColors(const thrust::host_vector<Eigen::Vector3f>& colors);
+    void SetColors(const thrust::host_vector<Eigen::Vector3f> &colors);
     thrust::host_vector<Eigen::Vector3f> GetColors() const;
 
     PointCloud &Clear() override;
@@ -39,22 +40,19 @@ public:
     Eigen::Vector3f GetMaxBound() const override;
     Eigen::Vector3f GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    PointCloud& Transform(const Eigen::Matrix4f& transformation) override;
-    PointCloud& Translate(const Eigen::Vector3f &translation,
+    PointCloud &Transform(const Eigen::Matrix4f &transformation) override;
+    PointCloud &Translate(const Eigen::Vector3f &translation,
                           bool relative = true) override;
-    PointCloud& Scale(const float scale, bool center = true) override;
-    PointCloud& Rotate(const Eigen::Matrix3f &R, bool center = true) override;
+    PointCloud &Scale(const float scale, bool center = true) override;
+    PointCloud &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
-    __host__ __device__
-    bool HasPoints() const { return !points_.empty(); }
+    __host__ __device__ bool HasPoints() const { return !points_.empty(); }
 
-    __host__ __device__
-    bool HasNormals() const {
+    __host__ __device__ bool HasNormals() const {
         return !points_.empty() && normals_.size() == points_.size();
     }
 
-    __host__ __device__
-    bool HasColors() const {
+    __host__ __device__ bool HasColors() const {
         return !points_.empty() && colors_.size() == points_.size();
     }
 
@@ -72,7 +70,9 @@ public:
     /// Function to select points from \param input pointcloud into
     /// \return output pointcloud
     /// Points with indices in \param indices are selected.
-    std::shared_ptr<PointCloud> SelectDownSample(const utility::device_vector<size_t> &indices, bool invert = false) const;
+    std::shared_ptr<PointCloud> SelectDownSample(
+            const utility::device_vector<size_t> &indices,
+            bool invert = false) const;
 
     /// Function to downsample \param input pointcloud into output pointcloud
     /// with a voxel \param voxel_size defines the resolution of the voxel grid,
@@ -84,7 +84,6 @@ public:
     /// uniformly \param every_k_points indicates the sample rate.
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
-
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
 
@@ -94,28 +93,30 @@ public:
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox& bbox) const;
+    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
 
     /// Function to compute the normals of a point cloud
     /// \param cloud is the input point cloud. It also stores the output
     /// normals. Normals are oriented with respect to the input point cloud if
     /// normals exist in the input. \param search_param The KDTree search
     /// parameters
-    bool EstimateNormals(const KDTreeSearchParam& search_param = KDTreeSearchParamKNN());
+    bool EstimateNormals(
+            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
     /// Function to orient the normals of a point cloud
     /// \param cloud is the input point cloud. It must have normals.
     /// Normals are oriented with respect to \param orientation_reference
-    bool OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference = Eigen::Vector3f(0.0, 0.0, 1.0));
+    bool OrientNormalsToAlignWithDirection(
+            const Eigen::Vector3f &orientation_reference =
+                    Eigen::Vector3f(0.0, 0.0, 1.0));
 
     /// Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
     /// in Large Spatial Databases with Noise", 1996
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
-    utility::device_vector<int> ClusterDBSCAN(float eps,
-                                             size_t min_points,
-                                             bool print_progress = false) const;
+    utility::device_vector<int> ClusterDBSCAN(
+            float eps, size_t min_points, bool print_progress = false) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)
@@ -151,6 +152,5 @@ public:
     utility::device_vector<Eigen::Vector3f> colors_;
 };
 
-
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

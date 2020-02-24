@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <thrust/host_vector.h>
+
+#include <Eigen/Core>
 
 #include "cupoch/utility/eigen.h"
 

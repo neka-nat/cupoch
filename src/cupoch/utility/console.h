@@ -3,10 +3,9 @@
 #include <string>
 
 #undef __SIZEOF_INT128__
+#include <cuda.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
-#include <cuda.h>
-
 
 #define DEFAULT_IO_BUFFER_SIZE 1024
 

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <Eigen/Core>
-#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
+#include <Eigen/Core>
+
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/helper.h"
 
 namespace cupoch {
@@ -34,17 +35,19 @@ public:
 
     MeshBase();
     virtual ~MeshBase();
-    MeshBase(const MeshBase& other);
-    MeshBase& operator=(const MeshBase& other);
+    MeshBase(const MeshBase &other);
+    MeshBase &operator=(const MeshBase &other);
 
     thrust::host_vector<Eigen::Vector3f> GetVertices() const;
-    void SetVertices(const thrust::host_vector<Eigen::Vector3f>& vertices);
+    void SetVertices(const thrust::host_vector<Eigen::Vector3f> &vertices);
 
     thrust::host_vector<Eigen::Vector3f> GetVertexNormals() const;
-    void SetVertexNormals(const thrust::host_vector<Eigen::Vector3f>& vertex_normals);
+    void SetVertexNormals(
+            const thrust::host_vector<Eigen::Vector3f> &vertex_normals);
 
     thrust::host_vector<Eigen::Vector3f> GetVertexColors() const;
-    void SetVertexColors(const thrust::host_vector<Eigen::Vector3f>& vertex_colors);
+    void SetVertexColors(
+            const thrust::host_vector<Eigen::Vector3f> &vertex_colors);
 
 public:
     virtual MeshBase &Clear() override;
@@ -63,17 +66,16 @@ public:
     MeshBase &operator+=(const MeshBase &mesh);
     MeshBase operator+(const MeshBase &mesh) const;
 
-    __host__ __device__
-    bool HasVertices() const { return vertices_.size() > 0; }
+    __host__ __device__ bool HasVertices() const {
+        return vertices_.size() > 0;
+    }
 
-    __host__ __device__
-    bool HasVertexNormals() const {
+    __host__ __device__ bool HasVertexNormals() const {
         return vertices_.size() > 0 &&
                vertex_normals_.size() == vertices_.size();
     }
 
-    __host__ __device__
-    bool HasVertexColors() const {
+    __host__ __device__ bool HasVertexColors() const {
         return vertices_.size() > 0 &&
                vertex_colors_.size() == vertices_.size();
     }
@@ -97,11 +99,12 @@ protected:
              const utility::device_vector<Eigen::Vector3f> &vertex_colors);
     MeshBase(Geometry::GeometryType type,
              const thrust::host_vector<Eigen::Vector3f> &vertices);
+
 public:
     utility::device_vector<Eigen::Vector3f> vertices_;
     utility::device_vector<Eigen::Vector3f> vertex_normals_;
     utility::device_vector<Eigen::Vector3f> vertex_colors_;
 };
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

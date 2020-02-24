@@ -1,10 +1,11 @@
-#include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/geometry/intersection_test.h"
-#include "cupoch/utility/console.h"
-#include "cupoch/utility/range.h"
 #include <thrust/iterator/discard_iterator.h>
 
 #include <Eigen/Geometry>
+
+#include "cupoch/geometry/intersection_test.h"
+#include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/console.h"
+#include "cupoch/utility/range.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -12,10 +13,10 @@ using namespace cupoch::geometry;
 namespace {
 
 struct compute_triangle_normals_functor {
-    compute_triangle_normals_functor(const Eigen::Vector3f* vertices) : vertices_(vertices) {};
-    const Eigen::Vector3f* vertices_;
-    __device__
-    Eigen::Vector3f operator() (const Eigen::Vector3i& tri) const {
+    compute_triangle_normals_functor(const Eigen::Vector3f *vertices)
+        : vertices_(vertices){};
+    const Eigen::Vector3f *vertices_;
+    __device__ Eigen::Vector3f operator()(const Eigen::Vector3i &tri) const {
         Eigen::Vector3f v01 = vertices_[tri(1)] - vertices_[tri(0)];
         Eigen::Vector3f v02 = vertices_[tri(2)] - vertices_[tri(0)];
         return v01.cross(v02);
@@ -23,12 +24,11 @@ struct compute_triangle_normals_functor {
 };
 
 struct compute_adjacency_matrix_functor {
-    compute_adjacency_matrix_functor(int* adjacency_matrix, size_t n_vertices)
-        : adjacency_matrix_(adjacency_matrix), n_vertices_(n_vertices) {};
-    int* adjacency_matrix_;
+    compute_adjacency_matrix_functor(int *adjacency_matrix, size_t n_vertices)
+        : adjacency_matrix_(adjacency_matrix), n_vertices_(n_vertices){};
+    int *adjacency_matrix_;
     size_t n_vertices_;
-    __device__
-    void operator() (const Eigen::Vector3i& triangle) {
+    __device__ void operator()(const Eigen::Vector3i &triangle) {
         adjacency_matrix_[triangle(0) * n_vertices_ + triangle(1)] = 1;
         adjacency_matrix_[triangle(0) * n_vertices_ + triangle(2)] = 1;
         adjacency_matrix_[triangle(1) * n_vertices_ + triangle(0)] = 1;
@@ -38,17 +38,17 @@ struct compute_adjacency_matrix_functor {
     }
 };
 
-struct check_self_intersecting_triangles{
-    check_self_intersecting_triangles(const Eigen::Vector3i* triangles,
-                                      const Eigen::Vector3f* vertices,
+struct check_self_intersecting_triangles {
+    check_self_intersecting_triangles(const Eigen::Vector3i *triangles,
+                                      const Eigen::Vector3f *vertices,
                                       int n_triangles)
-                                      : triangles_(triangles), vertices_(vertices),
-                                        n_triangles_(n_triangles) {};
-    const Eigen::Vector3i* triangles_;
-    const Eigen::Vector3f* vertices_;
+        : triangles_(triangles),
+          vertices_(vertices),
+          n_triangles_(n_triangles){};
+    const Eigen::Vector3i *triangles_;
+    const Eigen::Vector3f *vertices_;
     const int n_triangles_;
-    __device__
-    Eigen::Vector2i operator() (size_t idx) const {
+    __device__ Eigen::Vector2i operator()(size_t idx) const {
         int tidx0 = idx / n_triangles_;
         int tidx1 = idx % n_triangles_;
         if (tidx0 >= tidx1 || tidx0 == n_triangles_ - 1) {
@@ -78,25 +78,34 @@ struct check_self_intersecting_triangles{
     }
 };
 
-}
+}  // namespace
 
 TriangleMesh::TriangleMesh() : MeshBase(Geometry::GeometryType::TriangleMesh) {}
 TriangleMesh::~TriangleMesh() {}
 
-TriangleMesh::TriangleMesh(const utility::device_vector<Eigen::Vector3f> &vertices,
-                           const utility::device_vector<Eigen::Vector3i> &triangles)
-    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices), triangles_(triangles) {}
+TriangleMesh::TriangleMesh(
+        const utility::device_vector<Eigen::Vector3f> &vertices,
+        const utility::device_vector<Eigen::Vector3i> &triangles)
+    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
+      triangles_(triangles) {}
 
-TriangleMesh::TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
-                           const thrust::host_vector<Eigen::Vector3i> &triangles)
-    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices), triangles_(triangles) {}
+TriangleMesh::TriangleMesh(
+        const thrust::host_vector<Eigen::Vector3f> &vertices,
+        const thrust::host_vector<Eigen::Vector3i> &triangles)
+    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
+      triangles_(triangles) {}
 
-TriangleMesh::TriangleMesh(const geometry::TriangleMesh& other)
-    : MeshBase(Geometry::GeometryType::TriangleMesh, other.vertices_, other.vertex_normals_, other.vertex_colors_),
-      triangles_(other.triangles_), triangle_normals_(other.triangle_normals_),
-      adjacency_matrix_(other.adjacency_matrix_), triangle_uvs_(other.triangle_uvs_) {}
+TriangleMesh::TriangleMesh(const geometry::TriangleMesh &other)
+    : MeshBase(Geometry::GeometryType::TriangleMesh,
+               other.vertices_,
+               other.vertex_normals_,
+               other.vertex_colors_),
+      triangles_(other.triangles_),
+      triangle_normals_(other.triangle_normals_),
+      adjacency_matrix_(other.adjacency_matrix_),
+      triangle_uvs_(other.triangle_uvs_) {}
 
-TriangleMesh& TriangleMesh::operator=(const TriangleMesh& other) {
+TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     MeshBase::operator=(other);
     triangles_ = other.triangles_;
     triangle_normals_ = other.triangle_normals_;
@@ -110,7 +119,8 @@ thrust::host_vector<Eigen::Vector3i> TriangleMesh::GetTriangles() const {
     return triangles;
 }
 
-void TriangleMesh::SetTriangles(const thrust::host_vector<Eigen::Vector3i>& triangles) {
+void TriangleMesh::SetTriangles(
+        const thrust::host_vector<Eigen::Vector3i> &triangles) {
     triangles_ = triangles;
 }
 
@@ -119,7 +129,8 @@ thrust::host_vector<Eigen::Vector3f> TriangleMesh::GetTriangleNormals() const {
     return triangle_normals;
 }
 
-void TriangleMesh::SetTriangleNormals(const thrust::host_vector<Eigen::Vector3f>& triangle_normals) {
+void TriangleMesh::SetTriangleNormals(
+        const thrust::host_vector<Eigen::Vector3f> &triangle_normals) {
     triangle_normals_ = triangle_normals;
 }
 
@@ -128,7 +139,8 @@ thrust::host_vector<int> TriangleMesh::GetAdjacencyMatrix() const {
     return adjacency_matrix;
 }
 
-void TriangleMesh::SetAdjacencyMatrix(const thrust::host_vector<int>& adjacency_matrix) {
+void TriangleMesh::SetAdjacencyMatrix(
+        const thrust::host_vector<int> &adjacency_matrix) {
     adjacency_matrix_ = adjacency_matrix;
 }
 
@@ -137,7 +149,8 @@ thrust::host_vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
     return triangle_uvs;
 }
 
-void TriangleMesh::SetTriangleUVs(thrust::host_vector<Eigen::Vector2f>& triangle_uvs) {
+void TriangleMesh::SetTriangleUVs(
+        thrust::host_vector<Eigen::Vector2f> &triangle_uvs) {
     triangle_uvs_ = triangle_uvs;
 }
 
@@ -161,7 +174,8 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if ((!HasTriangles() || HasTriangleNormals()) &&
         mesh.HasTriangleNormals()) {
         triangle_normals_.resize(new_tri_num);
-        thrust::copy(mesh.triangle_normals_.begin(), mesh.triangle_normals_.end(),
+        thrust::copy(mesh.triangle_normals_.begin(),
+                     mesh.triangle_normals_.end(),
                      triangle_normals_.begin() + old_vert_num);
     } else {
         triangle_normals_.clear();
@@ -170,8 +184,11 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     triangles_.resize(triangles_.size() + mesh.triangles_.size());
     Eigen::Vector3i index_shift((int)old_vert_num, (int)old_vert_num,
                                 (int)old_vert_num);
-    thrust::transform(mesh.triangles_.begin(), mesh.triangles_.end(), triangles_.begin() + n_tri_old,
-                      [=] __device__ (const Eigen::Vector3i& tri) {return tri + index_shift;});
+    thrust::transform(mesh.triangles_.begin(), mesh.triangles_.end(),
+                      triangles_.begin() + n_tri_old,
+                      [=] __device__(const Eigen::Vector3i &tri) {
+                          return tri + index_shift;
+                      });
     if (HasAdjacencyMatrix()) {
         ComputeAdjacencyMatrix();
     }
@@ -190,11 +207,11 @@ TriangleMesh TriangleMesh::operator+(const TriangleMesh &mesh) const {
 TriangleMesh &TriangleMesh::NormalizeNormals() {
     MeshBase::NormalizeNormals();
     thrust::for_each(triangle_normals_.begin(), triangle_normals_.end(),
-                     [] __device__ (Eigen::Vector3f& nl) {
+                     [] __device__(Eigen::Vector3f & nl) {
                          nl.normalize();
-                         if (std::isnan(nl(0))) {
-                            nl = Eigen::Vector3f(0.0, 0.0, 1.0);
-                        }
+                         if (isnan(nl(0))) {
+                             nl = Eigen::Vector3f(0.0, 0.0, 1.0);
+                         }
                      });
     return *this;
 }
@@ -202,8 +219,10 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
 TriangleMesh &TriangleMesh::ComputeTriangleNormals(
         bool normalized /* = true*/) {
     triangle_normals_.resize(triangles_.size());
-    compute_triangle_normals_functor func(thrust::raw_pointer_cast(vertices_.data()));
-    thrust::transform(triangles_.begin(), triangles_.end(), triangle_normals_.begin(), func);
+    compute_triangle_normals_functor func(
+            thrust::raw_pointer_cast(vertices_.data()));
+    thrust::transform(triangles_.begin(), triangles_.end(),
+                      triangle_normals_.begin(), func);
     if (normalized) {
         NormalizeNormals();
     }
@@ -215,13 +234,18 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
         ComputeTriangleNormals(false);
     }
     vertex_normals_.resize(vertices_.size());
-    thrust::repeated_range<utility::device_vector<Eigen::Vector3f>::iterator> range(triangle_normals_.begin(), triangle_normals_.end(), 3);
-    utility::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() * 3);
+    thrust::repeated_range<utility::device_vector<Eigen::Vector3f>::iterator>
+            range(triangle_normals_.begin(), triangle_normals_.end(), 3);
+    utility::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() *
+                                                      3);
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
-    int* tri_ptr = (int*)(thrust::raw_pointer_cast(triangles_.data()));
-    thrust::sort_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin());
-    auto end = thrust::reduce_by_key(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, nm_thrice.begin(),
-                                     thrust::make_discard_iterator(), vertex_normals_.begin());
+    int *tri_ptr = (int *)(thrust::raw_pointer_cast(triangles_.data()));
+    thrust::sort_by_key(thrust::device, tri_ptr,
+                        tri_ptr + triangles_.size() * 3, nm_thrice.begin());
+    auto end = thrust::reduce_by_key(
+            thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3,
+            nm_thrice.begin(), thrust::make_discard_iterator(),
+            vertex_normals_.begin());
     size_t n_out = thrust::distance(vertex_normals_.begin(), end.second);
     vertex_normals_.resize(n_out);
     if (normalized) {
@@ -233,23 +257,29 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
 TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
     adjacency_matrix_.clear();
     adjacency_matrix_.resize(vertices_.size() * vertices_.size(), 0);
-    compute_adjacency_matrix_functor func(thrust::raw_pointer_cast(adjacency_matrix_.data()), vertices_.size());
+    compute_adjacency_matrix_functor func(
+            thrust::raw_pointer_cast(adjacency_matrix_.data()),
+            vertices_.size());
     thrust::for_each(triangles_.begin(), triangles_.end(), func);
     return *this;
 }
 
-utility::device_vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
-        const {
+utility::device_vector<Eigen::Vector2i>
+TriangleMesh::GetSelfIntersectingTriangles() const {
     const size_t n_triangles2 = triangles_.size() * triangles_.size();
-    utility::device_vector<Eigen::Vector2i> self_intersecting_triangles(n_triangles2);
-    check_self_intersecting_triangles func(thrust::raw_pointer_cast(triangles_.data()),
-                                           thrust::raw_pointer_cast(vertices_.data()),
-                                           triangles_.size());
+    utility::device_vector<Eigen::Vector2i> self_intersecting_triangles(
+            n_triangles2);
+    check_self_intersecting_triangles func(
+            thrust::raw_pointer_cast(triangles_.data()),
+            thrust::raw_pointer_cast(vertices_.data()), triangles_.size());
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_triangles2),
                       self_intersecting_triangles.begin(), func);
-    auto end = thrust::remove_if(self_intersecting_triangles.begin(), self_intersecting_triangles.end(),
-                                 [] __device__ (const Eigen::Vector2i& idxs) {return idxs[0] < 0;});
-    self_intersecting_triangles.resize(thrust::distance(self_intersecting_triangles.begin(), end));
+    auto end = thrust::remove_if(
+            self_intersecting_triangles.begin(),
+            self_intersecting_triangles.end(),
+            [] __device__(const Eigen::Vector2i &idxs) { return idxs[0] < 0; });
+    self_intersecting_triangles.resize(
+            thrust::distance(self_intersecting_triangles.begin(), end));
     return self_intersecting_triangles;
 }

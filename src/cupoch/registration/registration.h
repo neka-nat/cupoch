@@ -1,7 +1,8 @@
 #pragma once
-#include "cupoch/utility/eigen.h"
-#include "cupoch/registration/transformation_estimation.h"
 #include <thrust/host_vector.h>
+
+#include "cupoch/registration/transformation_estimation.h"
+#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 
@@ -27,15 +28,15 @@ public:
     int max_iteration_;
 };
 
-
 class RegistrationResult {
 public:
-    RegistrationResult(
-            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity());
-    RegistrationResult(const RegistrationResult& other);
+    RegistrationResult(const Eigen::Matrix4f &transformation =
+                               Eigen::Matrix4f::Identity());
+    RegistrationResult(const RegistrationResult &other);
     ~RegistrationResult();
 
-    void SetCorrespondenceSet(const thrust::host_vector<Eigen::Vector2i>& corres);
+    void SetCorrespondenceSet(
+            const thrust::host_vector<Eigen::Vector2i> &corres);
     thrust::host_vector<Eigen::Vector2i> GetCorrespondenceSet() const;
 
 public:
@@ -55,5 +56,5 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
-}
-}
+}  // namespace registration
+}  // namespace cupoch

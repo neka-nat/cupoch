@@ -1,12 +1,11 @@
+#include <Eigen/Eigenvalues>
+#include <numeric>
+
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
-
-#include <numeric>
-
-#include <Eigen/Eigenvalues>
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -14,56 +13,57 @@ using namespace cupoch::geometry;
 namespace {
 
 struct check_within_oriented_bounding_box_functor {
-    check_within_oriented_bounding_box_functor(const Eigen::Vector3f* points,
-                                               const std::array<Eigen::Vector3f, 8>& box_points)
-        : points_(points), box_points_(box_points) {};
-    const Eigen::Vector3f* points_;
+    check_within_oriented_bounding_box_functor(
+            const Eigen::Vector3f *points,
+            const std::array<Eigen::Vector3f, 8> &box_points)
+        : points_(points), box_points_(box_points){};
+    const Eigen::Vector3f *points_;
     const std::array<Eigen::Vector3f, 8> box_points_;
-    __device__
-    float test_plane(const Eigen::Vector3f& a, const Eigen::Vector3f& b,
-                     const Eigen::Vector3f c, const Eigen::Vector3f& x) const {
+    __device__ float test_plane(const Eigen::Vector3f &a,
+                                const Eigen::Vector3f &b,
+                                const Eigen::Vector3f c,
+                                const Eigen::Vector3f &x) const {
         Eigen::Matrix3f design;
         design << (b - a), (c - a), (x - a);
         return design.determinant();
     };
-    __device__
-    bool operator()(size_t idx) const {
-        const Eigen::Vector3f& point = points_[idx];
-        return (test_plane(box_points_[0], box_points_[1], box_points_[3], point) <=
-                        0 &&
-                test_plane(box_points_[0], box_points_[5], box_points_[3], point) >=
-                        0 &&
-                test_plane(box_points_[2], box_points_[5], box_points_[7], point) <=
-                        0 &&
-                test_plane(box_points_[1], box_points_[4], box_points_[7], point) >=
-                        0 &&
-                test_plane(box_points_[3], box_points_[4], box_points_[5], point) <=
-                        0 &&
-                test_plane(box_points_[0], box_points_[1], box_points_[7], point) >=
-                        0);
+    __device__ bool operator()(size_t idx) const {
+        const Eigen::Vector3f &point = points_[idx];
+        return (test_plane(box_points_[0], box_points_[1], box_points_[3],
+                           point) <= 0 &&
+                test_plane(box_points_[0], box_points_[5], box_points_[3],
+                           point) >= 0 &&
+                test_plane(box_points_[2], box_points_[5], box_points_[7],
+                           point) <= 0 &&
+                test_plane(box_points_[1], box_points_[4], box_points_[7],
+                           point) >= 0 &&
+                test_plane(box_points_[3], box_points_[4], box_points_[5],
+                           point) <= 0 &&
+                test_plane(box_points_[0], box_points_[1], box_points_[7],
+                           point) >= 0);
     }
 };
 
 struct check_within_axis_aligned_bounding_box_functor {
-    check_within_axis_aligned_bounding_box_functor(const Eigen::Vector3f* points,
-                                                   const Eigen::Vector3f& min_bound,
-                                                   const Eigen::Vector3f& max_bound)
-        : points_(points), min_bound_(min_bound), max_bound_(max_bound) {};
-    const Eigen::Vector3f* points_;
+    check_within_axis_aligned_bounding_box_functor(
+            const Eigen::Vector3f *points,
+            const Eigen::Vector3f &min_bound,
+            const Eigen::Vector3f &max_bound)
+        : points_(points), min_bound_(min_bound), max_bound_(max_bound){};
+    const Eigen::Vector3f *points_;
     const Eigen::Vector3f min_bound_;
     const Eigen::Vector3f max_bound_;
-    __device__
-    bool operator() (size_t idx) const {
-        const Eigen::Vector3f& point = points_[idx];
+    __device__ bool operator()(size_t idx) const {
+        const Eigen::Vector3f &point = points_[idx];
         return (point(0) >= min_bound_(0) && point(0) <= max_bound_(0) &&
                 point(1) >= min_bound_(1) && point(1) <= max_bound_(1) &&
                 point(2) >= min_bound_(2) && point(2) <= max_bound_(2));
     }
 };
 
-}
+}  // namespace
 
-OrientedBoundingBox& OrientedBoundingBox::Clear() {
+OrientedBoundingBox &OrientedBoundingBox::Clear() {
     center_.setZero();
     extent_.setZero();
     R_ = Eigen::Matrix3f::Identity();
@@ -93,16 +93,16 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox() const {
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Transform(
-        const Eigen::Matrix4f& transformation) {
+OrientedBoundingBox &OrientedBoundingBox::Transform(
+        const Eigen::Matrix4f &transformation) {
     utility::LogError(
             "A general transform of an OrientedBoundingBox is not implemented. "
             "Call Translate, Scale, and Rotate.");
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Translate(
-        const Eigen::Vector3f& translation, bool relative) {
+OrientedBoundingBox &OrientedBoundingBox::Translate(
+        const Eigen::Vector3f &translation, bool relative) {
     if (relative) {
         center_ += translation;
     } else {
@@ -111,7 +111,7 @@ OrientedBoundingBox& OrientedBoundingBox::Translate(
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Scale(const float scale,
+OrientedBoundingBox &OrientedBoundingBox::Scale(const float scale,
                                                 bool center) {
     if (center) {
         extent_ *= scale;
@@ -122,7 +122,7 @@ OrientedBoundingBox& OrientedBoundingBox::Scale(const float scale,
     return *this;
 }
 
-OrientedBoundingBox& OrientedBoundingBox::Rotate(const Eigen::Matrix3f& R,
+OrientedBoundingBox &OrientedBoundingBox::Rotate(const Eigen::Matrix3f &R,
                                                  bool center) {
     if (center) {
         R_ *= R;
@@ -153,19 +153,22 @@ std::array<Eigen::Vector3f, 8> OrientedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
-utility::device_vector<size_t> OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
-        const utility::device_vector<Eigen::Vector3f>& points) const {
+utility::device_vector<size_t>
+OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
+        const utility::device_vector<Eigen::Vector3f> &points) const {
     auto box_points = GetBoxPoints();
-    check_within_oriented_bounding_box_functor func(thrust::raw_pointer_cast(points.data()), box_points);
+    check_within_oriented_bounding_box_functor func(
+            thrust::raw_pointer_cast(points.data()), box_points);
     utility::device_vector<size_t> indices(points.size());
-    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points.size()),
+    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
+                               thrust::make_counting_iterator(points.size()),
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
     return indices;
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox& aabox) {
+        const AxisAlignedBoundingBox &aabox) {
     OrientedBoundingBox obox;
     obox.center_ = aabox.GetCenter();
     obox.extent_ = aabox.GetExtent();
@@ -173,7 +176,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
     return obox;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
     min_bound_.setZero();
     max_bound_.setZero();
     return *this;
@@ -201,16 +204,16 @@ OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Transform(
-        const Eigen::Matrix4f& transformation) {
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::Transform(
+        const Eigen::Matrix4f &transformation) {
     utility::LogError(
             "A general transform of a AxisAlignedBoundingBox would not be axis "
             "aligned anymore, convert it to a OrientedBoundingBox first");
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
-        const Eigen::Vector3f& translation, bool relative) {
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
+        const Eigen::Vector3f &translation, bool relative) {
     if (relative) {
         min_bound_ += translation;
         max_bound_ += translation;
@@ -222,7 +225,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Translate(
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const float scale,
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(const float scale,
                                                       bool center) {
     if (center) {
         Eigen::Vector3f center = GetCenter();
@@ -235,8 +238,8 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::Scale(const float scale,
     return *this;
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::Rotate(
-        const Eigen::Matrix3f& rotation, bool center) {
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::Rotate(
+        const Eigen::Matrix3f &rotation, bool center) {
     utility::LogError(
             "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
             "anymore, convert it to an OrientedBoundingBox first");
@@ -249,8 +252,8 @@ std::string AxisAlignedBoundingBox::GetPrintInfo() const {
                        max_bound_(0), max_bound_(1), max_bound_(2));
 }
 
-AxisAlignedBoundingBox& AxisAlignedBoundingBox::operator+=(
-        const AxisAlignedBoundingBox& other) {
+AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
+        const AxisAlignedBoundingBox &other) {
     if (IsEmpty()) {
         min_bound_ = other.min_bound_;
         max_bound_ = other.max_bound_;
@@ -262,7 +265,7 @@ AxisAlignedBoundingBox& AxisAlignedBoundingBox::operator+=(
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
-        const utility::device_vector<Eigen::Vector3f>& points) {
+        const utility::device_vector<Eigen::Vector3f> &points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
         box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
@@ -290,12 +293,14 @@ std::array<Eigen::Vector3f, 8> AxisAlignedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
-utility::device_vector<size_t> AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
-        const utility::device_vector<Eigen::Vector3f>& points) const {
+utility::device_vector<size_t>
+AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
+        const utility::device_vector<Eigen::Vector3f> &points) const {
     utility::device_vector<size_t> indices(points.size());
-    check_within_axis_aligned_bounding_box_functor func(thrust::raw_pointer_cast(points.data()),
-                                                        min_bound_, max_bound_);
-    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points.size()),
+    check_within_axis_aligned_bounding_box_functor func(
+            thrust::raw_pointer_cast(points.data()), min_bound_, max_bound_);
+    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
+                               thrust::make_counting_iterator(points.size()),
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
     return indices;

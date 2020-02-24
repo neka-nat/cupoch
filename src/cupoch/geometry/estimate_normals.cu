@@ -1,6 +1,7 @@
 #include <Eigen/Geometry>
-#include "cupoch/geometry/pointcloud.h"
+
 #include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -8,8 +9,8 @@ using namespace cupoch::geometry;
 
 namespace {
 
-__device__
-Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A, float eval0) {
+__device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
+                                               float eval0) {
     Eigen::Vector3f row0(A(0, 0) - eval0, A(0, 1), A(0, 2));
     Eigen::Vector3f row1(A(0, 1), A(1, 1) - eval0, A(1, 2));
     Eigen::Vector3f row2(A(0, 2), A(1, 2), A(2, 2) - eval0);
@@ -38,11 +39,10 @@ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A, float eval0) {
         return r1xr2 / std::sqrt(d2);
     }
 }
-    
-__device__
-Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
-                                    const Eigen::Vector3f &evec0,
-                                    float eval1) {
+
+__device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
+                                               const Eigen::Vector3f &evec0,
+                                               float eval1) {
     Eigen::Vector3f U, V;
     if (std::abs(evec0(0)) > std::abs(evec0(1))) {
         float inv_length =
@@ -56,17 +56,17 @@ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
     V = evec0.cross(U);
 
     Eigen::Vector3f AU(A(0, 0) * U(0) + A(0, 1) * U(1) + A(0, 2) * U(2),
-                      A(0, 1) * U(0) + A(1, 1) * U(1) + A(1, 2) * U(2),
-                      A(0, 2) * U(0) + A(1, 2) * U(1) + A(2, 2) * U(2));
+                       A(0, 1) * U(0) + A(1, 1) * U(1) + A(1, 2) * U(2),
+                       A(0, 2) * U(0) + A(1, 2) * U(1) + A(2, 2) * U(2));
 
     Eigen::Vector3f AV = {A(0, 0) * V(0) + A(0, 1) * V(1) + A(0, 2) * V(2),
                           A(0, 1) * V(0) + A(1, 1) * V(1) + A(1, 2) * V(2),
                           A(0, 2) * V(0) + A(1, 2) * V(1) + A(2, 2) * V(2)};
-    
+
     float m00 = U(0) * AU(0) + U(1) * AU(1) + U(2) * AU(2) - eval1;
     float m01 = U(0) * AV(0) + U(1) * AV(1) + U(2) * AV(2);
     float m11 = V(0) * AV(0) + V(1) * AV(1) + V(2) * AV(2) - eval1;
-    
+
     float absM00 = std::abs(m00);
     float absM01 = std::abs(m01);
     float absM11 = std::abs(m11);
@@ -106,8 +106,7 @@ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
     }
 }
 
-__device__
-Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
+__device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
     // Previous version based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // Current version based on
@@ -133,8 +132,7 @@ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
         float b11 = A(1, 1) - q;
         float b22 = A(2, 2) - q;
 
-        float p =
-                std::sqrt((b00 * b00 + b11 * b11 + b22 * b22 + norm * 2) / 6);
+        float p = std::sqrt((b00 * b00 + b11 * b11 + b22 * b22 + norm * 2) / 6);
 
         float c00 = b11 * b22 - A(1, 2) * A(1, 2);
         float c01 = A(0, 1) * b22 - A(1, 2) * A(0, 2);
@@ -193,9 +191,9 @@ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
     }
 }
 
-__device__
-Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
-                                const KNNIndices &indices, int knn) {
+__device__ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f *points,
+                                         const KNNIndices &indices,
+                                         int knn) {
     if (indices[0] < 0) return Eigen::Vector3f(0.0, 0.0, 1.0);
 
     Eigen::Matrix3f covariance;
@@ -204,7 +202,7 @@ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
     int count = 0;
     for (size_t i = 0; i < knn; i++) {
         if (indices[i] < 0) break;
-        const Eigen::Vector3f& point = points[indices[i]];
+        const Eigen::Vector3f &point = points[indices[i]];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);
@@ -232,14 +230,14 @@ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f* points,
 }
 
 struct compute_normal_functor {
-    compute_normal_functor(const Eigen::Vector3f* points,
-                           const int* indices, int knn)
-        : points_(points), indices_(indices), knn_(knn) {};
-    const Eigen::Vector3f* points_;
-    const int* indices_;
+    compute_normal_functor(const Eigen::Vector3f *points,
+                           const int *indices,
+                           int knn)
+        : points_(points), indices_(indices), knn_(knn){};
+    const Eigen::Vector3f *points_;
+    const int *indices_;
     const int knn_;
-    __device__
-    Eigen::Vector3f operator()(const int& idx) const {
+    __device__ Eigen::Vector3f operator()(const int &idx) const {
         KNNIndices idxs = KNNIndices::Constant(-1);
         for (int k = 0; k < knn_; ++k) idxs[k] = indices_[idx * knn_ + k];
         Eigen::Vector3f normal = ComputeNormal(points_, idxs, knn_);
@@ -251,11 +249,11 @@ struct compute_normal_functor {
 };
 
 struct align_normals_direction_functor {
-    align_normals_direction_functor(const Eigen::Vector3f& orientation_reference)
-        : orientation_reference_(orientation_reference) {};
+    align_normals_direction_functor(
+            const Eigen::Vector3f &orientation_reference)
+        : orientation_reference_(orientation_reference){};
     const Eigen::Vector3f orientation_reference_;
-    __device__
-    void operator()(Eigen::Vector3f& normal) const {
+    __device__ void operator()(Eigen::Vector3f &normal) const {
         if (normal.norm() == 0.0) {
             normal = orientation_reference_;
         } else if (normal.dot(orientation_reference_) < 0.0) {
@@ -264,7 +262,7 @@ struct align_normals_direction_functor {
     }
 };
 
-}
+}  // namespace
 
 bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     if (HasNormals() == false) {
@@ -276,7 +274,7 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     utility::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
     int knn;
-    switch(search_param.GetSearchType()) {
+    switch (search_param.GetSearchType()) {
         case KDTreeSearchParam::SearchType::Knn:
             knn = ((const KDTreeSearchParamKNN &)search_param).knn_;
             break;
@@ -291,14 +289,15 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
             return false;
     }
     compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
-                                thrust::raw_pointer_cast(indices.data()),
-                                knn);
-    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator((int)points_.size()),
+                                thrust::raw_pointer_cast(indices.data()), knn);
+    thrust::transform(thrust::make_counting_iterator(0),
+                      thrust::make_counting_iterator((int)points_.size()),
                       normals_.begin(), func);
     return true;
 }
 
-bool PointCloud::OrientNormalsToAlignWithDirection(const Eigen::Vector3f &orientation_reference) {
+bool PointCloud::OrientNormalsToAlignWithDirection(
+        const Eigen::Vector3f &orientation_reference) {
     if (HasNormals() == false) {
         utility::LogWarning(
                 "[OrientNormalsToAlignWithDirection] No normals in the "

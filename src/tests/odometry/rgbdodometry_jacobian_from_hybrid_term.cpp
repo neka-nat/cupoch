@@ -1,7 +1,7 @@
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/odometry/rgbdodometry_jacobian.h"
-#include "tests/test_utility/unit_test.h"
 #include "tests/odometry/odometry_tools.h"
+#include "tests/test_utility/unit_test.h"
 
 using namespace Eigen;
 using namespace odometry_tools;
@@ -103,8 +103,7 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
                 thrust::raw_pointer_cast(target_dx.depth_.GetData().data()),
                 thrust::raw_pointer_cast(target_dy.color_.GetData().data()),
                 thrust::raw_pointer_cast(target_dy.depth_.GetData().data()),
-                width,
-                intrinsic, extrinsic,
+                width, intrinsic, extrinsic,
                 thrust::raw_pointer_cast(corresps.data()));
 
         EXPECT_NEAR(ref_r[2 * row + 0], r[0], THRESHOLD_1E_4);

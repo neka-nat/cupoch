@@ -1,8 +1,8 @@
-#include "cupoch/registration/registration.h"
-#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/kdtree_flann.h"
-#include "cupoch/utility/helper.h"
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/registration/registration.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/helper.h"
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -10,29 +10,29 @@ using namespace cupoch::registration;
 namespace {
 
 struct extact_knn_distance_functor {
-    extact_knn_distance_functor(const float* distances) : distances_(distances) {};
-    const float* distances_;
-    __device__
-    float operator() (int idx) const {
+    extact_knn_distance_functor(const float *distances)
+        : distances_(distances){};
+    const float *distances_;
+    __device__ float operator()(int idx) const {
         return (std::isinf(distances_[idx])) ? 0.0 : distances_[idx];
     }
 };
 
 struct make_correspondence_pair_functor {
-    make_correspondence_pair_functor(const int* indices) : indices_(indices) {};
-    const int* indices_;
-   __device__
-   Eigen::Vector2i operator() (int i) const {
-        return (indices_[i] < 0) ? Eigen::Vector2i(-1, -1) : Eigen::Vector2i(i, indices_[i]);
-   }
+    make_correspondence_pair_functor(const int *indices) : indices_(indices){};
+    const int *indices_;
+    __device__ Eigen::Vector2i operator()(int i) const {
+        return (indices_[i] < 0) ? Eigen::Vector2i(-1, -1)
+                                 : Eigen::Vector2i(i, indices_[i]);
+    }
 };
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
-    const geometry::PointCloud &source,
-    const geometry::PointCloud &target,
-    const geometry::KDTreeFlann &target_kdtree,
-    float max_correspondence_distance,
-    const Eigen::Matrix4f &transformation) {
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const geometry::KDTreeFlann &target_kdtree,
+        float max_correspondence_distance,
+        const Eigen::Matrix4f &transformation) {
     RegistrationResult result(transformation);
     if (max_correspondence_distance <= 0.0) {
         return result;
@@ -41,18 +41,25 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     const int n_pt = source.points_.size();
     utility::device_vector<int> indices(n_pt);
     utility::device_vector<float> dists(n_pt);
-    target_kdtree.SearchHybrid(source.points_, max_correspondence_distance,
-                               1, indices, dists);
+    target_kdtree.SearchHybrid(source.points_, max_correspondence_distance, 1,
+                               indices, dists);
     extact_knn_distance_functor func(thrust::raw_pointer_cast(dists.data()));
     result.correspondence_set_.resize(n_pt);
-    const float error2 = thrust::transform_reduce(thrust::make_counting_iterator(0),
-                                                  thrust::make_counting_iterator(n_pt),
-                                                  func, 0.0f, thrust::plus<float>());
-    thrust::transform(thrust::make_counting_iterator(0), thrust::make_counting_iterator(n_pt),
+    const float error2 =
+            thrust::transform_reduce(thrust::make_counting_iterator(0),
+                                     thrust::make_counting_iterator(n_pt), func,
+                                     0.0f, thrust::plus<float>());
+    thrust::transform(thrust::make_counting_iterator(0),
+                      thrust::make_counting_iterator(n_pt),
                       result.correspondence_set_.begin(),
-                      make_correspondence_pair_functor(thrust::raw_pointer_cast(indices.data())));
-    auto end = thrust::remove_if(result.correspondence_set_.begin(), result.correspondence_set_.end(),
-                                 [] __device__ (const Eigen::Vector2i& x) -> bool {return (x[0] < 0);});
+                      make_correspondence_pair_functor(
+                              thrust::raw_pointer_cast(indices.data())));
+    auto end =
+            thrust::remove_if(result.correspondence_set_.begin(),
+                              result.correspondence_set_.end(),
+                              [] __device__(const Eigen::Vector2i &x) -> bool {
+                                  return (x[0] < 0);
+                              });
     int n_out = thrust::distance(result.correspondence_set_.begin(), end);
     result.correspondence_set_.resize(n_out);
 
@@ -67,44 +74,47 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     return result;
 }
 
-}
+}  // namespace
 
 RegistrationResult::RegistrationResult(const Eigen::Matrix4f &transformation)
     : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
 
-RegistrationResult::RegistrationResult(const RegistrationResult& other)
-    : transformation_(other.transformation_), correspondence_set_(other.correspondence_set_), inlier_rmse_(other.inlier_rmse_), fitness_(other.fitness_)
-{}
+RegistrationResult::RegistrationResult(const RegistrationResult &other)
+    : transformation_(other.transformation_),
+      correspondence_set_(other.correspondence_set_),
+      inlier_rmse_(other.inlier_rmse_),
+      fitness_(other.fitness_) {}
 
 RegistrationResult::~RegistrationResult() {}
 
-void RegistrationResult::SetCorrespondenceSet(const thrust::host_vector<Eigen::Vector2i>& corres) {
+void RegistrationResult::SetCorrespondenceSet(
+        const thrust::host_vector<Eigen::Vector2i> &corres) {
     correspondence_set_ = corres;
 }
 
-thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet() const {
+thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet()
+        const {
     thrust::host_vector<Eigen::Vector2i> corres = correspondence_set_;
     return corres;
 }
 
-
 RegistrationResult cupoch::registration::RegistrationICP(
-    const geometry::PointCloud &source,
-    const geometry::PointCloud &target,
-    float max_correspondence_distance,
-    const Eigen::Matrix4f &init /* = Eigen::Matrix4f::Identity()*/,
-    const TransformationEstimation &estimation
-    /* = TransformationEstimationPointToPoint(false)*/,
-    const ICPConvergenceCriteria
-            &criteria /* = ICPConvergenceCriteria()*/) {
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        float max_correspondence_distance,
+        const Eigen::Matrix4f &init /* = Eigen::Matrix4f::Identity()*/,
+        const TransformationEstimation &estimation
+        /* = TransformationEstimationPointToPoint(false)*/,
+        const ICPConvergenceCriteria
+                &criteria /* = ICPConvergenceCriteria()*/) {
     if (max_correspondence_distance <= 0.0) {
         utility::LogError("Invalid max_correspondence_distance.");
     }
 
     if ((estimation.GetTransformationEstimationType() ==
-                TransformationEstimationType::PointToPlane ||
+                 TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
-                TransformationEstimationType::ColoredICP) &&
+                 TransformationEstimationType::ColoredICP) &&
         (!source.HasNormals() || !target.HasNormals())) {
         utility::LogError(
                 "TransformationEstimationPointToPlane and "

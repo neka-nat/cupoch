@@ -1,8 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "cupoch/geometry/geometry2d.h"
 #include "cupoch/geometry/image.h"
-#include <vector>
 
 namespace cupoch {
 namespace geometry {
@@ -79,4 +80,4 @@ public:
 };
 
 }  // namespace geometry
-}  // namespace open3d
+}  // namespace cupoch

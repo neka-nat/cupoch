@@ -22,6 +22,6 @@ bool ChangeWorkingDirectory(const std::string &directory);
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
 
-}
-}
-}
+}  // namespace filesystem
+}  // namespace utility
+}  // namespace cupoch

@@ -67,7 +67,9 @@ if __name__ == "__main__":
     align = rs.align(align_to)
 
     fig = plt.figure()
-    ax = p3.Axes3D(fig)
+    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax3 = fig.add_subplot(2, 2, 4)
 
     # Streaming loop
     prev_rgbd_image = None
@@ -75,8 +77,10 @@ if __name__ == "__main__":
     cur_trans = np.identity(4)
     path = []
     path.append(cur_trans[:3, 3].tolist())
-    line = ax.plot(*list(zip(*path)), 'r-')[0]
-    pos = ax.plot(*list(zip(*path)), 'yo')[0]
+    line = ax1.plot(*list(zip(*path)), 'r-')[0]
+    pos = ax1.plot(*list(zip(*path)), 'yo')[0]
+    depth_im = ax2.imshow(np.zeros((480, 640), dtype=np.uint8), cmap="gray", vmin=0, vmax=255)
+    color_im = ax3.imshow(np.zeros((480, 640, 3), dtype=np.uint8))
     try:
         def update_odom(frame):
             global prev_rgbd_image, cur_trans
@@ -99,8 +103,8 @@ if __name__ == "__main__":
             if not aligned_depth_frame or not color_frame:
                 return
 
-            depth_image = x3d.geometry.Image(
-                np.array(aligned_depth_frame.get_data()))
+            depth_temp = np.array(aligned_depth_frame.get_data())
+            depth_image = x3d.geometry.Image(depth_temp)
             color_temp = np.asarray(color_frame.get_data())
             color_image = x3d.geometry.Image(color_temp)
 
@@ -124,6 +128,11 @@ if __name__ == "__main__":
             line.set_3d_properties(data[2])
             pos.set_data([cur_trans[0, 3]], [cur_trans[1, 3]])
             pos.set_3d_properties(cur_trans[2, 3])
+            depth_offset = depth_temp.min()
+            depth_scale = depth_temp.max() - depth_offset
+            depth_temp = np.clip((depth_temp - depth_offset) / depth_scale, 0.0, 1.0)
+            depth_im.set_array((255.0 * depth_temp).astype(np.uint8))
+            color_im.set_array(color_temp)
 
         anim = animation.FuncAnimation(fig, update_odom, interval=10)
         plt.show()

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <thrust/host_vector.h>
+
 #include <Eigen/Core>
 #include <memory>
 
 #include "cupoch/geometry/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
-#include <thrust/host_vector.h>
 
 namespace flann {
 template <typename T>

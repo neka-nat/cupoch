@@ -1,7 +1,7 @@
-#include "cupoch/geometry/lineset.h"
-#include "cupoch/geometry/boundingvolume.h"
-
 #include <numeric>
+
+#include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/lineset.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -10,19 +10,25 @@ LineSet::LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
 
 LineSet::LineSet(const utility::device_vector<Eigen::Vector3f> &points,
                  const utility::device_vector<Eigen::Vector2i> &lines)
-    : Geometry3D(Geometry::GeometryType::LineSet), points_(points), lines_(lines) {}
+    : Geometry3D(Geometry::GeometryType::LineSet),
+      points_(points),
+      lines_(lines) {}
 
 LineSet::LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
                  const thrust::host_vector<Eigen::Vector2i> &lines)
-    : Geometry3D(Geometry::GeometryType::LineSet), points_(points), lines_(lines) {}
+    : Geometry3D(Geometry::GeometryType::LineSet),
+      points_(points),
+      lines_(lines) {}
 
 LineSet::LineSet(const LineSet &other)
-    : Geometry3D(Geometry::GeometryType::LineSet), points_(other.points_),
-      lines_(other.lines_), colors_(other.colors_) {}
+    : Geometry3D(Geometry::GeometryType::LineSet),
+      points_(other.points_),
+      lines_(other.lines_),
+      colors_(other.colors_) {}
 
 LineSet::~LineSet() {}
 
-void LineSet::SetPoints(const thrust::host_vector<Eigen::Vector3f>& points) {
+void LineSet::SetPoints(const thrust::host_vector<Eigen::Vector3f> &points) {
     points_ = points;
 }
 
@@ -31,7 +37,7 @@ thrust::host_vector<Eigen::Vector3f> LineSet::GetPoints() const {
     return points;
 }
 
-void LineSet::SetLines(const thrust::host_vector<Eigen::Vector2i>& lines) {
+void LineSet::SetLines(const thrust::host_vector<Eigen::Vector2i> &lines) {
     lines_ = lines;
 }
 
@@ -40,7 +46,7 @@ thrust::host_vector<Eigen::Vector2i> LineSet::GetLines() const {
     return lines;
 }
 
-void LineSet::SetColors(const thrust::host_vector<Eigen::Vector3f>& colors) {
+void LineSet::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
 }
 
@@ -93,8 +99,7 @@ LineSet &LineSet::Rotate(const Eigen::Matrix3f &R, bool center) {
 }
 
 thrust::pair<Eigen::Vector3f, Eigen::Vector3f> LineSet::GetLineCoordinate(
-    size_t line_index) const {
+        size_t line_index) const {
     const Eigen::Vector2i idxs = lines_[line_index];
-    return thrust::make_pair(points_[idxs[0]],
-                             points_[idxs[1]]);
+    return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
 }

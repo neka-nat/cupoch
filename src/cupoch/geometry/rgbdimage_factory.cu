@@ -7,21 +7,19 @@ using namespace cupoch::geometry;
 namespace {
 
 struct convert_sun_format_functor {
-    convert_sun_format_functor(uint8_t* depth) : depth_(depth) {};
-    uint8_t* depth_;
-    __device__
-    void operator() (size_t idx) {
-        uint16_t &d = *(uint16_t*)(depth_ + idx * sizeof(uint16_t));
+    convert_sun_format_functor(uint8_t *depth) : depth_(depth){};
+    uint8_t *depth_;
+    __device__ void operator()(size_t idx) {
+        uint16_t &d = *(uint16_t *)(depth_ + idx * sizeof(uint16_t));
         d = (d >> 3) | (d << 13);
     }
 };
 
 struct convert_nyu_format_functor {
-    convert_nyu_format_functor(uint8_t* depth) : depth_(depth) {};
-    uint8_t* depth_;
-    __device__
-    void operator() (size_t idx) {
-        uint16_t *d = (uint16_t*)(depth_ + idx * sizeof(uint16_t));
+    convert_nyu_format_functor(uint8_t *depth) : depth_(depth){};
+    uint8_t *depth_;
+    __device__ void operator()(size_t idx) {
+        uint16_t *d = (uint16_t *)(depth_ + idx * sizeof(uint16_t));
         uint8_t *p = (uint8_t *)d;
         uint8_t x = *p;
         *p = *(p + 1);
@@ -35,7 +33,7 @@ struct convert_nyu_format_functor {
     }
 };
 
-}
+}  // namespace
 
 std::shared_ptr<RGBDImage> RGBDImage::CreateFromColorAndDepth(
         const Image &color,
@@ -88,9 +86,12 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromSUNFormat(
     }
     std::shared_ptr<Image> depth_t = std::make_shared<Image>();
     *depth_t = depth;
-    convert_sun_format_functor func(thrust::raw_pointer_cast(depth_t->data_.data()));
+    convert_sun_format_functor func(
+            thrust::raw_pointer_cast(depth_t->data_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(depth_t->width_ * depth_t->height_), func);
+                     thrust::make_counting_iterator<size_t>(depth_t->width_ *
+                                                            depth_t->height_),
+                     func);
     // SUN depth map has long range depth. We set depth_trunc as 7.0
     return CreateFromColorAndDepth(color, *depth_t, 1000.0, 7.0,
                                    convert_rgb_to_intensity);
@@ -107,9 +108,12 @@ std::shared_ptr<RGBDImage> RGBDImage::CreateFromNYUFormat(
     }
     std::shared_ptr<Image> depth_t = std::make_shared<Image>();
     *depth_t = depth;
-    convert_nyu_format_functor func(thrust::raw_pointer_cast(depth_t->data_.data()));
+    convert_nyu_format_functor func(
+            thrust::raw_pointer_cast(depth_t->data_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(depth_t->width_ * depth_t->height_), func);
+                     thrust::make_counting_iterator<size_t>(depth_t->width_ *
+                                                            depth_t->height_),
+                     func);
     // NYU depth map has long range depth. We set depth_trunc as 7.0
     return CreateFromColorAndDepth(color, *depth_t, 1000.0, 7.0,
                                    convert_rgb_to_intensity);

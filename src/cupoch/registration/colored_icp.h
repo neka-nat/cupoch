@@ -26,4 +26,4 @@ RegistrationResult RegistrationColoredICP(
         float lambda_geometric = 0.968);
 
 }  // namespace registration
-}  // namespace open3d
+}  // namespace cupoch

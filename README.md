@@ -87,6 +87,10 @@ python benchmarks.py
 
 ![speedup](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/speedup.png)
 
+### Visual odometry with intel realsense D435
+
+![vo](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/vo_gpu.gif)
+
 ## References
 
 * CUDA repository forked from Open3D, https://github.com/theNded/Open3D

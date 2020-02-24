@@ -1,13 +1,13 @@
 #pragma once
 
+#include <thrust/transform_reduce.h>
+
 #include <Eigen/Core>
 #include <memory>
 
 #include "cupoch/geometry/geometry3d.h"
 #include "cupoch/utility/console.h"
-
 #include "cupoch/utility/helper.h"
-#include <thrust/transform_reduce.h>
 
 namespace cupoch {
 
@@ -23,15 +23,13 @@ class Image;
 
 class Voxel {
 public:
-    __host__ __device__
-    Voxel() {}
-    __host__ __device__
-    Voxel(const Eigen::Vector3i &grid_index) : grid_index_(grid_index) {}
-    __host__ __device__
-    Voxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3f &color)
+    __host__ __device__ Voxel() {}
+    __host__ __device__ Voxel(const Eigen::Vector3i &grid_index)
+        : grid_index_(grid_index) {}
+    __host__ __device__ Voxel(const Eigen::Vector3i &grid_index,
+                              const Eigen::Vector3f &color)
         : grid_index_(grid_index), color_(color) {}
-    __host__ __device__
-    ~Voxel() {}
+    __host__ __device__ ~Voxel() {}
 
 public:
     Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);

@@ -1,4 +1,5 @@
 #include "cupoch/geometry/image.h"
+
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "tests/test_utility/unit_test.h"
 
@@ -386,7 +387,8 @@ TEST(Image, TransposeFloat) {
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
     const uint8_t* input_uint8_ptr =
             reinterpret_cast<const uint8_t*>(input.data());
-    thrust::host_vector<uint8_t> input_uint8(input_uint8_ptr, input_uint8_ptr + image.data_.size());
+    thrust::host_vector<uint8_t> input_uint8(
+            input_uint8_ptr, input_uint8_ptr + image.data_.size());
     image.SetData(input_uint8);
 
     auto transposed_image = image.Transpose();
@@ -396,7 +398,8 @@ TEST(Image, TransposeFloat) {
     EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
 
-    thrust::host_vector<uint8_t> transposed_host_data = transposed_image->GetData();
+    thrust::host_vector<uint8_t> transposed_host_data =
+            transposed_image->GetData();
     const float* transpose_image_floats =
             reinterpret_cast<const float*>(transposed_host_data.data());
     thrust::host_vector<float> transpose_image_data(

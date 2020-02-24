@@ -1,52 +1,57 @@
-#include "cupoch/geometry/pointcloud.h"
+#include <thrust/gather.h>
+
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
-#include "cupoch/camera/pinhole_camera_intrinsic.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
-#include <thrust/gather.h>
 
 using namespace cupoch;
 using namespace cupoch::geometry;
 
 namespace {
 
-template<class... Args>
+template <class... Args>
 struct check_nan_functor {
     check_nan_functor(bool remove_nan, bool remove_infinite)
-        : remove_nan_(remove_nan), remove_infinite_(remove_infinite) {};
+        : remove_nan_(remove_nan), remove_infinite_(remove_infinite){};
     const bool remove_nan_;
     const bool remove_infinite_;
-    __device__
-    bool operator()(const thrust::tuple<Eigen::Vector3f, Args...>& x) const {
-        const Eigen::Vector3f& point = thrust::get<0>(x);
+    __device__ bool operator()(
+            const thrust::tuple<Eigen::Vector3f, Args...> &x) const {
+        const Eigen::Vector3f &point = thrust::get<0>(x);
         bool is_nan = remove_nan_ &&
-                      (std::isnan(point(0)) || std::isnan(point(1)) ||
-                       std::isnan(point(2)));
-        bool is_infinite = remove_infinite_ && (std::isinf(point(0)) ||
-                                                std::isinf(point(1)) ||
-                                                std::isinf(point(2)));
+                      (isnan(point(0)) || isnan(point(1)) || isnan(point(2)));
+        bool is_infinite =
+                remove_infinite_ &&
+                (isinf(point(0)) || isinf(point(1)) || isinf(point(2)));
         return is_nan || is_infinite;
     }
 };
 
-}
+}  // namespace
 
 PointCloud::PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
-PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f>& points) : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
-PointCloud::PointCloud(const PointCloud& other) : Geometry3D(Geometry::GeometryType::PointCloud), points_(other.points_), normals_(other.normals_), colors_(other.colors_) {}
+PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
+    : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+PointCloud::PointCloud(const PointCloud &other)
+    : Geometry3D(Geometry::GeometryType::PointCloud),
+      points_(other.points_),
+      normals_(other.normals_),
+      colors_(other.colors_) {}
 
 PointCloud::~PointCloud() {}
 
-PointCloud& PointCloud::operator=(const PointCloud& other) {
+PointCloud &PointCloud::operator=(const PointCloud &other) {
     points_ = other.points_;
     normals_ = other.normals_;
     colors_ = other.colors_;
     return *this;
 }
 
-void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f>& points) {
+void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f> &points) {
     points_ = points;
 }
 
@@ -55,7 +60,8 @@ thrust::host_vector<Eigen::Vector3f> PointCloud::GetPoints() const {
     return points;
 }
 
-void PointCloud::SetNormals(const thrust::host_vector<Eigen::Vector3f>& normals) {
+void PointCloud::SetNormals(
+        const thrust::host_vector<Eigen::Vector3f> &normals) {
     normals_ = normals;
 }
 
@@ -64,7 +70,7 @@ thrust::host_vector<Eigen::Vector3f> PointCloud::GetNormals() const {
     return normals;
 }
 
-void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f>& colors) {
+void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
 }
 
@@ -80,7 +86,7 @@ PointCloud &PointCloud::Clear() {
     return *this;
 }
 
-bool PointCloud::IsEmpty() const {return !HasPoints();}
+bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
 Eigen::Vector3f PointCloud::GetMinBound() const {
     return ComputeMinBound(points_);
@@ -90,21 +96,19 @@ Eigen::Vector3f PointCloud::GetMaxBound() const {
     return ComputeMaxBound(points_);
 }
 
-Eigen::Vector3f PointCloud::GetCenter() const {
-    return ComputeCenter(points_);
-}
+Eigen::Vector3f PointCloud::GetCenter() const { return ComputeCenter(points_); }
 
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-PointCloud& PointCloud::Translate(const Eigen::Vector3f &translation,
+PointCloud &PointCloud::Translate(const Eigen::Vector3f &translation,
                                   bool relative) {
     TranslatePoints(translation, points_, relative);
     return *this;
 }
 
-PointCloud& PointCloud::Scale(const float scale, bool center) {
+PointCloud &PointCloud::Scale(const float scale, bool center) {
     ScalePoints(scale, points_, center);
     return *this;
 }
@@ -117,7 +121,8 @@ PointCloud &PointCloud::Rotate(const Eigen::Matrix3f &R, bool center) {
 }
 
 PointCloud &PointCloud::NormalizeNormals() {
-    thrust::for_each(normals_.begin(), normals_.end(), [] __device__ (Eigen::Vector3f& nl) {nl.normalize();});
+    thrust::for_each(normals_.begin(), normals_.end(),
+                     [] __device__(Eigen::Vector3f & nl) { nl.normalize(); });
     return *this;
 }
 
@@ -126,7 +131,7 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
     return *this;
 }
 
-PointCloud& PointCloud::Transform(const Eigen::Matrix4f& transformation) {
+PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
     TransformPoints(utility::GetStream(0), transformation, points_);
     TransformNormals(utility::GetStream(1), transformation, normals_);
     cudaSafeCall(cudaDeviceSynchronize());
@@ -143,7 +148,8 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
-PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infinite) {
+PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
+                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
     size_t old_point_num = points_.size();
@@ -155,17 +161,26 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infi
     } else if (has_normal && !has_color) {
         check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
         auto begin = make_tuple_iterator(points_.begin(), normals_.begin());
-        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), normals_.end()), func);
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(points_.end(), normals_.end()),
+                func);
         k = thrust::distance(begin, end);
     } else if (!has_normal && has_color) {
         check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
         auto begin = make_tuple_iterator(points_.begin(), colors_.begin());
-        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), colors_.end()), func);
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(points_.end(), colors_.end()), func);
         k = thrust::distance(begin, end);
     } else {
-        check_nan_functor<Eigen::Vector3f, Eigen::Vector3f> func(remove_nan, remove_infinite);
-        auto begin = make_tuple_iterator(points_.begin(), normals_.begin(), colors_.begin());
-        auto end = thrust::remove_if(begin, make_tuple_iterator(points_.end(), normals_.end(), colors_.end()), func);
+        check_nan_functor<Eigen::Vector3f, Eigen::Vector3f> func(
+                remove_nan, remove_infinite);
+        auto begin = make_tuple_iterator(points_.begin(), normals_.begin(),
+                                         colors_.begin());
+        auto end = thrust::remove_if(
+                begin,
+                make_tuple_iterator(points_.end(), normals_.end(),
+                                    colors_.end()),
+                func);
         k = thrust::distance(begin, end);
     }
     points_.resize(k);
@@ -174,5 +189,5 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan, bool remove_infi
     utility::LogDebug(
             "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
-    return *this; 
+    return *this;
 }

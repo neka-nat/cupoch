@@ -1,4 +1,5 @@
 #include "cupoch/geometry/lineset.h"
+
 #include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/raw.h"
 #include "tests/test_utility/unit_test.h"

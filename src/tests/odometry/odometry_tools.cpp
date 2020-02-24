@@ -1,4 +1,5 @@
 #include "tests/odometry/odometry_tools.h"
+
 #include <thrust/host_vector.h>
 
 using namespace cupoch;

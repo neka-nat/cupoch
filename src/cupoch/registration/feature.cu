@@ -1,7 +1,8 @@
 #include <Eigen/Geometry>
-#include "cupoch/registration/feature.h"
-#include "cupoch/geometry/pointcloud.h"
+
 #include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/registration/feature.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -9,11 +10,10 @@ using namespace cupoch::registration;
 
 namespace {
 
-__device__
-Eigen::Vector4f ComputePairFeatures(const Eigen::Vector3f &p1,
-        const Eigen::Vector3f &n1,
-        const Eigen::Vector3f &p2,
-        const Eigen::Vector3f &n2) {
+__device__ Eigen::Vector4f ComputePairFeatures(const Eigen::Vector3f &p1,
+                                               const Eigen::Vector3f &n1,
+                                               const Eigen::Vector3f &p2,
+                                               const Eigen::Vector3f &n2) {
     Eigen::Vector4f result;
     Eigen::Vector3f dp2p1 = p2 - p1;
     result(3) = dp2p1.norm();
@@ -46,17 +46,22 @@ Eigen::Vector4f ComputePairFeatures(const Eigen::Vector3f &p1,
 }
 
 struct compute_spfh_functor {
-    compute_spfh_functor(const Eigen::Vector3f* points,
-                         const Eigen::Vector3f* normals,
-                         const int* indices, int knn, float hist_incr)
-        : points_(points), normals_(normals), indices_(indices), knn_(knn), hist_incr_(hist_incr) {};
-    const Eigen::Vector3f* points_;
-    const Eigen::Vector3f* normals_;
-    const int* indices_;
+    compute_spfh_functor(const Eigen::Vector3f *points,
+                         const Eigen::Vector3f *normals,
+                         const int *indices,
+                         int knn,
+                         float hist_incr)
+        : points_(points),
+          normals_(normals),
+          indices_(indices),
+          knn_(knn),
+          hist_incr_(hist_incr){};
+    const Eigen::Vector3f *points_;
+    const Eigen::Vector3f *normals_;
+    const int *indices_;
     const int knn_;
     const float hist_incr_;
-    __device__
-    Feature<33>::FeatureType operator()(size_t idx) const {
+    __device__ Feature<33>::FeatureType operator()(size_t idx) const {
         Feature<33>::FeatureType ft;
         for (size_t k = 1; k < knn_; k++) {
             // skip the point itself, compute histogram
@@ -81,22 +86,21 @@ struct compute_spfh_functor {
 };
 
 std::shared_ptr<Feature<33>> ComputeSPFHFeature(
-    const geometry::PointCloud &input,
-    const geometry::KDTreeFlann &kdtree,
-    const geometry::KDTreeSearchParam &search_param) {
+        const geometry::PointCloud &input,
+        const geometry::KDTreeFlann &kdtree,
+        const geometry::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature<33>>();
     feature->Resize((int)input.points_.size());
 
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
     auto knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
-    kdtree.SearchKNN(input.points_, knn,
-                     indices, distance2);
+    kdtree.SearchKNN(input.points_, knn, indices, distance2);
     float hist_incr = 100.0 / (float)(knn - 1);
     compute_spfh_functor func(thrust::raw_pointer_cast(input.points_.data()),
                               thrust::raw_pointer_cast(input.normals_.data()),
-                              thrust::raw_pointer_cast(indices.data()),
-                              knn, hist_incr);
+                              thrust::raw_pointer_cast(indices.data()), knn,
+                              hist_incr);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(input.points_.size()),
                       feature->data_.begin(), func);
@@ -104,15 +108,19 @@ std::shared_ptr<Feature<33>> ComputeSPFHFeature(
 }
 
 struct compute_fpfh_functor {
-    compute_fpfh_functor(const Feature<33>::FeatureType* spfh_data,
-                         const int* indices, const float* distance2, int knn)
-        : spfh_data_(spfh_data), indices_(indices), distance2_(distance2), knn_(knn) {};
-    const Feature<33>::FeatureType* spfh_data_;
-    const int* indices_;
-    const float* distance2_;
+    compute_fpfh_functor(const Feature<33>::FeatureType *spfh_data,
+                         const int *indices,
+                         const float *distance2,
+                         int knn)
+        : spfh_data_(spfh_data),
+          indices_(indices),
+          distance2_(distance2),
+          knn_(knn){};
+    const Feature<33>::FeatureType *spfh_data_;
+    const int *indices_;
+    const float *distance2_;
     const int knn_;
-    __device__
-    Feature<33>::FeatureType operator() (size_t idx) const {
+    __device__ Feature<33>::FeatureType operator()(size_t idx) const {
         Feature<33>::FeatureType ft;
         float sum[3] = {0.0, 0.0, 0.0};
         for (size_t k = 1; k < knn_; k++) {
@@ -140,12 +148,12 @@ struct compute_fpfh_functor {
     }
 };
 
-}
+}  // namespace
 
 std::shared_ptr<Feature<33>> ComputeFPFHFeature(
-    const geometry::PointCloud &input,
-    const geometry::KDTreeSearchParam
-            &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
+        const geometry::PointCloud &input,
+        const geometry::KDTreeSearchParam
+                &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
     auto feature = std::make_shared<Feature<33>>();
     feature->Resize((int)input.points_.size());
 
@@ -159,13 +167,15 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
-    kdtree.SearchKNN(input.points_,
-                     ((const geometry::KDTreeSearchParamKNN &)search_param).knn_,
-                     indices, distance2);
-    compute_fpfh_functor func(thrust::raw_pointer_cast(spfh->data_.data()),
-                              thrust::raw_pointer_cast(indices.data()),
-                              thrust::raw_pointer_cast(distance2.data()),
-                              ((const geometry::KDTreeSearchParamKNN &)search_param).knn_);
+    kdtree.SearchKNN(
+            input.points_,
+            ((const geometry::KDTreeSearchParamKNN &)search_param).knn_,
+            indices, distance2);
+    compute_fpfh_functor func(
+            thrust::raw_pointer_cast(spfh->data_.data()),
+            thrust::raw_pointer_cast(indices.data()),
+            thrust::raw_pointer_cast(distance2.data()),
+            ((const geometry::KDTreeSearchParamKNN &)search_param).knn_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(input.points_.size()),
                       feature->data_.begin(), func);

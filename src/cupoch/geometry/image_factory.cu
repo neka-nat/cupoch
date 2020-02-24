@@ -8,39 +8,40 @@ using namespace cupoch::geometry;
 namespace {
 
 struct compute_camera_distance_functor {
-    compute_camera_distance_functor(uint8_t* data, int width,
-                                    const float* xx, const float* yy)
-                                    : data_(data), width_(width),
-                                      xx_(xx), yy_(yy) {};
-    uint8_t* data_;
+    compute_camera_distance_functor(uint8_t *data,
+                                    int width,
+                                    const float *xx,
+                                    const float *yy)
+        : data_(data), width_(width), xx_(xx), yy_(yy){};
+    uint8_t *data_;
     const int width_;
-    const float* xx_;
-    const float* yy_;
-    __device__
-    void operator() (size_t idx) {
+    const float *xx_;
+    const float *yy_;
+    __device__ void operator()(size_t idx) {
         int i = idx / width_;
         int j = idx % width_;
-        float *fp =
-                (float *)(data_ + idx * sizeof(float));
+        float *fp = (float *)(data_ + idx * sizeof(float));
         *fp = sqrtf(xx_[j] * xx_[j] + yy_[i] * yy_[i] + 1.0f);
     }
 };
 
 struct make_float_image_functor {
-    make_float_image_functor(const uint8_t* image, int num_of_channels,
+    make_float_image_functor(const uint8_t *image,
+                             int num_of_channels,
                              int bytes_per_channel,
                              Image::ColorToIntensityConversionType type,
-                             uint8_t* fimage)
-                             : image_(image), num_of_channels_(num_of_channels),
-                               bytes_per_channel_(bytes_per_channel),
-                               type_(type), fimage_(fimage) {};
-    const uint8_t* image_;
+                             uint8_t *fimage)
+        : image_(image),
+          num_of_channels_(num_of_channels),
+          bytes_per_channel_(bytes_per_channel),
+          type_(type),
+          fimage_(fimage){};
+    const uint8_t *image_;
     int num_of_channels_;
     int bytes_per_channel_;
     Image::ColorToIntensityConversionType type_;
-    uint8_t* fimage_;
-    __device__
-    void operator() (size_t idx) {
+    uint8_t *fimage_;
+    __device__ void operator()(size_t idx) {
         float *p = (float *)(fimage_ + idx * 4);
         const uint8_t *pi =
                 image_ + idx * num_of_channels_ * bytes_per_channel_;
@@ -91,20 +92,20 @@ struct make_float_image_functor {
     }
 };
 
-template<typename T>
+template <typename T>
 struct restore_from_float_image_functor {
-    restore_from_float_image_functor(const float* src, uint8_t* dst)
-        : src_(src), dst_(dst) {};
-    const float* src_;
-    uint8_t* dst_;
-    __device__
-    void operator() (size_t idx) {
-        if (sizeof(T) == 1) *(dst_ + idx) = static_cast<T>(*(src_ + idx) * 255.0f);
+    restore_from_float_image_functor(const float *src, uint8_t *dst)
+        : src_(src), dst_(dst){};
+    const float *src_;
+    uint8_t *dst_;
+    __device__ void operator()(size_t idx) {
+        if (sizeof(T) == 1)
+            *(dst_ + idx) = static_cast<T>(*(src_ + idx) * 255.0f);
         if (sizeof(T) == 2) *(dst_ + idx) = static_cast<T>(*(src_ + idx));
     }
 };
 
-}
+}  // namespace
 
 std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
         const camera::PinholeCameraIntrinsic &intrinsic) {
@@ -116,17 +117,24 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     float fpp1 = (float)intrinsic.GetPrincipalPoint().second;
     utility::device_vector<float> xx(intrinsic.width_);
     utility::device_vector<float> yy(intrinsic.height_);
-    thrust::tabulate(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)), xx.begin(), xx.end(),
-                     [=] __device__ (int idx) {return (idx - fpp0) * ffl_inv0;});
-    thrust::tabulate(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)), yy.begin(), yy.end(),
-                     [=] __device__ (int idx) {return (idx - fpp1) * ffl_inv1;});
+    thrust::tabulate(utility::exec_policy(utility::GetStream(0))
+                             ->on(utility::GetStream(0)),
+                     xx.begin(), xx.end(), [=] __device__(int idx) {
+                         return (idx - fpp0) * ffl_inv0;
+                     });
+    thrust::tabulate(utility::exec_policy(utility::GetStream(1))
+                             ->on(utility::GetStream(1)),
+                     yy.begin(), yy.end(), [=] __device__(int idx) {
+                         return (idx - fpp1) * ffl_inv1;
+                     });
     cudaSafeCall(cudaDeviceSynchronize());
-    compute_camera_distance_functor func(thrust::raw_pointer_cast(fimage->data_.data()),
-                                         intrinsic.width_,
-                                         thrust::raw_pointer_cast(xx.data()),
-                                         thrust::raw_pointer_cast(yy.data()));
+    compute_camera_distance_functor func(
+            thrust::raw_pointer_cast(fimage->data_.data()), intrinsic.width_,
+            thrust::raw_pointer_cast(xx.data()),
+            thrust::raw_pointer_cast(yy.data()));
     for_each(thrust::make_counting_iterator<size_t>(0),
-             thrust::make_counting_iterator<size_t>(intrinsic.height_ * intrinsic.width_),
+             thrust::make_counting_iterator<size_t>(intrinsic.height_ *
+                                                    intrinsic.width_),
              func);
     return fimage;
 }
@@ -138,11 +146,13 @@ std::shared_ptr<Image> Image::CreateFloatImage(
         return fimage;
     }
     fimage->Prepare(width_, height_, 1, 4);
-    make_float_image_functor func(thrust::raw_pointer_cast(data_.data()),
-                                  num_of_channels_, bytes_per_channel_, type,
-                                  thrust::raw_pointer_cast(fimage->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), 
-                     thrust::make_counting_iterator<size_t>(width_ * height_), func);
+    make_float_image_functor func(
+            thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+            bytes_per_channel_, type,
+            thrust::raw_pointer_cast(fimage->data_.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(width_ * height_),
+                     func);
     return fimage;
 }
 
@@ -155,9 +165,12 @@ std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
     }
 
     output->Prepare(width_, height_, num_of_channels_, sizeof(T));
-    restore_from_float_image_functor<T> func((const float*)thrust::raw_pointer_cast(data_.data()),
-                                             thrust::raw_pointer_cast(output->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(width_ * height_), func);
+    restore_from_float_image_functor<T> func(
+            (const float *)thrust::raw_pointer_cast(data_.data()),
+            thrust::raw_pointer_cast(output->data_.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(width_ * height_),
+                     func);
     return output;
 }
 

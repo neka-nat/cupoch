@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <thrust/pair.h>
+
+#include <Eigen/Core>
 
 #include "cupoch/utility/ijson_convertible.h"
 
@@ -66,13 +67,15 @@ public:
 
     /// Returns the focal length in a tuple of X-axis and Y-axis focal lengths.
     thrust::pair<float, float> GetFocalLength() const {
-        return thrust::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
+        return thrust::make_pair(intrinsic_matrix_(0, 0),
+                                 intrinsic_matrix_(1, 1));
     }
 
     /// Returns the principle point in a tuple of X-axis and Y-axis principle
     /// point.
     thrust::pair<float, float> GetPrincipalPoint() const {
-        return thrust::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
+        return thrust::make_pair(intrinsic_matrix_(0, 2),
+                                 intrinsic_matrix_(1, 2));
     }
 
     /// Returns the skew.

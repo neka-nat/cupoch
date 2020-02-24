@@ -9,15 +9,13 @@ namespace geometry {
 
 class TSDFVoxel : public Voxel {
 public:
-    __host__ __device__
-    TSDFVoxel() : Voxel() {}
-    __host__ __device__
-    TSDFVoxel(const Eigen::Vector3i &grid_index) : Voxel(grid_index) {}
-    __host__ __device__
-    TSDFVoxel(const Eigen::Vector3i &grid_index, const Eigen::Vector3f &color)
+    __host__ __device__ TSDFVoxel() : Voxel() {}
+    __host__ __device__ TSDFVoxel(const Eigen::Vector3i &grid_index)
+        : Voxel(grid_index) {}
+    __host__ __device__ TSDFVoxel(const Eigen::Vector3i &grid_index,
+                                  const Eigen::Vector3f &color)
         : Voxel(grid_index, color) {}
-    __host__ __device__
-    ~TSDFVoxel() {}
+    __host__ __device__ ~TSDFVoxel() {}
 
 public:
     float tsdf_ = 0;

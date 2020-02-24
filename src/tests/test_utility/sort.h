@@ -1,8 +1,10 @@
 #pragma once
 
-#include <Eigen/Core>
-#include "cupoch/utility/eigen.h"
 #include <thrust/host_vector.h>
+
+#include <Eigen/Core>
+
+#include "cupoch/utility/eigen.h"
 
 namespace unit_test {
 namespace sort {
@@ -13,5 +15,5 @@ bool GE(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1);
 // method needed because std::sort failed on TravisCI/macOS (works fine on
 // Linux)
 void Do(thrust::host_vector<Eigen::Vector3f>& v);
-}  // namespace Sort
+}  // namespace sort
 }  // namespace unit_test

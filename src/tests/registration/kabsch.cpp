@@ -1,4 +1,5 @@
 #include "cupoch/registration/kabsch.h"
+
 #include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
 
@@ -8,8 +9,8 @@ using namespace std;
 using namespace unit_test;
 
 namespace {
-    float deg_to_rad(float deg) {return deg / 180.0 * M_PI;}
-}
+float deg_to_rad(float deg) { return deg / 180.0 * M_PI; }
+}  // namespace
 
 TEST(Kabsch, Kabsch) {
     const size_t size = 20;
@@ -20,10 +21,10 @@ TEST(Kabsch, Kabsch) {
     geometry::PointCloud source;
     source.SetPoints(points);
     const float rad = deg_to_rad(30.0f);
-    const Matrix4f ref_tf = (Matrix4f() << std::cos(rad), -std::sin(rad), 0.0, 0.0,
-                                           std::sin(rad), std::cos(rad),  0.0, 0.0, 
-                                           0.0,           0.0,            1.0, 0.0,
-                                           0.0,           0.0,            0.0, 1.0).finished();
+    const Matrix4f ref_tf = (Matrix4f() << std::cos(rad), -std::sin(rad), 0.0,
+                             0.0, std::sin(rad), std::cos(rad), 0.0, 0.0, 0.0,
+                             0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+                                    .finished();
 
     geometry::PointCloud target = source;
     target.Transform(ref_tf);

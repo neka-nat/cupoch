@@ -1,7 +1,7 @@
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/odometry/rgbdodometry_jacobian.h"
-#include "tests/test_utility/unit_test.h"
 #include "tests/odometry/odometry_tools.h"
+#include "tests/test_utility/unit_test.h"
 
 using namespace Eigen;
 using namespace odometry_tools;
@@ -21,9 +21,8 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     ref_J_r[8] << -2.080471, 1.779082, 0.191770, 0.116250, 0.373750, -2.206175;
     ref_J_r[9] << -0.015476, 0.054573, -0.002288, 0.027828, 0.005931, -0.046776;
 
-    float ref_r_raw[] = {0.419608, -0.360784, 0.274510,  0.564706,
-                         0.835294, -0.352941, -0.545098, -0.360784,
-                         0.121569, -0.094118};
+    float ref_r_raw[] = {0.419608,  -0.360784, 0.274510,  0.564706, 0.835294,
+                         -0.352941, -0.545098, -0.360784, 0.121569, -0.094118};
     thrust::host_vector<float> ref_r;
     for (int i = 0; i < 10; ++i) ref_r.push_back(ref_r_raw[i]);
 
@@ -85,8 +84,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
                 thrust::raw_pointer_cast(target_dx.depth_.GetData().data()),
                 thrust::raw_pointer_cast(target_dy.color_.GetData().data()),
                 thrust::raw_pointer_cast(target_dy.depth_.GetData().data()),
-                width,
-                intrinsic, extrinsic,
+                width, intrinsic, extrinsic,
                 thrust::raw_pointer_cast(corresps.data()));
 
         EXPECT_NEAR(ref_r[row], r[0], THRESHOLD_1E_4);

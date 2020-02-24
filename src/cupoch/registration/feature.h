@@ -2,9 +2,9 @@
 
 #include <Eigen/Core>
 #include <memory>
-#include "cupoch/utility/device_vector.h"
 
 #include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 
@@ -14,12 +14,13 @@ class PointCloud;
 
 namespace registration {
 
-template<int Dim>
+template <int Dim>
 class Feature {
 public:
     void Resize(int n) { data_.resize(n); };
     size_t Dimension() const { return Dim; }
     size_t Num() const { return data_.size(); };
+
 public:
     typedef Eigen::Matrix<float, Dim, 1> FeatureType;
     utility::device_vector<FeatureType> data_;

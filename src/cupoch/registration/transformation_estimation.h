@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <memory>
+
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
@@ -89,5 +90,5 @@ private:
             TransformationEstimationType::PointToPlane;
 };
 
-}
-}
+}  // namespace registration
+}  // namespace cupoch

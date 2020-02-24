@@ -1,6 +1,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 
 #include <json/json.h>
+
 #include <Eigen/Dense>
 
 #include "cupoch/utility/console.h"

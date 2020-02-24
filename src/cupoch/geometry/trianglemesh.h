@@ -1,7 +1,6 @@
 #pragma once
-#include "cupoch/geometry/meshbase.h"
 #include "cupoch/geometry/image.h"
-
+#include "cupoch/geometry/meshbase.h"
 
 namespace cupoch {
 namespace geometry {
@@ -13,45 +12,42 @@ public:
                  const utility::device_vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
                  const thrust::host_vector<Eigen::Vector3i> &triangles);
-    TriangleMesh(const geometry::TriangleMesh& other);
+    TriangleMesh(const geometry::TriangleMesh &other);
     ~TriangleMesh() override;
-    TriangleMesh& operator=(const TriangleMesh& other);
+    TriangleMesh &operator=(const TriangleMesh &other);
 
     thrust::host_vector<Eigen::Vector3i> GetTriangles() const;
-    void SetTriangles(const thrust::host_vector<Eigen::Vector3i>& triangles);
+    void SetTriangles(const thrust::host_vector<Eigen::Vector3i> &triangles);
 
     thrust::host_vector<Eigen::Vector3f> GetTriangleNormals() const;
-    void SetTriangleNormals(const thrust::host_vector<Eigen::Vector3f>& triangle_normals);
+    void SetTriangleNormals(
+            const thrust::host_vector<Eigen::Vector3f> &triangle_normals);
 
     thrust::host_vector<int> GetAdjacencyMatrix() const;
-    void SetAdjacencyMatrix(const thrust::host_vector<int>& adjacency_matrix);
+    void SetAdjacencyMatrix(const thrust::host_vector<int> &adjacency_matrix);
 
     thrust::host_vector<Eigen::Vector2f> GetTriangleUVs() const;
-    void SetTriangleUVs(thrust::host_vector<Eigen::Vector2f>& triangle_uvs);
+    void SetTriangleUVs(thrust::host_vector<Eigen::Vector2f> &triangle_uvs);
 
 public:
     virtual TriangleMesh &Clear() override;
     TriangleMesh &operator+=(const TriangleMesh &mesh);
     TriangleMesh operator+(const TriangleMesh &mesh) const;
 
-    __host__ __device__
-    bool HasTriangles() const {
+    __host__ __device__ bool HasTriangles() const {
         return vertices_.size() > 0 && triangles_.size() > 0;
     }
 
-    __host__ __device__
-    bool HasTriangleNormals() const {
+    __host__ __device__ bool HasTriangleNormals() const {
         return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
-    __host__ __device__
-    bool HasAdjacencyMatrix() const {
+    __host__ __device__ bool HasAdjacencyMatrix() const {
         return vertices_.size() > 0 &&
                adjacency_matrix_.size() == vertices_.size() * vertices_.size();
     }
 
-    __host__ __device__
-    bool HasTriangleUvs() const {
+    __host__ __device__ bool HasTriangleUvs() const {
         return HasTriangles() && triangle_uvs_.size() == 3 * triangles_.size();
     }
 
@@ -65,12 +61,14 @@ public:
     /// Function to compute vertex normals, usually called before rendering
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
-    /// Function to compute adjacency matrix, call before adjacency matrix is needed
+    /// Function to compute adjacency matrix, call before adjacency matrix is
+    /// needed
     TriangleMesh &ComputeAdjacencyMatrix();
 
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
-    utility::device_vector<Eigen::Vector2i> GetSelfIntersectingTriangles() const;
+    utility::device_vector<Eigen::Vector2i> GetSelfIntersectingTriangles()
+            const;
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
     /// the mesh centroid will be at (0,0,0) and \param radius defines the
@@ -102,7 +100,6 @@ public:
     /// The latitudes will be split into \param resolution * 2 segments.
     static std::shared_ptr<TriangleMesh> CreateSphere(float radius = 1.0,
                                                       int resolution = 20);
-
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
@@ -158,5 +155,5 @@ public:
     Image texture_;
 };
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

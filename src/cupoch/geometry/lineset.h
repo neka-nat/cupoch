@@ -1,11 +1,12 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <memory>
-#include "cupoch/utility/device_vector.h"
 #include <thrust/host_vector.h>
 
+#include <Eigen/Core>
+#include <memory>
+
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 namespace geometry {
@@ -25,13 +26,13 @@ public:
     LineSet(const LineSet &other);
     ~LineSet();
 
-    void SetPoints(const thrust::host_vector<Eigen::Vector3f>& points);
+    void SetPoints(const thrust::host_vector<Eigen::Vector3f> &points);
     thrust::host_vector<Eigen::Vector3f> GetPoints() const;
 
-    void SetLines(const thrust::host_vector<Eigen::Vector2i>& lines);
+    void SetLines(const thrust::host_vector<Eigen::Vector2i> &lines);
     thrust::host_vector<Eigen::Vector2i> GetLines() const;
 
-    void SetColors(const thrust::host_vector<Eigen::Vector3f>& colors);
+    void SetColors(const thrust::host_vector<Eigen::Vector3f> &colors);
     thrust::host_vector<Eigen::Vector3f> GetColors() const;
 
 public:
@@ -70,7 +71,8 @@ public:
     static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
-            const utility::device_vector<thrust::pair<int, int>> &correspondences);
+            const utility::device_vector<thrust::pair<int, int>>
+                    &correspondences);
 
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &box);

@@ -8,30 +8,30 @@ namespace {
 
 struct compute_sphere_vertices_functor {
     compute_sphere_vertices_functor(int resolution, float radius)
-        : resolution_(resolution), radius_(radius) {step_ = M_PI / (float)resolution;};
+        : resolution_(resolution), radius_(radius) {
+        step_ = M_PI / (float)resolution;
+    };
     const int resolution_;
     const float radius_;
     float step_;
-    __device__
-    Eigen::Vector3f operator() (size_t idx) const {
+    __device__ Eigen::Vector3f operator()(size_t idx) const {
         int i = idx / (2 * resolution_) + 1;
         int j = idx % (2 * resolution_);
 
         float alpha = step_ * i;
         float theta = step_ * j;
-        return Eigen::Vector3f(sin(alpha) * cos(theta),
-                               sin(alpha) * sin(theta),
-                               cos(alpha)) * radius_;
+        return Eigen::Vector3f(sin(alpha) * cos(theta), sin(alpha) * sin(theta),
+                               cos(alpha)) *
+               radius_;
     }
 };
 
 struct compute_sphere_triangles_functor1 {
-    compute_sphere_triangles_functor1(Eigen::Vector3i* triangle, int resolution)
-        : triangles_(triangle), resolution_(resolution) {};
-    Eigen::Vector3i* triangles_;
+    compute_sphere_triangles_functor1(Eigen::Vector3i *triangle, int resolution)
+        : triangles_(triangle), resolution_(resolution){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int j1 = (idx + 1) % (2 * resolution_);
         int base = 2;
         triangles_[2 * idx] = Eigen::Vector3i(0, base + idx, base + j1);
@@ -41,32 +41,39 @@ struct compute_sphere_triangles_functor1 {
 };
 
 struct compute_sphere_triangles_functor2 {
-    compute_sphere_triangles_functor2(Eigen::Vector3i* triangle, int resolution)
-        : triangles_(triangle), resolution_(resolution) {};
-    Eigen::Vector3i* triangles_;
+    compute_sphere_triangles_functor2(Eigen::Vector3i *triangle, int resolution)
+        : triangles_(triangle), resolution_(resolution){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int i = idx / (2 * resolution_) + 1;
         int j = idx % (2 * resolution_);
         int base1 = 2 + 2 * resolution_ * (i - 1);
         int base2 = base1 + 2 * resolution_;
         int j1 = (j + 1) % (2 * resolution_);
         triangles_[2 * idx] = Eigen::Vector3i(base2 + j, base1 + j1, base1 + j);
-        triangles_[2 * idx + 1] = Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1);
+        triangles_[2 * idx + 1] =
+                Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1);
     }
 };
 
 struct compute_cylinder_vertices_functor {
-    compute_cylinder_vertices_functor(int resolution, float radius, float height, float step, float h_step)
-        : resolution_(resolution), radius_(radius), height_(height), step_(step), h_step_(h_step) {};
+    compute_cylinder_vertices_functor(int resolution,
+                                      float radius,
+                                      float height,
+                                      float step,
+                                      float h_step)
+        : resolution_(resolution),
+          radius_(radius),
+          height_(height),
+          step_(step),
+          h_step_(h_step){};
     const int resolution_;
     const float radius_;
     const float height_;
     const float step_;
     const float h_step_;
-    __device__
-    Eigen::Vector3f operator() (size_t idx) const {
+    __device__ Eigen::Vector3f operator()(size_t idx) const {
         int i = idx / resolution_;
         int j = idx % resolution_;
         float theta = step_ * j;
@@ -76,13 +83,14 @@ struct compute_cylinder_vertices_functor {
 };
 
 struct compute_cylinder_triangles_functor1 {
-    compute_cylinder_triangles_functor1(Eigen::Vector3i* triangle, int resolution, int split)
-        : triangles_(triangle), resolution_(resolution), split_(split) {};
-    Eigen::Vector3i* triangles_;
+    compute_cylinder_triangles_functor1(Eigen::Vector3i *triangle,
+                                        int resolution,
+                                        int split)
+        : triangles_(triangle), resolution_(resolution), split_(split){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
     const int split_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int j1 = (idx + 1) % resolution_;
         int base = 2;
         triangles_[2 * idx] = Eigen::Vector3i(0, base + idx, base + j1);
@@ -92,48 +100,54 @@ struct compute_cylinder_triangles_functor1 {
 };
 
 struct compute_cylinder_triangles_functor2 {
-    compute_cylinder_triangles_functor2(Eigen::Vector3i* triangle, int resolution)
-        : triangles_(triangle), resolution_(resolution) {};
-    Eigen::Vector3i* triangles_;
+    compute_cylinder_triangles_functor2(Eigen::Vector3i *triangle,
+                                        int resolution)
+        : triangles_(triangle), resolution_(resolution){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int i = idx / resolution_;
         int j = idx % resolution_;
         int base1 = 2 + resolution_ * i;
         int base2 = base1 + resolution_;
         int j1 = (j + 1) % resolution_;
         triangles_[2 * idx] = Eigen::Vector3i(base2 + j, base1 + j1, base1 + j);
-        triangles_[2 * idx + 1] = Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1);
+        triangles_[2 * idx + 1] =
+                Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1);
     }
 };
 
 struct compute_cone_vertices_functor {
-    compute_cone_vertices_functor(int resolution, int split, float step, float r_step, float h_step)
-        : resolution_(resolution), split_(split), step_(step), r_step_(r_step), h_step_(h_step) {};
+    compute_cone_vertices_functor(
+            int resolution, int split, float step, float r_step, float h_step)
+        : resolution_(resolution),
+          split_(split),
+          step_(step),
+          r_step_(r_step),
+          h_step_(h_step){};
     const int resolution_;
     const int split_;
     const float step_;
     const float r_step_;
     const float h_step_;
-    __device__
-    Eigen::Vector3f operator() (size_t idx) const {
+    __device__ Eigen::Vector3f operator()(size_t idx) const {
         int i = idx / resolution_;
         int j = idx % resolution_;
         float r = r_step_ * (split_ - i);
         float theta = step_ * j;
         return Eigen::Vector3f(cos(theta) * r, sin(theta) * r, h_step_ * i);
-     }
+    }
 };
 
 struct compute_cone_triangles_functor1 {
-    compute_cone_triangles_functor1(Eigen::Vector3i* triangle, int resolution, int split)
-        : triangles_(triangle), resolution_(resolution), split_(split) {};
-    Eigen::Vector3i* triangles_;
+    compute_cone_triangles_functor1(Eigen::Vector3i *triangle,
+                                    int resolution,
+                                    int split)
+        : triangles_(triangle), resolution_(resolution), split_(split){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
     const int split_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int j1 = (idx + 1) % resolution_;
         int base = 2;
         triangles_[2 * idx] = Eigen::Vector3i(0, base + j1, base + idx);
@@ -143,23 +157,24 @@ struct compute_cone_triangles_functor1 {
 };
 
 struct compute_cone_triangles_functor2 {
-    compute_cone_triangles_functor2(Eigen::Vector3i* triangle, int resolution)
-        : triangles_(triangle), resolution_(resolution) {};
-    Eigen::Vector3i* triangles_;
+    compute_cone_triangles_functor2(Eigen::Vector3i *triangle, int resolution)
+        : triangles_(triangle), resolution_(resolution){};
+    Eigen::Vector3i *triangles_;
     const int resolution_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int i = idx / resolution_;
         int j = idx % resolution_;
         int base1 = 2 + resolution_ * i;
         int base2 = base1 + resolution_;
         int j1 = (j + 1) % resolution_;
-        triangles_[2 * idx] = Eigen::Vector3i(base2 + j1, base1 + j, base1 + j1);
-        triangles_[2 * idx + 1] = Eigen::Vector3i(base2 + j1, base2 + j, base1 + j);
+        triangles_[2 * idx] =
+                Eigen::Vector3i(base2 + j1, base1 + j, base1 + j1);
+        triangles_[2 * idx + 1] =
+                Eigen::Vector3i(base2 + j1, base2 + j, base1 + j);
     }
 };
 
-}
+}  // namespace
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
         float radius /* = 1.0*/) {
@@ -302,14 +317,21 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_vertices - 2),
                       mesh_ptr->vertices_.begin() + 2, func_vt);
-    mesh_ptr->triangles_.resize(2 * resolution + 4 * (resolution - 2) * resolution);
-    compute_sphere_triangles_functor1 func_tr1(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution);
+    mesh_ptr->triangles_.resize(2 * resolution +
+                                4 * (resolution - 2) * resolution);
+    compute_sphere_triangles_functor1 func_tr1(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(2 * resolution), func_tr1);
-    compute_sphere_triangles_functor2 func_tr2(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + 2 * resolution,
-                                               resolution);
+                     thrust::make_counting_iterator<size_t>(2 * resolution),
+                     func_tr1);
+    compute_sphere_triangles_functor2 func_tr2(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) +
+                    2 * resolution,
+            resolution);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(2 * (resolution - 1) * resolution), func_tr2);
+                     thrust::make_counting_iterator<size_t>(
+                             2 * (resolution - 1) * resolution),
+                     func_tr2);
     return mesh_ptr;
 }
 
@@ -337,15 +359,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     mesh_ptr->vertices_[1] = Eigen::Vector3f(0.0, 0.0, -height * 0.5);
     float step = M_PI * 2.0 / (float)resolution;
     float h_step = height / (float)split;
-    compute_cylinder_vertices_functor func_vt(resolution, radius, height, step, h_step);
+    compute_cylinder_vertices_functor func_vt(resolution, radius, height, step,
+                                              h_step);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(n_vertices - 2),
                       mesh_ptr->vertices_.begin() + 2, func_vt);
     mesh_ptr->triangles_.resize(resolution + split * resolution);
-    compute_cylinder_triangles_functor1 func_tr1(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution, split);
-    for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(resolution), func_tr1);
-    compute_cylinder_triangles_functor2 func_tr2(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution, resolution);
-    for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(resolution * split), func_tr2);
+    compute_cylinder_triangles_functor1 func_tr1(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution,
+            split);
+    for_each(thrust::make_counting_iterator<size_t>(0),
+             thrust::make_counting_iterator<size_t>(resolution), func_tr1);
+    compute_cylinder_triangles_functor2 func_tr2(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution,
+            resolution);
+    for_each(thrust::make_counting_iterator<size_t>(0),
+             thrust::make_counting_iterator<size_t>(resolution * split),
+             func_tr2);
     return mesh_ptr;
 }
 
@@ -372,16 +402,26 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(float radius /* = 1.0*/,
     float step = M_PI * 2.0 / (float)resolution;
     float h_step = height / (float)split;
     float r_step = radius / (float)split;
-    compute_cone_vertices_functor func_vt(resolution, split, step, r_step, h_step);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(resolution * split),
-                      mesh_ptr->vertices_.begin() + 2, func_vt);
+    compute_cone_vertices_functor func_vt(resolution, split, step, r_step,
+                                          h_step);
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(resolution * split),
+            mesh_ptr->vertices_.begin() + 2, func_vt);
     mesh_ptr->triangles_.resize(resolution + (split - 1) * resolution);
-    compute_cone_triangles_functor1 func_tr1(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution, split);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(resolution), func_tr1);
-    compute_cone_triangles_functor2 func_tr2(thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution,
-                                             resolution);
+    compute_cone_triangles_functor1 func_tr1(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution,
+            split);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>((split - 1) * resolution), func_tr2);
+                     thrust::make_counting_iterator<size_t>(resolution),
+                     func_tr1);
+    compute_cone_triangles_functor2 func_tr2(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution,
+            resolution);
+    thrust::for_each(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>((split - 1) * resolution),
+            func_tr2);
     return mesh_ptr;
 }
 

@@ -1,20 +1,21 @@
-#include "cupoch/utility/eigen.h"
-#include "cupoch/utility/helper.h"
-#include "cupoch/utility/console.h"
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/transform_reduce.h>
+
+#include "cupoch/utility/console.h"
+#include "cupoch/utility/eigen.h"
+#include "cupoch/utility/helper.h"
 
 namespace cupoch {
 namespace utility {
 
 namespace {
 
-template<typename MatType, typename VecType, typename FuncType>
+template <typename MatType, typename VecType, typename FuncType>
 struct jtj_jtr_reduce_functor {
-    jtj_jtr_reduce_functor(const FuncType& f) : f_(f) {};
+    jtj_jtr_reduce_functor(const FuncType &f) : f_(f){};
     const FuncType f_;
-    __device__
-    thrust::tuple<MatType, VecType, float> operator() (int idx) const {
+    __device__ thrust::tuple<MatType, VecType, float> operator()(
+            int idx) const {
         VecType J_r;
         float r;
         f_(idx, J_r, r);
@@ -24,12 +25,12 @@ struct jtj_jtr_reduce_functor {
     }
 };
 
-template<typename MatType, typename VecType, int NumJ, typename FuncType>
+template <typename MatType, typename VecType, int NumJ, typename FuncType>
 struct multiple_jtj_jtr_reduce_functor {
-    multiple_jtj_jtr_reduce_functor(const FuncType& f) : f_(f) {};
+    multiple_jtj_jtr_reduce_functor(const FuncType &f) : f_(f){};
     const FuncType f_;
-    __device__
-    thrust::tuple<MatType, VecType, float> operator() (int idx) const {
+    __device__ thrust::tuple<MatType, VecType, float> operator()(
+            int idx) const {
         MatType JTJ_private;
         VecType JTr_private;
         float r2_sum_private = 0.0;
@@ -47,23 +48,23 @@ struct multiple_jtj_jtr_reduce_functor {
     }
 };
 
-}
+}  // namespace
 
 template <typename MatType, typename VecType, typename FuncType>
-thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
-        const FuncType& f,
-        int iteration_num,
-        bool verbose) {
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
+                                                        int iteration_num,
+                                                        bool verbose) {
     MatType JTJ;
     VecType JTr;
     float r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
     jtj_jtr_reduce_functor<MatType, VecType, FuncType> func(f);
-    auto jtj_jtr_r2 = thrust::transform_reduce(thrust::make_counting_iterator(0),
-                                               thrust::make_counting_iterator(iteration_num),
-                                               func, thrust::make_tuple(JTJ, JTr, r2_sum),
-                                               thrust::plus<thrust::tuple<MatType, VecType, float>>());
+    auto jtj_jtr_r2 = thrust::transform_reduce(
+            thrust::make_counting_iterator(0),
+            thrust::make_counting_iterator(iteration_num), func,
+            thrust::make_tuple(JTJ, JTr, r2_sum),
+            thrust::plus<thrust::tuple<MatType, VecType, float>>());
     r2_sum = thrust::get<2>(jtj_jtr_r2);
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
@@ -74,19 +75,18 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
 
 template <typename MatType, typename VecType, int NumJ, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
-        const FuncType& f,
-        int iteration_num,
-        bool verbose /*=true*/) {
+        const FuncType &f, int iteration_num, bool verbose /*=true*/) {
     MatType JTJ;
     VecType JTr;
     float r2_sum = 0.0;
     JTJ.setZero();
     JTr.setZero();
     multiple_jtj_jtr_reduce_functor<MatType, VecType, NumJ, FuncType> func(f);
-    auto jtj_jtr_r2 = thrust::transform_reduce(thrust::make_counting_iterator(0),
-                                               thrust::make_counting_iterator(iteration_num),
-                                               func, thrust::make_tuple(JTJ, JTr, r2_sum),
-                                               thrust::plus<thrust::tuple<MatType, VecType, float>>());
+    auto jtj_jtr_r2 = thrust::transform_reduce(
+            thrust::make_counting_iterator(0),
+            thrust::make_counting_iterator(iteration_num), func,
+            thrust::make_tuple(JTJ, JTr, r2_sum),
+            thrust::plus<thrust::tuple<MatType, VecType, float>>());
     r2_sum = thrust::get<2>(jtj_jtr_r2);
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",

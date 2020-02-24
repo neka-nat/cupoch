@@ -1,7 +1,8 @@
 #pragma once
 
-#include "cupoch/geometry/geometry.h"
 #include <Eigen/Core>
+
+#include "cupoch/geometry/geometry.h"
 
 namespace cupoch {
 namespace geometry {
@@ -22,7 +23,7 @@ protected:
     Geometry2D(GeometryType type) : Geometry(type, 2) {}
 
 public:
-    Geometry& Clear() override = 0;
+    Geometry &Clear() override = 0;
     bool IsEmpty() const override = 0;
     /// Returns min bounds for geometry coordinates.
     virtual Eigen::Vector2f GetMinBound() const = 0;
@@ -30,5 +31,5 @@ public:
     virtual Eigen::Vector2f GetMaxBound() const = 0;
 };
 
-}
-} 
+}  // namespace geometry
+}  // namespace cupoch

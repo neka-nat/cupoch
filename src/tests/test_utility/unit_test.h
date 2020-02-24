@@ -7,8 +7,9 @@
 #endif
 
 #include <gtest/gtest.h>
-#include <Eigen/Core>
 #include <thrust/host_vector.h>
+
+#include <Eigen/Core>
 
 #include "tests/test_utility/print.h"
 #include "tests/test_utility/rand.h"
@@ -100,24 +101,25 @@ void ExpectEQ(const uint8_t* const v0,
               const size_t& size);
 
 // Test equality of two vectors of uint8_t.
-void ExpectEQ(const thrust::host_vector<uint8_t>& v0, const thrust::host_vector<uint8_t>& v1);
+void ExpectEQ(const thrust::host_vector<uint8_t>& v0,
+              const thrust::host_vector<uint8_t>& v1);
 
 // Test equality of two arrays of int.
 void ExpectEQ(const int* const v0, const int* const v1, const size_t& size);
 
 // Test equality of two vectors of int.
-void ExpectEQ(const thrust::host_vector<int>& v0, const thrust::host_vector<int>& v1);
+void ExpectEQ(const thrust::host_vector<int>& v0,
+              const thrust::host_vector<int>& v1);
 
 // Test equality of two arrays of float.
 void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
 
 // Test equality of two vectors of float.
-void ExpectEQ(const thrust::host_vector<float>& v0, const thrust::host_vector<float>& v1);
+void ExpectEQ(const thrust::host_vector<float>& v0,
+              const thrust::host_vector<float>& v1);
 
 // Test equality of two arrays of double.
-void ExpectEQ(const float* const v0,
-              const float* const v1,
-              const size_t& size);
+void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
 
 // Reinterpret cast from uint8_t* to float*.
 template <class T>
