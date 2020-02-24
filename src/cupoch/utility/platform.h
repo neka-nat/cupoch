@@ -3,14 +3,14 @@
 #include <iostream>
 
 #ifdef _WIN32
-#define __REL_FILE__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #else
-#define __REL_FILE__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 #if defined(__GNUC__)
-    #define cudaSafeCall(expr)  ___cudaSafeCall(expr, __REL_FILE__, __LINE__, __func__)
+    #define cudaSafeCall(expr)  ___cudaSafeCall(expr, __FILENAME__, __LINE__, __func__)
 #else /* defined(__CUDACC__) || defined(__MSVC__) */
-    #define cudaSafeCall(expr)  ___cudaSafeCall(expr, __REL_FILE__, __LINE__)
+    #define cudaSafeCall(expr)  ___cudaSafeCall(expr, __FILENAME__, __LINE__)
 #endif
 
 namespace cupoch {
