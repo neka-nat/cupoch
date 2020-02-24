@@ -92,7 +92,7 @@ bool ImageShader::Compile() {
 }
 
 void ImageShader::Release() {
-    UnbindGeometry();
+    UnbindGeometry(true);
     ReleaseProgram();
 }
 
@@ -198,9 +198,10 @@ bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-void ImageShader::UnbindGeometry() {
+void ImageShader::UnbindGeometry(bool finalize) {
     if (bound_) {
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+        if (!finalize)
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
         glDeleteBuffers(1, &image_pixel_buffer_);
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_UV_buffer_);

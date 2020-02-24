@@ -43,7 +43,7 @@ bool TextureSimpleShader::Compile() {
 }
 
 void TextureSimpleShader::Release() {
-    UnbindGeometry();
+    UnbindGeometry(true);
     ReleaseProgram();
 }
 
@@ -119,10 +119,12 @@ bool TextureSimpleShader::RenderGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-void TextureSimpleShader::UnbindGeometry() {
+void TextureSimpleShader::UnbindGeometry(bool finalize) {
     if (bound_) {
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
+        if (!finalize) {
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
+        }
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_uv_buffer_);
         glDeleteTextures(1, &texture_buffer_);

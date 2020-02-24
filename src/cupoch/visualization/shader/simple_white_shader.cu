@@ -58,7 +58,7 @@ bool SimpleWhiteShader::Compile() {
 }
 
 void SimpleWhiteShader::Release() {
-    UnbindGeometry();
+    UnbindGeometry(true);
     ReleaseProgram();
 }
 
@@ -116,9 +116,10 @@ bool SimpleWhiteShader::RenderGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-void SimpleWhiteShader::UnbindGeometry() {
+void SimpleWhiteShader::UnbindGeometry(bool finalize) {
     if (bound_) {
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+        if (!finalize)
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
         glDeleteBuffers(1, &vertex_position_buffer_);
         bound_ = false;
     }

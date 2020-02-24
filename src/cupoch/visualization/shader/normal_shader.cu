@@ -54,7 +54,7 @@ bool NormalShader::Compile() {
 }
 
 void NormalShader::Release() {
-    UnbindGeometry();
+    UnbindGeometry(true);
     ReleaseProgram();
 }
 
@@ -126,10 +126,12 @@ bool NormalShader::RenderGeometry(const geometry::Geometry &geometry,
     return true;
 }
 
-void NormalShader::UnbindGeometry() {
+void NormalShader::UnbindGeometry(bool finalize) {
     if (bound_) {
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
-        cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
+        if (!finalize) {
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
+        }
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_normal_buffer_);
         bound_ = false;

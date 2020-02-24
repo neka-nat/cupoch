@@ -54,7 +54,7 @@ protected:
     virtual bool RenderGeometry(const geometry::Geometry &geometry,
                                 const RenderOption &option,
                                 const ViewControl &view) = 0;
-    virtual void UnbindGeometry() = 0;
+    virtual void UnbindGeometry(bool finalize = false) = 0;
 
     virtual void Unmap(size_t n_resource);
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;

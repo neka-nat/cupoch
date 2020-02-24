@@ -25,7 +25,7 @@ protected:
     bool RenderGeometry(const geometry::Geometry &geometry,
                         const RenderOption &option,
                         const ViewControl &view) final;
-    void UnbindGeometry() final;
+    void UnbindGeometry(bool finalize = false) final;
 
 protected:
     virtual bool PrepareRendering(const geometry::Geometry &geometry,
