@@ -174,6 +174,53 @@ struct compute_cone_triangles_functor2 {
     }
 };
 
+struct compute_torus_triangles_functor {
+    compute_torus_triangles_functor(Eigen::Vector3f* vertices, Eigen::Vector3i* triangles,
+                                    float torus_radius, float tube_radius,
+                                    int radial_resolution, int tubular_resolution)
+                                    : vertices_(vertices), triangles_(triangles), torus_radius_(torus_radius),
+                                    tube_radius_(tube_radius), radial_resolution_(radial_resolution),
+                                    tubular_resolution_(tubular_resolution),
+                                    u_step_(2 * M_PI / float(radial_resolution_)),
+                                    v_step_(2 * M_PI / float(tubular_resolution_)) {};
+    Eigen::Vector3f* vertices_;
+    Eigen::Vector3i* triangles_;
+    const float torus_radius_;
+    const float tube_radius_;
+    const int radial_resolution_;
+    const int tubular_resolution_;
+    const float u_step_;
+    const float v_step_;
+    __device__
+    int vert_idx(int uidx, int vidx) const {
+        return uidx * tubular_resolution_ + vidx;
+    };
+
+    __device__
+    void operator() (size_t idx) {
+        int uidx = idx / tubular_resolution_;
+        int vidx = idx % tubular_resolution_;
+        float u = uidx * u_step_;
+        Eigen::Vector3f w(cos(u), sin(u), 0);
+        float v = vidx * v_step_;
+        vertices_[vert_idx(uidx, vidx)] =
+                torus_radius_ * w + tube_radius_ * cos(v) * w +
+                Eigen::Vector3f(0, 0, tube_radius_ * sin(v));
+
+        int tri_idx = (uidx * tubular_resolution_ + vidx) * 2;
+        triangles_[tri_idx + 0] = Eigen::Vector3i(
+                vert_idx((uidx + 1) % radial_resolution_, vidx),
+                vert_idx((uidx + 1) % radial_resolution_,
+                         (vidx + 1) % tubular_resolution_),
+                vert_idx(uidx, vidx));
+        triangles_[tri_idx + 1] = Eigen::Vector3i(
+                vert_idx(uidx, vidx),
+                vert_idx((uidx + 1) % radial_resolution_,
+                         (vidx + 1) % tubular_resolution_),
+                vert_idx(uidx, (vidx + 1) % tubular_resolution_));
+    }
+};
+
 }  // namespace
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateTetrahedron(
@@ -423,6 +470,36 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(float radius /* = 1.0*/,
             thrust::make_counting_iterator<size_t>((split - 1) * resolution),
             func_tr2);
     return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateTorus(
+        float torus_radius /* = 1.0 */,
+        float tube_radius /* = 0.5 */,
+        int radial_resolution /* = 20 */,
+        int tubular_resolution /* = 20 */) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    if (torus_radius <= 0) {
+        utility::LogError("[CreateTorus] torus_radius <= 0");
+    }
+    if (tube_radius <= 0) {
+        utility::LogError("[CreateTorus] tube_radius <= 0");
+    }
+    if (radial_resolution <= 0) {
+        utility::LogError("[CreateTorus] radial_resolution <= 0");
+    }
+    if (tubular_resolution <= 0) {
+        utility::LogError("[CreateTorus] tubular_resolution <= 0");
+    }
+
+    mesh->vertices_.resize(radial_resolution * tubular_resolution);
+    mesh->triangles_.resize(2 * radial_resolution * tubular_resolution);
+    compute_torus_triangles_functor func(thrust::raw_pointer_cast(mesh->vertices_.data()),
+                                         thrust::raw_pointer_cast(mesh->triangles_.data()),
+                                         torus_radius, tube_radius,
+                                         radial_resolution, tubular_resolution);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(radial_resolution * tubular_resolution), func);
+    return mesh;
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(

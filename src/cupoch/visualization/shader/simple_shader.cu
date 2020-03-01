@@ -4,6 +4,7 @@
 #include "cupoch/geometry/lineset.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/visualizer/render_option.h"
 #include "cupoch/visualization/utility/color_map.h"
@@ -16,6 +17,32 @@ using namespace cupoch::visualization;
 using namespace cupoch::visualization::glsl;
 
 namespace {
+
+// Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
+__device__ const int cuboid_vertex_offsets[8][3] = {
+    {0, 0, 0}, {1, 0, 0},
+    {0, 1, 0}, {1, 1, 0},
+    {0, 0, 1}, {1, 0, 1},
+    {0, 1, 1}, {1, 1, 1},
+};
+
+// Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
+__device__ const int cuboid_triangles_vertex_indices[12][3] = {
+    {0, 2, 1}, {0, 1, 4},
+    {0, 4, 2}, {5, 1, 7},
+    {5, 7, 4}, {5, 4, 1},
+    {3, 7, 1}, {3, 1, 2},
+    {3, 2, 7}, {6, 4, 7},
+    {6, 7, 2}, {6, 2, 4},
+};
+
+// Vertex indices of 12 lines in a cuboid
+__device__ const int cuboid_lines_vertex_indices[12][2] = {
+    {0, 1}, {0, 2}, {0, 4},
+    {3, 1}, {3, 2}, {3, 7},
+    {5, 1}, {5, 4}, {5, 7},
+    {6, 2}, {6, 4}, {6, 7},
+};
 
 struct copy_pointcloud_functor{
     copy_pointcloud_functor(bool has_colors, RenderOption::PointColorOption color_option, const ViewControl& view)
@@ -126,6 +153,119 @@ struct copy_trianglemesh_functor {
         return thrust::make_tuple(vertex, color_tmp);
     }
 
+};
+
+struct compute_voxel_vertices_functor {
+    compute_voxel_vertices_functor(const geometry::Voxel* voxels, const Eigen::Vector3f& origin, float voxel_size)
+     : voxels_(voxels), origin_(origin), voxel_size_(voxel_size) {};
+    const geometry::Voxel* voxels_;
+    const Eigen::Vector3f origin_;
+    const float voxel_size_;
+    __device__
+    Eigen::Vector3f operator() (size_t idx) const {
+        int i = idx / 8;
+        int j = idx % 8;
+        const geometry::Voxel &voxel = voxels_[i];
+        // 8 vertices in a voxel
+        Eigen::Vector3f base_vertex =
+                origin_ + voxel.grid_index_.cast<float>() * voxel_size_;
+        const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
+                                              cuboid_vertex_offsets[j][1],
+                                              cuboid_vertex_offsets[j][2]);
+        return base_vertex + offset_v * voxel_size_;
+    }
+};
+
+struct copy_voxelgrid_line_functor {
+    copy_voxelgrid_line_functor(const Eigen::Vector3f* vertices, const geometry::Voxel* voxels, bool has_colors,
+                                RenderOption::MeshColorOption color_option, const Eigen::Vector3f& default_mesh_color,
+                                const ViewControl& view)
+                                : vertices_(vertices), voxels_(voxels), has_colors_(has_colors),
+                                 color_option_(color_option), default_mesh_color_(default_mesh_color),
+                                 view_(view) {};
+    const Eigen::Vector3f* vertices_;
+    const geometry::Voxel* voxels_;
+    const bool has_colors_;
+    const RenderOption::MeshColorOption color_option_;
+    const Eigen::Vector3f default_mesh_color_;
+    const ViewControl view_;
+    const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
+    __device__
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t idx) const {
+        int i = idx / (12 * 2);
+        int jk = idx % (12 * 2);
+        int j = jk / 2;
+        int k = jk % 2;
+        // Voxel color (applied to all points)
+        Eigen::Vector3f voxel_color;
+        switch (color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertices_[i * 8](0)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertices_[i * 8](1)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertices_[i * 8](2)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (has_colors_) {
+                    voxel_color = voxels_[i].color_;
+                    break;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                voxel_color = default_mesh_color_;
+                break;
+        }
+        return thrust::make_tuple(vertices_[cuboid_lines_vertex_indices[j][k]], voxel_color);
+    }
+};
+
+struct copy_voxelgrid_face_functor {
+    copy_voxelgrid_face_functor(const Eigen::Vector3f* vertices, const geometry::Voxel* voxels, bool has_colors,
+                                RenderOption::MeshColorOption color_option, const Eigen::Vector3f& default_mesh_color,
+                                const ViewControl& view)
+                                : vertices_(vertices), voxels_(voxels), has_colors_(has_colors),
+                                 color_option_(color_option), default_mesh_color_(default_mesh_color),
+                                 view_(view) {};
+    const Eigen::Vector3f* vertices_;
+    const geometry::Voxel* voxels_;
+    const bool has_colors_;
+    const RenderOption::MeshColorOption color_option_;
+    const Eigen::Vector3f default_mesh_color_;
+    const ViewControl view_;
+    const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
+    __device__
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t idx) const {
+        int i = idx / (12 * 3);
+        int jk = idx % (12 * 3);
+        int j = jk / 3;
+        int k = jk % 3;
+        // Voxel color (applied to all points)
+        Eigen::Vector3f voxel_color;
+        switch (color_option_) {
+            case RenderOption::MeshColorOption::XCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertices_[i * 8](0)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::YCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertices_[i * 8](1)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::ZCoordinate:
+                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertices_[i * 8](2)), colormap_option_);
+                break;
+            case RenderOption::MeshColorOption::Color:
+                if (has_colors_) {
+                    voxel_color = voxels_[i].color_;
+                    break;
+                }
+            case RenderOption::MeshColorOption::Default:
+            default:
+                voxel_color = default_mesh_color_;
+                break;
+        }
+        return thrust::make_tuple(vertices_[cuboid_triangles_vertex_indices[j][k]], voxel_color);
+    }
 };
 
 }
@@ -385,4 +525,119 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
 
 size_t SimpleShaderForTriangleMesh::GetDataSize(const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
+}
+
+bool SimpleShaderForVoxelGridLine::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForVoxelGridLine::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    const geometry::VoxelGrid &voxel_grid =
+            (const geometry::VoxelGrid &)geometry;
+    if (voxel_grid.HasVoxels() == false) {
+        PrintShaderWarning("Binding failed with empty voxel grid.");
+        return false;
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
+    compute_voxel_vertices_functor func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                         voxel_grid.origin_, voxel_grid.voxel_size_);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
+                      vertices.begin(), func1);
+
+    size_t n_out = voxel_grid.voxels_values_.size() * 12 * 2;
+    copy_voxelgrid_line_functor func2(thrust::raw_pointer_cast(vertices.data()),
+                                      thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                      voxel_grid.HasColors(), option.mesh_color_option_,
+                                      option.default_mesh_color_, view);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_out),
+                      make_tuple_iterator(points, colors), func2);
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(n_out);
+    return true;
+}
+
+size_t SimpleShaderForVoxelGridLine::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::VoxelGrid &)geometry).voxels_values_.size() * 12 * 2;
+}
+
+bool SimpleShaderForVoxelGridFace::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForVoxelGridFace::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
+        return false;
+    }
+    const geometry::VoxelGrid &voxel_grid =
+            (const geometry::VoxelGrid &)geometry;
+    if (voxel_grid.HasVoxels() == false) {
+        PrintShaderWarning("Binding failed with empty voxel grid.");
+        return false;
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
+    compute_voxel_vertices_functor func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                         voxel_grid.origin_, voxel_grid.voxel_size_);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
+                      vertices.begin(), func1);
+
+    size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
+    copy_voxelgrid_face_functor func2(thrust::raw_pointer_cast(vertices.data()),
+                                      thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                      voxel_grid.HasColors(), option.mesh_color_option_,
+                                      option.default_mesh_color_, view);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_out),
+                      make_tuple_iterator(points, colors), func2);
+    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_size_ = GLsizei(n_out);
+
+    return true;
+}
+
+size_t SimpleShaderForVoxelGridFace::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::VoxelGrid &)geometry).voxels_values_.size() * 12 * 3;
 }

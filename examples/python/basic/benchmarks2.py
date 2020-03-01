@@ -2,6 +2,7 @@ import os
 os.environ["OMP_NUM_THREADS"] = str(1)
 import numpy as np
 import cupoch as cph
+cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 import open3d as o3d
 import time
 

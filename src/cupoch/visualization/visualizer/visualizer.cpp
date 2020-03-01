@@ -311,6 +311,12 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::VoxelGrid) {
+        renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
                        geometry::Geometry::GeometryType::TriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {

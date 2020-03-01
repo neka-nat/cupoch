@@ -96,6 +96,34 @@ bool TriangleMeshRenderer::UpdateGeometry() {
     return true;
 }
 
+bool VoxelGridRenderer::Render(const RenderOption &option,
+                               const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    if (option.mesh_show_wireframe_) {
+        return simple_shader_for_voxel_grid_line_.Render(*geometry_ptr_, option,
+                                                         view);
+    } else {
+        return simple_shader_for_voxel_grid_face_.Render(*geometry_ptr_, option,
+                                                         view);
+    }
+}
+
+bool VoxelGridRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::VoxelGrid) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool VoxelGridRenderer::UpdateGeometry() {
+    simple_shader_for_voxel_grid_line_.InvalidateGeometry();
+    simple_shader_for_voxel_grid_face_.InvalidateGeometry();
+    return true;
+}
+
 bool ImageRenderer::Render(const RenderOption &option,
                            const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;

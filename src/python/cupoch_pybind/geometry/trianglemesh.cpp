@@ -82,6 +82,35 @@ void pybind_trianglemesh(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
                  "Assigns each vertex in the TriangleMesh the same color.")
+            .def_static("create_box", &geometry::TriangleMesh::CreateBox,
+                        "Factory function to create a box. The left bottom "
+                        "corner on the "
+                        "front will be placed at (0, 0, 0).",
+                        "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0)
+            .def_static("create_tetrahedron",
+                        &geometry::TriangleMesh::CreateTetrahedron,
+                        "Factory function to create a tetrahedron. The "
+                        "centroid of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
+            .def_static("create_octahedron",
+                        &geometry::TriangleMesh::CreateOctahedron,
+                        "Factory function to create a octahedron. The centroid "
+                        "of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
+            .def_static("create_icosahedron",
+                        &geometry::TriangleMesh::CreateIcosahedron,
+                        "Factory function to create a icosahedron. The "
+                        "centroid of the mesh "
+                        "will be placed at (0, 0, 0) and the vertices have a "
+                        "distance of "
+                        "radius to the center.",
+                        "radius"_a = 1.0)
             .def_static("create_sphere", &geometry::TriangleMesh::CreateSphere,
                         "Factory function to create a sphere mesh centered at "
                         "(0, 0, 0).",

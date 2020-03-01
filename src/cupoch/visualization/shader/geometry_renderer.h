@@ -89,6 +89,21 @@ protected:
     SimpleWhiteShaderForTriangleMeshWireFrame simplewhite_wireframe_shader_;
 };
 
+class VoxelGridRenderer : public GeometryRenderer {
+public:
+    ~VoxelGridRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForVoxelGridLine simple_shader_for_voxel_grid_line_;
+    SimpleShaderForVoxelGridFace simple_shader_for_voxel_grid_face_;
+};
+
 class CoordinateFrameRenderer : public GeometryRenderer {
 public:
     ~CoordinateFrameRenderer() override {}
