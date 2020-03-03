@@ -91,6 +91,20 @@ python benchmarks.py
 
 ![vo](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/vo_gpu.gif)
 
+### Visual odometry with ROS + D435
+
+This demo works in the following environment.
+* ROS melodic
+* Python2.7
+
+```
+# Launch roscore and rviz in the other terminals.
+cd examples/python/ros
+python realsense_rgbd_odometry_node.py
+```
+
+![vo](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/ros_vo.gif)
+
 ## References
 
 * CUDA repository forked from Open3D, https://github.com/theNded/Open3D
