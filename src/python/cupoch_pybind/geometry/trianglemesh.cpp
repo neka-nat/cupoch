@@ -124,12 +124,22 @@ void pybind_trianglemesh(py::module &m) {
                         "Factory function to create a cone mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
                         "split"_a = 1)
+            .def_static("create_torus", &geometry::TriangleMesh::CreateTorus,
+                        "Factory function to create a torus mesh.",
+                        "torus_radius"_a = 1.0, "tube_radius"_a = 0.5,
+                        "radial_resolution"_a = 30, "tubular_resolution"_a = 20)
             .def_static("create_arrow", &geometry::TriangleMesh::CreateArrow,
                         "Factory function to create an arrow mesh",
                         "cylinder_radius"_a = 1.0, "cone_radius"_a = 1.5,
                         "cylinder_height"_a = 5.0, "cone_height"_a = 4.0,
                         "resolution"_a = 20, "cylinder_split"_a = 4,
                         "cone_split"_a = 1)
+            .def_static("create_moebius",
+                        &geometry::TriangleMesh::CreateMoebius,
+                        "Factory function to create a Moebius strip.",
+                        "length_split"_a = 70, "width_split"_a = 15,
+                        "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
+                        "width"_a = 1, "scale"_a = 1)
             .def_static("create_coordinate_frame",
                         &geometry::TriangleMesh::CreateCoordinateFrame,
                         "Factory function to create a coordinate frame mesh. "
