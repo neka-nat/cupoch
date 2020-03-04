@@ -1,4 +1,6 @@
 #pragma once
+#include <Eigen/Geometry>
+
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/meshbase.h"
 
@@ -64,6 +66,30 @@ public:
     /// Function to compute adjacency matrix, call before adjacency matrix is
     /// needed
     TriangleMesh &ComputeAdjacencyMatrix();
+
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    float GetSurfaceArea() const;
+
+    /// Function that computes the surface area of the mesh, i.e. the sum of
+    /// the individual triangle surfaces.
+    float GetSurfaceArea(utility::device_vector<float> &triangle_areas) const;
+
+    /// Function to sample \param number_of_points points uniformly from the
+    /// mesh
+    std::shared_ptr<PointCloud> SamplePointsUniformlyImpl(
+            size_t number_of_points,
+            utility::device_vector<float> &triangle_areas,
+            float surface_area,
+            bool use_triangle_normal);
+
+    /// Function to sample \param number_of_points points uniformly from the
+    /// mesh. \param use_triangle_normal Set to true to assign the triangle
+    /// normals to the returned points instead of the interpolated vertex
+    /// normals. The triangle normals will be computed and added to the mesh
+    /// if necessary.
+    std::shared_ptr<PointCloud> SamplePointsUniformly(
+        size_t number_of_points, bool use_triangle_normal = false);
 
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
@@ -179,6 +205,46 @@ public:
     utility::device_vector<Eigen::Vector2f> triangle_uvs_;
     Image texture_;
 };
+
+    /// Function that computes the area of a mesh triangle
+__host__ __device__
+inline float ComputeTriangleArea(const Eigen::Vector3f &p0,
+                                 const Eigen::Vector3f &p1,
+                                 const Eigen::Vector3f &p2) {
+    const Eigen::Vector3f x = p0 - p1;
+    const Eigen::Vector3f y = p0 - p2;
+    float area = 0.5 * x.cross(y).norm();
+    return area;
+}
+
+/// Function that computes the area of a mesh triangle identified by the
+/// triangle index
+__host__ __device__
+inline float GetTriangleArea(const Eigen::Vector3f* vertices,
+                             const Eigen::Vector3i* triangles,
+                             size_t triangle_idx) {
+    const Eigen::Vector3i &triangle = triangles[triangle_idx];
+    const Eigen::Vector3f &vertex0 = vertices[triangle(0)];
+    const Eigen::Vector3f &vertex1 = vertices[triangle(1)];
+    const Eigen::Vector3f &vertex2 = vertices[triangle(2)];
+    return ComputeTriangleArea(vertex0, vertex1, vertex2);
+}
+
+__host__ __device__
+inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
+                                          int vidx1,
+                                          int vidx2) {
+    if (vidx0 > vidx2) {
+        thrust::swap(vidx0, vidx2);
+    }
+    if (vidx0 > vidx1) {
+        thrust::swap(vidx0, vidx1);
+    }
+    if (vidx1 > vidx2) {
+        thrust::swap(vidx1, vidx2);
+    }
+    return Eigen::Vector3i(vidx0, vidx1, vidx2);
+}
 
 }  // namespace geometry
 }  // namespace cupoch

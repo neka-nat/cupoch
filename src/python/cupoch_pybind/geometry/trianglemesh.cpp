@@ -82,6 +82,15 @@ void pybind_trianglemesh(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::TriangleMesh::PaintUniformColor,
                  "Assigns each vertex in the TriangleMesh the same color.")
+            .def("get_surface_area",
+                 (float (geometry::TriangleMesh::*)() const) &
+                         geometry::TriangleMesh::GetSurfaceArea,
+                 "Function that computes the surface area of the mesh, i.e. "
+                 "the sum of the individual triangle surfaces.")
+            .def("sample_points_uniformly",
+                 &geometry::TriangleMesh::SamplePointsUniformly,
+                 "Function to uniformly sample points from the mesh.",
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
             .def_static("create_box", &geometry::TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "

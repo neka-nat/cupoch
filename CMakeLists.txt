@@ -158,8 +158,7 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     --default-stream per-thread
     -Xcudafe "--diag_suppress=integer_sign_change"
     -Xcudafe "--diag_suppress=partial_override"
-    -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
-    ${CUDA_ARCH})
+    -Xcudafe "--diag_suppress=virtual_function_decl_hidden")
 if (USE_RMM)
     add_definitions(-DUSE_RMM)
 endif ()

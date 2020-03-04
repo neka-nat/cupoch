@@ -1,9 +1,10 @@
 #include <thrust/iterator/discard_iterator.h>
-
-#include <Eigen/Geometry>
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/uniform_real_distribution.h>
 
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/range.h"
 
@@ -35,6 +36,61 @@ struct compute_adjacency_matrix_functor {
         adjacency_matrix_[triangle(1) * n_vertices_ + triangle(2)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(0)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(1)] = 1;
+    }
+};
+
+struct sample_points_functor {
+    sample_points_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3f* vertex_normals,
+                          const Eigen::Vector3i* triangles, const Eigen::Vector3f* triangle_normals,
+                          const Eigen::Vector3f* vertex_colors, const size_t* n_points_scan,
+                          Eigen::Vector3f* points, Eigen::Vector3f* normals, Eigen::Vector3f* colors,
+                          bool has_vert_normal, bool use_triangle_normal, bool has_vert_color)
+                          : dist_(0.0, 1.0), vertices_(vertices), vertex_normals_(vertex_normals),
+                          triangles_(triangles), triangle_normals_(triangle_normals), vertex_colors_(vertex_colors),
+                          n_points_scan_(n_points_scan), points_(points), normals_(normals),
+                          colors_(colors), has_vert_normal_(has_vert_normal),
+                          use_triangle_normal_(use_triangle_normal), has_vert_color_(has_vert_color) {};
+    thrust::minstd_rand mt_;
+    thrust::uniform_real_distribution<float> dist_;
+    const Eigen::Vector3f* vertices_;
+    const Eigen::Vector3f* vertex_normals_;
+    const Eigen::Vector3i* triangles_;
+    const Eigen::Vector3f* triangle_normals_;
+    const Eigen::Vector3f* vertex_colors_;
+    const size_t* n_points_scan_;
+    Eigen::Vector3f* points_;
+    Eigen::Vector3f* normals_;
+    Eigen::Vector3f* colors_;
+    const bool has_vert_normal_;
+    const bool use_triangle_normal_;
+    const bool has_vert_color_;
+    __device__
+    void operator() (size_t idx) {
+        for (int point_idx = n_points_scan_[idx]; point_idx < n_points_scan_[idx + 1]; ++point_idx) {
+            float r1 = dist_(mt_);
+            float r2 = dist_(mt_);
+            float a = (1 - sqrt(r1));
+            float b = sqrt(r1) * (1 - r2);
+            float c = sqrt(r1) * r2;
+
+            const Eigen::Vector3i &triangle = triangles_[idx];
+            points_[point_idx] = a * vertices_[triangle(0)] +
+                                 b * vertices_[triangle(1)] +
+                                 c * vertices_[triangle(2)];
+            if (has_vert_normal_ && !use_triangle_normal_) {
+                normals_[point_idx] = a * vertex_normals_[triangle(0)] +
+                                      b * vertex_normals_[triangle(1)] +
+                                      c * vertex_normals_[triangle(2)];
+            }
+            if (use_triangle_normal_) {
+                normals_[point_idx] = triangle_normals_[idx];
+            }
+            if (has_vert_color_) {
+                colors_[point_idx] = a * vertex_colors_[triangle(0)] +
+                                     b * vertex_colors_[triangle(1)] +
+                                     c * vertex_colors_[triangle(2)];
+            }
+        }
     }
 };
 
@@ -262,6 +318,96 @@ TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
             vertices_.size());
     thrust::for_each(triangles_.begin(), triangles_.end(), func);
     return *this;
+}
+
+float TriangleMesh::GetSurfaceArea() const {
+    const Eigen::Vector3f* vert_pt = thrust::raw_pointer_cast(vertices_.data());
+    const Eigen::Vector3i* tri_pt = thrust::raw_pointer_cast(triangles_.data());
+    return thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+                                    thrust::make_counting_iterator(triangles_.size()),
+                                    [vert_pt, tri_pt] __device__ (size_t idx) -> float { return GetTriangleArea(vert_pt, tri_pt, idx); },
+                                    0.0f, thrust::plus<float>());
+}
+
+float TriangleMesh::GetSurfaceArea(utility::device_vector<float> &triangle_areas) const {
+    const Eigen::Vector3f* vert_pt = thrust::raw_pointer_cast(vertices_.data());
+    const Eigen::Vector3i* tri_pt = thrust::raw_pointer_cast(triangles_.data());
+    triangle_areas.resize(triangles_.size());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(triangles_.size()),
+                      triangle_areas.begin(),
+                      [vert_pt, tri_pt] __device__ (size_t idx) { return GetTriangleArea(vert_pt, tri_pt, idx); });
+    return thrust::reduce(triangle_areas.begin(), triangle_areas.end());
+}
+
+std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
+        size_t number_of_points,
+        utility::device_vector<float> &triangle_areas,
+        float surface_area,
+        bool use_triangle_normal) {
+    // triangle areas to cdf
+    triangle_areas[0] /= surface_area;
+    float* triangle_areas_ptr = thrust::raw_pointer_cast(triangle_areas.data());
+    thrust::for_each(thrust::make_counting_iterator<size_t>(1),
+                     thrust::make_counting_iterator(triangles_.size()),
+                     [triangle_areas_ptr, surface_area] __device__ (size_t idx) {
+                         triangle_areas_ptr[idx] = triangle_areas_ptr[idx] / surface_area + triangle_areas_ptr[idx - 1];
+                        });
+
+    // sample point cloud
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    auto pcd = std::make_shared<PointCloud>();
+    pcd->points_.resize(number_of_points);
+    if (has_vert_normal || use_triangle_normal) {
+        pcd->normals_.resize(number_of_points);
+    }
+    if (use_triangle_normal && !HasTriangleNormals()) {
+        ComputeTriangleNormals(true);
+    }
+    if (has_vert_color) {
+        pcd->colors_.resize(number_of_points);
+    }
+    utility::device_vector<size_t> n_points_of_triangle(triangles_.size() + 1, 0);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(triangles_.size()),
+                      n_points_of_triangle.begin(),
+                      [triangle_areas_ptr, number_of_points] __device__ (size_t idx) {
+                          return round(triangle_areas_ptr[idx] * number_of_points);
+                      });
+    thrust::exclusive_scan(n_points_of_triangle.begin(), n_points_of_triangle.end(),
+                           n_points_of_triangle.begin());
+    sample_points_functor func(thrust::raw_pointer_cast(vertices_.data()),
+                               thrust::raw_pointer_cast(vertex_normals_.data()),
+                               thrust::raw_pointer_cast(triangles_.data()),
+                               thrust::raw_pointer_cast(triangle_normals_.data()),
+                               thrust::raw_pointer_cast(vertex_colors_.data()),
+                               thrust::raw_pointer_cast(n_points_of_triangle.data()),
+                               thrust::raw_pointer_cast(pcd->points_.data()),
+                               thrust::raw_pointer_cast(pcd->normals_.data()),
+                               thrust::raw_pointer_cast(pcd->colors_.data()),
+                               has_vert_normal, use_triangle_normal, has_vert_color);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(triangles_.size()),
+                     func);
+    return pcd;
+}
+
+std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
+        size_t number_of_points, bool use_triangle_normal /* = false */) {
+    if (number_of_points <= 0) {
+        utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
+    }
+    if (triangles_.size() == 0) {
+        utility::LogError(
+                "[SamplePointsUniformly] input mesh has no triangles");
+    }
+
+    // Compute area of each triangle and sum surface area
+    utility::device_vector<float> triangle_areas;
+    float surface_area = GetSurfaceArea(triangle_areas);
+
+    return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
+                                     surface_area, use_triangle_normal);
 }
 
 utility::device_vector<Eigen::Vector2i>
