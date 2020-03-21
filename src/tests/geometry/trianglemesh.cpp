@@ -545,6 +545,27 @@ TEST(TriangleMesh, NormalizeNormals) {
     ExpectEQ(ref_triangle_normals, tm.GetTriangleNormals());
 }
 
+TEST(TriangleMesh, PaintUniformColor) {
+    int size = 25;
+
+    Vector3f dmin(0.0, 0.0, 0.0);
+    Vector3f dmax(10.0, 10.0, 10.0);
+
+    geometry::TriangleMesh tm;
+
+    thrust::host_vector<Vector3f> vertices(size);
+    tm.SetVertices(vertices);
+    thrust::host_vector<Vector3f> vertex_colors(size);
+    tm.SetVertexColors(vertex_colors);
+
+    Vector3f color(233. / 255., 171. / 255., 53.0 / 255.);
+    tm.PaintUniformColor(color);
+
+    vertex_colors = tm.GetVertexColors();
+    for (size_t i = 0; i < tm.vertex_colors_.size(); i++)
+        ExpectEQ(color, vertex_colors[i]);
+}
+
 TEST(TriangleMesh, CreateMeshSphere) {
     Vector3f ref_vertices_raw[] = {{0.000000, 0.000000, 1.000000},
                                    {0.000000, 0.000000, -1.000000},

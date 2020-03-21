@@ -295,11 +295,12 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     utility::device_vector<Eigen::Vector3f> nm_thrice(triangle_normals_.size() *
                                                       3);
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
-    int *tri_ptr = (int *)(thrust::raw_pointer_cast(triangles_.data()));
+    utility::device_vector<Eigen::Vector3i> copy_tri = triangles_;
+    int *tri_ptr = (int *)(thrust::raw_pointer_cast(copy_tri.data()));
     thrust::sort_by_key(thrust::device, tri_ptr,
-                        tri_ptr + triangles_.size() * 3, nm_thrice.begin());
+                        tri_ptr + copy_tri.size() * 3, nm_thrice.begin());
     auto end = thrust::reduce_by_key(
-            thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3,
+            thrust::device, tri_ptr, tri_ptr + copy_tri.size() * 3,
             nm_thrice.begin(), thrust::make_discard_iterator(),
             vertex_normals_.begin());
     size_t n_out = thrust::distance(vertex_normals_.begin(), end.second);
