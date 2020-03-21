@@ -472,7 +472,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_vertices - 2),
                       mesh_ptr->vertices_.begin() + 2, func_vt);
-    mesh_ptr->triangles_.resize(2 * resolution +
+    mesh_ptr->triangles_.resize(4 * resolution +
                                 4 * (resolution - 2) * resolution);
     compute_sphere_triangles_functor1 func_tr1(
             thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution);
@@ -481,7 +481,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
                      func_tr1);
     compute_sphere_triangles_functor2 func_tr2(
             thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) +
-                    2 * resolution,
+                    4 * resolution,
             resolution);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator<size_t>(
@@ -519,14 +519,14 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(n_vertices - 2),
                       mesh_ptr->vertices_.begin() + 2, func_vt);
-    mesh_ptr->triangles_.resize(resolution + split * resolution);
+    mesh_ptr->triangles_.resize(2 * resolution + 2 * split * resolution);
     compute_cylinder_triangles_functor1 func_tr1(
             thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution,
             split);
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution), func_tr1);
     compute_cylinder_triangles_functor2 func_tr2(
-            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution,
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + 2 * resolution,
             resolution);
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution * split),
@@ -563,7 +563,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(float radius /* = 1.0*/,
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator<size_t>(resolution * split),
             mesh_ptr->vertices_.begin() + 2, func_vt);
-    mesh_ptr->triangles_.resize(resolution + (split - 1) * resolution);
+    mesh_ptr->triangles_.resize(2 * resolution + 2 * (split - 1) * resolution);
     compute_cone_triangles_functor1 func_tr1(
             thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution,
             split);
@@ -571,7 +571,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(float radius /* = 1.0*/,
                      thrust::make_counting_iterator<size_t>(resolution),
                      func_tr1);
     compute_cone_triangles_functor2 func_tr2(
-            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + resolution,
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + 2 * resolution,
             resolution);
     thrust::for_each(
             thrust::make_counting_iterator<size_t>(0),
