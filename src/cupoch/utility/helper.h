@@ -46,27 +46,24 @@ struct plus<thrust::tuple<MatType, VecType, float>> {
 
 namespace Eigen {
 
-template <int Dim>
-__host__ __device__ bool operator<(const Eigen::Matrix<int, Dim, 1> &lhs,
-                                   const Eigen::Matrix<int, Dim, 1> &rhs) {
+template <typename T, int Dim>
+__host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
+                                   const Eigen::Matrix<T, Dim, 1> &rhs) {
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return lhs[i] < rhs[i];
     }
     return false;
 }
 
-__host__ __device__ inline bool operator==(const Eigen::Vector3i &lhs,
-                                           const Eigen::Vector3i &rhs) {
+template <typename T>
+__host__ __device__ inline bool operator==(const Eigen::Matrix<T, 3, 1> &lhs,
+                                           const Eigen::Matrix<T, 3, 1> &rhs) {
     return (lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2]);
 }
 
-__host__ __device__ inline bool operator!=(const Eigen::Vector3i &lhs,
-                                           const Eigen::Vector3i &rhs) {
-    return (lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2]);
-}
-
-__host__ __device__ inline bool operator!=(const Eigen::Vector3f &lhs,
-                                           const Eigen::Vector3f &rhs) {
+template <typename T>
+__host__ __device__ inline bool operator!=(const Eigen::Matrix<T, 3, 1> &lhs,
+                                           const Eigen::Matrix<T, 3, 1> &rhs) {
     return (lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2]);
 }
 

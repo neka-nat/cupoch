@@ -8,11 +8,6 @@
 
 namespace cupoch {
 
-namespace geometry {
-class PointCloud;
-class TriangleMesh;
-}  // namespace geometry
-
 namespace wrapper {
 
 template <typename Type>
