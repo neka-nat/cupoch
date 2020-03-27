@@ -95,6 +95,14 @@ public:
     /// clipped.
     std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox &bbox) const;
 
+    /// \brief Function to crop pointcloud into output pointcloud
+    ///
+    /// All points with coordinates outside the bounding box \p bbox are
+    /// clipped.
+    ///
+    /// \param bbox OrientedBoundingBox to crop points.
+    std::shared_ptr<PointCloud> Crop(const OrientedBoundingBox &bbox) const;
+
     /// Function to compute the normals of a point cloud
     /// \param cloud is the input point cloud. It also stores the output
     /// normals. Normals are oriented with respect to the input point cloud if

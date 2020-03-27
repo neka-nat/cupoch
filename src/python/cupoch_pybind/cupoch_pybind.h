@@ -34,34 +34,6 @@ void bind_copy_functions(Class_ &cl) {
     cl.def("__deepcopy__", [](T &v, py::dict &memo) { return T(v); });
 }
 
-inline void bind_device_vector_wrapper(py::module &m) {
-    py::class_<cupoch::wrapper::device_vector_wrapper<Eigen::Vector3f>> dvv3f(
-            m, "device_vector_vector3f");
-    dvv3f.def("cpu",
-              &cupoch::wrapper::device_vector_wrapper<Eigen::Vector3f>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<Eigen::Vector2f>> dvv2f(
-            m, "device_vector_vector2f");
-    dvv2f.def("cpu",
-              &cupoch::wrapper::device_vector_wrapper<Eigen::Vector2f>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<Eigen::Vector3i>> dvv3i(
-            m, "device_vector_vector3i");
-    dvv3i.def("cpu",
-              &cupoch::wrapper::device_vector_wrapper<Eigen::Vector3i>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<Eigen::Vector2i>> dvv2i(
-            m, "device_vector_vector2i");
-    dvv2i.def("cpu",
-              &cupoch::wrapper::device_vector_wrapper<Eigen::Vector2i>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<float>> dvf(
-            m, "device_vector_float");
-    dvf.def("cpu", &cupoch::wrapper::device_vector_wrapper<float>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<int>> dvi(
-            m, "device_vector_int");
-    dvi.def("cpu", &cupoch::wrapper::device_vector_wrapper<int>::cpu);
-    py::class_<cupoch::wrapper::device_vector_wrapper<size_t>> dvs(
-            m, "device_vector_size_t");
-    dvs.def("cpu", &cupoch::wrapper::device_vector_wrapper<size_t>::cpu);
-}
-
 }  // namespace detail
 }  // namespace pybind11
 

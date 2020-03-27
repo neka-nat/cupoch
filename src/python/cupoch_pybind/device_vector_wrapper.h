@@ -26,6 +26,8 @@ public:
     ~device_vector_wrapper();
     device_vector_wrapper<Type>& operator=(
             const device_vector_wrapper<Type>& other);
+    size_t size() const;
+    bool empty() const;
     thrust::host_vector<Type> cpu() const;
     utility::device_vector<Type> data_;
 };

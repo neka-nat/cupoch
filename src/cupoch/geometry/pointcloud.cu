@@ -148,6 +148,16 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
     return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
+std::shared_ptr<PointCloud> PointCloud::Crop(
+        const OrientedBoundingBox &bbox) const {
+    if (bbox.IsEmpty()) {
+        utility::LogError(
+                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "size, or has wrong bounds.");
+    }
+    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
+}
+
 PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
                                                bool remove_infinite) {
     bool has_normal = HasNormals();

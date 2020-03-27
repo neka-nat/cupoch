@@ -33,6 +33,16 @@ device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator=(
 }
 
 template <typename Type>
+size_t device_vector_wrapper<Type>::size() const {
+    return data_.size();
+}
+
+template <typename Type>
+bool device_vector_wrapper<Type>::empty() const {
+    return data_.empty();
+}
+
+template <typename Type>
 thrust::host_vector<Type> device_vector_wrapper<Type>::cpu() const {
     thrust::host_vector<Type> ans = data_;
     return ans;
