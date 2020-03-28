@@ -731,7 +731,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
                       thrust::make_counting_iterator<size_t>(length_split * width_split),
                       mesh->vertices_.begin(), func1);
 
-    mesh->triangles_.resize(length_split * (width_split - 1));
+    mesh->triangles_.resize(2 * length_split * (width_split - 1));
     compute_moebius_triangles_functor func2(thrust::raw_pointer_cast(mesh->triangles_.data()), length_split,
                                             width_split, twists);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),

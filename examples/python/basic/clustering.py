@@ -22,10 +22,10 @@ def pointcloud_generator():
         (0, -d, 0))
     mesh += cph.geometry.TriangleMesh.create_moebius(twists=2).translate(
         (d, -d, 0))
-    yield "shapes", mesh.sample_points_uniformly(int(1e5)), 0.5
+    yield "shapes", mesh.sample_points_uniformly(int(1e4)), 0.5
 
-    yield "fragment", cph.io.read_point_cloud(
-        "../../testdata/fragment.ply"), 0.02
+    # yield "fragment", cph.io.read_point_cloud(
+    #     "../../testdata/fragment.ply"), 0.02
 
 
 if __name__ == "__main__":
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         cph.visualization.draw_geometries([pcl])
 
         labels = np.array(
-            pcl.cluster_dbscan(eps=eps, min_points=10, print_progress=True))
+            pcl.cluster_dbscan(eps=eps, min_points=10, print_progress=True).cpu())
         max_label = labels.max()
         print("%s has %d clusters" % (pcl_name, max_label + 1))
 

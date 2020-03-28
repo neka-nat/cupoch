@@ -12,8 +12,8 @@ struct initialize_cluster_matrix_functor {
                                       const float *dists2,
                                       float eps,
                                       int n_points,
-                                      int *cluster_matrix,
-                                      int *valid,
+                                      char *cluster_matrix,
+                                      char *valid,
                                       int *reroute)
         : indices_(indices),
           dists2_(dists2),
@@ -26,15 +26,15 @@ struct initialize_cluster_matrix_functor {
     const float *dists2_;
     const float eps_;
     const int n_points_;
-    int *cluster_matrix_;
-    int *valid_;
+    char *cluster_matrix_;
+    char *valid_;
     int *reroute_;
     __device__ void operator()(size_t idx) {
         cluster_matrix_[idx * n_points_ + idx] = 1;
         for (int k = 0; k < NUM_MAX_NN; ++k) {
-            if (indices_[idx * n_points_ + k] < 0) continue;
-            if (dists2_[idx * n_points_ + k] <= eps_) {
-                cluster_matrix_[indices_[idx * n_points_ + k] * n_points_ +
+            if (indices_[idx * NUM_MAX_NN + k] < 0) continue;
+            if (dists2_[idx * NUM_MAX_NN + k] <= eps_) {
+                cluster_matrix_[indices_[idx * NUM_MAX_NN + k] * n_points_ +
                                 idx] = 1;
             }
         }
@@ -45,8 +45,8 @@ struct initialize_cluster_matrix_functor {
 
 struct merge_cluster_functor {
     merge_cluster_functor(int cluster_index,
-                          int *cluster_matrix,
-                          int *valid,
+                          char *cluster_matrix,
+                          char *valid,
                           int *reroute,
                           int n_points)
         : cluster_index_(cluster_index),
@@ -55,8 +55,8 @@ struct merge_cluster_functor {
           reroute_(reroute),
           n_points_(n_points){};
     const int cluster_index_;
-    int *cluster_matrix_;
-    int *valid_;
+    char *cluster_matrix_;
+    char *valid_;
     int *reroute_;
     const int n_points_;
     __device__ int get_reroute_index(int idx) {
@@ -96,8 +96,8 @@ struct merge_cluster_functor {
 };
 
 struct assign_cluster_functor {
-    assign_cluster_functor(const int *cluster_matrix,
-                           const int *valid,
+    assign_cluster_functor(const char *cluster_matrix,
+                           const char *valid,
                            int n_points,
                            int min_points,
                            int *labels)
@@ -106,8 +106,8 @@ struct assign_cluster_functor {
           n_points_(n_points),
           min_points_(min_points),
           labels_(labels){};
-    const int *cluster_matrix_;
-    const int *valid_;
+    const char *cluster_matrix_;
+    const char *valid_;
     const int n_points_;
     const int min_points_;
     int *labels_;
@@ -129,6 +129,8 @@ struct assign_cluster_functor {
 
 }  // namespace
 
+// https://arxiv.org/pdf/1506.02226.pdf
+// https://github.com/Maghoumi/cudbscan
 utility::device_vector<int> PointCloud::ClusterDBSCAN(
         float eps, size_t min_points, bool print_progress) const {
     KDTreeFlann kdtree(*this);
@@ -141,8 +143,8 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
     kdtree.SearchRadius(points_, eps, indices, dists2);
 
     const size_t n_pt = points_.size();
-    utility::device_vector<int> cluster_matrix(n_pt * n_pt);
-    utility::device_vector<int> valid(n_pt);
+    utility::device_vector<char> cluster_matrix(n_pt * n_pt);
+    utility::device_vector<char> valid(n_pt);
     utility::device_vector<int> reroute(n_pt);
     initialize_cluster_matrix_functor func(
             thrust::raw_pointer_cast(indices.data()),
