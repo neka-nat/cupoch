@@ -14,20 +14,20 @@ def edges_to_lineset(mesh, edges, color):
     ls.lines = edges
     colors = np.empty((np.asarray(edges).shape[0], 3))
     colors[:] = color
-    ls.colors = cph.utility.Vector3dVector(colors)
+    ls.colors = cph.utility.Vector3fVector(colors)
     return ls
 
 
 def apply_noise(mesh, noise):
     vertices = np.asarray(mesh.vertices)
     vertices += np.random.uniform(-noise, noise, size=vertices.shape)
-    mesh.vertices = cph.utility.Vector3dVector(vertices)
+    mesh.vertices = cph.utility.Vector3fVector(vertices)
     return mesh
 
 
 def triangle():
     mesh = cph.geometry.TriangleMesh(
-        vertices=cph.utility.Vector3dVector(
+        vertices=cph.utility.Vector3fVector(
             np.array(
                 [
                     (np.sqrt(8 / 9), 0, -1 / 3),
@@ -44,7 +44,7 @@ def triangle():
 
 def plane(height=0.2, width=1):
     mesh = cph.geometry.TriangleMesh(
-        vertices=cph.utility.Vector3dVector(
+        vertices=cph.utility.Vector3fVector(
             np.array(
                 [[0, 0, 0], [0, height, 0], [width, height, 0], [width, 0, 0]],
                 dtype=np.float32,
@@ -60,7 +60,7 @@ def non_manifold_edge():
                      dtype=np.float64)
     triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
     mesh = cph.geometry.TriangleMesh()
-    mesh.vertices = cph.utility.Vector3dVector(verts)
+    mesh.vertices = cph.utility.Vector3fVector(verts)
     mesh.triangles = cph.utility.Vector3iVector(triangles)
     mesh.compute_vertex_normals()
     return mesh
@@ -90,7 +90,7 @@ def non_manifold_vertex():
         [4, 6, 3],
     ])
     mesh = cph.geometry.TriangleMesh()
-    mesh.vertices = cph.utility.Vector3dVector(verts)
+    mesh.vertices = cph.utility.Vector3fVector(verts)
     mesh.triangles = cph.utility.Vector3iVector(triangles)
     mesh.compute_vertex_normals()
     return mesh

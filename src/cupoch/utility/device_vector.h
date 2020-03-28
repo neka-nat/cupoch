@@ -2,6 +2,7 @@
 
 #ifdef USE_RMM
 #include <rmm/thrust_rmm_allocator.h>
+#include <rmm/rmm_api.h>
 #else
 #include <thrust/device_vector.h>
 #endif

@@ -64,6 +64,7 @@ coverage.xml
 CMakeFiles/
 Debug
 build/
+RelWithDebInfo/
 thirdparty/googletest/
 include/rmm/detail/cnmem.h
 

@@ -20,7 +20,7 @@
 namespace rmm {
 namespace mr {
 
-/**---------------------------------------------------------------------------*
+/**
  * @brief Get the default device memory resource pointer.
  *
  * The default device memory resource is used when an explicit memory resource
@@ -31,10 +31,10 @@ namespace mr {
  *
  * @return device_memory_resource* Pointer to the current default memory
  * resource
- *---------------------------------------------------------------------------**/
+ */
 device_memory_resource* get_default_resource();
 
-/**---------------------------------------------------------------------------*
+/**
  * @brief Sets the default device memory resource pointer.
  *
  * If `new_resource` is not `nullptr`, sets the default device memory resource
@@ -50,20 +50,20 @@ device_memory_resource* get_default_resource();
  * default device memory resource
  * @return device_memory_resource* The previous value of the default device
  * memory resource pointer
- *---------------------------------------------------------------------------**/
+ */
 device_memory_resource* set_default_resource(
     device_memory_resource* new_resource);
 
 namespace detail{
 
-/**---------------------------------------------------------------------------*
+/**
  * @brief gets the default memory_resource when none is set
  *
  * A static function which will return a singleton cuda_memory_resource
  *
  * @return device_memory_resource* a pointer to the static
  * cuda_memory_resource
- *---------------------------------------------------------------------------**/
+ */
 device_memory_resource* initial_resource();
 
 }  // namespace detail

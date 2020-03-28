@@ -21,8 +21,10 @@ void pybind_trianglemesh(py::module &m) {
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
     trianglemesh
-            .def(py::init<const thrust::host_vector<Eigen::Vector3f> &,
-                          const thrust::host_vector<Eigen::Vector3i> &>(),
+            .def(py::init([](const wrapper::device_vector_vector3f& vertices,
+                             const wrapper::device_vector_vector3i& triangles) {
+                    return std::unique_ptr<geometry::TriangleMesh>(new geometry::TriangleMesh(vertices.data_, triangles.data_));
+                 }),
                  "Create a triangle mesh from vertices and triangle indices",
                  "vertices"_a, "triangles"_a)
             .def("__repr__",

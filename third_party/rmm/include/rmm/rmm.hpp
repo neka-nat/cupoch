@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Device Memory Manager public C++ interface.
  *
  * Efficient allocation, deallocation and tracking of GPU memory.
- * --------------------------------------------------------------------------**/
+ */
 
 #ifndef MEMORY_HPP
 #define MEMORY_HPP
-#include "rmm/rmm_api.h"
-#include "rmm/detail/memory_manager.hpp"
-#include "rmm/mr/default_memory_resource.hpp"
+#include <rmm/rmm_api.h>
+#include <rmm/detail/error.hpp>
+#include <rmm/detail/memory_manager.hpp>
+#include <rmm/mr/device/default_memory_resource.hpp>
 
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Macro wrapper to check for error in RMM API calls.
- * ---------------------------------------------------------------------------**/
+ */
 #define RMM_CHECK(call)                     \
   do {                                      \
     rmmError_t error = (call);              \
     if (error != RMM_SUCCESS) return error; \
-  } while (0)
-
-/** ---------------------------------------------------------------------------*
- * @brief Macro wrapper for RMM API calls to return appropriate RMM errors.
- * ---------------------------------------------------------------------------**/
-#define RMM_CHECK_CUDA(call)                    \
-  do {                                          \
-    cudaError_t cudaError = (call);             \
-    if (cudaError == cudaErrorMemoryAllocation) \
-      return RMM_ERROR_OUT_OF_MEMORY;           \
-    else if (cudaError != cudaSuccess)          \
-      return RMM_ERROR_CUDA_ERROR;              \
   } while (0)
 
 namespace rmm {
@@ -67,7 +56,7 @@ class LogIt {
         usageLogging(usageLogging) {
     if (filename) file = filename;
     if (Manager::getOptions().enable_logging) {
-      cudaGetDevice(&device);
+      RMM_CUDA_TRY(cudaGetDevice(&device));
       start = std::chrono::system_clock::now();
     }
   }
@@ -100,7 +89,7 @@ class LogIt {
   bool usageLogging;
 };
 
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Allocate memory and return a pointer to device memory.
  *
  * @param[out] ptr Returned pointer
@@ -113,13 +102,12 @@ class LogIt {
  *                    has not been called, RMM_ERROR_INVALID_ARGUMENT if ptr is
  *                    null, RMM_ERROR_OUT_OF_MEMORY if unable to allocate the
  *                    requested size, or RMM_CUDA_ERROR on any other CUDA error.
- * --------------------------------------------------------------------------**/
+ */
 template <typename T>
-inline rmmError_t alloc(T** ptr, size_t size, cudaStream_t stream, const char* file,
-                 unsigned int line) {
+[[deprecated]] inline rmmError_t alloc(T** ptr, size_t size, cudaStream_t stream,
+                        const char* file, unsigned int line) {
   if (!rmmIsInitialized(nullptr)) {
-    if (ptr)
-      *ptr = nullptr;
+    if (ptr) *ptr = nullptr;
     return RMM_ERROR_NOT_INITIALIZED;
   }
 
@@ -129,14 +117,13 @@ inline rmmError_t alloc(T** ptr, size_t size, cudaStream_t stream, const char* f
     return RMM_SUCCESS;
   }
 
-  if (!ptr)
-    return RMM_ERROR_INVALID_ARGUMENT;
+  if (!ptr) return RMM_ERROR_INVALID_ARGUMENT;
 
   try {
     *ptr = static_cast<T*>(
-      rmm::mr::get_default_resource()->allocate(size,stream));
+        rmm::mr::get_default_resource()->allocate(size, stream));
 
-  } catch(std::exception const& e) {
+  } catch (std::exception const& e) {
     *ptr = nullptr;
     return RMM_ERROR_OUT_OF_MEMORY;
   }
@@ -145,7 +132,7 @@ inline rmmError_t alloc(T** ptr, size_t size, cudaStream_t stream, const char* f
   return RMM_SUCCESS;
 }
 
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Reallocate device memory block to new size and recycle any remaining
  *        memory.
  *
@@ -160,7 +147,7 @@ inline rmmError_t alloc(T** ptr, size_t size, cudaStream_t stream, const char* f
  *                    null, RMM_ERROR_OUT_OF_MEMORY if unable to allocate the
  *                    requested size, or RMM_ERROR_CUDA_ERROR on any other CUDA
  *                    error.
- * --------------------------------------------------------------------------**/
+ */
 /*template <typename T>
 inline rmmError_t realloc(T** ptr, size_t new_size, cudaStream_t stream,
                    const char* file, unsigned int line) {
@@ -187,7 +174,7 @@ inline rmmError_t realloc(T** ptr, size_t new_size, cudaStream_t stream,
   return RMM_SUCCESS;
 }
 */
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Release device memory and recycle the associated memory.
  *
  * \note Doesn't need to be a template because T* is implicitly conertible to
@@ -201,15 +188,14 @@ inline rmmError_t realloc(T** ptr, size_t new_size, cudaStream_t stream,
  * @return rmmError_t RMM_SUCCESS, or RMM_ERROR_NOT_INITIALIZED if rmmInitialize
  *                    has not been called,or RMM_ERROR_CUDA_ERROR on any CUDA
  *                    error.
- * --------------------------------------------------------------------------**/
-inline rmmError_t free(void* ptr, cudaStream_t stream, const char* file,
-                   unsigned int line) {
-  if (!rmmIsInitialized(nullptr))
-    return RMM_ERROR_NOT_INITIALIZED;
+ */
+[[deprecated]] inline rmmError_t free(void* ptr, cudaStream_t stream, const char* file,
+                       unsigned int line) {
+  if (!rmmIsInitialized(nullptr)) return RMM_ERROR_NOT_INITIALIZED;
 
   rmm::LogIt log(rmm::Logger::Free, ptr, 0, stream, file, line);
 
-  rmm::mr::get_default_resource()->deallocate(ptr,0,stream);
+  rmm::mr::get_default_resource()->deallocate(ptr, 0, stream);
 
   return RMM_SUCCESS;
 }

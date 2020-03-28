@@ -232,7 +232,7 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
         triangle_normals_.resize(new_tri_num);
         thrust::copy(mesh.triangle_normals_.begin(),
                      mesh.triangle_normals_.end(),
-                     triangle_normals_.begin() + old_vert_num);
+                     triangle_normals_.begin() + old_tri_num);
     } else {
         triangle_normals_.clear();
     }
@@ -352,8 +352,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     thrust::for_each(thrust::make_counting_iterator<size_t>(1),
                      thrust::make_counting_iterator(triangles_.size()),
                      [triangle_areas_ptr, surface_area] __device__ (size_t idx) {
-                         triangle_areas_ptr[idx] = triangle_areas_ptr[idx] / surface_area + triangle_areas_ptr[idx - 1];
+                         triangle_areas_ptr[idx] = triangle_areas_ptr[idx] / surface_area;
                         });
+    thrust::inclusive_scan(triangle_areas.begin(), triangle_areas.end(),
+                           triangle_areas.begin());
 
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
@@ -372,12 +374,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     utility::device_vector<size_t> n_points_of_triangle(triangles_.size() + 1, 0);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(triangles_.size()),
-                      n_points_of_triangle.begin(),
+                      n_points_of_triangle.begin() + 1,
                       [triangle_areas_ptr, number_of_points] __device__ (size_t idx) {
                           return round(triangle_areas_ptr[idx] * number_of_points);
                       });
-    thrust::exclusive_scan(n_points_of_triangle.begin(), n_points_of_triangle.end(),
-                           n_points_of_triangle.begin());
     sample_points_functor func(thrust::raw_pointer_cast(vertices_.data()),
                                thrust::raw_pointer_cast(vertex_normals_.data()),
                                thrust::raw_pointer_cast(triangles_.data()),
@@ -401,6 +401,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     if (triangles_.size() == 0) {
         utility::LogError(
                 "[SamplePointsUniformly] input mesh has no triangles");
+        throw std::runtime_error("input mesh has no triangles");
     }
 
     // Compute area of each triangle and sum surface area

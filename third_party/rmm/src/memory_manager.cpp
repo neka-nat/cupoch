@@ -15,14 +15,14 @@
  */
 
 #include <rmm/detail/memory_manager.hpp>
-#include <rmm/mr/cnmem_managed_memory_resource.hpp>
-#include <rmm/mr/cnmem_memory_resource.hpp>
-#include <rmm/mr/cuda_memory_resource.hpp>
-#include <rmm/mr/default_memory_resource.hpp>
-#include <rmm/mr/managed_memory_resource.hpp>
+#include <rmm/mr/device/cnmem_managed_memory_resource.hpp>
+#include <rmm/mr/device/cnmem_memory_resource.hpp>
+#include <rmm/mr/device/cuda_memory_resource.hpp>
+#include <rmm/mr/device/default_memory_resource.hpp>
+#include <rmm/mr/device/managed_memory_resource.hpp>
 
 namespace rmm {
-/** -------------------------------------------------------------------------*
+/**
  * Record a memory manager event in the log.
  *
  * @param[in] event The type of event (Alloc, Realloc, or Free)
@@ -32,7 +32,7 @@ namespace rmm {
  * @param[in] size The size of allocation (only needed for Alloc/Realloc).
  * @param[in] stream The stream on which the allocation is happening
  *                   (only needed for Alloc/Realloc).
- * ------------------------------------------------------------------------**/
+ */
 void Logger::record(MemEvent_t event, int deviceId, void* ptr, TimePt start,
                     TimePt end, size_t freeMem, size_t totalMem, size_t size,
                     cudaStream_t stream, std::string filename,
@@ -48,12 +48,12 @@ void Logger::record(MemEvent_t event, int deviceId, void* ptr, TimePt start,
                     current_allocations.size(), start, end, filename, line});
 }
 
-/** -------------------------------------------------------------------------*
+/**
  * @brief Output a comma-separated value string of the current log to the
  *        provided ostream
  *
  * @param[in] csv The output stream to put the CSV log string into.
- * ------------------------------------------------------------------------**/
+ */
 void Logger::to_csv(std::ostream& csv) {
   csv << "Event Type,Device ID,Address,Stream,Size (bytes),Free Memory,"
       << "Total Memory,Current Allocs,Start,End,Elapsed,Location\n";
@@ -70,13 +70,13 @@ void Logger::to_csv(std::ostream& csv) {
         << e.currentAllocations << ","
         << std::chrono::duration<double>(e.start - base_time).count() << ","
         << std::chrono::duration<double>(e.end - base_time).count() << ","
-        << elapsed.count() << "," << e.filename.c_str() << ":" << e.line << std::endl;
+        << elapsed.count() << "," << e.filename << ":" << e.line << std::endl;
   }
 }
 
-/** ---------------------------------------------------------------------------*
+/**
  * @brief Clear the log
- * --------------------------------------------------------------------------**/
+ */
 void Logger::clear() {
   std::lock_guard<std::mutex> guard(log_mutex);
   events.clear();

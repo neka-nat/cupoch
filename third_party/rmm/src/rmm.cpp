@@ -23,14 +23,11 @@
 
 #include "rmm/rmm.h"
 #include "rmm/detail/memory_manager.hpp"
-#include "rmm/mr/cnmem_memory_resource.hpp"
-#include "rmm/mr/cnmem_managed_memory_resource.hpp"
-#include "rmm/mr/managed_memory_resource.hpp"
-#include "rmm/mr/cuda_memory_resource.hpp"
+#include "rmm/mr/device/cnmem_memory_resource.hpp"
+#include "rmm/mr/device/cnmem_managed_memory_resource.hpp"
+#include "rmm/mr/device/managed_memory_resource.hpp"
+#include "rmm/mr/device/cuda_memory_resource.hpp"
 
-
-
-#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cstddef>
@@ -102,6 +99,8 @@ rmmError_t rmmFree(void *ptr, cudaStream_t stream, const char* file, unsigned in
 // with the stream.
 rmmError_t rmmGetInfo(size_t *freeSize, size_t *totalSize, cudaStream_t stream)
 {
+  if (!rmmIsInitialized(nullptr))
+    return RMM_ERROR_NOT_INITIALIZED;
   try {
     std::pair<size_t,size_t> memInfo = rmm::mr::get_default_resource()->get_mem_info( stream);
     *freeSize = memInfo.first;

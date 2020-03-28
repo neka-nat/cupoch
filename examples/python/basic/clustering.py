@@ -25,7 +25,7 @@ def pointcloud_generator():
     yield "shapes", mesh.sample_points_uniformly(int(1e5)), 0.5
 
     yield "fragment", cph.io.read_point_cloud(
-        "../../TestData/fragment.ply"), 0.02
+        "../../testdata/fragment.ply"), 0.02
 
 
 if __name__ == "__main__":
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     cmap = plt.get_cmap("tab20")
     for pcl_name, pcl, eps in pointcloud_generator():
-        print("%s has %d points" % (pcl_name, np.asarray(pcl.points).shape[0]))
+        print("%s has %d points" % (pcl_name, np.asarray(pcl.points.cpu()).shape[0]))
         cph.visualization.draw_geometries([pcl])
 
         labels = np.array(

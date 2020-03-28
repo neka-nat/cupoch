@@ -31,7 +31,7 @@
 #include <set>
 #include <mutex>
 
-#include <rmm/mr/device_memory_resource.hpp>
+#include <rmm/mr/device/device_memory_resource.hpp>
 
 #include <rmm/rmm_api.h>
 #include <cnmem.h>

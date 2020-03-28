@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cnmem.h>
+#include <rmm/detail/error.hpp>
 #include "device_memory_resource.hpp"
 
 #include <cuda_runtime_api.h>
@@ -27,37 +28,80 @@
 #include <vector>
 
 namespace rmm {
+/**
+ * @brief Exception thrown when a CNMEM error is encountered.
+ *
+ */
+struct cnmem_error : public std::runtime_error {
+  cnmem_error(const char* message) : std::runtime_error(message) {}
+  cnmem_error(std::string const& message) : cnmem_error{message.c_str()} {}
+};
+}  // namespace rmm
+
+#define CNMEM_TRY(...)                                       \
+  GET_CNMEM_TRY_MACRO(__VA_ARGS__, CNMEM_TRY_2, CNMEM_TRY_1) \
+  (__VA_ARGS__)
+#define GET_CNMEM_TRY_MACRO(_1, _2, NAME, ...) NAME
+#define CNMEM_TRY_2(_call, _exception_type)                              \
+  do {                                                                   \
+    cnmemStatus_t const error = (_call);                                 \
+    if (CNMEM_STATUS_SUCCESS != error) {                                 \
+      throw _exception_type{std::string{"CNMEM error at: "} + __FILE__ + \
+                            RMM_STRINGIFY(__LINE__) + ": " +             \
+                            cnmemGetErrorString(error)};                 \
+    }                                                                    \
+  } while (0);
+#define CNMEM_TRY_1(_call) CNMEM_TRY_2(_call, rmm::cnmem_error)
+
+namespace rmm {
 namespace mr {
-/**---------------------------------------------------------------------------*
+/**
  * @brief Memory resource that allocates/deallocates using the cnmem pool
  * sub-allocator.
- *---------------------------------------------------------------------------**/
+ */
 class cnmem_memory_resource : public device_memory_resource {
  public:
-  /**--------------------------------------------------------------------------*
+  /**
    * @brief Construct a cnmem memory resource and allocate the initial device
    * memory pool.
-
-   * TODO Add constructor arguments for other CNMEM options/flags
+   *
+   * @throws `rmm::cuda_error` if getting the current device fails
+   * @throws `rmm::cnmem_error` if initializing CNMEM fails
    *
    * @param initial_pool_size Size, in bytes, of the initial pool size. When
    * zero, an implementation defined pool size is used.
    * @param devices List of GPU device IDs to register with CNMEM
-   *---------------------------------------------------------------------------**/
+   */
   explicit cnmem_memory_resource(std::size_t initial_pool_size = 0,
                                  std::vector<int> const& devices = {})
       : cnmem_memory_resource(initial_pool_size, devices, memory_kind::CUDA) {}
 
+  /**
+   * @brief Destroy the CNMEM resource, finalizing CNMEM and freeing all pool
+   * memory.
+   *
+   * @throws Nothing.
+   *
+   */
   virtual ~cnmem_memory_resource() {
     auto status = cnmemFinalize();
-#ifndef NDEBUG
-    if (status != CNMEM_STATUS_SUCCESS) {
-      std::cerr << "cnmemFinalize failed.\n";
-    }
-#endif
+    assert(CNMEM_STATUS_SUCCESS == status);
   }
 
+  /**
+   * @brief Query whether the resource supports use of non-null CUDA streams for
+   * allocation/deallocation.
+   *
+   * @returns bool true
+   */
   bool supports_streams() const noexcept override { return true; }
+
+  /**
+   * @brief Query whether the resource supports the get_mem_info API.
+   * 
+   * @return bool true if the resource supports get_mem_info, false otherwise.
+   */
+  bool supports_get_mem_info() const noexcept override { return true; }
 
  protected:
   /**
@@ -76,10 +120,7 @@ class cnmem_memory_resource : public device_memory_resource {
     // If no devices were specified, use the current one
     if (devices.empty()) {
       int current_device{};
-      auto status = cudaGetDevice(&current_device);
-      if(status != cudaSuccess){
-         throw std::runtime_error{"Failed to get current device."};
-      }
+      RMM_CUDA_TRY(cudaGetDevice(&current_device));
       cnmemDevice_t dev{};
       dev.device = current_device;
       dev.size = initial_pool_size;
@@ -95,56 +136,55 @@ class cnmem_memory_resource : public device_memory_resource {
 
     unsigned long flags =
         (pool_type == memory_kind::MANAGED) ? CNMEM_FLAGS_MANAGED : 0;
-    // TODO Update exception
-    auto status = cnmemInit(cnmem_devices.size(), cnmem_devices.data(), flags);
-    if (CNMEM_STATUS_SUCCESS != status) {
-      std::string msg = cnmemGetErrorString(status);
-      throw std::runtime_error{"Failed to initialize cnmem: " + msg};
-    }
+
+    CNMEM_TRY(cnmemInit(cnmem_devices.size(), cnmem_devices.data(), flags));
   }
 
  private:
-  /**--------------------------------------------------------------------------*
+  /**
    * @brief Allocates memory of size at least \p bytes using cnmem.
    *
    * The returned pointer has at least 256B alignment.
    *
-   * @throws `std::runtime_error` if cnmem failed to register the stream
-   * @throws `std::bad_alloc` if the requested allocation could not be fulfilled
+   * @throws `rmm::cnmem_error` if cnmem failed to register the stream
+   * @throws `rmm::bad_alloc` if the requested allocation could not be fulfilled
    *
    * @param bytes The size, in bytes, of the allocation
    * @return void* Pointer to the newly allocated memory
-   *-------------------------------------------------------------------------**/
+   */
   void* do_allocate(std::size_t bytes, cudaStream_t stream) override {
     register_stream(stream);
     void* p{nullptr};
-    auto status = cnmemMalloc(&p, bytes, stream);
-    if (CNMEM_STATUS_SUCCESS != status) {
-#ifndef NDEBUG
-      std::cerr << "cnmemMalloc failed: " << cnmemGetErrorString(status)
-                << "\n";
-#endif
-      throw std::bad_alloc{};
-    }
+    CNMEM_TRY(cnmemMalloc(&p, bytes, stream), rmm::bad_alloc);
     return p;
   }
 
-  /**--------------------------------------------------------------------------*
+  /**
    * @brief Deallocate memory pointed to by \p p.
    *
    * @throws Nothing.
    *
    * @param p Pointer to be deallocated
-   *-------------------------------------------------------------------------**/
+   */
   void do_deallocate(void* p, std::size_t, cudaStream_t stream) override {
     auto status = cnmemFree(p, stream);
-    if (CNMEM_STATUS_SUCCESS != status) {
-#ifndef NDEBUG
-      std::cerr << "cnmemFree failed: " << cnmemGetErrorString(status) << "\n";
-#endif
-    }
+    assert(CNMEM_STATUS_SUCCESS == status);
   }
 
+  /**
+   * @brief Registers `stream` with CNMEM if not already registered.
+   *
+   * The null stream is ignored.
+   *
+   * If a stream equal to `stream` has already been registered, this function
+   * has no effect.
+   *
+   * This function is thread safe.
+   *
+   * @throws `rmm::cnmem_error` if registering the stream with cnmem fails.
+   *
+   * @param stream The stream to register
+   */
   void register_stream(cudaStream_t stream) {
     // Don't register null stream with CNMEM
     if (stream != 0) {
@@ -152,39 +192,30 @@ class cnmem_memory_resource : public device_memory_resource {
       // allocation
       std::lock_guard<std::mutex> lock(streams_mutex);
       auto result = registered_streams.insert(stream);
-
       if (result.second == true) {
-        auto status = cnmemRegisterStream(stream);
-        if (CNMEM_STATUS_SUCCESS != status) {
-          std::string msg = cnmemGetErrorString(status);
-          throw std::runtime_error{"Failed to register stream with cnmem: " +
-                                   msg};
-        }
+        CNMEM_TRY(cnmemRegisterStream(stream));
       }
     }
   }
 
-  /**--------------------------------------------------------------------------*
+  /**
    * @brief Get free and available memory for memory resource
    *
-   * @throws std::runtime_error if we could not get cnmem free / total memory
+   * @throws rmm::cnmem_error if we could not get cnmem free / total memory
    *
    * @param stream to execute on
    * @return std::pair contaiing free_size and total_size of memory
-   *-------------------------------------------------------------------------**/
-  std::pair<size_t, size_t> do_get_mem_info(cudaStream_t stream) const {
+   **/
+  std::pair<size_t, size_t> do_get_mem_info(cudaStream_t stream) const override {
     std::size_t free_size;
     std::size_t total_size;
-    auto status = cnmemMemGetInfo(&free_size, &total_size, stream);
-    if (CNMEM_STATUS_SUCCESS != status) {
-      std::string msg = cnmemGetErrorString(status);
-      throw std::runtime_error{"cnmemMemGetInfo failed: " + msg};
-    }
+    CNMEM_TRY(cnmemMemGetInfo(&free_size, &total_size, stream));
     return std::make_pair(free_size, total_size);
   }
-
-  std::set<cudaStream_t> registered_streams{};
-  std::mutex streams_mutex{};
+  std::set<cudaStream_t> registered_streams{};  // Unique streams that have been
+                                                // registered with cnmem
+  std::mutex streams_mutex{};  // Mutex used to guard concurrent access to
+                               // `registered_streams`
 };
 
 }  // namespace mr

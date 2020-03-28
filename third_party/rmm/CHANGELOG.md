@@ -1,16 +1,92 @@
-# RMM 0.12.0 (Date TBD)
+# RMM 0.14.0 (Date TBD)
 
 ## New Features
 
 ## Improvements
 
-- PR #214 Add codeowners
+## Bug Fixes
+
+# RMM 0.13.0 (Date TBD)
+
+## New Features
+
+- PR #253 Add `frombytes` to convert `bytes`-like to `DeviceBuffer`
+- PR #252 Add `__sizeof__` method to `DeviceBuffer`
+- PR #258 Define pickling behavior for `DeviceBuffer`
+- PR #261 Add `__bytes__` method to `DeviceBuffer`
+- PR #262 Moved device memory resource files to `mr/device` directory
+- PR #266 Drop `rmm.auto_device`
+- PR #268 Add Cython/Python `copy_to_host` and `to_device`
+- PR #272 Add `host_memory_resource`.
+- PR #273 Moved device memory resource tests to `device/` directory.
+- PR #274 Add `copy_from_host` method to `DeviceBuffer`
+- PR #275 Add `copy_from_device` method to `DeviceBuffer`
+- PR #283 Add random allocation benchmark.
+- PR #287 Enabled CUDA CXX11 for unit tests.
+- PR #292 Revamped RMM exceptions.
+- PR #297 Use spdlog to implement `logging_resource_adaptor`.
+- PR #303 Added replay benchmark.
+- PR #319 Add `thread_safe_resource_adaptor` class.
+- PR #314 New suballocator memory_resources.
+- PR #330 Fixed incorrect name of `stream_free_blocks_` debug symbol.
+- PR #331 Move to C++14 and deprecate legacy APIs.
+
+## Improvements
+
+- PR #246 Type `DeviceBuffer` arguments to `__cinit__`
+- PR #249 Use `DeviceBuffer` in `device_array`
+- PR #255 Add standard header to all Cython files
+- PR #256 Cast through `uintptr_t` to `cudaStream_t`
+- PR #254 Use `const void*` in `DeviceBuffer.__cinit__`
+- PR #257 Mark Cython-exposed C++ functions that raise
+- PR #269 Doc sync behavior in `copy_ptr_to_host`
+- PR #278 Allocate a `bytes` object to fill up with RMM log data
+- PR #280 Drop allocation/deallocation of `offset`
+- PR #282 `DeviceBuffer` use default constructor for size=0
+- PR #296 Use CuPy's `UnownedMemory` for RMM-backed allocations
+- PR #310 Improve `device_buffer` allocation logic.
+- PR #309 Sync default stream in `DeviceBuffer` constructor
+- PR #326 Sync only on copy construction
+- PR #308 Fix typo in README
+- PR #334 Replace `rmm_allocator` for Thrust allocations
 
 ## Bug Fixes
+- PR #298 Remove RMM_CUDA_TRY from cuda_event_timer destructor
+- PR #299 Fix assert condition blocking debug builds
+- PR #300 Fix host mr_tests compile error
+- PR #312 Fix libcudf compilation errors due to explicit defaulted device_buffer constructor.
+
+
+# RMM 0.12.0 (04 Feb 2020)
+
+## New Features
+
+- PR #218 Add `_DevicePointer`
+- PR #219 Add method to copy `device_buffer` back to host memory
+- PR #222 Expose free and total memory in Python interface
+- PR #235 Allow construction of `DeviceBuffer` with a `stream`
+
+## Improvements
+
+- PR #214 Add codeowners
+- PR #226 Add some tests of the Python `DeviceBuffer`
+- PR #233 Reuse the same `CUDA_HOME` logic from cuDF
+- PR #234 Add missing `size_t` in `DeviceBuffer`
+- PR #239 Cleanup `DeviceBuffer`'s `__cinit__`
+- PR #242 Special case 0-size `DeviceBuffer` in `tobytes`
+- PR #244 Explicitly force `DeviceBuffer.size` to an `int`
+- PR #247 Simplify casting in `tobytes` and other cleanup
+
+## Bug Fixes
+
 - PR #215 Catch polymorphic exceptions by reference instead of by value
+- PR #221 Fix segfault calling rmmGetInfo when uninitialized
+- PR #225 Avoid invoking Python operations in c_free
+- PR #230 Fix duplicate symbol issues with `copy_to_host`
+- PR #232 Move `copy_to_host` doc back to header file
 
 
-# RMM 0.11.0 (Date TBD)
+# RMM 0.11.0 (11 Dec 2019)
 
 ## New Features
 
@@ -40,6 +116,7 @@
 - PR #182 Prefix `DeviceBuffer`'s C functions
 - PR #189 Drop `__reduce__` from `DeviceBuffer`
 - PR #193 Remove thrown exception from `rmm_allocator::deallocate`
+- PR #224 Slice the CSV log before converting to bytes
 
 
 # RMM 0.10.0 (16 Oct 2019)
@@ -192,4 +269,3 @@ RMM was initially implemented as part of cuDF, so we include the relevant change
 # cuDF 0.2.0 and cuDF 0.1.0
 
 These were initial releases of cuDF based on previously separate pyGDF and libGDF libraries. RMM was initially implemented as part of libGDF.
-

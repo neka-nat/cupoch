@@ -16,11 +16,15 @@
 
 #pragma once
 
+#include <thrust/detail/type_traits/pointer_traits.h>
 #include <thrust/device_malloc_allocator.h>
+
+#include <rmm/mr/device/default_memory_resource.hpp>
+#include <rmm/mr/device/device_memory_resource.hpp>
 
 namespace rmm {
 namespace mr {
-/**---------------------------------------------------------------------------*
+/**
  * @brief An `allocator` compatible with Thrust containers and algorithms using
  * a `device_memory_resource` for memory (de)allocation.
  *
@@ -29,7 +33,7 @@ namespace mr {
  * types.
  *
  * @tparam T The type of the objects that will be allocated by this allocator
- *---------------------------------------------------------------------------**/
+ */
 template <typename T>
 class thrust_allocator : public thrust::device_malloc_allocator<T> {
  public:
@@ -37,68 +41,81 @@ class thrust_allocator : public thrust::device_malloc_allocator<T> {
   using pointer = typename Base::pointer;
   using size_type = typename Base::size_type;
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Provides the type of a `thrust_allocator` instantiated with another
    * type.
    *
    * @tparam U the other type to use for instantiation
-   *---------------------------------------------------------------------------**/
+   */
   template <typename U>
   struct rebind {
     using other = thrust_allocator<U>;
   };
 
-  /**---------------------------------------------------------------------------*
+  /**
+   * @brief Default constructor creates an allocator using the default memory
+   * resource and default stream.
+   */
+  thrust_allocator() = default;
+
+  /**
+   * @brief Constructs a `thrust_allocator` using the default device memory
+   * resource and specified stream.
+   *
+   * @param stream The stream to be used for device memory (de)allocation
+   */
+  explicit thrust_allocator(cudaStream_t stream) : _stream{stream} {}
+
+  /**
    * @brief Constructs a `thrust_allocator` using a device memory resource and
    * stream.
    *
    * @param mr The resource to be used for device memory allocation
    * @param stream The stream to be used for device memory (de)allocation
-   *---------------------------------------------------------------------------**/
+   */
   thrust_allocator(device_memory_resource* mr, cudaStream_t stream)
-      : _mr(mr), _stream{stream} {
-          
-      }
+      : _mr(mr), _stream{stream} {}
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Copy constructor. Copies the resource pointer and stream.
    *
    * @param other The `thrust_allocator` to copy
-   *---------------------------------------------------------------------------**/
+   */
   template <typename U>
   thrust_allocator(thrust_allocator<U> const& other)
       : _mr(other.resource()), _stream{other.stream()} {}
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Allocate objects of type `T`
    *
    * @param n  The number of elements of type `T` to allocate
    * @return pointer Pointer to the newly allocated storage
-   *---------------------------------------------------------------------------**/
+   */
   pointer allocate(size_type n) {
-    return static_cast<pointer>(_mr->do_allocate(n * sizeof(T), _stream));
+    return thrust::device_pointer_cast(
+        static_cast<T*>(_mr->allocate(n * sizeof(T), _stream)));
   }
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Deallocates objects of type `T`
    *
    * @param p Pointer returned by a previous call to `allocate`
    * @param n number of elements, *must* be equal to the argument passed to the
    * prior `allocate` call that produced `p`
-   *---------------------------------------------------------------------------**/
+   */
   void deallocate(pointer p, size_type n) {
-    return _mr->do_deallocate(p, n * sizeof(T), _stream);
+    return _mr->deallocate(thrust::raw_pointer_cast(p), n * sizeof(T), _stream);
   }
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Returns the device memory resource used by this allocator.
-   *---------------------------------------------------------------------------**/
+   */
   device_memory_resource* resource() const noexcept { return _mr; }
 
-  /**---------------------------------------------------------------------------*
+  /**
    * @brief Returns the stream used by this allocator.
-   *---------------------------------------------------------------------------**/
-  cudaStream_t stream() const noexcept { return stream; }
+   */
+  cudaStream_t stream() const noexcept { return _stream; }
 
  private:
   device_memory_resource* _mr{rmm::mr::get_default_resource()};

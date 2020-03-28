@@ -29,14 +29,14 @@
 
 namespace rmm {
 namespace mr {
-/**----------------------------------------------------------------------------*
+/**
  * @brief Memory resource that allocates/deallocates managed device memory
     (CUDA Unified Memory) using the cnmem pool sub-allocator.
  * the cnmem pool sub-allocator for allocation/deallocation.
- *---------------------------------------------------------------------------**/
+ */
 class cnmem_managed_memory_resource final : public cnmem_memory_resource {
  public:
-  /**--------------------------------------------------------------------------*
+  /**
    * @brief Construct a cnmem memory resource and allocate the initial device
    * memory pool
 
@@ -44,7 +44,7 @@ class cnmem_managed_memory_resource final : public cnmem_memory_resource {
    *
    * @param initial_pool_size Size, in bytes, of the intial pool size. When
    * zero, an implementation defined pool size is used.
-   *-------------------------------------------------------------------------**/
+   */
   explicit cnmem_managed_memory_resource(std::size_t initial_pool_size = 0,
                                          std::vector<int> const& devices = {})
       : cnmem_memory_resource(initial_pool_size, devices,

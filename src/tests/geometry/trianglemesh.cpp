@@ -415,6 +415,80 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     ExpectEQ(ref, tm.GetVertexNormals());
 }
 
+TEST(TriangleMesh, SamplePointsUniformly) {
+    auto mesh_empty = geometry::TriangleMesh();
+    EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
+
+    thrust::host_vector<Vector3f> vertices;
+    vertices.push_back(Vector3f(0, 0, 0));
+    vertices.push_back(Vector3f(1, 0, 0));
+    vertices.push_back(Vector3f(0, 1, 0));
+    thrust::host_vector<Vector3i> triangles;
+    triangles.push_back(Vector3i(0, 1, 2));
+
+    auto mesh_simple = geometry::TriangleMesh();
+    mesh_simple.SetVertices(vertices);
+    mesh_simple.SetTriangles(triangles);
+
+    size_t n_points = 100;
+    auto pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == 0);
+    EXPECT_TRUE(pcd_simple->normals_.size() == 0);
+
+    thrust::host_vector<Vector3f> colors;
+    colors.push_back(Vector3f(1, 0, 0));
+    colors.push_back(Vector3f(1, 0, 0));
+    colors.push_back(Vector3f(1, 0, 0));
+    thrust::host_vector<Vector3f> normals;
+    normals.push_back(Vector3f(0, 1, 0));
+    normals.push_back(Vector3f(0, 1, 0));
+    normals.push_back(Vector3f(0, 1, 0));
+    mesh_simple.SetVertexColors(colors);
+    mesh_simple.SetVertexNormals(normals);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    thrust::host_vector<Vector3f> hc = pcd_simple->GetColors();
+    thrust::host_vector<Vector3f> hn = pcd_simple->GetNormals();
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(hc[pidx], Vector3f(1, 0, 0));
+        ExpectEQ(hn[pidx], Vector3f(0, 1, 0));
+    }
+
+    // use triangle normal instead of the vertex normals
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == false);
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
+    // the mesh now has triangle normals as a side effect.
+    EXPECT_TRUE(mesh_simple.HasTriangleNormals() == true);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    hc = pcd_simple->GetColors();
+    hn = pcd_simple->GetNormals();
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(hc[pidx], Vector3f(1, 0, 0));
+        ExpectEQ(hn[pidx], Vector3f(0, 0, 1));
+    }
+
+    // use triangle normal, this time the mesh has no vertex normals
+    mesh_simple.SetVertexNormals(thrust::host_vector<Vector3f>());
+    pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
+    EXPECT_TRUE(pcd_simple->points_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
+    EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
+
+    hc = pcd_simple->GetColors();
+    hn = pcd_simple->GetNormals();
+    for (size_t pidx = 0; pidx < n_points; ++pidx) {
+        ExpectEQ(hc[pidx], Vector3f(1, 0, 0));
+        ExpectEQ(hn[pidx], Vector3f(0, 0, 1));
+    }
+}
+
 TEST(TriangleMesh, HasVertices) {
     int size = 100;
 

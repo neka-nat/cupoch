@@ -110,7 +110,7 @@ rmmError_t rmmFinalize();
  * @return true if rmmInitialize has been called successfully.
  * @return false if rmmInitialize has not been called successfully.
  * --------------------------------------------------------------------------**/
-bool rmmIsInitialized(rmmOptions_t *options);
+[[deprecated]] bool rmmIsInitialized(rmmOptions_t *options);
 
 /** ---------------------------------------------------------------------------*
  * @brief Stringify RMM error code.
@@ -118,7 +118,7 @@ bool rmmIsInitialized(rmmOptions_t *options);
  * @param errcode The error returned by an RMM function
  * @return const char* The input error code in string form
  * --------------------------------------------------------------------------**/
-const char * rmmGetErrorString(rmmError_t errcode);
+[[deprecated]] const char * rmmGetErrorString(rmmError_t errcode);
 
 /** ---------------------------------------------------------------------------*
  * @brief Allocate memory and return a pointer to device memory.
@@ -137,7 +137,7 @@ const char * rmmGetErrorString(rmmError_t errcode);
  *                    null, RMM_ERROR_OUT_OF_MEMORY if unable to allocate the
  *                    requested size, or RMM_CUDA_ERROR on any other CUDA error.
  * --------------------------------------------------------------------------**/
-rmmError_t rmmAlloc(void **ptr, size_t size, cudaStream_t stream,
+[[deprecated]] rmmError_t rmmAlloc(void **ptr, size_t size, cudaStream_t stream,
                     const char* file, unsigned int line);
 
 /** ---------------------------------------------------------------------------*
@@ -173,7 +173,7 @@ rmmError_t rmmAlloc(void **ptr, size_t size, cudaStream_t stream,
  *                    has not been called,or RMM_ERROR_CUDA_ERROR on any CUDA
  *                    error.
  * --------------------------------------------------------------------------**/
-rmmError_t rmmFree(void *ptr, cudaStream_t stream,
+[[deprecated]] rmmError_t rmmFree(void *ptr, cudaStream_t stream,
                    const char* file, unsigned int line);
 
 /** ---------------------------------------------------------------------------*
@@ -192,7 +192,7 @@ rmmError_t rmmFree(void *ptr, cudaStream_t stream,
  *                    has not been called, or RMM_ERROR_CUDA_ERROR on any CUDA
  *                    error
  * --------------------------------------------------------------------------**/
-rmmError_t rmmGetInfo(size_t *freeSize, size_t *totalSize, cudaStream_t stream);
+[[deprecated]] rmmError_t rmmGetInfo(size_t *freeSize, size_t *totalSize, cudaStream_t stream);
 
 /** ---------------------------------------------------------------------------*
  * @brief Write the memory event stats log to specified path/filename
@@ -202,14 +202,14 @@ rmmError_t rmmGetInfo(size_t *freeSize, size_t *totalSize, cudaStream_t stream);
  * @param filename The full path and filename to write.
  * @return rmmError_t RMM_SUCCESS or RMM_ERROR_IO on output failure.
  * --------------------------------------------------------------------------**/
-rmmError_t rmmWriteLog(const char* filename);
+[[deprecated]] rmmError_t rmmWriteLog(const char* filename);
 
 /** ---------------------------------------------------------------------------*
  * @brief Get the size of the CSV log string in memory.
  *
  * @return size_t The size of the log (as a C string) in memory.
  * --------------------------------------------------------------------------**/
-size_t rmmLogSize();
+[[deprecated]] size_t rmmLogSize();
 
 /** ---------------------------------------------------------------------------*
  * @brief Get the RMM log as CSV in a C string.
@@ -218,4 +218,4 @@ size_t rmmLogSize();
  * @param[in] buffer_size The size allocated for buffer.
  * @return rmmError_t RMM_SUCCESS, or RMM_IO_ERROR on any failure.
  * --------------------------------------------------------------------------**/
-rmmError_t rmmGetLog(char* buffer, size_t buffer_size);
+[[deprecated]] rmmError_t rmmGetLog(char* buffer, size_t buffer_size);
