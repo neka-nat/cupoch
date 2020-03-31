@@ -84,6 +84,10 @@ void pybind_visualizer(py::module &m) {
                  &visualization::Visualizer::CaptureScreenImage,
                  "Function to capture and save a screen image", "filename"_a,
                  "do_render"_a = false)
+            .def("capture_depth_float_buffer",
+                 &visualization::Visualizer::CaptureDepthFloatBuffer,
+                 "Function to capture depth in a float buffer",
+                 "do_render"_a = false)
             .def("capture_depth_image",
                  &visualization::Visualizer::CaptureDepthImage,
                  "Function to capture and save a depth image", "filename"_a,

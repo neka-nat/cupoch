@@ -125,9 +125,23 @@ public:
 
     virtual void RenderImGui();
 
+    /// \brief Function to capture and save a screen image.
+    ///
+    /// \param do_render Set to `true` to do render.
     void CaptureScreenImage(const std::string &filename = "",
                             bool do_render = true);
 
+    /// Function to capture depth in a float buffer.
+    ///
+    /// \param do_render Set to `true` to do render.
+    std::shared_ptr<geometry::Image> CaptureDepthFloatBuffer(
+            bool do_render = true);
+
+    /// Function to capture and save a depth image.
+    ///
+    /// \param filename Path to file.
+    /// \param do_render Set to `true` to do render.
+    /// \param depth_scale Scale depth value when capturing the depth image.
     void CaptureDepthImage(const std::string &filename = "",
                            bool do_render = true,
                            double depth_scale = 1000.0);
@@ -137,6 +151,7 @@ public:
     ViewControl &GetViewControl() { return *view_control_ptr_; }
     RenderOption &GetRenderOption() { return *render_option_ptr_; }
 
+    /// Function to reset view point.
     void ResetViewPoint(bool reset_bounding_box = false);
 
     const std::string &GetWindowName() const { return window_name_; }

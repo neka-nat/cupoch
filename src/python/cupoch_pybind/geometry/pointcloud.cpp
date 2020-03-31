@@ -37,6 +37,8 @@ void pybind_pointcloud(py::module &m) {
             .def("from_points_dlpack", [](geometry::PointCloud &pcd, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, pcd.points_);})
             .def("from_normals_dlpack", [](geometry::PointCloud &pcd, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, pcd.normals_);})
             .def("from_colors_dlpack", [](geometry::PointCloud &pcd, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, pcd.colors_);})
+            .def(py::self + py::self)
+            .def(py::self += py::self)
             .def("has_points", &geometry::PointCloud::HasPoints,
                  "Returns ``True`` if the point cloud contains points.")
             .def("has_normals", &geometry::PointCloud::HasNormals,

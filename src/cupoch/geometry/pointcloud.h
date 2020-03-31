@@ -46,16 +46,23 @@ public:
     PointCloud &Scale(const float scale, bool center = true) override;
     PointCloud &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
+    PointCloud &operator+=(const PointCloud &cloud);
+    PointCloud operator+(const PointCloud &cloud) const;
+
+    /// Returns 'true' if the point cloud contains points.
     __host__ __device__ bool HasPoints() const { return !points_.empty(); }
 
+    /// Returns `true` if the point cloud contains point normals.
     __host__ __device__ bool HasNormals() const {
         return !points_.empty() && normals_.size() == points_.size();
     }
 
+    /// Returns `true` if the point cloud contains point colors.
     __host__ __device__ bool HasColors() const {
         return !points_.empty() && colors_.size() == points_.size();
     }
 
+    /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals();
 
     /// Assigns each point in the PointCloud the same color \param color.

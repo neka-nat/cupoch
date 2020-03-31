@@ -164,6 +164,73 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     }
 }
 
+std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
+        bool do_render /* = true*/) {
+    geometry::Image depth_image;
+    depth_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                        view_control_ptr_->GetWindowHeight(), 1, 4);
+    if (do_render) {
+        Render();
+        is_redraw_required_ = false;
+    }
+    glFinish();
+
+    auto host_data = depth_image.GetData();
+#if __APPLE__
+    // On OSX with Retina display and glfw3, there is a bug with glReadPixels().
+    // When using glReadPixels() to read a block of depth data. The data is
+    // horizontally stretched (vertically it is fine). This issue is related
+    // to GLFW_SAMPLES hint. When it is set to 0 (anti-aliasing disabled),
+    // glReadPixels() works fine. See this post for details:
+    // http://stackoverflow.com/questions/30608121/glreadpixel-one-pass-vs-looping-through-points
+    // The reason of this bug is unknown. The current workaround is to read
+    // depth buffer column by column. This is 15~30 times slower than one block
+    // reading glReadPixels().
+    std::vector<float> float_buffer(depth_image.height_);
+    float *p = (float *)host_data.data();
+    for (int j = 0; j < depth_image.width_; j++) {
+        glReadPixels(j, 0, 1, depth_image.height_, GL_DEPTH_COMPONENT, GL_FLOAT,
+                     float_buffer.data());
+        for (int i = 0; i < depth_image.height_; i++) {
+            p[i * depth_image.width_ + j] = float_buffer[i];
+        }
+    }
+#else   //__APPLE__
+    // By default, glReadPixels read a block of depth buffer.
+    glReadPixels(0, 0, depth_image.width_, depth_image.height_,
+                 GL_DEPTH_COMPONENT, GL_FLOAT, host_data.data());
+#endif  //__APPLE__
+
+    // glReadPixels get the screen in a vertically flipped manner
+    // We should flip it back, and convert it to the correct depth value
+    auto image_ptr = std::make_shared<io::HostImage>();
+    double z_near = view_control_ptr_->GetZNear();
+    double z_far = view_control_ptr_->GetZFar();
+
+    image_ptr->Prepare(view_control_ptr_->GetWindowWidth(),
+                       view_control_ptr_->GetWindowHeight(), 1, 4);
+    for (int i = 0; i < depth_image.height_; i++) {
+        float *p_depth = (float *)(host_data.data() +
+                                   depth_image.BytesPerLine() *
+                                           (depth_image.height_ - i - 1));
+        float *p_image = (float *)(image_ptr->data_.data() +
+                                   image_ptr->BytesPerLine() * i);
+        for (int j = 0; j < depth_image.width_; j++) {
+            if (p_depth[j] == 1.0) {
+                continue;
+            }
+            double z_depth =
+                    2.0 * z_near * z_far /
+                    (z_far + z_near -
+                     (2.0 * (double)p_depth[j] - 1.0) * (z_far - z_near));
+            p_image[j] = (float)z_depth;
+        }
+    }
+    auto output = std::make_shared<geometry::Image>();
+    image_ptr->ToDevice(*output);
+    return output;
+}
+
 void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
                                    bool do_render /* = true*/,
                                    double depth_scale /* = 1000.0*/) {
