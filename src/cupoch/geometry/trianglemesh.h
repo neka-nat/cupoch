@@ -63,6 +63,25 @@ public:
     /// Function to compute vertex normals, usually called before rendering
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
+    /// \brief Function that removes duplicated verties, i.e., vertices that
+    /// have identical coordinates.
+    TriangleMesh &RemoveDuplicatedVertices();
+
+    /// \brief Function that removes duplicated triangles, i.e., removes
+    /// triangles that reference the same three vertices, independent of their
+    /// order.
+    TriangleMesh &RemoveDuplicatedTriangles();
+
+    /// \brief This function removes vertices from the triangle mesh that are
+    /// not referenced in any triangle of the mesh.
+    TriangleMesh &RemoveUnreferencedVertices();
+
+    /// \brief Function that removes degenerate triangles, i.e., triangles that
+    /// reference a single vertex multiple times in a single triangle.
+    ///
+    /// They are usually the product of removing duplicated vertices.
+    TriangleMesh &RemoveDegenerateTriangles();
+
     /// Function to compute adjacency matrix, call before adjacency matrix is
     /// needed
     TriangleMesh &ComputeAdjacencyMatrix();

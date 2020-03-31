@@ -9,16 +9,22 @@ namespace {
 struct initialize_cluster_matrix_functor {
     initialize_cluster_matrix_functor(const Eigen::Vector3f* points,
                                       float eps,
+                                      int min_points,
                                       int n_points,
-                                      char *cluster_matrix)
+                                      char *cluster_matrix,
+                                      char *valid)
         : points_(points),
-          eps_(eps),
+          eps2_(eps * eps),
+          min_points_(min_points),
           n_points_(n_points),
-          cluster_matrix_(cluster_matrix) {};
+          cluster_matrix_(cluster_matrix),
+          valid_(valid) {};
     const Eigen::Vector3f* points_;
-    const float eps_;
+    const float eps2_;
+    const int min_points_;
     const int n_points_;
     char *cluster_matrix_;
+    char *valid_;
     __device__ void operator()(size_t idx) {
         // cluster_matrix
         //            1st class | 2nd class | ... | N-th class
@@ -26,12 +32,18 @@ struct initialize_cluster_matrix_functor {
         // 2nd point  [0          1           ...  0          ]
         // ...         ...
         // N-th point [0          0           ...  1          ]
-        int k = idx / n_points_;
-        int i = idx % n_points_;
-        if (i == k) {
-            cluster_matrix_[idx] = 1;
-        } else if ((points_[k] - points_[i]).norm() < eps_) {
-            cluster_matrix_[idx] = 1;
+        int count = 0;
+        for (int k = 0; k < n_points_; k++) {
+            if (idx == k) {
+                cluster_matrix_[k * n_points_ + idx] = 1;
+                count += 1;
+            } else if ((points_[k] - points_[idx]).squaredNorm() < eps2_) {
+                cluster_matrix_[k * n_points_ + idx] = 1;
+                count += 1;
+            }
+        }
+        if (count > min_points_) {
+            valid_[idx] = 1;
         }
     }
 };
@@ -133,14 +145,15 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
 
     const size_t n_pt = points_.size();
     utility::device_vector<char> cluster_matrix(n_pt * n_pt, 0);
-    utility::device_vector<char> valid(n_pt, 1);
+    utility::device_vector<char> valid(n_pt, 0);
     utility::device_vector<int> reroute(n_pt, -1);
-    initialize_cluster_matrix_functor func(
+    initialize_cluster_matrix_functor init_func(
             thrust::raw_pointer_cast(points_.data()),
-            eps, n_pt,
-            thrust::raw_pointer_cast(cluster_matrix.data()));
+            eps, min_points, n_pt,
+            thrust::raw_pointer_cast(cluster_matrix.data()),
+            thrust::raw_pointer_cast(valid.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(n_pt * n_pt), func);
+                     thrust::make_counting_iterator(n_pt), init_func);
 
     for (int i = 0; i < n_pt; ++i) { // cluster loop
         ++progress_bar;

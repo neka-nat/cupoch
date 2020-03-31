@@ -1,11 +1,13 @@
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/uniform_real_distribution.h>
+#include <thrust/gather.h>
 
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/helper.h"
 #include "cupoch/utility/range.h"
 
 using namespace cupoch;
@@ -36,6 +38,33 @@ struct compute_adjacency_matrix_functor {
         adjacency_matrix_[triangle(1) * n_vertices_ + triangle(2)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(0)] = 1;
         adjacency_matrix_[triangle(2) * n_vertices_ + triangle(1)] = 1;
+    }
+};
+
+struct align_triangle_functor {
+    __device__ Eigen::Vector3i operator() (const Eigen::Vector3i& tri) const {
+        if (tri(0) <= tri(1)) {
+            if (tri(0) <= tri(2)) {
+                return Eigen::Vector3i(tri(0), tri(1), tri(2));
+            } else {
+                return Eigen::Vector3i(tri(2), tri(0), tri(1));
+            }
+        } else {
+            if (tri(1) <= tri(2)) {
+                return Eigen::Vector3i(tri(1), tri(2), tri(0));
+            } else {
+                return Eigen::Vector3i(tri(2), tri(0), tri(1));
+            }
+        }
+    }
+};
+
+template <class... Args>
+struct check_ref_functor {
+    __device__ bool operator()(
+            const thrust::tuple<bool, Args...> &x) const {
+        const bool ref = thrust::get<0>(x);
+        return !ref;
     }
 };
 
@@ -410,6 +439,230 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
                                      surface_area, use_triangle_normal);
+}
+
+TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
+    size_t old_vertex_num = vertices_.size();
+    utility::device_vector<int> index_new_to_old(old_vertex_num);
+    utility::device_vector<int> index_old_to_new(old_vertex_num);
+    thrust::sequence(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                     index_new_to_old.begin(), index_new_to_old.end(), 0);
+    thrust::sequence(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
+                     index_old_to_new.begin(), index_old_to_new.end(), 0);
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    size_t k = 0;
+    if (has_vert_normal && has_vert_color) {
+        thrust::sort_by_key(vertices_.begin(), vertices_.end(),
+                            make_tuple_iterator(index_new_to_old.begin(),
+                                                vertex_normals_.begin(),
+                                                vertex_colors_.begin()));
+        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin(), vertex_colors_.begin());
+        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
+        k = thrust::distance(begin, end.second);
+    } else if (has_vert_normal) {
+        thrust::sort_by_key(vertices_.begin(), vertices_.end(),
+                            make_tuple_iterator(index_new_to_old.begin(),
+                                                vertex_normals_.begin()));
+        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin());
+        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
+        k = thrust::distance(begin, end.second);
+    } else if (has_vert_color) {
+        thrust::sort_by_key(vertices_.begin(), vertices_.end(),
+                            make_tuple_iterator(index_new_to_old.begin(),
+                                                vertex_colors_.begin()));
+        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_colors_.begin());
+        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
+        k = thrust::distance(begin, end.second);
+    } else {
+        thrust::sort_by_key(vertices_.begin(), vertices_.end(), index_new_to_old.begin());
+        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), index_new_to_old.begin());
+        k = thrust::distance(index_new_to_old.begin(), end.second);
+    }
+    vertices_.resize(k);
+    index_new_to_old.resize(k);
+    if (has_vert_normal) vertex_normals_.resize(k);
+    if (has_vert_color) vertex_colors_.resize(k);
+    thrust::gather(index_new_to_old.begin(), index_new_to_old.end(),
+                   thrust::make_counting_iterator<size_t>(0), index_old_to_new.begin());
+    utility::device_vector<Eigen::Vector3i> new_tri(triangles_.size());
+    int* tri_ptr = (int*)thrust::raw_pointer_cast(triangles_.data());
+    int* tri_new_ptr = (int*)thrust::raw_pointer_cast(new_tri.data());
+    int* index_old_to_new_ptr = thrust::raw_pointer_cast(index_old_to_new.data());
+    thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
+                      [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
+    triangles_ = new_tri;
+    if (HasAdjacencyMatrix()) {
+        ComputeAdjacencyMatrix();
+    }
+    utility::LogDebug(
+            "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
+            (int)(old_vertex_num - k));
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[RemoveDuplicatedTriangles] This mesh contains triangle uvs "
+                "that are not handled in this function");
+    }
+    bool has_tri_normal = HasTriangleNormals();
+    size_t old_triangle_num = triangles_.size();
+    size_t k = 0;
+    utility::device_vector<Eigen::Vector3i> new_triangles(old_triangle_num);
+    thrust::transform(triangles_.begin(), triangles_.end(), new_triangles.begin(), align_triangle_functor());
+    if (has_tri_normal) {
+        thrust::sort_by_key(new_triangles.begin(), new_triangles.end(), triangle_normals_.begin());
+        auto end = thrust::unique_by_key(new_triangles.begin(), new_triangles.end(), triangle_normals_.begin());
+        k = thrust::distance(new_triangles.begin(), end.first);
+    } else {
+        thrust::sort(new_triangles.begin(), new_triangles.end());
+        auto end = thrust::unique(new_triangles.begin(), new_triangles.end());
+        k = thrust::distance(new_triangles.begin(), end);
+    }
+    new_triangles.resize(k);
+    triangles_ = new_triangles;
+    if (has_tri_normal) triangle_normals_.resize(k);
+    if (k < old_triangle_num && HasAdjacencyMatrix()) {
+        ComputeAdjacencyMatrix();
+    }
+    utility::LogDebug(
+            "[RemoveDuplicatedTriangles] {:d} triangles have been removed.",
+            (int)(old_triangle_num - k));
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
+    utility::device_vector<bool> vertex_has_reference(vertices_.size(), false);
+    bool* ref_ptr = thrust::raw_pointer_cast(vertex_has_reference.data());
+    int* tri_ptr = (int*)thrust::raw_pointer_cast(triangles_.data());
+    thrust::for_each(thrust::device,
+                     tri_ptr, tri_ptr + triangles_.size() * 3,
+                     [ref_ptr] __device__ (int tri) {
+                         ref_ptr[tri] = true;
+                     });
+    bool has_vert_normal = HasVertexNormals();
+    bool has_vert_color = HasVertexColors();
+    size_t old_vertex_num = vertices_.size();
+    utility::device_vector<int> index_new_to_old(old_vertex_num);
+    utility::device_vector<int> index_old_to_new(old_vertex_num);
+    thrust::sequence(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                     index_new_to_old.begin(), index_new_to_old.end(), 0);
+    thrust::sequence(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
+                     index_old_to_new.begin(), index_old_to_new.end(), 0);
+    size_t k = 0;                                  // new index
+    if (!has_vert_normal && !has_vert_color) {
+        check_ref_functor<int, Eigen::Vector3f> func;
+        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
+                                         vertices_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
+                                           vertices_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    } else if (has_vert_normal && !has_vert_color) {
+        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
+        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
+                                         vertices_.begin(), vertex_normals_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
+                                           vertices_.end(), vertex_normals_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    } else if (!has_vert_normal && has_vert_color) {
+        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
+        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
+                                         vertices_.begin(), vertex_colors_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
+                                           vertices_.end(), vertex_colors_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    } else {
+        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> func;
+        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
+                                         vertices_.begin(), vertex_normals_.begin(), vertex_colors_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
+                                           vertices_.end(), vertex_normals_.end(), vertex_colors_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    }
+    vertices_.resize(k);
+    if (has_vert_normal) vertex_normals_.resize(k);
+    if (has_vert_color) vertex_colors_.resize(k);
+    thrust::gather(index_new_to_old.begin(), index_new_to_old.end(),
+                   thrust::make_counting_iterator<size_t>(0), index_old_to_new.begin());
+    if (k < old_vertex_num) {
+        utility::device_vector<Eigen::Vector3i> new_tri(triangles_.size());
+        int* tri_ptr = (int*)thrust::raw_pointer_cast(triangles_.data());
+        int* tri_new_ptr = (int*)thrust::raw_pointer_cast(new_tri.data());
+        int* index_old_to_new_ptr = thrust::raw_pointer_cast(index_old_to_new.data());
+        thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
+                          [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
+        triangles_ = new_tri;
+        if (HasAdjacencyMatrix()) {
+            ComputeAdjacencyMatrix();
+        }
+    }
+    utility::LogDebug(
+            "[RemoveUnreferencedVertices] {:d} vertices have been removed.",
+            (int)(old_vertex_num - k));
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
+    if (HasTriangleUvs()) {
+        utility::LogWarning(
+                "[RemoveDegenerateTriangles] This mesh contains triangle uvs "
+                "that are not handled in this function");
+    }
+    bool has_tri_normal = HasTriangleNormals();
+    size_t old_triangle_num = triangles_.size();
+    utility::device_vector<bool> is_degenerate(triangles_.size(), false);
+    bool* ref_ptr = thrust::raw_pointer_cast(is_degenerate.data());
+    Eigen::Vector3i* tri_ptr = thrust::raw_pointer_cast(triangles_.data());
+    thrust::for_each(thrust::device,
+                     thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator(triangles_.size()),
+                     [ref_ptr, tri_ptr] __device__ (int i) {
+                        if (tri_ptr[i](0) != tri_ptr[i](1) && tri_ptr[i](1) != tri_ptr[i](2) &&
+                            tri_ptr[i](2) != tri_ptr[i](0)) {
+                            ref_ptr[i] = true;
+                        }
+                     });
+    size_t k = 0;
+    if (!has_tri_normal) {
+        check_ref_functor<Eigen::Vector3i> func;
+        auto begin = make_tuple_iterator(is_degenerate.begin(), triangles_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(is_degenerate.end(), triangles_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    } else {
+        check_ref_functor<Eigen::Vector3i, Eigen::Vector3f> func;
+        auto begin = make_tuple_iterator(is_degenerate.begin(), triangles_.begin(),
+                                         triangle_normals_.begin());
+        auto end = thrust::remove_if(
+                begin, make_tuple_iterator(is_degenerate.end(), triangles_.end(),
+                                           triangle_normals_.end()),
+                func);
+        k = thrust::distance(begin, end);
+    }
+    triangles_.resize(k);
+    if (has_tri_normal) triangle_normals_.resize(k);
+    if (k < old_triangle_num && HasAdjacencyMatrix()) {
+        ComputeAdjacencyMatrix();
+    }
+    utility::LogDebug(
+            "[RemoveDegenerateTriangles] {:d} triangles have been "
+            "removed.",
+            (int)(old_triangle_num - k));
+    return *this;
 }
 
 utility::device_vector<Eigen::Vector2i>
