@@ -70,6 +70,7 @@ public:
     /// Add a voxel with specified grid index and color
     void AddVoxel(const Voxel &voxel);
     void AddVoxels(const utility::device_vector<Voxel> &voxels);
+    void AddVoxels(const thrust::host_vector<Voxel> &voxels);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::array<Eigen::Vector3f, 8> GetVoxelBoundingPoints(

@@ -5,10 +5,12 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/io/class_io/ijson_convertible_io.h"
 #include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/io/class_io/trianglemesh_io.h"
+#include "cupoch/io/class_io/voxelgrid_io.h"
 
 #include <string>
 
@@ -136,6 +138,32 @@ void pybind_class_io(py::module &m_io) {
              "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
              "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
+                                 map_shared_argument_docstrings);
+
+    // cupoch::geometry::VoxelGrid
+    m_io.def("read_voxel_grid",
+             [](const std::string &filename, const std::string &format,
+                bool print_progress) {
+                 geometry::VoxelGrid voxel_grid;
+                 io::ReadVoxelGrid(filename, voxel_grid, format);
+                 return voxel_grid;
+             },
+             "Function to read VoxelGrid from file", "filename"_a,
+             "format"_a = "auto", "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_voxel_grid",
+                                 map_shared_argument_docstrings);
+
+    m_io.def("write_voxel_grid",
+             [](const std::string &filename,
+                const geometry::VoxelGrid &voxel_grid, bool write_ascii,
+                bool compressed, bool print_progress) {
+                 return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
+                                           compressed, print_progress);
+             },
+             "Function to write VoxelGrid to file", "filename"_a,
+             "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false,
+             "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_voxel_grid",
                                  map_shared_argument_docstrings);
 
     // cupoch::camera

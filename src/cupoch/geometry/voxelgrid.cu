@@ -333,6 +333,11 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
     voxels_values_.resize(out_size);
 }
 
+void VoxelGrid::AddVoxels(const thrust::host_vector<Voxel> &voxels) {
+    utility::device_vector<Voxel> voxels_dev = voxels;
+    AddVoxels(voxels_dev);
+}
+
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3f &point) const {
     Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
     return (Eigen::floor(voxel_f.array())).cast<int>();

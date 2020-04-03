@@ -132,7 +132,7 @@ def voxel_carving(mesh,
     if (visualization):
         print("visualize camera center")
         centers = cph.geometry.PointCloud()
-        centers.points = cph.utility.Vector3dVector(centers_pts)
+        centers.points = cph.utility.Vector3fVector(centers_pts)
         cph.visualization.draw_geometries([centers, mesh])
 
         print("surface voxels from %s" % surface_method)
