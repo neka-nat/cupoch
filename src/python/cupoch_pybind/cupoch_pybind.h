@@ -36,8 +36,3 @@ void bind_copy_functions(Class_ &cl) {
 
 }  // namespace detail
 }  // namespace pybind11
-
-PYBIND11_MAKE_OPAQUE(thrust::host_vector<int, std::allocator<int>>);
-PYBIND11_MAKE_OPAQUE(thrust::host_vector<float, std::allocator<float>>);
-PYBIND11_MAKE_OPAQUE(
-        thrust::host_vector<Eigen::Vector3f, std::allocator<Eigen::Vector3f>>);

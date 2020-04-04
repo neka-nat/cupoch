@@ -6,7 +6,8 @@ add_library(${PACKAGE_NAME} SHARED
     ${PY_ALL_SOURCE_FILES}
 )
 
-cuda_add_library(cupoch_wrapper cupoch_pybind/device_vector_wrapper.cu)
+cuda_add_library(cupoch_wrapper cupoch_pybind/device_vector_wrapper.cu
+    cupoch_pybind/device_map_wrapper.cu)
 target_include_directories(cupoch_wrapper PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

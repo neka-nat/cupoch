@@ -1,4 +1,3 @@
-#include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/device_vector_wrapper.h"
 
 namespace cupoch {

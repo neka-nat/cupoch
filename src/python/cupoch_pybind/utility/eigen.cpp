@@ -79,12 +79,7 @@ template <typename Scalar,
 py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
         py::module &m, const std::string &bind_name) {
     auto vec = py::bind_vector_without_repr<cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name, py::module_local());
-    vec.def("cpu", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) {
-        thrust::host_vector<Scalar> hv = v.cpu();
-        py::array_t<Scalar> arr(hv.size());
-        std::copy(hv.data(), hv.data() + arr.size(), arr.mutable_data());
-        return arr;
-    });
+    vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
     vec.def("__copy__",
             [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) { return cupoch::wrapper::device_vector_wrapper<Scalar>(v); });
     vec.def("__deepcopy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v, py::dict &memo) {
@@ -111,13 +106,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
                std::string(" elements.\n") +
                std::string("Use numpy.asarray() to copy data to host.");
     });
-    vec.def("cpu", [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
-        thrust::host_vector<EigenVector> hv = v.cpu();
-        py::array_t<Scalar> arr;
-        arr.resize({hv.size(), (size_t)EigenVector::SizeAtCompileTime});
-        std::copy((Scalar*)hv.data(), (Scalar*)hv.data() + arr.size(), arr.mutable_data());
-        return arr;
-    });
+    vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<EigenVector>::cpu);
     vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
         return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
     });

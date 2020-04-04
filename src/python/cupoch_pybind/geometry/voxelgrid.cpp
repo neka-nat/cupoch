@@ -4,14 +4,61 @@
 #include "cupoch/geometry/pointcloud.h"
 
 #include "cupoch_pybind/docstring.h"
+#include "cupoch_pybind/device_map_wrapper.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 
 #include <sstream>
 
+namespace pybind11 {
+namespace detail {
+
+template <> struct type_caster<Eigen::Vector3i> {
+    using value_conv = make_caster<int>;
+
+public:
+    bool load(handle src, bool convert) {
+        if (!isinstance<sequence>(src))
+            return false;
+        auto l = reinterpret_borrow<sequence>(src);
+        if (l.size() != 3)
+            return false;
+        size_t ctr = 0;
+        for (auto it : l) {
+            value_conv conv;
+            if (!conv.load(it, convert))
+                return false;
+            value[ctr++] = cast_op<int &&>(std::move(conv));
+        }
+        return true;
+    }
+
+    template <typename T>
+    static handle cast(T &&src, return_value_policy policy, handle parent) {
+        tuple t(src.size());
+        size_t index = 0;
+        for (auto &&value : src) {
+            auto value_ = reinterpret_steal<object>(value_conv::cast(forward_like<T>(value), policy, parent));
+            if (!value_)
+                return handle();
+            PyTuple_SET_ITEM(t.ptr(), (ssize_t) index++, value_.release().ptr()); // steals a reference
+        }
+        return t.release();
+    }
+
+    PYBIND11_TYPE_CASTER(Eigen::Vector3i, _("Eigen::Vector3i"));
+};
+
+}
+}
+
 using namespace cupoch;
 
 void pybind_voxelgrid(py::module &m) {
+    py::class_<wrapper::VoxelMap, std::shared_ptr<wrapper::VoxelMap>> voxel_map(m, "DeviceVoxelMap");
+    voxel_map.def(py::init<>())
+             .def("__len__", &wrapper::VoxelMap::size)
+             .def("cpu", &wrapper::VoxelMap::cpu);
     py::class_<geometry::Voxel, std::shared_ptr<geometry::Voxel>> voxel(
             m, "Voxel", "Base Voxel class, containing grid id and color");
     py::detail::bind_default_constructor<geometry::Voxel>(voxel);
@@ -56,6 +103,8 @@ void pybind_voxelgrid(py::module &m) {
                             std::to_string(voxelgrid.voxels_keys_.size()) +
                             " voxels.";
                  })
+            .def_property("voxels", [] (geometry::VoxelGrid &vg) {return wrapper::VoxelMap(vg.voxels_keys_, vg.voxels_values_);},
+                                    [] (geometry::VoxelGrid &vg, const wrapper::VoxelMap& map) {wrapper::FromWrapper(vg.voxels_keys_, vg.voxels_values_, map);})
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("has_colors", &geometry::VoxelGrid::HasColors,

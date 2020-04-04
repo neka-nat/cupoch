@@ -33,7 +33,7 @@ public:
 
 public:
     Eigen::Vector3i grid_index_ = Eigen::Vector3i(0, 0, 0);
-    Eigen::Vector3f color_ = Eigen::Vector3f(0, 0, 0);
+    Eigen::Vector3f color_ = Eigen::Vector3f(1.0, 1.0, 1.0);
 };
 
 class VoxelGrid : public Geometry3D {
@@ -60,7 +60,7 @@ public:
 
     bool HasVoxels() const { return voxels_keys_.size() > 0; }
     bool HasColors() const {
-        return true;  // By default, the colors are (0, 0, 0)
+        return true;  // By default, the colors are (1.0, 1.0, 1.0)
     }
     Eigen::Vector3i GetVoxel(const Eigen::Vector3f &point) const;
 
