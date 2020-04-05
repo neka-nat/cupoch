@@ -114,8 +114,8 @@ struct compute_carve_functor {
             const thrust::tuple<Eigen::Vector3i, Voxel> &voxel) const {
         bool carve = true;
         float r = voxel_size_ / 2.0;
-        Voxel v = thrust::get<1>(voxel);
-        auto x = ((v.grid_index_.cast<float>() +
+        const Voxel& vxl = thrust::get<1>(voxel);
+        auto x = ((vxl.grid_index_.cast<float>() +
                    Eigen::Vector3f(0.5, 0.5, 0.5)) *
                   voxel_size_) +
                  origin_;

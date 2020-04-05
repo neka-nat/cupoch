@@ -218,7 +218,7 @@ struct copy_voxelgrid_line_functor {
                 voxel_color = default_mesh_color_;
                 break;
         }
-        return thrust::make_tuple(vertices_[cuboid_lines_vertex_indices[j][k]], voxel_color);
+        return thrust::make_tuple(vertices_[i * 8 + cuboid_lines_vertex_indices[j][k]], voxel_color);
     }
 };
 
@@ -264,7 +264,7 @@ struct copy_voxelgrid_face_functor {
                 voxel_color = default_mesh_color_;
                 break;
         }
-        return thrust::make_tuple(vertices_[cuboid_triangles_vertex_indices[j][k]], voxel_color);
+        return thrust::make_tuple(vertices_[i * 8 + cuboid_triangles_vertex_indices[j][k]], voxel_color);
     }
 };
 

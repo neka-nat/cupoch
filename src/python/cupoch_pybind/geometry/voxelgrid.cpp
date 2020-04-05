@@ -159,7 +159,7 @@ void pybind_voxelgrid(py::module &m) {
                     "Function to make voxels from a PointCloud", "input"_a,
                     "voxel_size"_a, "min_bound"_a, "max_bound"_a)
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
-                           "``float64`` vector of length 3: Coorindate of the "
+                           "``float32`` vector of length 3: Coorindate of the "
                            "origin point.")
             .def_readwrite("voxel_size", &geometry::VoxelGrid::voxel_size_);
     docstring::ClassMethodDocInject(m, "VoxelGrid", "has_colors");

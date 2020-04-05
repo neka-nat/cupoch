@@ -1,3 +1,6 @@
+configure_file("${PROJECT_SOURCE_DIR}/src/cupoch/cupoch_config.h.in"
+               "${PROJECT_SOURCE_DIR}/src/cupoch/cupoch_config.h")
+
 add_subdirectory(camera)
 add_subdirectory(geometry)
 add_subdirectory(integration)
