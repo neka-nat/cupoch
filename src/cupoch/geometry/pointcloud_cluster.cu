@@ -100,18 +100,19 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
     // Cluster identification
     int cluster = 0;
     utility::device_vector<int> visited(n_pt, 0);
+    thrust::host_vector<int> h_visited(n_pt, 0);
     utility::device_vector<int> clusters(n_pt, -1);
     utility::device_vector<int> xa(n_pt);
     utility::device_vector<int> fa(n_pt);
     for (int i = 0; i < n_pt; i++) {
         ++progress_bar;
-        if (visited[i] != 1) {
-            visited[i] = 1;
-            clusters[i] = cluster;
-            thrust::fill(xa.begin(), xa.end(), 0);
-            thrust::fill(fa.begin(), fa.end(), 0);
+        if (h_visited[i] != 1) {
+            thrust::fill_n(make_tuple_iterator(visited.begin() + i, clusters.begin() + i),
+                           1, thrust::make_tuple(1, cluster));
+            thrust::fill(make_tuple_iterator(xa.begin(), fa.begin()),
+                         make_tuple_iterator(xa.end(), fa.end()), thrust::make_tuple(0, 0));
             fa[i] = 1;
-            while (thrust::reduce(fa.begin(), fa.end()) != 0) {
+            while (thrust::find(fa.begin(), fa.end(), 1) != fa.end()) {
                 bfs_functor bfs_func(thrust::raw_pointer_cast(vertex_degrees.data()),
                                      thrust::raw_pointer_cast(exscan_vd.data()),
                                      thrust::raw_pointer_cast(indices.data()),
@@ -126,6 +127,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
                                       thrust::raw_pointer_cast(visited.data()));
             thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                              thrust::make_counting_iterator(n_pt), sl_func);
+            h_visited = visited;
             cluster++;
         }
     }

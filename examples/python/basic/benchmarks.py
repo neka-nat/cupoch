@@ -62,6 +62,10 @@ _, tg = measure_time(cph.registration, "registration_icp", "GPU",
                      cph.registration.TransformationEstimationPointToPoint())
 speeds['registration_icp'] = (tc / tg)
 
+_, tc = measure_time(pc_cpu, "cluster_dbscan", "CPU", 0.02, 10)
+_, tg = measure_time(pc_gpu, "cluster_dbscan", "GPU", 0.02, 10)
+speeds['cluster_dbscan'] = (tc / tg)
+
 import matplotlib.pyplot as plt
 plt.style.use('seaborn')
 plt.title("Speedup over open3d (%d points)" % np.asarray(pc_gpu.points.cpu()).shape[0])
