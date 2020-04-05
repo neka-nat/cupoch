@@ -26,18 +26,18 @@ struct compute_triangle_normals_functor {
     }
 };
 
-struct compute_adjacency_matrix_functor {
-    compute_adjacency_matrix_functor(int *adjacency_matrix, size_t n_vertices)
-        : adjacency_matrix_(adjacency_matrix), n_vertices_(n_vertices){};
-    int *adjacency_matrix_;
-    size_t n_vertices_;
-    __device__ void operator()(const Eigen::Vector3i &triangle) {
-        adjacency_matrix_[triangle(0) * n_vertices_ + triangle(1)] = 1;
-        adjacency_matrix_[triangle(0) * n_vertices_ + triangle(2)] = 1;
-        adjacency_matrix_[triangle(1) * n_vertices_ + triangle(0)] = 1;
-        adjacency_matrix_[triangle(1) * n_vertices_ + triangle(2)] = 1;
-        adjacency_matrix_[triangle(2) * n_vertices_ + triangle(0)] = 1;
-        adjacency_matrix_[triangle(2) * n_vertices_ + triangle(1)] = 1;
+struct compute_adjacency_list_functor {
+    compute_adjacency_list_functor(const Eigen::Vector3i *triangles, Eigen::Vector2i *adjacency_list)
+        : triangles_(triangles), adjacency_list_(adjacency_list) {};
+    const Eigen::Vector3i *triangles_;
+    Eigen::Vector2i *adjacency_list_;
+    __device__ void operator()(size_t idx) {
+        adjacency_list_[3 * idx] = Eigen::Vector2i(min(triangles_[idx][0], triangles_[idx][1]),
+                                                   max(triangles_[idx][0], triangles_[idx][1]));
+        adjacency_list_[3 * idx + 1] = Eigen::Vector2i(min(triangles_[idx][1], triangles_[idx][2]),
+                                                       max(triangles_[idx][1], triangles_[idx][2]));
+        adjacency_list_[3 * idx + 2] = Eigen::Vector2i(min(triangles_[idx][2], triangles_[idx][0]),
+                                                       max(triangles_[idx][2], triangles_[idx][0]));
     }
 };
 
@@ -187,14 +187,14 @@ TriangleMesh::TriangleMesh(const geometry::TriangleMesh &other)
                other.vertex_colors_),
       triangles_(other.triangles_),
       triangle_normals_(other.triangle_normals_),
-      adjacency_matrix_(other.adjacency_matrix_),
+      adjacency_list_(other.adjacency_list_),
       triangle_uvs_(other.triangle_uvs_) {}
 
 TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     MeshBase::operator=(other);
     triangles_ = other.triangles_;
     triangle_normals_ = other.triangle_normals_;
-    adjacency_matrix_ = other.adjacency_matrix_;
+    adjacency_list_ = other.adjacency_list_;
     triangle_uvs_ = other.triangle_uvs_;
     return *this;
 }
@@ -219,14 +219,14 @@ void TriangleMesh::SetTriangleNormals(
     triangle_normals_ = triangle_normals;
 }
 
-thrust::host_vector<int> TriangleMesh::GetAdjacencyMatrix() const {
-    thrust::host_vector<int> adjacency_matrix = adjacency_matrix_;
-    return adjacency_matrix;
+thrust::host_vector<Eigen::Vector2i> TriangleMesh::GetAdjacencyList() const {
+    thrust::host_vector<Eigen::Vector2i> adjacency_list = adjacency_list_;
+    return adjacency_list;
 }
 
-void TriangleMesh::SetAdjacencyMatrix(
-        const thrust::host_vector<int> &adjacency_matrix) {
-    adjacency_matrix_ = adjacency_matrix;
+void TriangleMesh::SetAdjacencyList(
+        const thrust::host_vector<Eigen::Vector2i> &adjacency_list) {
+    adjacency_list_ = adjacency_list;
 }
 
 thrust::host_vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
@@ -243,7 +243,7 @@ TriangleMesh &TriangleMesh::Clear() {
     MeshBase::Clear();
     triangles_.clear();
     triangle_normals_.clear();
-    adjacency_matrix_.clear();
+    adjacency_list_.clear();
     triangle_uvs_.clear();
     texture_.Clear();
     return *this;
@@ -274,8 +274,8 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
                       [=] __device__(const Eigen::Vector3i &tri) {
                           return tri + index_shift;
                       });
-    if (HasAdjacencyMatrix()) {
-        ComputeAdjacencyMatrix();
+    if (HasAdjacencyList()) {
+        ComputeAdjacencyList();
     }
     if (HasTriangleUvs() || HasTexture()) {
         utility::LogError(
@@ -340,13 +340,18 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     return *this;
 }
 
-TriangleMesh &TriangleMesh::ComputeAdjacencyMatrix() {
-    adjacency_matrix_.clear();
-    adjacency_matrix_.resize(vertices_.size() * vertices_.size(), 0);
-    compute_adjacency_matrix_functor func(
-            thrust::raw_pointer_cast(adjacency_matrix_.data()),
-            vertices_.size());
-    thrust::for_each(triangles_.begin(), triangles_.end(), func);
+TriangleMesh &TriangleMesh::ComputeAdjacencyList() {
+    adjacency_list_.clear();
+    adjacency_list_.resize(triangles_.size() * 3);
+    compute_adjacency_list_functor func(
+            thrust::raw_pointer_cast(triangles_.data()),
+            thrust::raw_pointer_cast(adjacency_list_.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator(triangles_.size()), func);
+    thrust::sort(adjacency_list_.begin(), adjacency_list_.end());
+    auto end = thrust::unique(adjacency_list_.begin(), adjacency_list_.end());
+    size_t n_out = thrust::distance(adjacency_list_.begin(), end);
+    adjacency_list_.resize(n_out);
     return *this;
 }
 
@@ -492,8 +497,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
                       [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
     triangles_ = new_tri;
-    if (HasAdjacencyMatrix()) {
-        ComputeAdjacencyMatrix();
+    if (HasAdjacencyList()) {
+        ComputeAdjacencyList();
     }
     utility::LogDebug(
             "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
@@ -525,8 +530,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     new_triangles.resize(k);
     triangles_ = new_triangles;
     if (has_tri_normal) triangle_normals_.resize(k);
-    if (k < old_triangle_num && HasAdjacencyMatrix()) {
-        ComputeAdjacencyMatrix();
+    if (k < old_triangle_num && HasAdjacencyList()) {
+        ComputeAdjacencyList();
     }
     utility::LogDebug(
             "[RemoveDuplicatedTriangles] {:d} triangles have been removed.",
@@ -604,8 +609,8 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
         thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
                           [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
         triangles_ = new_tri;
-        if (HasAdjacencyMatrix()) {
-            ComputeAdjacencyMatrix();
+        if (HasAdjacencyList()) {
+            ComputeAdjacencyList();
         }
     }
     utility::LogDebug(
@@ -655,8 +660,8 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     }
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
-    if (k < old_triangle_num && HasAdjacencyMatrix()) {
-        ComputeAdjacencyMatrix();
+    if (k < old_triangle_num && HasAdjacencyList()) {
+        ComputeAdjacencyList();
     }
     utility::LogDebug(
             "[RemoveDegenerateTriangles] {:d} triangles have been "

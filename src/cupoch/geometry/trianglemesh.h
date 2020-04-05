@@ -25,8 +25,8 @@ public:
     void SetTriangleNormals(
             const thrust::host_vector<Eigen::Vector3f> &triangle_normals);
 
-    thrust::host_vector<int> GetAdjacencyMatrix() const;
-    void SetAdjacencyMatrix(const thrust::host_vector<int> &adjacency_matrix);
+    thrust::host_vector<Eigen::Vector2i> GetAdjacencyList() const;
+    void SetAdjacencyList(const thrust::host_vector<Eigen::Vector2i> &adjacency_list);
 
     thrust::host_vector<Eigen::Vector2f> GetTriangleUVs() const;
     void SetTriangleUVs(thrust::host_vector<Eigen::Vector2f> &triangle_uvs);
@@ -44,9 +44,9 @@ public:
         return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
-    __host__ __device__ bool HasAdjacencyMatrix() const {
+    __host__ __device__ bool HasAdjacencyList() const {
         return vertices_.size() > 0 &&
-               adjacency_matrix_.size() == vertices_.size() * vertices_.size();
+               adjacency_list_.size() > 0;
     }
 
     __host__ __device__ bool HasTriangleUvs() const {
@@ -82,9 +82,9 @@ public:
     /// They are usually the product of removing duplicated vertices.
     TriangleMesh &RemoveDegenerateTriangles();
 
-    /// Function to compute adjacency matrix, call before adjacency matrix is
+    /// Function to compute adjacency list, call before adjacency list is
     /// needed
-    TriangleMesh &ComputeAdjacencyMatrix();
+    TriangleMesh &ComputeAdjacencyList();
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
@@ -220,7 +220,7 @@ public:
 public:
     utility::device_vector<Eigen::Vector3i> triangles_;
     utility::device_vector<Eigen::Vector3f> triangle_normals_;
-    utility::device_vector<int> adjacency_matrix_;
+    utility::device_vector<Eigen::Vector2i> adjacency_list_;
     utility::device_vector<Eigen::Vector2f> triangle_uvs_;
     Image texture_;
 };

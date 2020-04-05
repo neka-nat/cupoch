@@ -55,8 +55,8 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_adjacency_matrix",
-                 &geometry::TriangleMesh::ComputeAdjacencyMatrix,
+            .def("compute_adjacency_list",
+                 &geometry::TriangleMesh::ComputeAdjacencyList,
                  "Function to compute adjacency list, call before adjacency "
                  "list is needed")
             .def("remove_duplicated_vertices",
@@ -90,9 +90,9 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_triangle_normals",
                  &geometry::TriangleMesh::HasTriangleNormals,
                  "Returns ``True`` if the mesh contains triangle normals.")
-            .def("has_adjacency_matrix",
-                 &geometry::TriangleMesh::HasAdjacencyMatrix,
-                 "Returns ``True`` if the mesh contains adjacency matrix.")
+            .def("has_adjacency_list",
+                 &geometry::TriangleMesh::HasAdjacencyList,
+                 "Returns ``True`` if the mesh contains adjacency list.")
             .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
                  "Returns ``True`` if the mesh contains uv coordinates.")
             .def("has_texture", &geometry::TriangleMesh::HasTexture,
@@ -189,8 +189,8 @@ void pybind_trianglemesh(py::module &m) {
                                        [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3i& vec) {wrapper::FromWrapper(mesh.triangles_, vec);})
             .def_property("triangle_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.triangle_normals_);},
                                               [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.triangle_normals_, vec);})
-            .def_property("adjacency_matrix", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_int(mesh.adjacency_matrix_);},
-                                              [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_int& vec) {wrapper::FromWrapper(mesh.adjacency_matrix_, vec);})
+            .def_property("adjacency_list", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector2i(mesh.adjacency_list_);},
+                                            [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(mesh.adjacency_list_, vec);})
             .def_property("triangle_uvs", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector2f(mesh.triangle_uvs_);},
                                           [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector2f& vec) {wrapper::FromWrapper(mesh.triangle_uvs_, vec);})
             .def_readwrite("texture", &geometry::TriangleMesh::texture_,
@@ -202,12 +202,12 @@ void pybind_trianglemesh(py::module &m) {
             .def("from_vertex_normals_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_normals_);})
             .def("from_vertex_colors_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_colors_);});
     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                    "compute_adjacency_matrix");
+                                    "compute_adjacency_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_triangle_normals");
     docstring::ClassMethodDocInject(m, "TriangleMesh",
                                     "compute_vertex_normals");
-    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_adjacency_matrix");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_adjacency_list");
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "has_triangle_normals",
             {{"normalized",
