@@ -131,7 +131,7 @@ public:
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
     utility::device_vector<int> ClusterDBSCAN(
-            float eps, size_t min_points, bool print_progress = false) const;
+            float eps, size_t min_points, bool print_progress = false, size_t max_edges = NUM_MAX_NN) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

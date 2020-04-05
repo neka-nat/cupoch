@@ -22,10 +22,10 @@ def pointcloud_generator():
         (0, -d, 0))
     mesh += cph.geometry.TriangleMesh.create_moebius(twists=2).translate(
         (d, -d, 0))
-    yield "shapes", mesh.sample_points_uniformly(int(1e4)), 0.5
+    yield "shapes", mesh.sample_points_uniformly(int(1e5)), 0.5
 
-    # yield "fragment", cph.io.read_point_cloud(
-    #     "../../testdata/fragment.ply"), 0.02
+    yield "fragment", cph.io.read_point_cloud(
+        "../../testdata/fragment.ply"), 0.02
 
 
 if __name__ == "__main__":

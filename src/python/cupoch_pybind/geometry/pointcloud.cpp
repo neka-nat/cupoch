@@ -117,15 +117,15 @@ void pybind_pointcloud(py::module &m) {
                  "Function to orient the normals of a point cloud",
                  "orientation_reference"_a = Eigen::Vector3f(0.0, 0.0, 1.0))
             .def("cluster_dbscan",
-                 [] (const geometry::PointCloud& pcd, float eps, size_t min_points, bool print_progress) {
-                      auto res = pcd.ClusterDBSCAN(eps, min_points, print_progress);
+                 [] (const geometry::PointCloud& pcd, float eps, size_t min_points, bool print_progress, size_t max_edges) {
+                      auto res = pcd.ClusterDBSCAN(eps, min_points, print_progress, max_edges);
                       return wrapper::device_vector_int(std::move(res));
                  },
                  "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
                  "'A Density-Based Algorithm for Discovering Clusters in Large "
                  "Spatial Databases with Noise', 1996. Returns a list of point "
                  "labels, -1 indicates noise according to the algorithm.",
-                 "eps"_a, "min_points"_a, "print_progress"_a = false)
+                 "eps"_a, "min_points"_a, "print_progress"_a = false, "max_edges"_a = geometry::NUM_MAX_NN)
             .def_static(
                     "create_from_depth_image",
                     &geometry::PointCloud::CreateFromDepthImage,

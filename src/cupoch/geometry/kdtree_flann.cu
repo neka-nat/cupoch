@@ -142,8 +142,7 @@ int KDTreeFlann::SearchHybrid(const utility::device_vector<T> &query,
     // It is also the recommended setting for search.
     // Other flann::Index::radiusSearch() implementations lose performance due
     // to memory allocation/deallocation.
-    if (data_.empty() || query.empty() || dataset_size_ <= 0 || max_nn < 0 ||
-        max_nn > NUM_MAX_NN)
+    if (data_.empty() || query.empty() || dataset_size_ <= 0 || max_nn < 0)
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
