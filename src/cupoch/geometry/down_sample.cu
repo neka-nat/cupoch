@@ -105,7 +105,7 @@ struct average_distance_functor {
         float avg = 0;
         for (int i = 0; i < knn_; ++i) {
             const float d = distance_[idx * knn_ + i];
-            if (std::isinf(d) || d < 0.0) continue;
+            if (isinf(d) || d < 0.0) continue;
             avg += d;
             count++;
         }

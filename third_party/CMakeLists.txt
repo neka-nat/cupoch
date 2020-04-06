@@ -196,6 +196,7 @@ endif ()
 if (BUILD_JPEG)
     message(STATUS "Building libjpeg-turbo from source")
     include(libjpeg-turbo/libjpeg-turbo.cmake)
+    set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/libjpeg-turbo)
 endif()
 
 

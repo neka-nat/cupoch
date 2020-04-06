@@ -28,6 +28,7 @@
 #include "rmm/mr/device/managed_memory_resource.hpp"
 #include "rmm/mr/device/cuda_memory_resource.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cstddef>
