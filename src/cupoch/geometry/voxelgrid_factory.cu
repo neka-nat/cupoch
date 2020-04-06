@@ -15,15 +15,15 @@ using namespace cupoch::geometry;
 namespace {
 
 struct create_dense_functor {
-    create_dense_functor(int num_w, int num_h) : num_w_(num_w), num_h_(num_h){};
-    const int num_w_;
+    create_dense_functor(int num_h, int num_d) : num_h_(num_h), num_d_(num_d){};
     const int num_h_;
+    const int num_d_;
     __device__ thrust::tuple<Eigen::Vector3i, Voxel> operator()(
             size_t idx) const {
-        int whidx = idx / (num_w_ * num_h_);
-        int widx = whidx / num_h_;
-        int hidx = whidx % num_h_;
-        int didx = idx % (num_w_ * num_h_);
+        int widx = idx / (num_h_ * num_d_);
+        int hdidx = idx % (num_h_ * num_d_);
+        int hidx = hdidx / num_d_;
+        int didx = hdidx % num_d_;
         Eigen::Vector3i grid_index(widx, hidx, didx);
         return thrust::make_tuple(grid_index, geometry::Voxel(grid_index));
     }
@@ -140,7 +140,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
     int n_total = num_w * num_h * num_d;
     output->voxels_keys_.resize(n_total);
     output->voxels_values_.resize(n_total);
-    create_dense_functor func(num_w, num_h);
+    create_dense_functor func(num_h, num_d);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(n_total),
                       make_tuple_iterator(output->voxels_keys_.begin(),

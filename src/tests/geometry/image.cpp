@@ -96,6 +96,34 @@ TEST(Image, Clear) {
     EXPECT_EQ(0, image.BytesPerLine());
 }
 
+TEST(Image, FloatValueAt) {
+    geometry::Image image;
+
+    int width = 10;
+    int height = 10;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    image.Prepare(width, height, num_of_channels, bytes_per_channel);
+    thrust::host_vector<uint8_t> h_data = image.GetData();
+
+    float* const im = Cast<float>(&h_data[0]);
+
+    im[0 * width + 0] = 4.0f;
+    im[0 * width + 1] = 4.0f;
+    im[1 * width + 0] = 4.0f;
+    im[1 * width + 1] = 4.0f;
+
+    EXPECT_NEAR(4.0f, geometry::FloatValueAt(h_data.data(), 0.0, 0.0, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(4.0f, geometry::FloatValueAt(h_data.data(), 0.0, 1.0, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(4.0f, geometry::FloatValueAt(h_data.data(), 1.0, 0.0, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(4.0f, geometry::FloatValueAt(h_data.data(), 1.0, 1.0, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(4.0f, geometry::FloatValueAt(h_data.data(), 0.5, 0.5, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(2.0f, geometry::FloatValueAt(h_data.data(), 0.0, 1.5, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(2.0f, geometry::FloatValueAt(h_data.data(), 1.5, 0.0, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+    EXPECT_NEAR(1.0f, geometry::FloatValueAt(h_data.data(), 1.5, 1.5, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
+}
+
 void TEST_CreateFloatImage(
         const int& num_of_channels,
         const int& bytes_per_channel,
