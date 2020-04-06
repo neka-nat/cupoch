@@ -44,7 +44,7 @@ Please set up Jetson using [jetcard](https://github.com/NVIDIA-AI-IOT/jetcard) a
 
 ```
 sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
-pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.5/cupoch-0.0.5.0-cp36-cp36m-linux_aarch64.whl
+pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.6/cupoch-0.0.6.0-cp36-cp36m-linux_aarch64.whl
 ```
 
 ## Getting started
@@ -104,6 +104,12 @@ python realsense_rgbd_odometry_node.py
 ```
 
 ![vo](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/ros_vo.gif)
+
+## Visualization
+
+| Point Cloud | Triangle Mesh | Voxel Grid | Image |
+|-----|-----|---------|-----------|
+| <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/pointcloud.png" width="640"> |  <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/trianglemesh.png" width="640"> | <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/voxelgrid.png" width="640"> | <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/image.png" width="640"> |
 
 ## References
 
