@@ -71,34 +71,27 @@ struct compute_color_gradient_functor {
         const Eigen::Vector3f &vt = points_[idx];
         const Eigen::Vector3f &nt = normals_[idx];
         float it = (colors_[idx](0) + colors_[idx](1) + colors_[idx](2)) / 3.0;
-        Eigen::Matrix<float, geometry::NUM_MAX_NN, 3> A;
-        Eigen::Matrix<float, geometry::NUM_MAX_NN, 1> b;
-        A.setZero();
-        b.setZero();
+        Eigen::Matrix3f AtA;
+        Eigen::Vector3f Atb;
+        AtA.setZero();
+        Atb.setZero();
         int nn = 0;
         for (size_t i = 1; i < knn_; ++i) {
             if (indices_[idx * knn_ + i] < 0) continue;
             int P_adj_idx = indices_[idx * knn_ + i];
-            Eigen::Vector3f vt_adj = points_[P_adj_idx];
-            Eigen::Vector3f vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
+            const Eigen::Vector3f& vt_adj = points_[P_adj_idx];
+            const Eigen::Vector3f vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
             float it_adj = (colors_[P_adj_idx](0) + colors_[P_adj_idx](1) +
                             colors_[P_adj_idx](2)) /
                            3.0;
-            A(nn - 1, 0) = (vt_proj(0) - vt(0));
-            A(nn - 1, 1) = (vt_proj(1) - vt(1));
-            A(nn - 1, 2) = (vt_proj(2) - vt(2));
-            b(nn - 1, 0) = (it_adj - it);
+            const Eigen::Vector3f vtmp = vt_proj - vt;
+            AtA.noalias() += vtmp * vtmp.transpose();
+            Atb.noalias() += (it_adj - it) * vtmp;
             ++nn;
         }
         if (nn < 4) return Eigen::Vector3f::Zero();
         // adds orthogonal constraint
-        A(nn - 1, 0) = (nn - 1) * nt(0);
-        A(nn - 1, 1) = (nn - 1) * nt(1);
-        A(nn - 1, 2) = (nn - 1) * nt(2);
-        b(nn - 1, 0) = 0;
-        // solving linear equation
-        Eigen::Matrix3f AtA = A.transpose() * A;
-        Eigen::Vector3f Atb = A.transpose() * b;
+        AtA.noalias() += (nn - 1) * (nn - 1) * nt * nt.transpose();
         const Eigen::Vector3f x = AtA.inverse() * Atb;
         return x;
     }

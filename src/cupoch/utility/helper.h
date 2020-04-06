@@ -90,7 +90,7 @@ struct add_tuple_functor
 };
 
 template <class... Args>
-struct devided_tuple_functor
+struct devide_tuple_functor
     : public thrust::binary_function<const thrust::tuple<Args...>,
                                      const int,
                                      thrust::tuple<Args...>> {
@@ -143,7 +143,7 @@ struct add_tuple_functor<T1, T2, T3>
 };
 
 template <class T1>
-struct devided_tuple_functor<T1>
+struct devide_tuple_functor<T1>
     : public thrust::binary_function<const thrust::tuple<T1>,
                                      const int,
                                      thrust::tuple<T1>> {
@@ -156,7 +156,7 @@ struct devided_tuple_functor<T1>
 };
 
 template <class T1, class T2>
-struct devided_tuple_functor<T1, T2>
+struct devide_tuple_functor<T1, T2>
     : public thrust::binary_function<const thrust::tuple<T1, T2>,
                                      const int,
                                      thrust::tuple<T1, T2>> {
@@ -170,7 +170,7 @@ struct devided_tuple_functor<T1, T2>
 };
 
 template <class T1, class T2, class T3>
-struct devided_tuple_functor<T1, T2, T3>
+struct devide_tuple_functor<T1, T2, T3>
     : public thrust::binary_function<const thrust::tuple<T1, T2, T3>,
                                      const int,
                                      thrust::tuple<T1, T2, T3>> {

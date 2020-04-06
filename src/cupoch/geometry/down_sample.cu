@@ -74,7 +74,7 @@ __host__ int CalcAverageByKey(utility::device_vector<Eigen::Vector3i> &keys,
                                       thrust::make_discard_iterator(),
                                       output_begins, binary_pred, add_func);
 
-    devided_tuple_functor<Args...> dv_func;
+    devide_tuple_functor<Args...> dv_func;
     thrust::transform(output_begins, output_begins + n_out, counts.begin(),
                       output_begins, dv_func);
     return n_out;
