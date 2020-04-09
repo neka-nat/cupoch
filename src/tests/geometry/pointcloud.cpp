@@ -252,7 +252,7 @@ TEST(PointCloud, NormalizeNormals) {
     ExpectEQ(ref, pc.GetNormals());
 }
 
-TEST(PointCloud, SelectDownSample) {
+TEST(PointCloud, SelectByIndex) {
     thrust::host_vector<Vector3f> ref;
     ref.push_back(Vector3f(796.078431, 909.803922, 196.078431));
     ref.push_back(Vector3f(768.627451, 525.490196, 768.627451));
@@ -298,7 +298,7 @@ TEST(PointCloud, SelectDownSample) {
     it = thrust::unique(indices.begin(), indices.end());
     indices.resize(thrust::distance(indices.begin(), it));
 
-    auto output_pc = pc.SelectDownSample(indices);
+    auto output_pc = pc.SelectByIndex(indices);
     auto output_pt = output_pc->GetPoints();
 
     sort::Do(ref);

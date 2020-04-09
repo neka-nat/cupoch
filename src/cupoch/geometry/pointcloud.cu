@@ -178,7 +178,7 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
                 "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
-    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
 std::shared_ptr<PointCloud> PointCloud::Crop(
@@ -188,7 +188,7 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
                 "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
-    return SelectDownSample(bbox.GetPointIndicesWithinBoundingBox(points_));
+    return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
 
 PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,

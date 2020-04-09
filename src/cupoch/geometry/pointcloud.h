@@ -68,16 +68,24 @@ public:
     /// Assigns each point in the PointCloud the same color \param color.
     PointCloud &PaintUniformColor(const Eigen::Vector3f &color);
 
-    /// Remove all points fromt he point cloud that have a nan entry, or
+    /// \brief Remove all points fromt he point cloud that have a nan entry, or
     /// infinite entries.
+    ///
     /// Also removes the corresponding normals and color entries.
+    ///
+    /// \param remove_nan Remove NaN values from the PointCloud.
+    /// \param remove_infinite Remove infinite values from the PointCloud.
     PointCloud &RemoveNoneFinitePoints(bool remove_nan = true,
                                        bool remove_infinite = true);
 
-    /// Function to select points from \param input pointcloud into
-    /// \return output pointcloud
+    /// \brief Function to select points from \p input pointcloud into
+    /// \p output pointcloud.
+    ///
     /// Points with indices in \param indices are selected.
-    std::shared_ptr<PointCloud> SelectDownSample(
+    ///
+    /// \param indices Indices of points to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    std::shared_ptr<PointCloud> SelectByIndex(
             const utility::device_vector<size_t> &indices,
             bool invert = false) const;
 

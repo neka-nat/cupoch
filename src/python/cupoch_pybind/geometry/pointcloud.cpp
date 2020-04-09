@@ -53,7 +53,8 @@ void pybind_pointcloud(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assigns each point in the PointCloud the same color.")
-            .def("select_down_sample", &geometry::PointCloud::SelectDownSample,
+            .def("select_by_index", [] (const geometry::PointCloud& pcd, const wrapper::device_vector_size_t& index, bool invert) {
+                     return pcd.SelectByIndex(index.data_, invert); },
                  "Function to select points from input pointcloud into output "
                  "pointcloud. ``indices``: "
                  "Indices of points to be selected. ``invert``: Set to "
@@ -161,7 +162,7 @@ void pybind_pointcloud(py::module &m) {
              m, "PointCloud", "paint_uniform_color",
              {{"color", "RGB color for the PointCloud."}});
      docstring::ClassMethodDocInject(
-             m, "PointCloud", "select_down_sample",
+             m, "PointCloud", "select_by_index",
              {{"indices", "Indices of points to be selected."},
               {"invert",
                "Set to ``True`` to invert the selection of indices."}});

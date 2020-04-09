@@ -17,6 +17,7 @@ void HostTriangleMesh::FromDevice(const geometry::TriangleMesh& trianglemesh) {
     utility::CopyFromDeviceMultiStream(trianglemesh.triangles_, triangles_);
     utility::CopyFromDeviceMultiStream(trianglemesh.triangle_normals_, triangle_normals_);
     utility::CopyFromDeviceMultiStream(trianglemesh.triangle_uvs_, triangle_uvs_);
+    texture_.FromDevice(trianglemesh.texture_);
     cudaDeviceSynchronize();
 }
 
@@ -33,6 +34,7 @@ void HostTriangleMesh::ToDevice(geometry::TriangleMesh& trianglemesh) const {
     utility::CopyToDeviceMultiStream(triangles_, trianglemesh.triangles_);
     utility::CopyToDeviceMultiStream(triangle_normals_, trianglemesh.triangle_normals_);
     utility::CopyToDeviceMultiStream(triangle_uvs_, trianglemesh.triangle_uvs_);
+    texture_.ToDevice(trianglemesh.texture_);
     cudaDeviceSynchronize();
 }
 
@@ -43,4 +45,5 @@ void HostTriangleMesh::Clear() {
     triangles_.clear();
     triangle_normals_.clear();
     triangle_uvs_.clear();
+    texture_.Clear();
 }

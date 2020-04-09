@@ -1,0 +1,15 @@
+site_name: Cupoch - CUDA-based 3D processing library
+
+theme:
+  name: 'material'
+  language: 'en'
+  feature:
+    tabs: true
+
+nav:
+  - 'Home' : index.md
+
+markdown_extensions:
+  - codehilite:
+      linenums: true
+      guess_lang: False

@@ -13,5 +13,8 @@ torch = "==1.2.0"
 wheel = "*"
 twine = "*"
 pyrealsense2 = "*"
+mkdocs = "*"
+mkdocs-material = "*"
+pymdown-extensions = "*"
 
 [requires]

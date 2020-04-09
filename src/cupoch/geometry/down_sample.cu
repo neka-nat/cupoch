@@ -13,9 +13,9 @@ using namespace cupoch::geometry;
 
 namespace {
 
-void SelectDownSampleImpl(const geometry::PointCloud &src,
-                          geometry::PointCloud &dst,
-                          const utility::device_vector<size_t> &indices) {
+void SelectByIndexImpl(const geometry::PointCloud &src,
+                       geometry::PointCloud &dst,
+                       const utility::device_vector<size_t> &indices) {
     const bool has_normals = src.HasNormals();
     const bool has_colors = src.HasColors();
     if (has_normals) dst.normals_.resize(indices.size());
@@ -126,7 +126,7 @@ struct check_distance_threshold_functor {
 
 }  // namespace
 
-std::shared_ptr<PointCloud> PointCloud::SelectDownSample(
+std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
         const utility::device_vector<size_t> &indices, bool invert) const {
     auto output = std::make_shared<PointCloud>();
 
@@ -139,9 +139,9 @@ std::shared_ptr<PointCloud> PointCloud::SelectDownSample(
                                thrust::make_counting_iterator(points_.size()),
                                sorted_indices.begin(), sorted_indices.end(),
                                inv_indices.begin());
-        SelectDownSampleImpl(*this, *output, inv_indices);
+        SelectByIndexImpl(*this, *output, inv_indices);
     } else {
-        SelectDownSampleImpl(*this, *output, indices);
+        SelectByIndexImpl(*this, *output, indices);
     }
     return output;
 }
@@ -312,7 +312,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
                                thrust::make_counting_iterator(n_pt),
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
-    return std::make_tuple(SelectDownSample(indices), indices);
+    return std::make_tuple(SelectByIndex(indices), indices);
 }
 
 std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
@@ -368,5 +368,5 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                thrust::make_counting_iterator((size_t)n_pt),
                                indices.begin(), th_func);
     indices.resize(thrust::distance(indices.begin(), end));
-    return std::make_tuple(SelectDownSample(indices), indices);
+    return std::make_tuple(SelectByIndex(indices), indices);
 }
