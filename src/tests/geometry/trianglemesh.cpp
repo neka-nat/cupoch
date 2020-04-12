@@ -415,6 +415,56 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     ExpectEQ(ref, tm.GetVertexNormals());
 }
 
+TEST(TriangleMesh, ComputeEdgeList) {
+    // 4-sided pyramid with A as top vertex, bottom has two triangles
+    Eigen::Vector3f A(0, 0, 1);    // 0
+    Eigen::Vector3f B(1, 1, 0);    // 1
+    Eigen::Vector3f C(-1, 1, 0);   // 2
+    Eigen::Vector3f D(-1, -1, 0);  // 3
+    Eigen::Vector3f E(1, -1, 0);   // 4
+    thrust::host_vector<Eigen::Vector3f> vertices;
+    vertices.push_back(A);
+    vertices.push_back(B);
+    vertices.push_back(C);
+    vertices.push_back(D);
+    vertices.push_back(E);
+
+    geometry::TriangleMesh tm;
+    tm.SetVertices(vertices);
+    thrust::host_vector<Eigen::Vector3i> triangles;
+    triangles.push_back(Eigen::Vector3i(0, 1, 2));
+    triangles.push_back(Eigen::Vector3i(0, 2, 3));
+    triangles.push_back(Eigen::Vector3i(0, 3, 4));
+    triangles.push_back(Eigen::Vector3i(0, 4, 1));
+    triangles.push_back(Eigen::Vector3i(1, 2, 4));
+    triangles.push_back(Eigen::Vector3i(2, 3, 4));
+    tm.SetTriangles(triangles);
+    EXPECT_FALSE(tm.HasEdgeList());
+    tm.ComputeEdgeList();
+    EXPECT_TRUE(tm.HasEdgeList());
+
+    thrust::host_vector<Eigen::Vector2i> ref;
+    ref.push_back({0, 1});
+    ref.push_back({0, 2});
+    ref.push_back({0, 3});
+    ref.push_back({0, 4});
+    ref.push_back({1, 0});
+    ref.push_back({1, 2});
+    ref.push_back({1, 4});
+    ref.push_back({2, 0});
+    ref.push_back({2, 1});
+    ref.push_back({2, 3});
+    ref.push_back({2, 4});
+    ref.push_back({3, 0});
+    ref.push_back({3, 2});
+    ref.push_back({3, 4});
+    ref.push_back({4, 0});
+    ref.push_back({4, 1});
+    ref.push_back({4, 2});
+    ref.push_back({4, 3});
+    ExpectEQ(ref, tm.GetEdgeList());
+}
+
 TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
     EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
@@ -487,6 +537,76 @@ TEST(TriangleMesh, SamplePointsUniformly) {
         ExpectEQ(hc[pidx], Vector3f(1, 0, 0));
         ExpectEQ(hn[pidx], Vector3f(0, 0, 1));
     }
+}
+
+TEST(TriangleMesh, FilterSharpen) {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    thrust::host_vector<Eigen::Vector3f> vertices;
+    thrust::host_vector<Eigen::Vector3i> triangles;
+    vertices.push_back({0, 0, 0});
+    vertices.push_back({1, 0, 0});
+    vertices.push_back({0, 1, 0});
+    vertices.push_back({-1, 0, 0});
+    vertices.push_back({0, -1, 0});
+    triangles.push_back({0, 1, 2});
+    triangles.push_back({0, 2, 3});
+    triangles.push_back({0, 3, 4});
+    triangles.push_back({0, 4, 1});
+    mesh->SetVertices(vertices);
+    mesh->SetTriangles(triangles);
+
+    mesh = mesh->FilterSharpen(1, 1);
+    thrust::host_vector<Eigen::Vector3f> ref1;
+    ref1.push_back({0, 0, 0});
+    ref1.push_back({4, 0, 0});
+    ref1.push_back({0, 4, 0});
+    ref1.push_back({-4, 0, 0});
+    ref1.push_back({0, -4, 0});
+    ExpectEQ(mesh->GetVertices(), ref1);
+
+    mesh = mesh->FilterSharpen(9, 0.1);
+    thrust::host_vector<Eigen::Vector3f> ref2;
+    ref2.push_back({0, 0, 0});
+    ref2.push_back({42.417997, 0, 0});
+    ref2.push_back({0, 42.417997, 0});
+    ref2.push_back({-42.417997, 0, 0});
+    ref2.push_back({0, -42.417997, 0});
+    ExpectEQ(mesh->GetVertices(), ref2);
+}
+
+TEST(TriangleMesh, FilterSmoothSimple) {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    thrust::host_vector<Eigen::Vector3f> vertices;
+    thrust::host_vector<Eigen::Vector3i> triangles;
+    vertices.push_back({0, 0, 0});
+    vertices.push_back({1, 0, 0});
+    vertices.push_back({0, 1, 0});
+    vertices.push_back({-1, 0, 0});
+    vertices.push_back({0, -1, 0});
+    triangles.push_back({0, 1, 2});
+    triangles.push_back({0, 2, 3});
+    triangles.push_back({0, 3, 4});
+    triangles.push_back({0, 4, 1});
+    mesh->SetVertices(vertices);
+    mesh->SetTriangles(triangles);
+
+    mesh = mesh->FilterSmoothSimple(1);
+    thrust::host_vector<Eigen::Vector3f> ref1;
+    ref1.push_back({0, 0, 0});
+    ref1.push_back({0.25, 0, 0});
+    ref1.push_back({0, 0.25, 0});
+    ref1.push_back({-0.25, 0, 0});
+    ref1.push_back({0, -0.25, 0});
+    ExpectEQ(mesh->GetVertices(), ref1);
+
+    mesh = mesh->FilterSmoothSimple(3);
+    thrust::host_vector<Eigen::Vector3f> ref2;
+    ref2.push_back({0, 0, 0});
+    ref2.push_back({0.003906, 0, 0});
+    ref2.push_back({0, 0.003906, 0});
+    ref2.push_back({-0.003906, 0, 0});
+    ref2.push_back({0, -0.003906, 0});
+    ExpectEQ(mesh->GetVertices(), ref2);
 }
 
 TEST(TriangleMesh, HasVertices) {

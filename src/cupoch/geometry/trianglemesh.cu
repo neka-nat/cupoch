@@ -26,18 +26,24 @@ struct compute_triangle_normals_functor {
     }
 };
 
-struct compute_adjacency_list_functor {
-    compute_adjacency_list_functor(const Eigen::Vector3i *triangles, Eigen::Vector2i *adjacency_list)
-        : triangles_(triangles), adjacency_list_(adjacency_list) {};
+struct compute_edge_list_functor {
+    compute_edge_list_functor(const Eigen::Vector3i *triangles, Eigen::Vector2i *edge_list)
+        : triangles_(triangles), edge_list_(edge_list) {};
     const Eigen::Vector3i *triangles_;
-    Eigen::Vector2i *adjacency_list_;
+    Eigen::Vector2i *edge_list_;
     __device__ void operator()(size_t idx) {
-        adjacency_list_[3 * idx] = Eigen::Vector2i(min(triangles_[idx][0], triangles_[idx][1]),
-                                                   max(triangles_[idx][0], triangles_[idx][1]));
-        adjacency_list_[3 * idx + 1] = Eigen::Vector2i(min(triangles_[idx][1], triangles_[idx][2]),
-                                                       max(triangles_[idx][1], triangles_[idx][2]));
-        adjacency_list_[3 * idx + 2] = Eigen::Vector2i(min(triangles_[idx][2], triangles_[idx][0]),
-                                                       max(triangles_[idx][2], triangles_[idx][0]));
+        const int min01 = min(triangles_[idx][0], triangles_[idx][1]);
+        const int max01 = max(triangles_[idx][0], triangles_[idx][1]);
+        edge_list_[6 * idx] = Eigen::Vector2i(min01, max01);
+        edge_list_[6 * idx + 1] = Eigen::Vector2i(max01, min01);
+        const int min12 = min(triangles_[idx][1], triangles_[idx][2]);
+        const int max12 = max(triangles_[idx][1], triangles_[idx][2]);
+        edge_list_[6 * idx + 2] = Eigen::Vector2i(min12, max12);
+        edge_list_[6 * idx + 3] = Eigen::Vector2i(max12, min12);
+        const int min20 = min(triangles_[idx][2], triangles_[idx][0]);
+        const int max20 = max(triangles_[idx][2], triangles_[idx][0]);
+        edge_list_[6 * idx + 4] = Eigen::Vector2i(min20, max20);
+        edge_list_[6 * idx + 5] = Eigen::Vector2i(max20, min20);
     }
 };
 
@@ -187,14 +193,14 @@ TriangleMesh::TriangleMesh(const geometry::TriangleMesh &other)
                other.vertex_colors_),
       triangles_(other.triangles_),
       triangle_normals_(other.triangle_normals_),
-      adjacency_list_(other.adjacency_list_),
+      edge_list_(other.edge_list_),
       triangle_uvs_(other.triangle_uvs_) {}
 
 TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     MeshBase::operator=(other);
     triangles_ = other.triangles_;
     triangle_normals_ = other.triangle_normals_;
-    adjacency_list_ = other.adjacency_list_;
+    edge_list_ = other.edge_list_;
     triangle_uvs_ = other.triangle_uvs_;
     return *this;
 }
@@ -219,14 +225,14 @@ void TriangleMesh::SetTriangleNormals(
     triangle_normals_ = triangle_normals;
 }
 
-thrust::host_vector<Eigen::Vector2i> TriangleMesh::GetAdjacencyList() const {
-    thrust::host_vector<Eigen::Vector2i> adjacency_list = adjacency_list_;
-    return adjacency_list;
+thrust::host_vector<Eigen::Vector2i> TriangleMesh::GetEdgeList() const {
+    thrust::host_vector<Eigen::Vector2i> edge_list = edge_list_;
+    return edge_list;
 }
 
-void TriangleMesh::SetAdjacencyList(
-        const thrust::host_vector<Eigen::Vector2i> &adjacency_list) {
-    adjacency_list_ = adjacency_list;
+void TriangleMesh::SetEdgeList(
+        const thrust::host_vector<Eigen::Vector2i> &edge_list) {
+    edge_list_ = edge_list;
 }
 
 thrust::host_vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
@@ -243,7 +249,7 @@ TriangleMesh &TriangleMesh::Clear() {
     MeshBase::Clear();
     triangles_.clear();
     triangle_normals_.clear();
-    adjacency_list_.clear();
+    edge_list_.clear();
     triangle_uvs_.clear();
     texture_.Clear();
     return *this;
@@ -274,8 +280,8 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
                       [=] __device__(const Eigen::Vector3i &tri) {
                           return tri + index_shift;
                       });
-    if (HasAdjacencyList()) {
-        ComputeAdjacencyList();
+    if (HasEdgeList()) {
+        ComputeEdgeList();
     }
     if (HasTriangleUvs() || HasTexture()) {
         utility::LogError(
@@ -340,19 +346,183 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     return *this;
 }
 
-TriangleMesh &TriangleMesh::ComputeAdjacencyList() {
-    adjacency_list_.clear();
-    adjacency_list_.resize(triangles_.size() * 3);
-    compute_adjacency_list_functor func(
+TriangleMesh &TriangleMesh::ComputeEdgeList() {
+    edge_list_.clear();
+    edge_list_.resize(triangles_.size() * 6);
+    compute_edge_list_functor func(
             thrust::raw_pointer_cast(triangles_.data()),
-            thrust::raw_pointer_cast(adjacency_list_.data()));
+            thrust::raw_pointer_cast(edge_list_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(triangles_.size()), func);
-    thrust::sort(adjacency_list_.begin(), adjacency_list_.end());
-    auto end = thrust::unique(adjacency_list_.begin(), adjacency_list_.end());
-    size_t n_out = thrust::distance(adjacency_list_.begin(), end);
-    adjacency_list_.resize(n_out);
+    thrust::sort(edge_list_.begin(), edge_list_.end());
+    auto end = thrust::unique(edge_list_.begin(), edge_list_.end());
+    size_t n_out = thrust::distance(edge_list_.begin(), end);
+    edge_list_.resize(n_out);
     return *this;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
+        int number_of_iterations, float strength, FilterScope scope) const {
+    bool filter_vertex =
+            scope == FilterScope::All || scope == FilterScope::Vertex;
+    bool filter_normal =
+            (scope == FilterScope::All || scope == FilterScope::Normal) &&
+            HasVertexNormals();
+    bool filter_color =
+            (scope == FilterScope::All || scope == FilterScope::Color) &&
+            HasVertexColors();
+
+    utility::device_vector<Eigen::Vector3f> prev_vertices = vertices_;
+    utility::device_vector<Eigen::Vector3f> prev_vertex_normals = vertex_normals_;
+    utility::device_vector<Eigen::Vector3f> prev_vertex_colors = vertex_colors_;
+
+    std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>();
+    mesh->vertices_.resize(vertices_.size());
+    mesh->vertex_normals_.resize(vertex_normals_.size());
+    mesh->vertex_colors_.resize(vertex_colors_.size());
+    mesh->triangles_ = triangles_;
+    mesh->edge_list_ = edge_list_;
+    if (!mesh->HasEdgeList()) {
+        mesh->ComputeEdgeList();
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertex_sums(vertices_.size());
+    utility::device_vector<Eigen::Vector3f> normal_sums(vertex_normals_.size());
+    utility::device_vector<Eigen::Vector3f> color_sums(vertex_colors_.size());
+    utility::device_vector<int> counts(mesh->edge_list_.size());
+    typedef utility::device_vector<Eigen::Vector3f>::iterator ElementIterator;
+    auto ext_second = [] __device__ (const Eigen::Vector2i& x) { return x[1]; };
+    auto adj_first_eq = [] __device__ (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) { return lhs[0] == rhs[0]; };
+    auto filter_fn = [strength] __device__ (const thrust::tuple<Eigen::Vector3f, int, Eigen::Vector3f>& x) -> Eigen::Vector3f {
+            const Eigen::Vector3f& prv = thrust::get<0>(x);
+            const Eigen::Vector3f& sum = thrust::get<2>(x);
+            return prv + strength * (prv * thrust::get<1>(x) - sum);
+        };
+    auto end = thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                     thrust::make_constant_iterator(1), thrust::make_discard_iterator(),
+                                     counts.begin(), adj_first_eq);
+    counts.resize(thrust::distance(counts.begin(), end.second));
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        if (filter_vertex) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertices.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  vertex_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertices.begin(), counts.begin(), vertex_sums.begin()),
+                              make_tuple_iterator(prev_vertices.end(), counts.end(), vertex_sums.end()),
+                              mesh->vertices_.begin(), filter_fn);
+        }
+        if (filter_normal) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_normals.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  normal_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertex_normals.begin(), counts.begin(), normal_sums.begin()),
+                              make_tuple_iterator(prev_vertex_normals.end(), counts.end(), normal_sums.end()),
+                              mesh->vertex_normals_.begin(), filter_fn);
+        }
+        if (filter_color) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_colors.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  color_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertex_colors.begin(), counts.begin(), color_sums.begin()),
+                              make_tuple_iterator(prev_vertex_colors.end(), counts.end(), color_sums.end()),
+                              mesh->vertex_colors_.begin(), filter_fn);
+        }
+        if (iter < number_of_iterations - 1) {
+            thrust::swap(mesh->vertices_, prev_vertices);
+            thrust::swap(mesh->vertex_normals_, prev_vertex_normals);
+            thrust::swap(mesh->vertex_colors_, prev_vertex_colors);
+        }
+    }
+
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
+    int number_of_iterations, FilterScope scope) const {
+    bool filter_vertex =
+            scope == FilterScope::All || scope == FilterScope::Vertex;
+    bool filter_normal =
+            (scope == FilterScope::All || scope == FilterScope::Normal) &&
+            HasVertexNormals();
+    bool filter_color =
+            (scope == FilterScope::All || scope == FilterScope::Color) &&
+            HasVertexColors();
+
+    utility::device_vector<Eigen::Vector3f> prev_vertices = vertices_;
+    utility::device_vector<Eigen::Vector3f> prev_vertex_normals = vertex_normals_;
+    utility::device_vector<Eigen::Vector3f> prev_vertex_colors = vertex_colors_;
+
+    std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>();
+    mesh->vertices_.resize(vertices_.size());
+    mesh->vertex_normals_.resize(vertex_normals_.size());
+    mesh->vertex_colors_.resize(vertex_colors_.size());
+    mesh->triangles_ = triangles_;
+    mesh->edge_list_ = edge_list_;
+    if (!mesh->HasEdgeList()) {
+        mesh->ComputeEdgeList();
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertex_sums(vertices_.size());
+    utility::device_vector<Eigen::Vector3f> normal_sums(vertex_normals_.size());
+    utility::device_vector<Eigen::Vector3f> color_sums(vertex_colors_.size());
+    utility::device_vector<int> counts(mesh->edge_list_.size());
+    typedef utility::device_vector<Eigen::Vector3f>::iterator ElementIterator;
+    auto ext_second = [] __device__ (const Eigen::Vector2i& x) { return x[1]; };
+    auto adj_first_eq = [] __device__ (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) { return lhs[0] == rhs[0]; };
+    auto filter_fn = [] __device__ (const thrust::tuple<Eigen::Vector3f, int, Eigen::Vector3f>& x) -> Eigen::Vector3f {
+            const Eigen::Vector3f& prv = thrust::get<0>(x);
+            const Eigen::Vector3f& sum = thrust::get<2>(x);
+            return (prv + sum) / (1.0 + thrust::get<1>(x));
+        };
+    auto end = thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                     thrust::make_constant_iterator(1), thrust::make_discard_iterator(),
+                                     counts.begin(), adj_first_eq);
+    counts.resize(thrust::distance(counts.begin(), end.second));
+    for (int iter = 0; iter < number_of_iterations; ++iter) {
+        if (filter_vertex) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertices.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  vertex_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertices.begin(), counts.begin(), vertex_sums.begin()),
+                              make_tuple_iterator(prev_vertices.end(), counts.end(), vertex_sums.end()),
+                              mesh->vertices_.begin(), filter_fn);
+        }
+        if (filter_normal) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_normals.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  normal_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertex_normals.begin(), counts.begin(), normal_sums.begin()),
+                              make_tuple_iterator(prev_vertex_normals.end(), counts.end(), normal_sums.end()),
+                              mesh->vertex_normals_.begin(), filter_fn);
+        }
+        if (filter_color) {
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), ext_second);
+            thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_colors.begin(), tritr);
+            thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                                  pmitr, thrust::make_discard_iterator(),
+                                  color_sums.begin(), adj_first_eq);
+            thrust::transform(make_tuple_iterator(prev_vertex_colors.begin(), counts.begin(), color_sums.begin()),
+                              make_tuple_iterator(prev_vertex_colors.end(), counts.end(), color_sums.end()),
+                              mesh->vertex_colors_.begin(), filter_fn);
+        }
+        if (iter < number_of_iterations - 1) {
+            thrust::swap(mesh->vertices_, prev_vertices);
+            thrust::swap(mesh->vertex_normals_, prev_vertex_normals);
+            thrust::swap(mesh->vertex_colors_, prev_vertex_colors);
+        }
+    }
+
+    return mesh;
 }
 
 float TriangleMesh::GetSurfaceArea() const {
@@ -497,8 +667,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
                       [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
     triangles_ = new_tri;
-    if (HasAdjacencyList()) {
-        ComputeAdjacencyList();
+    if (HasEdgeList()) {
+        ComputeEdgeList();
     }
     utility::LogDebug(
             "[RemoveDuplicatedVertices] {:d} vertices have been removed.",
@@ -530,8 +700,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     new_triangles.resize(k);
     triangles_ = new_triangles;
     if (has_tri_normal) triangle_normals_.resize(k);
-    if (k < old_triangle_num && HasAdjacencyList()) {
-        ComputeAdjacencyList();
+    if (k < old_triangle_num && HasEdgeList()) {
+        ComputeEdgeList();
     }
     utility::LogDebug(
             "[RemoveDuplicatedTriangles] {:d} triangles have been removed.",
@@ -609,8 +779,8 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
         thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
                           [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
         triangles_ = new_tri;
-        if (HasAdjacencyList()) {
-            ComputeAdjacencyList();
+        if (HasEdgeList()) {
+            ComputeEdgeList();
         }
     }
     utility::LogDebug(
@@ -660,8 +830,8 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     }
     triangles_.resize(k);
     if (has_tri_normal) triangle_normals_.resize(k);
-    if (k < old_triangle_num && HasAdjacencyList()) {
-        ComputeAdjacencyList();
+    if (k < old_triangle_num && HasEdgeList()) {
+        ComputeEdgeList();
     }
     utility::LogDebug(
             "[RemoveDegenerateTriangles] {:d} triangles have been "

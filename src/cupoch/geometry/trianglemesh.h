@@ -25,8 +25,8 @@ public:
     void SetTriangleNormals(
             const thrust::host_vector<Eigen::Vector3f> &triangle_normals);
 
-    thrust::host_vector<Eigen::Vector2i> GetAdjacencyList() const;
-    void SetAdjacencyList(const thrust::host_vector<Eigen::Vector2i> &adjacency_list);
+    thrust::host_vector<Eigen::Vector2i> GetEdgeList() const;
+    void SetEdgeList(const thrust::host_vector<Eigen::Vector2i> &edge_list);
 
     thrust::host_vector<Eigen::Vector2f> GetTriangleUVs() const;
     void SetTriangleUVs(thrust::host_vector<Eigen::Vector2f> &triangle_uvs);
@@ -44,9 +44,9 @@ public:
         return HasTriangles() && triangles_.size() == triangle_normals_.size();
     }
 
-    __host__ __device__ bool HasAdjacencyList() const {
+    __host__ __device__ bool HasEdgeList() const {
         return vertices_.size() > 0 &&
-               adjacency_list_.size() > 0;
+               edge_list_.size() > 0;
     }
 
     __host__ __device__ bool HasTriangleUvs() const {
@@ -82,9 +82,35 @@ public:
     /// They are usually the product of removing duplicated vertices.
     TriangleMesh &RemoveDegenerateTriangles();
 
-    /// Function to compute adjacency list, call before adjacency list is
+    /// \brief Function to sharpen triangle mesh.
+    ///
+    /// The output value ($v_o$) is the input value ($v_i$) plus strength times
+    /// the input value minus the sum of he adjacent values. $v_o = v_i x
+    /// strength (v_i * |N| - \sum_{n \in N} v_n)$.
+    ///
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
+    /// \param strength - The strength of the filter.
+    std::shared_ptr<TriangleMesh> FilterSharpen(
+            int number_of_iterations,
+            float strength,
+            FilterScope scope = FilterScope::All) const;
+
+    /// \brief Function to smooth triangle mesh with simple neighbour average.
+    ///
+    /// $v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}$, with $v_i$
+    /// being the input value, $v_o$ the output value, and $N$ is the
+    /// set of adjacent neighbours.
+    ///
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
+    std::shared_ptr<TriangleMesh> FilterSmoothSimple(
+            int number_of_iterations,
+            FilterScope scope = FilterScope::All) const;
+
+    /// Function to compute edge list, call before edge list is
     /// needed
-    TriangleMesh &ComputeAdjacencyList();
+    TriangleMesh &ComputeEdgeList();
 
     /// Function that computes the surface area of the mesh, i.e. the sum of
     /// the individual triangle surfaces.
@@ -220,7 +246,7 @@ public:
 public:
     utility::device_vector<Eigen::Vector3i> triangles_;
     utility::device_vector<Eigen::Vector3f> triangle_normals_;
-    utility::device_vector<Eigen::Vector2i> adjacency_list_;
+    utility::device_vector<Eigen::Vector2i> edge_list_;
     utility::device_vector<Eigen::Vector2f> triangle_uvs_;
     Image texture_;
 };
