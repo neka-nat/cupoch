@@ -32,6 +32,21 @@ device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator=(
 }
 
 template <typename Type>
+device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
+        const utility::device_vector<Type>& other) {
+    thrust::transform(data_.begin(), data_.end(), other.begin(), data_.begin(), thrust::plus<Type>());
+    return *this;
+}
+
+template <typename Type>
+device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
+        const thrust::host_vector<Type>& other) {
+    utility::device_vector<Type> dvo = other;
+    thrust::transform(data_.begin(), data_.end(), dvo.begin(), data_.begin(), thrust::plus<Type>());
+    return *this;
+}
+
+template <typename Type>
 size_t device_vector_wrapper<Type>::size() const {
     return data_.size();
 }

@@ -609,6 +609,76 @@ TEST(TriangleMesh, FilterSmoothSimple) {
     ExpectEQ(mesh->GetVertices(), ref2);
 }
 
+TEST(TriangleMesh, FilterSmoothLaplacian) {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    thrust::host_vector<Eigen::Vector3f> vertices;
+    vertices.push_back({0, 0, 0});
+    vertices.push_back({1, 0, 0});
+    vertices.push_back({0, 1, 0});
+    vertices.push_back({-1, 0, 0});
+    vertices.push_back({0, -1, 0});
+    thrust::host_vector<Eigen::Vector3i> triangles;
+    triangles.push_back({0, 1, 2});
+    triangles.push_back({0, 2, 3});
+    triangles.push_back({0, 3, 4});
+    triangles.push_back({0, 4, 1});
+    mesh->SetVertices(vertices);
+    mesh->SetTriangles(triangles);
+
+    mesh = mesh->FilterSmoothLaplacian(1, 0.5);
+    thrust::host_vector<Eigen::Vector3f> ref1;
+    ref1.push_back({0, 0, 0});
+    ref1.push_back({0.5, 0, 0});
+    ref1.push_back({0, 0.5, 0});
+    ref1.push_back({-0.5, 0, 0});
+    ref1.push_back({0, -0.5, 0});
+    ExpectEQ(mesh->GetVertices(), ref1);
+
+    mesh = mesh->FilterSmoothLaplacian(10, 0.5);
+    thrust::host_vector<Eigen::Vector3f> ref2;
+    ref2.push_back({0, 0, 0});
+    ref2.push_back({0.000488, 0, 0});
+    ref2.push_back({0, 0.000488, 0});
+    ref2.push_back({-0.000488, 0, 0});
+    ref2.push_back({0, -0.000488, 0});
+    ExpectEQ(mesh->GetVertices(), ref2);
+}
+
+TEST(TriangleMesh, FilterSmoothTaubin) {
+    auto mesh = std::make_shared<geometry::TriangleMesh>();
+    thrust::host_vector<Eigen::Vector3f> vertices;
+    vertices.push_back({0, 0, 0});
+    vertices.push_back({1, 0, 0});
+    vertices.push_back({0, 1, 0});
+    vertices.push_back({-1, 0, 0});
+    vertices.push_back({0, -1, 0});
+    thrust::host_vector<Eigen::Vector3i> triangles;
+    triangles.push_back({0, 1, 2});
+    triangles.push_back({0, 2, 3});
+    triangles.push_back({0, 3, 4});
+    triangles.push_back({0, 4, 1});
+    mesh->SetVertices(vertices);
+    mesh->SetTriangles(triangles);
+
+    mesh = mesh->FilterSmoothTaubin(1, 0.5, -0.53);
+    thrust::host_vector<Eigen::Vector3f> ref1;
+    ref1.push_back({0, 0, 0});
+    ref1.push_back({0.765, 0, 0});
+    ref1.push_back({0, 0.765, 0});
+    ref1.push_back({-0.765, 0, 0});
+    ref1.push_back({0, -0.765, 0});
+    ExpectEQ(mesh->GetVertices(), ref1);
+
+    mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
+    thrust::host_vector<Eigen::Vector3f> ref2;
+    ref2.push_back({0, 0, 0});
+    ref2.push_back({0.052514, 0, 0});
+    ref2.push_back({0, 0.052514, 0});
+    ref2.push_back({-0.052514, 0, 0});
+    ref2.push_back({0, -0.052514, 0});
+    ExpectEQ(mesh->GetVertices(), ref2);
+}
+
 TEST(TriangleMesh, HasVertices) {
     int size = 100;
 

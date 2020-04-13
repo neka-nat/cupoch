@@ -108,6 +108,37 @@ public:
             int number_of_iterations,
             FilterScope scope = FilterScope::All) const;
 
+    /// \brief Function to smooth triangle mesh using Laplacian.
+    ///
+    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
+    /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
+    /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
+    /// based on the inverse distance (closer neighbours have higher weight),
+    ///
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
+    /// \param lambda is the smoothing parameter.
+    std::shared_ptr<TriangleMesh> FilterSmoothLaplacian(
+            int number_of_iterations,
+            float lambda,
+            FilterScope scope = FilterScope::All) const;
+
+    /// \brief Function to smooth triangle mesh using method of Taubin,
+    /// "Curve and Surface Smoothing Without Shrinkage", 1995.
+    /// Applies in each iteration two times FilterSmoothLaplacian, first
+    /// with lambda and second with mu as smoothing parameter.
+    /// This method avoids shrinkage of the triangle mesh.
+    ///
+    /// \param number_of_iterations defines the number of repetitions
+    /// of this operation.
+    /// \param lambda is the filter parameter
+    /// \param mu is the filter parameter
+    std::shared_ptr<TriangleMesh> FilterSmoothTaubin(
+            int number_of_iterations,
+            float lambda = 0.5,
+            float mu = -0.53,
+            FilterScope scope = FilterScope::All) const;
+
     /// Function to compute edge list, call before edge list is
     /// needed
     TriangleMesh &ComputeEdgeList();
@@ -243,6 +274,7 @@ public:
                                                        float flatness = 1,
                                                        float width = 1,
                                                        float scale = 1);
+
 public:
     utility::device_vector<Eigen::Vector3i> triangles_;
     utility::device_vector<Eigen::Vector3f> triangle_normals_;

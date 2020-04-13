@@ -16,6 +16,27 @@ void pybind_meshbase(py::module &m) {
                      "may also contain vertex normals and vertex colors.");
     py::detail::bind_default_constructor<geometry::MeshBase>(meshbase);
     py::detail::bind_copy_functions<geometry::MeshBase>(meshbase);
+    py::enum_<geometry::MeshBase::SimplificationContraction>(
+            m, "SimplificationContraction")
+            .value("Average",
+                   geometry::MeshBase::SimplificationContraction::Average,
+                   "The vertex positions are computed by the averaging.")
+            .value("Quadric",
+                   geometry::MeshBase::SimplificationContraction::Quadric,
+                   "The vertex positions are computed by minimizing the "
+                   "distance to the adjacent triangle planes.")
+            .export_values();
+    py::enum_<geometry::MeshBase::FilterScope>(m, "FilterScope")
+            .value("All", geometry::MeshBase::FilterScope::All,
+                   "All properties (color, normal, vertex position) are "
+                   "filtered.")
+            .value("Color", geometry::MeshBase::FilterScope::Color,
+                   "Only the color values are filtered.")
+            .value("Normal", geometry::MeshBase::FilterScope::Normal,
+                   "Only the normal values are filtered.")
+            .value("Vertex", geometry::MeshBase::FilterScope::Vertex,
+                   "Only the vertex positions are filtered.")
+            .export_values();
     meshbase.def("__repr__",
                  [](const geometry::MeshBase &mesh) {
                      return std::string("geometry::MeshBase with ") +

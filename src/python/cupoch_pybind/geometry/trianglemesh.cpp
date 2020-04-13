@@ -95,6 +95,27 @@ void pybind_trianglemesh(py::module &m) {
                  "adjacent neighbours.",
                  "number_of_iterations"_a = 1,
                  "filter_scope"_a = geometry::MeshBase::FilterScope::All)
+            .def("filter_smooth_laplacian",
+                 &geometry::TriangleMesh::FilterSmoothLaplacian,
+                 "Function to smooth triangle mesh using Laplacian. :math:`v_o "
+                 "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
+                 ":math:`v_i` being the input value, :math:`v_o` the output "
+                 "value, :math:`N` is the  set of adjacent neighbours, "
+                 ":math:`w_n` is the weighting of the neighbour based on the "
+                 "inverse distance (closer neighbours have higher weight), and "
+                 "lambda is the smoothing parameter.",
+                 "number_of_iterations"_a = 1, "lambda"_a = 0.5,
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
+            .def("filter_smooth_taubin",
+                 &geometry::TriangleMesh::FilterSmoothTaubin,
+                 "Function to smooth triangle mesh using method of Taubin, "
+                 "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
+                 "Applies in each iteration two times filter_smooth_laplacian, "
+                 "first with filter parameter lambda and second with filter "
+                 "parameter mu as smoothing parameter. This method avoids "
+                 "shrinkage of the triangle mesh.",
+                 "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
+                 "filter_scope"_a = geometry::MeshBase::FilterScope::All)
             .def("has_vertices", &geometry::TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &geometry::TriangleMesh::HasTriangles,
@@ -257,6 +278,19 @@ void pybind_trianglemesh(py::module &m) {
              m, "TriangleMesh", "filter_smooth_simple",
              {{"number_of_iterations",
                " Number of repetitions of this operation"},
+              {"scope", "Mesh property that should be filtered."}});
+     docstring::ClassMethodDocInject(
+             m, "TriangleMesh", "filter_smooth_laplacian",
+             {{"number_of_iterations",
+               " Number of repetitions of this operation"},
+              {"lambda", "Filter parameter."},
+              {"scope", "Mesh property that should be filtered."}});
+     docstring::ClassMethodDocInject(
+             m, "TriangleMesh", "filter_smooth_taubin",
+             {{"number_of_iterations",
+               " Number of repetitions of this operation"},
+              {"lambda", "Filter parameter."},
+              {"mu", "Filter parameter."},
               {"scope", "Mesh property that should be filtered."}});
      docstring::ClassMethodDocInject(
              m, "TriangleMesh", "paint_uniform_color",

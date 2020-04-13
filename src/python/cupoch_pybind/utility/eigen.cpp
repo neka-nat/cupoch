@@ -80,6 +80,11 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
         py::module &m, const std::string &bind_name) {
     auto vec = py::bind_vector_without_repr<cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name, py::module_local());
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
+    vec.def("__iadd__", [] (cupoch::wrapper::device_vector_wrapper<Scalar>& self, const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& other) {
+            thrust::host_vector<Scalar> hso(other.data(), other.data() + other.rows());
+            self += hso;
+            return self;
+        }, py::is_operator());
     vec.def("__copy__",
             [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) { return cupoch::wrapper::device_vector_wrapper<Scalar>(v); });
     vec.def("__deepcopy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v, py::dict &memo) {
@@ -107,6 +112,13 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
                std::string("Use numpy.asarray() to copy data to host.");
     });
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<EigenVector>::cpu);
+    vec.def("__iadd__", [] (cupoch::wrapper::device_vector_wrapper<EigenVector>& self,
+                            const Eigen::Matrix<Scalar, Eigen::Dynamic, EigenVector::RowsAtCompileTime>& other) {
+            thrust::host_vector<EigenVector> hso(other.rows());
+            for (int i = 0; i < other.rows(); ++i) { hso[i] = other.row(i); }
+            self += hso;
+            return self;
+        }, py::is_operator());
     vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
         return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
     });
@@ -146,7 +158,7 @@ void pybind_eigen(py::module &m) {
             py::none(), py::none(), "");
 
     auto vector3fvector = pybind_eigen_vector_of_vector<Eigen::Vector3f>(
-            m, "Vector3fVector", "thrust::host_vector<Eigen::Vector3f>",
+            m, "Vector3fVector", "utility::device_vector<Eigen::Vector3f>",
             py::py_array_to_vectors_float<Eigen::Vector3f>);
     vector3fvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
@@ -166,7 +178,7 @@ Example usage
             py::none(), py::none(), "");
 
     auto vector3ivector = pybind_eigen_vector_of_vector<Eigen::Vector3i>(
-            m, "Vector3iVector", "thrust::host_vector<Eigen::Vector3i>",
+            m, "Vector3iVector", "utility::device_vector<Eigen::Vector3i>",
             py::py_array_to_vectors_int<Eigen::Vector3i>);
     vector3ivector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
@@ -196,13 +208,13 @@ Example usage
     # From numpy to Cupoch
     mesh.triangles = cupoch.Vector3iVector(np_triangles)
     # From Cupoch to numpy
-    np_triangles = np.asarray(mesh.triangles)
+    np_triangles = np.asarray(mesh.triangles.cpu())
 )";
             }),
             py::none(), py::none(), "");
 
     auto vector2ivector = pybind_eigen_vector_of_vector<Eigen::Vector2i>(
-            m, "Vector2iVector", "thrust::host_vector<Eigen::Vector2i>",
+            m, "Vector2iVector", "utility::device_vector<Eigen::Vector2i>",
             py::py_array_to_vectors_int<Eigen::Vector2i>);
     vector2ivector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
