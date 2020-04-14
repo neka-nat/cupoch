@@ -31,3 +31,8 @@ if __name__ == "__main__":
     print("We draw a few primitives using + operator of mesh.")
     cph.visualization.draw_geometries(
         [mesh_box + mesh_sphere + mesh_cylinder + mesh_frame])
+
+    print("Let's draw a textured triangle mesh from obj file.")
+    textured_mesh = cph.io.read_triangle_mesh("../../testdata/crate/crate.obj")
+    textured_mesh.compute_vertex_normals()
+    cph.visualization.draw_geometries([textured_mesh])

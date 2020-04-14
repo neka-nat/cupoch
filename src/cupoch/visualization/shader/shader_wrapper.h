@@ -75,7 +75,7 @@ protected:
     GLsizei draw_arrays_size_ = 0;
     bool compiled_ = false;
     bool bound_ = false;
-    cudaGraphicsResource_t cuda_graphics_resources_[3] = {NULL, NULL, NULL};
+    cudaGraphicsResource_t cuda_graphics_resources_[4] = {NULL, NULL, NULL, NULL};
 
     void SetShaderName(const std::string &shader_name) {
         shader_name_ = shader_name;

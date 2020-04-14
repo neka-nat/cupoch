@@ -15,6 +15,26 @@ using namespace cupoch::visualization::glsl;
 
 namespace {
 
+GLenum GetFormat(const geometry::Geometry &geometry) {
+    auto it = gl_helper::texture_format_map_.find(
+        ((const geometry::TriangleMesh &)geometry).texture_.num_of_channels_);
+    if (it == gl_helper::texture_format_map_.end()) {
+        utility::LogWarning("Unknown texture format, abort!");
+        return false;
+    }
+    return it->second;
+}
+
+GLenum GetType(const geometry::Geometry &geometry) {
+    auto it = gl_helper::texture_type_map_.find(
+        ((const geometry::TriangleMesh &)geometry).texture_.bytes_per_channel_);
+    if (it == gl_helper::texture_type_map_.end()) {
+        utility::LogWarning("Unknown texture type, abort!");
+        return false;
+    }
+    return it->second;
+}
+
 struct copy_trianglemesh_functor {
     copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3f* vertex_normals,
                               const int* triangles, const Eigen::Vector3f* triangle_normals,
@@ -89,6 +109,21 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
 
     // Prepare data to be passed to GPU
     const size_t num_data_size = GetDataSize(geometry);
+    const size_t num_texture_height = GetTextureHeight(geometry);
+    const size_t num_texture_width = GetTextureWidth(geometry);
+
+    glGenTextures(1, &diffuse_texture_buffer_);
+    glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
+
+    GLenum format = GetFormat(geometry);
+    GLenum type = GetType(geometry);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, num_texture_width,
+                 num_texture_height, 0, format, type, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Create buffers and bind the geometry
     glGenBuffers(1, &vertex_position_buffer_);
@@ -106,24 +141,33 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
     glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector2f), 0, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[2], vertex_uv_buffer_, cudaGraphicsMapFlagsNone));
+    glGenBuffers(1, &diffuse_texture_pixel_buffer_);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, diffuse_texture_pixel_buffer_);
+    size_t texture_size = GetTextureSize(geometry);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, texture_size, 0, GL_STATIC_DRAW);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[3], diffuse_texture_pixel_buffer_, cudaGraphicsMapFlagsNone));
 
     Eigen::Vector3f* raw_points_ptr;
     Eigen::Vector3f* raw_normals_ptr;
     Eigen::Vector2f* raw_uvs_ptr;
+    uint8_t* raw_render_texture_ptr;
     size_t n_bytes;
-    cudaSafeCall(cudaGraphicsMapResources(3, cuda_graphics_resources_));
+    cudaSafeCall(cudaGraphicsMapResources(4, cuda_graphics_resources_));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_normals_ptr, &n_bytes, cuda_graphics_resources_[1]));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_uvs_ptr, &n_bytes, cuda_graphics_resources_[2]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_render_texture_ptr, &n_bytes, cuda_graphics_resources_[3]));
     thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
     thrust::device_ptr<Eigen::Vector3f> dev_normals_ptr = thrust::device_pointer_cast(raw_normals_ptr);
     thrust::device_ptr<Eigen::Vector2f> dev_uvs_ptr = thrust::device_pointer_cast(raw_uvs_ptr);
+    thrust::device_ptr<uint8_t> dev_texture_ptr = thrust::device_pointer_cast(raw_render_texture_ptr);
 
-    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_normals_ptr, dev_uvs_ptr) == false) {
+    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_normals_ptr, dev_uvs_ptr, dev_texture_ptr) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
-    Unmap(3);
+    Unmap(4);
     bound_ = true;
     return true;
 }
@@ -135,6 +179,12 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
         PrintShaderWarning("Rendering failed during preparation.");
         return false;
     }
+
+    const size_t num_data_height = GetTextureHeight(geometry);
+    const size_t num_data_width = GetTextureWidth(geometry);
+    GLenum format = GetFormat(geometry);
+    GLenum type = GetType(geometry);
+
     glUseProgram(program_);
     glUniformMatrix4fv(MVP_, 1, GL_FALSE, view.GetMVPMatrix().data());
     glUniformMatrix4fv(V_, 1, GL_FALSE, view.GetViewMatrix().data());
@@ -148,9 +198,13 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
                  light_specular_shininess_data_.data());
     glUniform4fv(light_ambient_, 1, light_ambient_data_.data());
 
-    glUniform1i(diffuse_texture_, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, diffuse_texture_pixel_buffer_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, num_data_width, num_data_height,
+        format, type, 0);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    glUniform1i(diffuse_texture_, 0);
 
     glEnableVertexAttribArray(vertex_position_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
@@ -178,7 +232,9 @@ void TexturePhongShader::UnbindGeometry(bool finalize) {
             cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
             cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
             cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[2]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[3]));
         }
+        glDeleteBuffers(1, &diffuse_texture_buffer_);
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_normal_buffer_);
         glDeleteBuffers(1, &vertex_uv_buffer_);
@@ -257,7 +313,8 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
         thrust::device_ptr<Eigen::Vector3f> &normals,
-        thrust::device_ptr<Eigen::Vector2f> &uvs) {
+        thrust::device_ptr<Eigen::Vector2f> &uvs,
+        thrust::device_ptr<uint8_t> &texture_image) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -284,57 +341,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
                       make_tuple_iterator(points, normals, uvs), func);
-
-    glGenTextures(1, &diffuse_texture_);
-    glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
-
-    GLenum format;
-    switch (mesh.texture_.num_of_channels_) {
-        case 1: {
-            format = GL_RED;
-            break;
-        }
-        case 3: {
-            format = GL_RGB;
-            break;
-        }
-        case 4: {
-            format = GL_RGBA;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
-            return false;
-        }
-    }
-
-    GLenum type;
-    switch (mesh.texture_.bytes_per_channel_) {
-        case 1: {
-            type = GL_UNSIGNED_BYTE;
-            break;
-        }
-        case 2: {
-            type = GL_UNSIGNED_SHORT;
-            break;
-        }
-        case 4: {
-            type = GL_FLOAT;
-            break;
-        }
-        default: {
-            utility::LogWarning("Unknown format, abort!");
-            return false;
-        }
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, mesh.texture_.width_,
-                 mesh.texture_.height_, 0, format, type,
-                 thrust::raw_pointer_cast(mesh.texture_.data_.data()));
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    thrust::copy(mesh.texture_.data_.begin(), mesh.texture_.data_.end(), texture_image);
 
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
@@ -343,4 +350,16 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
 
 size_t TexturePhongShaderForTriangleMesh::GetDataSize(const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
+}
+
+size_t TexturePhongShaderForTriangleMesh::GetTextureSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).texture_.data_.size();
+}
+
+size_t TexturePhongShaderForTriangleMesh::GetTextureHeight(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).texture_.height_;
+}
+
+size_t TexturePhongShaderForTriangleMesh::GetTextureWidth(const geometry::Geometry &geometry) const {
+    return ((const geometry::TriangleMesh &)geometry).texture_.width_;
 }

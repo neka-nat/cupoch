@@ -199,8 +199,8 @@ struct vertical_flip_functor {
     __device__ void operator()(size_t idx) {
         const int y = idx / width_;
         const int x = idx % width_;
-        memcpy(&dst_[(height_ - y - 1) * width_ * bytes_per_pixel_ + x],
-               &src_[idx], bytes_per_pixel_ * sizeof(uint8_t));
+        memcpy(&dst_[((height_ - y - 1) * width_  + x) * bytes_per_pixel_],
+               &src_[idx * bytes_per_pixel_], bytes_per_pixel_ * sizeof(uint8_t));
     }
 };
 
@@ -220,8 +220,8 @@ struct horizontal_flip_functor {
     __device__ void operator()(size_t idx) {
         const int y = idx / width_;
         const int x = idx % width_;
-        memcpy(&dst_[y * width_ * bytes_per_pixel_ + (width_ - x - 1)],
-               &src_[idx], bytes_per_pixel_ * sizeof(uint8_t));
+        memcpy(&dst_[(y * width_ + (width_ - x - 1)) * bytes_per_pixel_],
+               &src_[idx * bytes_per_pixel_], bytes_per_pixel_ * sizeof(uint8_t));
     }
 };
 

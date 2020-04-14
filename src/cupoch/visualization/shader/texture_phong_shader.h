@@ -39,8 +39,12 @@ protected:
                                 const ViewControl &view,
                                 thrust::device_ptr<Eigen::Vector3f> &points,
                                 thrust::device_ptr<Eigen::Vector3f> &normals,
-                                thrust::device_ptr<Eigen::Vector2f> &uvs) = 0;
+                                thrust::device_ptr<Eigen::Vector2f> &uvs,
+                                thrust::device_ptr<uint8_t> &texture_image) = 0;
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetTextureSize(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetTextureHeight(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetTextureWidth(const geometry::Geometry &geometry) const = 0;
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 
@@ -63,6 +67,7 @@ protected:
 
     GLuint diffuse_texture_;
     GLuint diffuse_texture_buffer_;
+    GLuint diffuse_texture_pixel_buffer_;
 
     // At most support 4 lights
     gl_helper::GLMatrix4f light_position_world_data_;
@@ -87,8 +92,12 @@ protected:
                         const ViewControl &view,
                         thrust::device_ptr<Eigen::Vector3f> &points,
                         thrust::device_ptr<Eigen::Vector3f> &normals,
-                        thrust::device_ptr<Eigen::Vector2f> &uvs) final;
+                        thrust::device_ptr<Eigen::Vector2f> &uvs,
+                        thrust::device_ptr<uint8_t> &texture_image) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
+    size_t GetTextureSize(const geometry::Geometry &geometry) const final;
+    size_t GetTextureHeight(const geometry::Geometry &geometry) const final;
+    size_t GetTextureWidth(const geometry::Geometry &geometry) const final;
 };
 
 }  // namespace glsl
