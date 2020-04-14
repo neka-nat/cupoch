@@ -120,6 +120,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
     }
 
     mesh.Clear();
+    host_mesh.ToDevice(mesh);
     // Now we assert only one shape is stored, we only select the first
     // diffuse material
     for (auto& material : materials) {
@@ -130,7 +131,6 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
             break;
         }
     }
-    host_mesh.ToDevice(mesh);
     return true;
 }
 

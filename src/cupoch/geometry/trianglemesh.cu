@@ -272,7 +272,8 @@ TriangleMesh::TriangleMesh(const geometry::TriangleMesh &other)
       triangles_(other.triangles_),
       triangle_normals_(other.triangle_normals_),
       edge_list_(other.edge_list_),
-      triangle_uvs_(other.triangle_uvs_) {}
+      triangle_uvs_(other.triangle_uvs_),
+      texture_(other.texture_) {}
 
 TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     MeshBase::operator=(other);
@@ -280,6 +281,7 @@ TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     triangle_normals_ = other.triangle_normals_;
     edge_list_ = other.edge_list_;
     triangle_uvs_ = other.triangle_uvs_;
+    texture_ = other.texture_;
     return *this;
 }
 
