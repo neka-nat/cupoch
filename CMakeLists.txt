@@ -113,12 +113,12 @@ if (WIN32)
 elseif (CYGWIN)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     message(STATUS "Compiling on Cygwin")
-    # enable c++11
+    # enable c++14
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_definitions(-DCYGWIN)
 elseif (APPLE)
     add_definitions(-DUNIX)
-    # enable c++11
+    # enable c++14
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     add_compile_options(-Wno-deprecated-declarations)
     if (NOT BUILD_SHARED_LIBS)
@@ -131,7 +131,7 @@ elseif (APPLE)
     endif()
 elseif (UNIX)
     add_definitions(-DUNIX)
-    # enable c++11
+    # enable c++14
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC")
     if (NOT BUILD_SHARED_LIBS)

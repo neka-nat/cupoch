@@ -44,7 +44,7 @@ Please set up Jetson using [jetcard](https://github.com/NVIDIA-AI-IOT/jetcard) a
 
 ```
 sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
-pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.6/cupoch-0.0.6.0-cp36-cp36m-linux_aarch64.whl
+pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.7/cupoch-0.0.7.0-cp36-cp36m-linux_aarch64.whl
 ```
 
 ## Getting started
