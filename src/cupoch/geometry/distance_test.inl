@@ -24,6 +24,18 @@ float PointPlane(const Eigen::Vector3f &p,
     return abs(n.dot(p - vert0));
 }
 
+float PointAABBSquared(const Eigen::Vector3f &p,
+                       const Eigen::Vector3f &min_bound,
+                       const Eigen::Vector3f &max_bound) {
+    float dist2 = 0.0f;
+    for (int i = 0; i < 3; i++) {
+        float v = p[i];
+        if(v < min_bound[i]) dist2 += (min_bound[i] - v) * (min_bound[i] - v);
+        if(v > max_bound[i]) dist2 += (v - max_bound[i]) * (v - max_bound[i]);
+    }
+    return dist2;
+}
+
 }  // namespace distance_test
 
 }  // namespace geometry

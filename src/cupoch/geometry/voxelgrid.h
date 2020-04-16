@@ -21,6 +21,8 @@ class PointCloud;
 class TriangleMesh;
 class Image;
 
+__device__ const int INVALID_VOXEL_INDEX = std::numeric_limits<int>::min();
+
 class Voxel {
 public:
     __host__ __device__ Voxel() {}

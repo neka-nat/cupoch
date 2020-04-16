@@ -2,6 +2,7 @@
 #include <tomasakeninemoeller/tribox3.h>
 
 #include "cupoch/geometry/intersection_test.h"
+#include "cupoch/geometry/distance_test.h"
 
 namespace cupoch {
 namespace geometry {
@@ -43,6 +44,23 @@ bool TriangleAABB(const Eigen::Vector3f &box_center,
     return triBoxOverlap(const_cast<float *>(box_center.data()),
                          const_cast<float *>(box_half_size.data()),
                          tri_verts) != 0;
+}
+
+bool AABBAABB(const Eigen::Vector3f &min_bound0,
+              const Eigen::Vector3f &max_bound0,
+              const Eigen::Vector3f &min_bound1,
+              const Eigen::Vector3f &max_bound1) {
+    return (min_bound0[0] <= max_bound1[0] && max_bound0[0] >= min_bound1[0]) &&
+           (min_bound0[1] <= max_bound1[1] && max_bound0[1] >= min_bound1[1]) &&
+           (min_bound0[2] <= max_bound1[2] && max_bound0[2] >= min_bound1[2]);
+}
+
+bool SphereAABB(const Eigen::Vector3f& center,
+                float radius,
+                const Eigen::Vector3f& min_bound,
+                const Eigen::Vector3f& max_bound) {
+    float dist2 = distance_test::PointAABBSquared(center, min_bound, max_bound);
+    return dist2 <= radius * radius;
 }
 
 }  // namespace intersection_test

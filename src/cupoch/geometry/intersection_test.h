@@ -21,6 +21,19 @@ __host__ __device__ inline bool TriangleAABB(
         const Eigen::Vector3f &vert0,
         const Eigen::Vector3f &vert1,
         const Eigen::Vector3f &vert2);
+
+__host__ __device__ inline bool AABBAABB(
+        const Eigen::Vector3f &min_bound0,
+        const Eigen::Vector3f &max_bound0,
+        const Eigen::Vector3f &min_bound1,
+        const Eigen::Vector3f &max_bound1);
+
+__host__ __device__ inline bool SphereAABB(
+        const Eigen::Vector3f& center,
+        float radius,
+        const Eigen::Vector3f& min_bound,
+        const Eigen::Vector3f& max_bound);
+
 }  // namespace intersection_test
 
 }  // namespace geometry

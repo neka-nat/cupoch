@@ -2,19 +2,20 @@
 <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/cupoch_logo.png" width="320" />
 </p>
 
-# CUDA-based 3D Data Processing Library
+# CUDA-based 3D Data Processing and Robotics Library
 
 [![Build Status](https://travis-ci.com/neka-nat/cupoch.svg?branch=master)](https://travis-ci.com/neka-nat/cupoch)
 [![PyPI version](https://badge.fury.io/py/cupoch.svg)](https://badge.fury.io/py/cupoch)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cupoch)
 [![Downloads](https://pepy.tech/badge/cupoch)](https://pepy.tech/project/cupoch)
 
-Cupoch is a library that implements rapid 3D data processing using CUDA.
+Cupoch is a library that implements rapid 3D data processing and robotics computation using CUDA.
 
 ## Core Features
 
-* 3D data processing using CUDA
+* 3D data processing and robotics computation using CUDA
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
+* Collision calculation for robotics
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
 * Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
@@ -114,3 +115,4 @@ python realsense_rgbd_odometry_node.py
 ## References
 
 * CUDA repository forked from Open3D, https://github.com/theNded/Open3D
+* Voxel collision comupation for robotics, https://github.com/fzi-forschungszentrum-informatik/gpu-voxels

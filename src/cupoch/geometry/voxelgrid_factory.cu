@@ -119,7 +119,9 @@ struct create_from_trianglemesh_functor {
                                           geometry::Voxel(grid_index));
             }
         }
-        return thrust::make_tuple(Eigen::Vector3i(-1, -1, -1),
+        return thrust::make_tuple(Eigen::Vector3i(INVALID_VOXEL_INDEX,
+                                                  INVALID_VOXEL_INDEX,
+                                                  INVALID_VOXEL_INDEX),
                                   geometry::Voxel());
     }
 };
@@ -269,7 +271,9 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                     const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
                     -> bool {
                 Eigen::Vector3i idxs = thrust::get<0>(x);
-                return idxs[0] < 0;
+                return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX,
+                                               INVALID_VOXEL_INDEX,
+                                               INVALID_VOXEL_INDEX);
             });
     size_t n_out = thrust::distance(begin, end);
     output->voxels_keys_.resize(n_out);

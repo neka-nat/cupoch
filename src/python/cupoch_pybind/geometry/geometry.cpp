@@ -1,6 +1,5 @@
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/docstring.h"
-#include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 
 using namespace cupoch;

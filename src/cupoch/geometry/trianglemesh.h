@@ -33,6 +33,10 @@ public:
 
 public:
     virtual TriangleMesh &Clear() override;
+    virtual TriangleMesh &Transform(
+            const Eigen::Matrix4f &transformation) override;
+    virtual TriangleMesh &Rotate(const Eigen::Matrix3f &R,
+                                 bool center = true) override;
     TriangleMesh &operator+=(const TriangleMesh &mesh);
     TriangleMesh operator+(const TriangleMesh &mesh) const;
 

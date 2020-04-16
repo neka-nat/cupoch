@@ -335,6 +335,18 @@ TriangleMesh &TriangleMesh::Clear() {
     return *this;
 }
 
+TriangleMesh &TriangleMesh::Transform(const Eigen::Matrix4f &transformation) {
+    MeshBase::Transform(transformation);
+    TransformNormals(transformation, triangle_normals_);
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3f &R, bool center) {
+    MeshBase::Rotate(R, center);
+    RotateNormals(R, triangle_normals_);
+    return *this;
+}
+
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
     size_t old_vert_num = vertices_.size();

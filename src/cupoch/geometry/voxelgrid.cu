@@ -235,17 +235,17 @@ VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4f &transformation) {
 
 VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3f &translation,
                                 bool relative) {
-    utility::LogError("Not implemented");
+    origin_ += translation;
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Scale(const float scale, bool center) {
-    utility::LogError("Not implemented");
+    voxel_size_ *= scale;
     return *this;
 }
 
 VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3f &R, bool center) {
-    utility::LogError("VoxelGrid::Transform is not supported");
+    utility::LogError("VoxelGrid::Rotate is not supported");
     return *this;
 }
 

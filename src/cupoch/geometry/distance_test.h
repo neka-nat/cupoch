@@ -18,6 +18,11 @@ __host__ __device__ inline float PointPlane(
         const Eigen::Vector3f &vert1,
         const Eigen::Vector3f &vert2);
 
+__host__ __device__ inline float PointAABBSquared(
+        const Eigen::Vector3f &p,
+        const Eigen::Vector3f &min_bound,
+        const Eigen::Vector3f &max_bound);
+
 }  // namespace distance_test
 
 }  // namespace geometry
