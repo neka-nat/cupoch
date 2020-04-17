@@ -36,6 +36,7 @@ class Sphere : public Primitive {
 public:
     Sphere();
     Sphere(float radius);
+    Sphere(float radius, const Eigen::Vector3f& center);
     virtual ~Sphere();
 
     std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(float voxel_size) const override;

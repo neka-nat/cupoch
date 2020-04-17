@@ -17,6 +17,8 @@ void pybind_primitives(py::module &m) {
     py::detail::bind_copy_functions<Sphere>(sphere);
     sphere.def(py::init<float>(),
                "Create a Sphere", "radius"_a)
+          .def(py::init<float, const Eigen::Vector3f&>(),
+               "Create a Sphere", "radius"_a, "center"_a)
           .def("create_voxel_grid", &Sphere::CreateVoxelGrid)
           .def("create_voxel_grid_with_sweeping", &Sphere::CreateVoxelGridWithSweeping)
           .def("create_triangle_mesh", &Sphere::CreateTriangleMesh);

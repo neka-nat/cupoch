@@ -137,6 +137,11 @@ Primitive::~Primitive() {}
 
 Sphere::Sphere() : Primitive(Primitive::PrimitiveType::Sphere), radius_(0.0) {}
 Sphere::Sphere(float radius) : Primitive(Primitive::PrimitiveType::Sphere), radius_(radius) {}
+Sphere::Sphere(float radius, const Eigen::Vector3f& center)
+    : Primitive(Primitive::PrimitiveType::Sphere), radius_(radius) {
+    transform_.block<3, 1>(0, 3) = center;
+}
+
 Sphere::~Sphere() {}
 
 std::shared_ptr<geometry::VoxelGrid> Sphere::CreateVoxelGrid(float voxel_size) const {
