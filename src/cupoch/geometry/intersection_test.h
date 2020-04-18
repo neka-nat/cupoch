@@ -28,6 +28,12 @@ __host__ __device__ inline bool AABBAABB(
         const Eigen::Vector3f &min_bound1,
         const Eigen::Vector3f &max_bound1);
 
+__host__ __device__ inline bool LineSegmentAABB(
+        const Eigen::Vector3f &p0,
+        const Eigen::Vector3f &p1,
+        const Eigen::Vector3f &min_bound,
+        const Eigen::Vector3f &max_bound);
+
 __host__ __device__ inline bool SphereAABB(
         const Eigen::Vector3f& center,
         float radius,

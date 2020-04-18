@@ -3,14 +3,12 @@
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/geometry/intersection_test.h"
 
+#include "cupoch/utility/eigen.h"
+
 namespace cupoch {
 namespace collision {
 
 namespace {
-
-__device__ Eigen::Vector3f FloorVector(const Eigen::Vector3f& x) {
-    return Eigen::Vector3f(floor(x[0]), floor(x[1]), floor(x[2]));
-}
 
 struct create_from_sphere_functor {
     create_from_sphere_functor(float radius,
@@ -83,12 +81,12 @@ struct create_from_swept_sphere_functor {
         int widx = idx / (num_h_ * num_d_ * sampling_)  - num_w_ / 2;
         int hdsidx = idx % (num_h_ * num_d_ * sampling_);
         int hidx = hdsidx / (num_d_ * sampling_) - num_h_ / 2;
-        int dsidx = idx % (num_d_ * sampling_);
+        int dsidx = hdsidx % (num_d_ * sampling_);
         int didx = dsidx / sampling_ - num_d_ / 2;
         int sidx = dsidx % sampling_;
 
         Eigen::Vector3f diff = sidx * step_;
-        Eigen::Vector3i offset = (FloorVector(diff / voxel_size_)).cast<int>();
+        Eigen::Vector3i offset = (Eigen::device_floor<Eigen::Vector3f>(diff / voxel_size_)).cast<int>();
         const Eigen::Vector3f box_center = (offset.cast<float>() + Eigen::Vector3f(widx, hidx, didx)) * voxel_size_;
         if (geometry::intersection_test::SphereAABB(sidx * step_, radius_,
                                                     box_center - box_half_size_,

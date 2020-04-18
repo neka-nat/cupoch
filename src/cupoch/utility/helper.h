@@ -55,6 +55,15 @@ __host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
     return false;
 }
 
+template <typename T, int Dim>
+__host__ __device__ bool operator>(const Eigen::Matrix<T, Dim, 1> &lhs,
+                                   const Eigen::Matrix<T, Dim, 1> &rhs) {
+    for (int i = 0; i < Dim; ++i) {
+        if (lhs[i] != rhs[i]) return lhs[i] > rhs[i];
+    }
+    return false;
+}
+
 template <typename T>
 __host__ __device__ inline bool operator==(const Eigen::Matrix<T, 3, 1> &lhs,
                                            const Eigen::Matrix<T, 3, 1> &rhs) {
@@ -73,6 +82,24 @@ __host__ __device__ bool device_any(const ArrayType &array) {
         if (array[i]) return true;
     }
     return false;
+}
+
+template <typename ArrayType>
+__host__ __device__ ArrayType device_floor(const ArrayType& x) {
+    ArrayType ans;
+    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
+        ans[i] = ::floor(x[i]);
+    }
+    return ans;
+}
+
+template <typename ArrayType>
+__host__ __device__ ArrayType device_ceil(const ArrayType& x) {
+    ArrayType ans;
+    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
+        ans[i] = ::ceil(x[i]);
+    }
+    return ans;
 }
 
 }  // namespace Eigen

@@ -60,9 +60,7 @@ struct create_from_pointcloud_functor {
     __device__ thrust::tuple<Eigen::Vector3i, geometry::Voxel> operator()(
             const Eigen::Vector3f &point, const Eigen::Vector3f &color) const {
         Eigen::Vector3f ref_coord = (point - min_bound_) / voxel_size_;
-        Eigen::Vector3i voxel_index;
-        voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
-                int(floor(ref_coord(2)));
+        Eigen::Vector3i voxel_index = Eigen::device_floor(ref_coord).cast<int>();
         if (has_colors_) {
             return thrust::make_tuple(voxel_index,
                                       geometry::Voxel(voxel_index, color));

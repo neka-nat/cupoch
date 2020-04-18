@@ -11,11 +11,17 @@
 
 Cupoch is a library that implements rapid 3D data processing and robotics computation using CUDA.
 
+The goal of this library is to process the input of 3D sensors rapidly and use it to control the robot.
+This library is based on the functionality of Open3D, with additional features for integration into robot systems.
+
 ## Core Features
 
 * 3D data processing and robotics computation using CUDA
+    * Point cloud registration
+    * Collision checking
+    * Visual Odometry
+    * Filtering, down sampling
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
-* Collision calculation for robotics
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
 * Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
@@ -48,32 +54,8 @@ sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
 pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.7/cupoch-0.0.7.0-cp36-cp36m-linux_aarch64.whl
 ```
 
-## Getting started
-The following demo shows ICP registration.
-You can write code that is almost compatible with open3d.
-
-```py
-import cupoch as cph
-import numpy as np
-
-if __name__ == "__main__":
-    source_gpu = cph.io.read_point_cloud("testdata/icp/cloud_bin_0.pcd")
-    target_gpu = cph.io.read_point_cloud("testdata/icp/cloud_bin_1.pcd")
-    threshold = 0.02
-    trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
-                             [-0.139, 0.967, -0.215, 0.7],
-                             [0.487, 0.255, 0.835, -1.4],
-                             [0.0, 0.0, 0.0, 1.0]])
-    reg_p2p = cph.registration.registration_icp(
-        source_gpu, target_gpu, threshold, trans_init.astype(np.float32),
-        cph.registration.TransformationEstimationPointToPoint())
-    print(reg_p2p.transformation)
-    source_gpu.transform(reg_p2p.transformation)
-    cph.visualization.draw_geometries([source_gpu, target_gpu])
-```
-
-## Result
-The figure shows Cupoch speedup over Open3d.
+## Results
+The figure shows Cupoch's point cloud algorithms speedup over Open3D.
 The environment tested on has the following specs:
 * Intel Core i7-7700HQ CPU
 * Nvidia GTX1070 GPU

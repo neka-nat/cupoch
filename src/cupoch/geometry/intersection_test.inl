@@ -55,6 +55,27 @@ bool AABBAABB(const Eigen::Vector3f &min_bound0,
            (min_bound0[2] <= max_bound1[2] && max_bound0[2] >= min_bound1[2]);
 }
 
+bool LineSegmentAABB(const Eigen::Vector3f &p0,
+                     const Eigen::Vector3f &p1,
+                     const Eigen::Vector3f &min_bound,
+                     const Eigen::Vector3f &max_bound) {
+    const Eigen::Vector3f center = (min_bound + max_bound) * 0.5;
+    const Eigen::Vector3f ext = max_bound - center;
+    Eigen::Vector3f mid = (p0 + p1) * 0.5;
+    const Eigen::Vector3f dst = p1 - mid;
+    mid -= center;
+    Eigen::Vector3f absdst;
+    for (int i = 0; i < 3; ++i) {
+        absdst[i] = abs(dst[i]);
+        if (abs(mid[i]) > ext[i] + absdst[i]) return false;
+    }
+    absdst.array() += std::numeric_limits<float>::epsilon();
+    if (abs(mid[1] * dst[2] - mid[2] * dst[1]) > ext[1] * absdst[2] + ext[2] * absdst[1]) return false;
+    if (abs(mid[2] * dst[0] - mid[0] * dst[2]) > ext[2] * absdst[0] + ext[0] * absdst[2]) return false;
+    if (abs(mid[0] * dst[1] - mid[1] * dst[0]) > ext[0] * absdst[1] + ext[1] * absdst[0]) return false;
+    return true;
+}
+
 bool SphereAABB(const Eigen::Vector3f& center,
                 float radius,
                 const Eigen::Vector3f& min_bound,

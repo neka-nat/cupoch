@@ -20,6 +20,8 @@ public:
         PointCloud = 1,
         /// VoxelGrid
         VoxelGrid = 2,
+        /// OccupancyGrid
+        OccupancyGrid = 3,
         /// LineSet
         LineSet = 4,
         /// MeshBase
