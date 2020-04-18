@@ -101,7 +101,7 @@ public:
 
 protected:
     SimpleShaderForVoxelGridLine simple_shader_for_voxel_grid_line_;
-    SimpleShaderForVoxelGridFace simple_shader_for_voxel_grid_face_;
+    PhongShaderForVoxelGridFace phong_shader_for_voxel_grid_face_;
 };
 
 class CoordinateFrameRenderer : public GeometryRenderer {

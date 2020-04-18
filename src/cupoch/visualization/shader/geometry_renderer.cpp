@@ -103,8 +103,8 @@ bool VoxelGridRenderer::Render(const RenderOption &option,
         return simple_shader_for_voxel_grid_line_.Render(*geometry_ptr_, option,
                                                          view);
     } else {
-        return simple_shader_for_voxel_grid_face_.Render(*geometry_ptr_, option,
-                                                         view);
+        return phong_shader_for_voxel_grid_face_.Render(*geometry_ptr_, option,
+                                                        view);
     }
 }
 
@@ -120,7 +120,7 @@ bool VoxelGridRenderer::AddGeometry(
 
 bool VoxelGridRenderer::UpdateGeometry() {
     simple_shader_for_voxel_grid_line_.InvalidateGeometry();
-    simple_shader_for_voxel_grid_face_.InvalidateGeometry();
+    phong_shader_for_voxel_grid_face_.InvalidateGeometry();
     return true;
 }
 
