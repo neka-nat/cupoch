@@ -1,6 +1,8 @@
 #include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_functor.h"
 
 #include "cupoch/utility/eigen.h"
 
@@ -86,8 +88,8 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     free_voxels.resize(thrust::distance(free_voxels.begin(), end2));
 }
 
-struct create_from_points_functor {
-    create_from_points_functor(const Eigen::Vector3f &origin,
+struct create_occupancy_voxels_functor {
+    create_occupancy_voxels_functor(const Eigen::Vector3f &origin,
                                float voxel_size)
         : origin_(origin),
           voxel_size_(voxel_size) {};
@@ -171,6 +173,18 @@ Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
     }
 }
 
+Eigen::Vector3f OccupancyGrid::GetCenter() const {
+    Eigen::Vector3f init(0, 0, 0);
+    if (!HasVoxels()) {
+        return init;
+    }
+    compute_grid_center_functor func(voxel_size_, origin_);
+    Eigen::Vector3f center = thrust::transform_reduce(voxels_keys_.begin(),
+            voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
+    center /= float(voxels_values_.size());
+    return center;
+}
+
 AxisAlignedBoundingBox OccupancyGrid::GetAxisAlignedBoundingBox() const {
     AxisAlignedBoundingBox box;
     box.min_bound_ = GetMinBound();
@@ -183,6 +197,27 @@ OrientedBoundingBox OccupancyGrid::GetOrientedBoundingBox() const {
             GetAxisAlignedBoundingBox());
 }
 
+OccupancyGrid &OccupancyGrid::Transform(const Eigen::Matrix4f &transformation) {
+    utility::LogError("OccupancyGrid::Transform is not supported");
+    return *this;
+}
+
+OccupancyGrid &OccupancyGrid::Translate(const Eigen::Vector3f &translation,
+                                        bool relative) {
+    origin_ += translation;
+    return *this;
+}
+
+OccupancyGrid &OccupancyGrid::Scale(const float scale, bool center) {
+    voxel_size_ *= scale;
+    return *this;
+}
+
+OccupancyGrid &OccupancyGrid::Rotate(const Eigen::Matrix3f &R, bool center) {
+    utility::LogError("OccupancyGrid::Rotate is not supported");
+    return *this;
+}
+
 void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
     utility::device_vector<Eigen::Vector3i> free_voxels;
     utility::device_vector<Eigen::Vector3i> occupied_voxels;
@@ -192,7 +227,7 @@ void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points
 
     { // compute occupied voxels
         occupied_voxels.resize(points.size());
-        create_from_points_functor func(origin_, voxel_size_);
+        create_occupancy_voxels_functor func(origin_, voxel_size_);
         thrust::transform(points.begin(), points.end(), occupied_voxels.begin(), func);
         thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
         auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
@@ -207,12 +242,34 @@ void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points
     AddVoxels(occupied_voxels, true);
 }
 
+void OccupancyGrid::Insert(const geometry::PointCloud& pointcloud, const Eigen::Vector3f& viewpoint) {
+    Insert(pointcloud.points_, viewpoint);
+}
+
+void OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
+    voxels_keys_.push_back(voxel);
+    voxels_values_.push_back(OccupancyVoxel(voxel, (occupied) ? prob_hit_log_ : prob_miss_log_));
+    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+                        voxels_values_.begin());
+    utility::device_vector<Eigen::Vector3i> new_voxels_keys(voxels_keys_.size());
+    utility::device_vector<OccupancyVoxel> new_voxels_values(voxels_keys_.size());
+    auto end = thrust::reduce_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+                                     voxels_values_.begin(), new_voxels_keys.begin(),
+                                     new_voxels_values.begin(), thrust::equal_to<Eigen::Vector3i>(),
+                                     add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
+    size_t out_size = thrust::distance(new_voxels_keys.begin(), end.first);
+    new_voxels_keys.resize(out_size);
+    new_voxels_values.resize(out_size);
+    voxels_keys_ = new_voxels_keys;
+    voxels_values_ = new_voxels_values;
+}
+
 void OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
     voxels_keys_.insert(voxels_keys_.end(), voxels.begin(), voxels.end());
-    voxels_values_.insert(voxels_values_.end(), thrust::make_transform_iterator(
-                                voxels.begin(), create_occupancy_voxel_functor(prob_hit_log_, prob_miss_log_, occupied)),
-                          thrust::make_transform_iterator(
-                                voxels.end(), create_occupancy_voxel_functor(prob_hit_log_, prob_miss_log_, occupied)));
+    create_occupancy_voxel_functor func(prob_hit_log_, prob_miss_log_, occupied);
+    voxels_values_.insert(voxels_values_.end(),
+                          thrust::make_transform_iterator(voxels.begin(), func),
+                          thrust::make_transform_iterator(voxels.end(), func));
     thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
     utility::device_vector<Eigen::Vector3i> new_voxels_keys(voxels_keys_.size());

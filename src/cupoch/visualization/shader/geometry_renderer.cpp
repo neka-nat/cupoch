@@ -124,6 +124,28 @@ bool VoxelGridRenderer::UpdateGeometry() {
     return true;
 }
 
+bool OccupancyGridRenderer::Render(const RenderOption &option,
+                                   const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    return phong_shader_for_occupancy_grid_.Render(*geometry_ptr_, option,
+                                                   view);
+}
+
+bool OccupancyGridRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::OccupancyGrid) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool OccupancyGridRenderer::UpdateGeometry() {
+    phong_shader_for_occupancy_grid_.InvalidateGeometry();
+    return true;
+}
+
 bool ImageRenderer::Render(const RenderOption &option,
                            const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;

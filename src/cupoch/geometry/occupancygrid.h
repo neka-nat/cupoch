@@ -31,8 +31,14 @@ public:
     bool IsEmpty() const override;
     Eigen::Vector3f GetMinBound() const override;
     Eigen::Vector3f GetMaxBound() const override;
+    Eigen::Vector3f GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox() const;
+    OccupancyGrid &Transform(const Eigen::Matrix4f &transformation) override;
+    OccupancyGrid &Translate(const Eigen::Vector3f &translation,
+                             bool relative = true) override;
+    OccupancyGrid &Scale(const float scale, bool center = true) override;
+    OccupancyGrid &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     bool HasVoxels() const { return voxels_keys_.size() > 0; }
     bool HasColors() const {
@@ -43,7 +49,8 @@ public:
     void Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);
     void Insert(const Image& depth, const camera::PinholeCameraIntrinsic &intrinsic,
                 const Eigen::Matrix4f &extrinsic);
-private:
+
+    void AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
     void AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
 public:
     float voxel_size_ = 0.0;

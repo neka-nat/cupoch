@@ -4,26 +4,12 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/geometry/geometry_functor.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
 
 namespace {
-
-struct compute_center_functor {
-    compute_center_functor(float voxel_size,
-                           const Eigen::Vector3f &origin,
-                           const Eigen::Vector3f &half_voxel_size)
-        : voxel_size_(voxel_size),
-          origin_(origin),
-          half_voxel_size_(half_voxel_size){};
-    const float voxel_size_;
-    const Eigen::Vector3f origin_;
-    const Eigen::Vector3f half_voxel_size_;
-    __device__ Eigen::Vector3f operator()(const Eigen::Vector3i &x) const {
-        return x.cast<float>() * voxel_size_ + origin_ + half_voxel_size_;
-    }
-};
 
 struct extract_grid_index_functor {
     __device__ Eigen::Vector3i operator()(const Voxel &voxel) const {
@@ -179,9 +165,7 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     if (!HasVoxels()) {
         return init;
     }
-    const Eigen::Vector3f half_voxel_size(0.5 * voxel_size_, 0.5 * voxel_size_,
-                                          0.5 * voxel_size_);
-    compute_center_functor func(voxel_size_, origin_, half_voxel_size);
+    compute_grid_center_functor func(voxel_size_, origin_);
     Eigen::Vector3f center = thrust::transform_reduce(voxels_keys_.begin(),
             voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
