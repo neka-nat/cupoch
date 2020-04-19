@@ -10,20 +10,6 @@ using namespace cupoch::geometry;
 
 namespace {
 
-struct elementwise_min_functor {
-    __device__ Eigen::Vector3i operator()(const Eigen::Vector3i &a,
-                                          const Eigen::Vector3i &b) {
-        return a.array().min(b.array()).matrix();
-    }
-};
-
-struct elementwise_max_functor {
-    __device__ Eigen::Vector3i operator()(const Eigen::Vector3i &a,
-                                          const Eigen::Vector3i &b) {
-        return a.array().max(b.array()).matrix();
-    }
-};
-
 struct compute_center_functor {
     compute_center_functor(float voxel_size,
                            const Eigen::Vector3f &origin,
@@ -168,14 +154,9 @@ Eigen::Vector3f VoxelGrid::GetMinBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Voxel v = voxels_values_[0];
-        Eigen::Vector3i init = v.grid_index_;
-        Eigen::Vector3i min_grid_index = thrust::reduce(
-                thrust::make_transform_iterator(voxels_values_.begin(),
-                                                extract_grid_index_functor()),
-                thrust::make_transform_iterator(voxels_values_.end(),
-                                                extract_grid_index_functor()),
-                init, elementwise_min_functor());
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i min_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_minimum<Eigen::Vector3i>());
         return min_grid_index.cast<float>() * voxel_size_ + origin_;
     }
 }
@@ -184,15 +165,10 @@ Eigen::Vector3f VoxelGrid::GetMaxBound() const {
     if (!HasVoxels()) {
         return origin_;
     } else {
-        Voxel v = voxels_values_[0];
-        Eigen::Vector3i init = v.grid_index_;
-        Eigen::Vector3i min_grid_index = thrust::reduce(
-                thrust::make_transform_iterator(voxels_values_.begin(),
-                                                extract_grid_index_functor()),
-                thrust::make_transform_iterator(voxels_values_.end(),
-                                                extract_grid_index_functor()),
-                init, elementwise_max_functor());
-        return (min_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i max_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_maximum<Eigen::Vector3i>());
+        return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
                        voxel_size_ +
                origin_;
     }
@@ -206,12 +182,8 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     const Eigen::Vector3f half_voxel_size(0.5 * voxel_size_, 0.5 * voxel_size_,
                                           0.5 * voxel_size_);
     compute_center_functor func(voxel_size_, origin_, half_voxel_size);
-    Eigen::Vector3f center = thrust::transform_reduce(
-            thrust::make_transform_iterator(voxels_values_.begin(),
-                                            extract_grid_index_functor()),
-            thrust::make_transform_iterator(voxels_values_.end(),
-                                            extract_grid_index_functor()),
-            func, init, thrust::plus<Eigen::Vector3f>());
+    Eigen::Vector3f center = thrust::transform_reduce(voxels_keys_.begin(),
+            voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
     return center;
 }

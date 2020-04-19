@@ -27,6 +27,18 @@ public:
     OccupancyGrid();
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);
+    OccupancyGrid &Clear() override;
+    bool IsEmpty() const override;
+    Eigen::Vector3f GetMinBound() const override;
+    Eigen::Vector3f GetMaxBound() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    bool HasVoxels() const { return voxels_keys_.size() > 0; }
+    bool HasColors() const {
+        return true;  // By default, the colors are (1.0, 1.0, 1.0)
+    }
+
     void Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
     void Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);
     void Insert(const Image& depth, const camera::PinholeCameraIntrinsic &intrinsic,

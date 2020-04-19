@@ -8,20 +8,6 @@ using namespace cupoch::geometry;
 
 namespace {
 
-struct elementwise_min_functor {
-    __device__ Eigen::Vector3f operator()(const Eigen::Vector3f &a,
-                                          const Eigen::Vector3f &b) {
-        return a.array().min(b.array()).matrix();
-    }
-};
-
-struct elementwise_max_functor {
-    __device__ Eigen::Vector3f operator()(const Eigen::Vector3f &a,
-                                          const Eigen::Vector3f &b) {
-        return a.array().max(b.array()).matrix();
-    }
-};
-
 struct transform_points_functor {
     transform_points_functor(const Eigen::Matrix4f &transform)
         : transform_(transform){};
@@ -59,7 +45,7 @@ Eigen::Vector3f Geometry3D::ComputeMinBound(
     Eigen::Vector3f init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
                           points.begin(), points.end(), init,
-                          elementwise_min_functor());
+                          thrust::elementwise_minimum<Eigen::Vector3f>());
 }
 
 Eigen::Vector3f Geometry3D::ComputeMaxBound(
@@ -74,7 +60,7 @@ Eigen::Vector3f Geometry3D::ComputeMaxBound(
     Eigen::Vector3f init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
                           points.begin(), points.end(), init,
-                          elementwise_max_functor());
+                          thrust::elementwise_maximum<Eigen::Vector3f>());
 }
 
 Eigen::Vector3f Geometry3D::ComputeCenter(

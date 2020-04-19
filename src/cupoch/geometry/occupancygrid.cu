@@ -137,6 +137,52 @@ OccupancyGrid::OccupancyGrid(const OccupancyGrid& other)
    prob_hit_log_(other.prob_hit_log_), prob_miss_log_(other.prob_miss_log_),
    occ_prob_thres_log_(other.occ_prob_thres_log_) {}
 
+OccupancyGrid &OccupancyGrid::Clear() {
+    voxel_size_ = 0.0;
+    origin_ = Eigen::Vector3f::Zero();
+    voxels_keys_.clear();
+    voxels_values_.clear();
+    return *this;
+}
+
+bool OccupancyGrid::IsEmpty() const { return !HasVoxels(); }
+
+Eigen::Vector3f OccupancyGrid::GetMinBound() const {
+    if (!HasVoxels()) {
+        return origin_;
+    } else {
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i min_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_minimum<Eigen::Vector3i>());
+        return min_grid_index.cast<float>() * voxel_size_ + origin_;
+    }
+}
+
+Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
+    if (!HasVoxels()) {
+        return origin_;
+    } else {
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i max_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_maximum<Eigen::Vector3i>());
+        return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
+                       voxel_size_ +
+               origin_;
+    }
+}
+
+AxisAlignedBoundingBox OccupancyGrid::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox box;
+    box.min_bound_ = GetMinBound();
+    box.max_bound_ = GetMaxBound();
+    return box;
+}
+
+OrientedBoundingBox OccupancyGrid::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
 void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
     utility::device_vector<Eigen::Vector3i> free_voxels;
     utility::device_vector<Eigen::Vector3i> occupied_voxels;

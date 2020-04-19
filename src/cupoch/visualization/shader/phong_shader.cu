@@ -3,6 +3,7 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
 #include <thrust/iterator/constant_iterator.h>
@@ -571,4 +572,76 @@ bool PhongShaderForVoxelGridFace::PrepareBinding(
 
 size_t PhongShaderForVoxelGridFace::GetDataSize(const geometry::Geometry &geometry) const {
     return ((const geometry::VoxelGrid &)geometry).voxels_keys_.size() * 12 * 3;
+}
+
+bool PhongShaderForOccupancyGrid::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OccupancyGrid) {
+        PrintShaderWarning("Rendering type is not geometry::OccupancyGrid.");
+        return false;
+    }
+    if (option.mesh_show_back_face_) {
+        glDisable(GL_CULL_FACE);
+    } else {
+        glEnable(GL_CULL_FACE);
+    }
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if (option.mesh_show_wireframe_) {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.0, 1.0);
+    } else {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
+    SetLighting(view, option);
+    return true;
+}
+
+bool PhongShaderForOccupancyGrid::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &normals,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::OccupancyGrid) {
+        PrintShaderWarning("Rendering type is not geometry::OccupancyGrid.");
+        return false;
+    }
+    const geometry::OccupancyGrid &voxel_grid =
+            (const geometry::OccupancyGrid &)geometry;
+    if (voxel_grid.HasVoxels() == false) {
+        PrintShaderWarning("Binding failed with empty voxel grid.");
+        return false;
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
+    compute_voxel_vertices_functor func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                         voxel_grid.origin_, voxel_grid.voxel_size_);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
+                      vertices.begin(), func1);
+
+    size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
+    copy_voxelgrid_face_functor func2(thrust::raw_pointer_cast(vertices.data()),
+                                      thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                      voxel_grid.HasColors(), option.mesh_color_option_,
+                                      option.default_mesh_color_, view);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_out),
+                      make_tuple_iterator(points, normals, colors), func2);
+    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_size_ = GLsizei(n_out);
+
+    return true;
+}
+
+size_t PhongShaderForOccupancyGrid::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::OccupancyGrid &)geometry).voxels_keys_.size() * 12 * 3;
 }

@@ -42,6 +42,22 @@ struct plus<thrust::tuple<MatType, VecType, float>> {
     }
 };
 
+template<typename VectorType>
+struct elementwise_minimum {
+    __device__ VectorType operator()(const VectorType &a,
+                                     const VectorType &b) {
+        return a.array().min(b.array()).matrix();
+    }
+};
+
+template<typename VectorType>
+struct elementwise_maximum {
+    __device__ VectorType operator()(const VectorType &a,
+                                     const VectorType &b) {
+        return a.array().max(b.array()).matrix();
+    }
+};
+
 }  // namespace thrust
 
 namespace Eigen {
