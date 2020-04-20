@@ -13,8 +13,8 @@ public:
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index, float prob_log)
         : Voxel(grid_index), prob_log_(prob_log) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index,
-                                       const Eigen::Vector3f &color,
-                                       float prob_log = 0.0)
+                                       float prob_log,
+                                       const Eigen::Vector3f &color)
         : Voxel(grid_index, color), prob_log_(prob_log) {}
     __host__ __device__ ~OccupancyVoxel() {}
 
@@ -44,6 +44,10 @@ public:
     bool HasColors() const {
         return true;  // By default, the colors are (1.0, 1.0, 1.0)
     }
+    bool IsOccupied(const Eigen::Vector3f &point) const;
+    bool IsUnknown(const Eigen::Vector3f &point) const;
+    int GetVoxelIndex(const Eigen::Vector3f& point) const;
+    thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
 
     void Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
     void Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);

@@ -123,8 +123,9 @@ struct add_occupancy_functor{
     const float clamping_thres_max_;
     __device__ OccupancyVoxel operator() (const OccupancyVoxel& lhs, const OccupancyVoxel& rhs) const {
         float sum_prob = lhs.prob_log_ + rhs.prob_log_;
-        return OccupancyVoxel(lhs.grid_index_, (lhs.color_ + rhs.color_) * 0.5,
-                              min(max(sum_prob, clamping_thres_min_), clamping_thres_max_));
+        return OccupancyVoxel(lhs.grid_index_,
+                              min(max(sum_prob, clamping_thres_min_), clamping_thres_max_),
+                              (lhs.color_ + rhs.color_) * 0.5);
     }
 };
 
@@ -195,6 +196,33 @@ AxisAlignedBoundingBox OccupancyGrid::GetAxisAlignedBoundingBox() const {
 OrientedBoundingBox OccupancyGrid::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
             GetAxisAlignedBoundingBox());
+}
+
+bool OccupancyGrid::IsOccupied(const Eigen::Vector3f &point) const{
+    auto idx = GetVoxelIndex(point);
+    if (idx < 0) return false;
+    OccupancyVoxel voxel = voxels_values_[idx];
+    return voxel.prob_log_ > occ_prob_thres_log_;
+}
+
+bool OccupancyGrid::IsUnknown(const Eigen::Vector3f &point) const{
+    auto idx = GetVoxelIndex(point);
+    return idx < 0;
+}
+
+int OccupancyGrid::GetVoxelIndex(const Eigen::Vector3f& point) const {
+    Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
+    Eigen::Vector3i voxel_idx = (Eigen::floor(voxel_f.array())).cast<int>();
+    auto itr = thrust::find(voxels_keys_.begin(), voxels_keys_.end(), voxel_idx);
+    if (itr == voxels_keys_.end()) return -1;
+    return thrust::distance(voxels_keys_.begin(), itr);
+}
+
+thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(const Eigen::Vector3f &point) const {
+    auto idx = GetVoxelIndex(point);
+    if (idx < 0) return thrust::make_tuple(false, OccupancyVoxel());
+    OccupancyVoxel voxel = voxels_values_[idx];
+    return thrust::make_tuple(true, voxel);
 }
 
 OccupancyGrid &OccupancyGrid::Transform(const Eigen::Matrix4f &transformation) {

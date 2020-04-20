@@ -156,6 +156,7 @@ void pybind_geometry(py::module &m) {
     pybind_kdtreeflann(m_submodule);
     pybind_pointcloud(m_submodule);
     pybind_voxelgrid(m_submodule);
+    pybind_occupanygrid(m_submodule);
     pybind_lineset(m_submodule);
     pybind_meshbase(m_submodule);
     pybind_trianglemesh(m_submodule);

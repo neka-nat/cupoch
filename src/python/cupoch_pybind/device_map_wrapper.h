@@ -10,6 +10,7 @@ namespace cupoch {
 
 namespace geometry {
 class Voxel;
+class OccupancyVoxel;
 }
 
 namespace wrapper {
@@ -50,6 +51,7 @@ void FromWrapper(utility::device_vector<KeyType>& dk, utility::device_vector<Val
                  const device_map_wrapper<KeyType, ValueType, Hash>& map);
 
 using VoxelMap = device_map_wrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>;
+using OccupancyVoxelMap = device_map_wrapper<Eigen::Vector3i, geometry::OccupancyVoxel, hash<Eigen::Vector3i>>;
 
 }  // namespace wrapper
 }  // namespace cupoch
