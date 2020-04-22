@@ -140,20 +140,21 @@ struct copy_trianglemesh_functor {
 
 };
 
+template<typename VoxelType>
 struct compute_voxel_vertices_functor {
-    compute_voxel_vertices_functor(const geometry::Voxel* voxels, const Eigen::Vector3f& origin, float voxel_size)
+    compute_voxel_vertices_functor(const VoxelType* voxels, const Eigen::Vector3f& origin, float voxel_size)
      : voxels_(voxels), origin_(origin), voxel_size_(voxel_size) {};
-    const geometry::Voxel* voxels_;
+    const VoxelType* voxels_;
     const Eigen::Vector3f origin_;
     const float voxel_size_;
     __device__
     Eigen::Vector3f operator() (size_t idx) const {
         int i = idx / 8;
         int j = idx % 8;
-        const geometry::Voxel &voxel = voxels_[i];
+        const VoxelType &voxel = voxels_[i];
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
-                origin_ + voxel.grid_index_.cast<float>() * voxel_size_;
+                origin_ + voxel.grid_index_.template cast<float>() * voxel_size_;
         const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
                                               cuboid_vertex_offsets[j][1],
                                               cuboid_vertex_offsets[j][2]);
@@ -161,15 +162,16 @@ struct compute_voxel_vertices_functor {
     }
 };
 
+template<typename VoxelType>
 struct copy_voxelgrid_face_functor {
-    copy_voxelgrid_face_functor(const Eigen::Vector3f* vertices, const geometry::Voxel* voxels, bool has_colors,
+    copy_voxelgrid_face_functor(const Eigen::Vector3f* vertices, const VoxelType* voxels, bool has_colors,
                                 RenderOption::MeshColorOption color_option, const Eigen::Vector3f& default_mesh_color,
                                 const ViewControl& view)
                                 : vertices_(vertices), voxels_(voxels), has_colors_(has_colors),
                                  color_option_(color_option), default_mesh_color_(default_mesh_color),
                                  view_(view) {};
     const Eigen::Vector3f* vertices_;
-    const geometry::Voxel* voxels_;
+    const VoxelType* voxels_;
     const bool has_colors_;
     const RenderOption::MeshColorOption color_option_;
     const Eigen::Vector3f default_mesh_color_;
@@ -550,17 +552,17 @@ bool PhongShaderForVoxelGridFace::PrepareBinding(
     }
 
     utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
-    compute_voxel_vertices_functor func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                         voxel_grid.origin_, voxel_grid.voxel_size_);
+    compute_voxel_vertices_functor<geometry::Voxel> func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                                          voxel_grid.origin_, voxel_grid.voxel_size_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
                       vertices.begin(), func1);
 
     size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
-    copy_voxelgrid_face_functor func2(thrust::raw_pointer_cast(vertices.data()),
-                                      thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                      voxel_grid.HasColors(), option.mesh_color_option_,
-                                      option.default_mesh_color_, view);
+    copy_voxelgrid_face_functor<geometry::Voxel> func2(thrust::raw_pointer_cast(vertices.data()),
+                                                       thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                                       voxel_grid.HasColors(), option.mesh_color_option_,
+                                                       option.default_mesh_color_, view);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);
@@ -589,7 +591,6 @@ bool PhongShaderForOccupancyGrid::PrepareRendering(
         glEnable(GL_CULL_FACE);
     }
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (option.mesh_show_wireframe_) {
@@ -622,17 +623,17 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
     }
 
     utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
-    compute_voxel_vertices_functor func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                         voxel_grid.origin_, voxel_grid.voxel_size_);
+    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                                                   voxel_grid.origin_, voxel_grid.voxel_size_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
                       vertices.begin(), func1);
 
     size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
-    copy_voxelgrid_face_functor func2(thrust::raw_pointer_cast(vertices.data()),
-                                      thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                      voxel_grid.HasColors(), option.mesh_color_option_,
-                                      option.default_mesh_color_, view);
+    copy_voxelgrid_face_functor<geometry::OccupancyVoxel> func2(thrust::raw_pointer_cast(vertices.data()),
+                                                                thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+                                                                voxel_grid.HasColors(), option.mesh_color_option_,
+                                                                option.default_mesh_color_, view);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);

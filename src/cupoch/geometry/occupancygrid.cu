@@ -40,7 +40,7 @@ struct compute_free_voxels_functor{
         int dpidx = hdpidx % (num_d_ * n_points_);
         int didx = dpidx / n_points_;
         int pidx = dpidx % n_points_;
-        Eigen::Vector3f center = Eigen::Vector3f(widx, hidx, didx) * voxel_size_ + min_bound_ - box_half_size_;
+        Eigen::Vector3f center = Eigen::Vector3f(widx, hidx, didx) * voxel_size_ + min_bound_ + box_half_size_;
         if (intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
                                                center - box_half_size_,
                                                center + box_half_size_)) {
@@ -57,14 +57,16 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        const Eigen::Vector3f& viewpoint,
                        float voxel_size, Eigen::Vector3f& origin,
                        utility::device_vector<Eigen::Vector3i>& free_voxels) {
+    if (points.empty()) return;
     size_t n_points = points.size();
     auto bbx = AxisAlignedBoundingBox::CreateFromPoints(points);
-    Eigen::Vector3f min_bound = viewpoint.array().min(bbx.min_bound_.array());
-    Eigen::Vector3f max_bound = viewpoint.array().max(bbx.max_bound_.array());
+    const Eigen::Vector3f box_half_size(0.5 * voxel_size, 0.5 * voxel_size, 0.5 * voxel_size);
+    Eigen::Vector3f min_bound = viewpoint.array().min(bbx.min_bound_.array()).matrix() - box_half_size;
+    Eigen::Vector3f max_bound = viewpoint.array().max(bbx.max_bound_.array()).matrix() + box_half_size;
     Eigen::Vector3f grid_size = max_bound - min_bound;
-    int num_w = int(std::round(grid_size(0) / voxel_size));
-    int num_h = int(std::round(grid_size(1) / voxel_size));
-    int num_d = int(std::round(grid_size(2) / voxel_size));
+    int num_w = int(std::floor(grid_size(0) / voxel_size));
+    int num_h = int(std::floor(grid_size(1) / voxel_size));
+    int num_d = int(std::floor(grid_size(2) / voxel_size));
     size_t n_total = num_w * num_h * num_d * n_points;
 
     free_voxels.resize(n_total);
@@ -90,7 +92,7 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
 
 struct create_occupancy_voxels_functor {
     create_occupancy_voxels_functor(const Eigen::Vector3f &origin,
-                               float voxel_size)
+                                    float voxel_size)
         : origin_(origin),
           voxel_size_(voxel_size) {};
     const Eigen::Vector3f origin_;
@@ -100,6 +102,17 @@ struct create_occupancy_voxels_functor {
         return Eigen::device_floor<Eigen::Vector3f>(ref_coord).cast<int>();
     }
 };
+
+void ComputeOccupiedVoxels(const utility::device_vector<Eigen::Vector3f>& points,
+    float voxel_size, Eigen::Vector3f& origin,
+    utility::device_vector<Eigen::Vector3i>& occupied_voxels) {
+    occupied_voxels.resize(points.size());
+    create_occupancy_voxels_functor func(origin, voxel_size);
+    thrust::transform(points.begin(), points.end(), occupied_voxels.begin(), func);
+    thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
+    auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
+    occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
+}
 
 struct create_occupancy_voxel_functor{
     create_occupancy_voxel_functor(float prob_hit_log,
@@ -132,6 +145,8 @@ struct add_occupancy_functor{
 }
 
 OccupancyGrid::OccupancyGrid() : Geometry3D(Geometry::GeometryType::OccupancyGrid) {}
+OccupancyGrid::OccupancyGrid(float voxel_size, const Eigen::Vector3f& origin)
+ : Geometry3D(Geometry::GeometryType::OccupancyGrid), voxel_size_(voxel_size), origin_(origin) {}
 OccupancyGrid::~OccupancyGrid() {}
 OccupancyGrid::OccupancyGrid(const OccupancyGrid& other)
  : Geometry3D(Geometry::GeometryType::OccupancyGrid), voxel_size_(other.voxel_size_),
@@ -246,21 +261,15 @@ OccupancyGrid &OccupancyGrid::Rotate(const Eigen::Matrix3f &R, bool center) {
     return *this;
 }
 
-void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
+OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
     utility::device_vector<Eigen::Vector3i> free_voxels;
     utility::device_vector<Eigen::Vector3i> occupied_voxels;
 
     // comupute free voxels
-    ComputeFreeVoxels(points, viewpoint, voxel_size_, origin_, free_voxels); 
+    ComputeFreeVoxels(points, viewpoint, voxel_size_, origin_, free_voxels);
+    // compute occupied voxels
+    ComputeOccupiedVoxels(points, voxel_size_, origin_, occupied_voxels);
 
-    { // compute occupied voxels
-        occupied_voxels.resize(points.size());
-        create_occupancy_voxels_functor func(origin_, voxel_size_);
-        thrust::transform(points.begin(), points.end(), occupied_voxels.begin(), func);
-        thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
-        auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
-        occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
-    }
     utility::device_vector<Eigen::Vector3i> free_voxels_res(free_voxels.size());
     auto end = thrust::set_difference(free_voxels.begin(), free_voxels.end(),
                                       occupied_voxels.begin(), occupied_voxels.end(),
@@ -268,10 +277,17 @@ void OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points
     free_voxels_res.resize(thrust::distance(free_voxels_res.begin(), end));
     AddVoxels(free_voxels_res, false);
     AddVoxels(occupied_voxels, true);
+    return *this;
 }
 
-void OccupancyGrid::Insert(const geometry::PointCloud& pointcloud, const Eigen::Vector3f& viewpoint) {
+OccupancyGrid& OccupancyGrid::Insert(const thrust::host_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
+    utility::device_vector<Eigen::Vector3f> dev_points = points;
+    return Insert(dev_points, viewpoint);
+}
+
+OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud, const Eigen::Vector3f& viewpoint) {
     Insert(pointcloud.points_, viewpoint);
+    return *this;
 }
 
 void OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {

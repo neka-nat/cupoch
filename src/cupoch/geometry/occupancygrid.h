@@ -22,9 +22,10 @@ public:
     float prob_log_ = 0;
 };
 
-class OccupancyGrid : Geometry3D {
+class OccupancyGrid : public Geometry3D {
 public:
     OccupancyGrid();
+    OccupancyGrid(float voxel_size, const Eigen::Vector3f& origin = Eigen::Vector3f::Zero());
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);
     OccupancyGrid &Clear() override;
@@ -49,15 +50,14 @@ public:
     int GetVoxelIndex(const Eigen::Vector3f& point) const;
     thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
 
-    void Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
-    void Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);
-    void Insert(const Image& depth, const camera::PinholeCameraIntrinsic &intrinsic,
-                const Eigen::Matrix4f &extrinsic);
+    OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
+    OccupancyGrid& Insert(const thrust::host_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
+    OccupancyGrid& Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);
 
     void AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
     void AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
 public:
-    float voxel_size_ = 0.0;
+    float voxel_size_ = 0.05;
     Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
     utility::device_vector<Eigen::Vector3i> voxels_keys_;
     utility::device_vector<OccupancyVoxel> voxels_values_;

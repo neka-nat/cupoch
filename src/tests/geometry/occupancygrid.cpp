@@ -35,3 +35,23 @@ TEST(OccupancyGrid, GetVoxel) {
     EXPECT_TRUE(thrust::get<0>(res3));
     EXPECT_FLOAT_EQ(thrust::get<1>(res3).prob_log_, 2.0 * occupancy_grid->prob_hit_log_ + occupancy_grid->prob_miss_log_);
 }
+
+TEST(OccupancyGrid, Insert) {
+    auto occupancy_grid = std::make_shared<geometry::OccupancyGrid>();
+    occupancy_grid->origin_ = Eigen::Vector3f(-0.5, -0.5, 0);
+    occupancy_grid->voxel_size_ = 1.0;
+    thrust::host_vector<Eigen::Vector3f> host_points;
+    host_points.push_back({0.0, 0.0, 3.5});
+    occupancy_grid->Insert(host_points, Eigen::Vector3f::Zero());
+    EXPECT_EQ(occupancy_grid->voxels_keys_.size(), 4);
+    auto res1 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 0.5));
+    EXPECT_TRUE(thrust::get<0>(res1));
+    auto res2 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 1.5));
+    EXPECT_TRUE(thrust::get<0>(res2));
+    auto res3 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 2.5));
+    EXPECT_TRUE(thrust::get<0>(res3));
+    auto res4 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 3.5));
+    EXPECT_TRUE(thrust::get<0>(res4));
+    auto res5 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 4.5));
+    EXPECT_FALSE(thrust::get<0>(res5));
+}

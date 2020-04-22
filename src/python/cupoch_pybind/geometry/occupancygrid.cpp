@@ -1,6 +1,5 @@
 #include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/camera/pinhole_camera_parameters.h"
-#include "cupoch/geometry/image.h"
 #include "cupoch/geometry/pointcloud.h"
 
 #include "cupoch_pybind/docstring.h"
@@ -54,4 +53,24 @@ void pybind_occupanygrid(py::module &m) {
                     "color", &geometry::OccupancyVoxel::color_,
                     "Float32 numpy array of shape (3,): Color of the voxel.");
 
+    py::class_<geometry::OccupancyGrid, PyGeometry3D<geometry::OccupancyGrid>,
+               std::shared_ptr<geometry::OccupancyGrid>, geometry::Geometry3D>
+            occupancygrid(m, "OccupancyGrid",
+                          "Occupancy is a collection of voxels which is a special voxel grid "
+                          "with a parameter of occupancy probability.");
+    py::detail::bind_default_constructor<geometry::OccupancyGrid>(occupancygrid);
+    py::detail::bind_copy_functions<geometry::OccupancyGrid>(occupancygrid);
+    occupancygrid
+            .def(py::init<float, const Eigen::Vector3f&>(),
+                 "Create a Occupancy grid", "voxel_grid"_a, "origin"_a = Eigen::Vector3f::Zero())
+            .def("__repr__",
+                 [](const geometry::OccupancyGrid &occupancygrid) {
+                     return std::string("geometry::OccupancyGrid with ") +
+                            std::to_string(occupancygrid.voxels_keys_.size()) +
+                            " voxels.";
+                 })
+            .def_property("voxels", [] (geometry::OccupancyGrid &og) {return wrapper::OccupancyVoxelMap(og.voxels_keys_, og.voxels_values_);},
+                                    [] (geometry::OccupancyGrid &og, const wrapper::OccupancyVoxelMap& map) {
+                                        wrapper::FromWrapper(og.voxels_keys_, og.voxels_values_, map);})
+            .def("insert", py::overload_cast<const geometry::PointCloud&, const Eigen::Vector3f&>(&geometry::OccupancyGrid::Insert));
 }
