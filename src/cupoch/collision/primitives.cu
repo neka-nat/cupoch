@@ -86,7 +86,7 @@ struct create_from_swept_sphere_functor {
         int sidx = dsidx % sampling_;
 
         Eigen::Vector3f diff = sidx * step_;
-        Eigen::Vector3i offset = (Eigen::device_floor<Eigen::Vector3f>(diff / voxel_size_)).cast<int>();
+        Eigen::Vector3i offset = (Eigen::device_vectorize<float, 3, ::floor>(diff / voxel_size_)).cast<int>();
         const Eigen::Vector3f box_center = (offset.cast<float>() + Eigen::Vector3f(widx, hidx, didx)) * voxel_size_;
         if (geometry::intersection_test::SphereAABB(sidx * step_, radius_,
                                                     box_center - box_half_size_,

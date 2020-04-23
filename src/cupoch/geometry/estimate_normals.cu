@@ -14,30 +14,18 @@ __device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
     Eigen::Vector3f row0(A(0, 0) - eval0, A(0, 1), A(0, 2));
     Eigen::Vector3f row1(A(0, 1), A(1, 1) - eval0, A(1, 2));
     Eigen::Vector3f row2(A(0, 2), A(1, 2), A(2, 2) - eval0);
-    Eigen::Vector3f r0xr1 = row0.cross(row1);
-    Eigen::Vector3f r0xr2 = row0.cross(row2);
-    Eigen::Vector3f r1xr2 = row1.cross(row2);
-    float d0 = r0xr1.dot(r0xr1);
-    float d1 = r0xr2.dot(r0xr2);
-    float d2 = r1xr2.dot(r1xr2);
+    Eigen::Vector3f rxr[3];
+    rxr[0] = row0.cross(row1);
+    rxr[1] = row0.cross(row2);
+    rxr[2] = row1.cross(row2);
+    Eigen::Vector3f d;
+    d[0] = rxr[0].dot(rxr[0]);
+    d[1] = rxr[1].dot(rxr[1]);
+    d[2] = rxr[2].dot(rxr[2]);
 
-    float dmax = d0;
-    int imax = 0;
-    if (d1 > dmax) {
-        dmax = d1;
-        imax = 1;
-    }
-    if (d2 > dmax) {
-        imax = 2;
-    }
-
-    if (imax == 0) {
-        return r0xr1 / std::sqrt(d0);
-    } else if (imax == 1) {
-        return r0xr2 / std::sqrt(d1);
-    } else {
-        return r1xr2 / std::sqrt(d2);
-    }
+    int imax;
+    d.maxCoeff(&imax);
+    return rxr[imax] / std::sqrt(d[imax]);
 }
 
 __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
@@ -181,13 +169,11 @@ __device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
         }
     } else {
         A *= max_coeff;
-        if (A(0, 0) < A(1, 1) && A(0, 0) < A(2, 2)) {
-            return Eigen::Vector3f(1, 0, 0);
-        } else if (A(1, 1) < A(0, 0) && A(1, 1) < A(2, 2)) {
-            return Eigen::Vector3f(0, 1, 0);
-        } else {
-            return Eigen::Vector3f(0, 0, 1);
-        }
+        int min_id;
+        A.diagonal().minCoeff(&min_id);
+        Eigen::Vector3f unit = Eigen::Vector3f::Zero();
+        unit[min_id] = 1.0;
+        return unit;
     }
 }
 

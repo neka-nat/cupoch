@@ -615,24 +615,24 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::OccupancyGrid.");
         return false;
     }
-    const geometry::OccupancyGrid &voxel_grid =
+    const geometry::OccupancyGrid &occupancy_grid =
             (const geometry::OccupancyGrid &)geometry;
-    if (voxel_grid.HasVoxels() == false) {
+    if (occupancy_grid.HasVoxels() == false) {
         PrintShaderWarning("Binding failed with empty voxel grid.");
         return false;
     }
 
-    utility::device_vector<Eigen::Vector3f> vertices(voxel_grid.voxels_values_.size() * 8);
-    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                                                   voxel_grid.origin_, voxel_grid.voxel_size_);
+    utility::device_vector<Eigen::Vector3f> vertices(occupancy_grid.voxels_values_.size() * 8);
+    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(thrust::raw_pointer_cast(occupancy_grid.voxels_values_.data()),
+                                                                   occupancy_grid.origin_, occupancy_grid.voxel_size_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(voxel_grid.voxels_values_.size() * 8),
+                      thrust::make_counting_iterator<size_t>(occupancy_grid.voxels_values_.size() * 8),
                       vertices.begin(), func1);
 
-    size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
+    size_t n_out = occupancy_grid.voxels_values_.size() * 12 * 3;
     copy_voxelgrid_face_functor<geometry::OccupancyVoxel> func2(thrust::raw_pointer_cast(vertices.data()),
-                                                                thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                                                voxel_grid.HasColors(), option.mesh_color_option_,
+                                                                thrust::raw_pointer_cast(occupancy_grid.voxels_values_.data()),
+                                                                occupancy_grid.HasColors(), option.mesh_color_option_,
                                                                 option.default_mesh_color_, view);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),

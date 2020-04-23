@@ -6,6 +6,7 @@
 #include "cupoch_pybind/device_map_wrapper.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
+#include "cupoch_pybind/geometry/eigen_type_caster.h"
 
 using namespace cupoch;
 

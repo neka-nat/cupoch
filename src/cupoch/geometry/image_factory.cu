@@ -42,52 +42,35 @@ struct make_float_image_functor {
     Image::ColorToIntensityConversionType type_;
     uint8_t *fimage_;
     __device__ void operator()(size_t idx) {
+        typedef float (*grayfn)(const uint8_t *);
+        typedef float (*colorfn)(const uint8_t *, const float *);
+        const float weights[2][3] = {{1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0},
+                                     {0.2990f, 0.5870f, 0.1140f}};
+        grayfn gf[4] = {[] __device__ (const uint8_t *pi) { return (float)(*pi) / 255.0f; },
+                        [] __device__ (const uint8_t *pi) { const uint16_t *pi16 = (const uint16_t *)pi; return (float)(*pi16); },
+                        [] __device__ (const uint8_t *pi) { return 0.0f; },
+                        [] __device__ (const uint8_t *pi) { const float *pf = (const float *)pi; return *pf; }};
+        colorfn cf[4] = {
+            [] __device__ (const uint8_t *pi, const float *weights) {
+                return (weights[0] * (float)(pi[0]) + weights[1] * (float)(pi[1]) + weights[2] * (float)(pi[2])) / 255.0f;
+            },
+            [] __device__ (const uint8_t *pi, const float *weights) {
+                const uint16_t *pi16 = (const uint16_t *)pi;
+                return weights[0] * (float)(pi16[0]) + weights[1] * (float)(pi16[1]) + weights[2] * (float)(pi16[2]);
+            },
+            [] __device__ (const uint8_t *pi, const float *weights) { return 0.0f; },
+            [] __device__ (const uint8_t *pi, const float *weights) {
+                const float *pf = (const float *)pi;
+                return weights[0] * pf[0] + weights[1] * pf[1] + weights[2] * pf[2];
+            }};
         float *p = (float *)(fimage_ + idx * 4);
         const uint8_t *pi =
                 image_ + idx * num_of_channels_ * bytes_per_channel_;
         if (num_of_channels_ == 1) {
             // grayscale image
-            if (bytes_per_channel_ == 1) {
-                *p = (float)(*pi) / 255.0f;
-            } else if (bytes_per_channel_ == 2) {
-                const uint16_t *pi16 = (const uint16_t *)pi;
-                *p = (float)(*pi16);
-            } else if (bytes_per_channel_ == 4) {
-                const float *pf = (const float *)pi;
-                *p = *pf;
-            }
+            *p = gf[bytes_per_channel_ - 1](pi);
         } else if (num_of_channels_ == 3) {
-            if (bytes_per_channel_ == 1) {
-                if (type_ == Image::ColorToIntensityConversionType::Equal) {
-                    *p = ((float)(pi[0]) + (float)(pi[1]) + (float)(pi[2])) /
-                         3.0f / 255.0f;
-                } else if (type_ ==
-                           Image::ColorToIntensityConversionType::Weighted) {
-                    *p = (0.2990f * (float)(pi[0]) + 0.5870f * (float)(pi[1]) +
-                          0.1140f * (float)(pi[2])) /
-                         255.0f;
-                }
-            } else if (bytes_per_channel_ == 2) {
-                const uint16_t *pi16 = (const uint16_t *)pi;
-                if (type_ == Image::ColorToIntensityConversionType::Equal) {
-                    *p = ((float)(pi16[0]) + (float)(pi16[1]) +
-                          (float)(pi16[2])) /
-                         3.0f;
-                } else if (type_ ==
-                           Image::ColorToIntensityConversionType::Weighted) {
-                    *p = (0.2990f * (float)(pi16[0]) +
-                          0.5870f * (float)(pi16[1]) +
-                          0.1140f * (float)(pi16[2]));
-                }
-            } else if (bytes_per_channel_ == 4) {
-                const float *pf = (const float *)pi;
-                if (type_ == Image::ColorToIntensityConversionType::Equal) {
-                    *p = (pf[0] + pf[1] + pf[2]) / 3.0f;
-                } else if (type_ ==
-                           Image::ColorToIntensityConversionType::Weighted) {
-                    *p = (0.2990f * pf[0] + 0.5870f * pf[1] + 0.1140f * pf[2]);
-                }
-            }
+            *p = cf[bytes_per_channel_ - 1](pi, weights[(int)type_]);
         }
     }
 };

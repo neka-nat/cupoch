@@ -104,8 +104,7 @@ struct clip_intensity_functor {
     const float max_;
     __device__ void operator()(size_t idx) {
         float *p = (float *)(fimage_ + idx * sizeof(float));
-        if (*p > max_) *p = (float)max_;
-        if (*p < min_) *p = (float)min_;
+        *p = max(min(max_, *p), min_);
     }
 };
 

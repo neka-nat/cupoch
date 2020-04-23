@@ -32,9 +32,9 @@ public:
     /// Digital ITU BT.601 standard: I = 0.299 * R + 0.587 * G + 0.114 * B.
     enum class ColorToIntensityConversionType {
         /// R, G, B channels have equal weights.
-        Equal,
+        Equal = 0,
         /// Weighted R, G, B channels: I = 0.299 * R + 0.587 * G + 0.114 * B.
-        Weighted,
+        Weighted = 1,
     };
 
     /// \enum FilterType

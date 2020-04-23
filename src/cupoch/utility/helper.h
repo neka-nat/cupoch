@@ -100,20 +100,11 @@ __host__ __device__ bool device_any(const ArrayType &array) {
     return false;
 }
 
-template <typename ArrayType>
-__host__ __device__ ArrayType device_floor(const ArrayType& x) {
-    ArrayType ans;
-    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
-        ans[i] = ::floor(x[i]);
-    }
-    return ans;
-}
-
-template <typename ArrayType>
-__host__ __device__ ArrayType device_ceil(const ArrayType& x) {
-    ArrayType ans;
-    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
-        ans[i] = ::ceil(x[i]);
+template <typename T, int Dim, float (*Func)(float)>
+__host__ __device__ Eigen::Matrix<T, Dim, 1> device_vectorize(const Eigen::Matrix<T, Dim, 1>& x) {
+    Eigen::Matrix<T, Dim, 1> ans;
+    for (int i = 0; i < Dim; ++i) {
+        ans[i] = Func(x[i]);
     }
     return ans;
 }
