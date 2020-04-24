@@ -1,6 +1,9 @@
 #include "cupoch/collision/collision.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/intersection_test.h"
+
+#include <thrust/iterator/discard_iterator.h>
 
 namespace cupoch {
 namespace collision {
@@ -49,6 +52,32 @@ bool ComputeIntersection(const geometry::VoxelGrid& voxelgrid1,
                                        thrust::raw_pointer_cast(voxelgrid2.voxels_keys_.data()),
                                        voxelgrid1.voxel_size_, voxelgrid2.voxel_size_,
                                        voxelgrid1.origin_, voxelgrid2.origin_, n_v2);
+    int n_coll = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
+                                          thrust::make_counting_iterator(n_total),
+                                          func, 0, thrust::plus<int>());
+    return n_coll > 0;
+}
+
+bool ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
+                         const geometry::OccupancyGrid& occgrid) {
+    size_t n_v1 = voxelgrid.voxels_keys_.size();
+    utility::device_vector<Eigen::Vector3i> occupied_voxels(occgrid.voxels_keys_.size());
+    const float occ_prob_thres_log = occgrid.occ_prob_thres_log_;
+    auto begin_tr = thrust::make_transform_iterator(occgrid.voxels_values_.begin(),
+            [] __device__ (const geometry::OccupancyVoxel& voxel) {
+                return thrust::make_tuple(voxel.grid_index_, voxel.prob_log_);
+            });
+    auto begin_tp = make_tuple_iterator(occupied_voxels.begin(), thrust::make_discard_iterator());
+    auto end = thrust::copy_if(begin_tr, begin_tr + occgrid.voxels_values_.size(), begin_tp,
+                               [occ_prob_thres_log] __device__ (const thrust::tuple<Eigen::Vector3i, float>& x) {
+                                   return thrust::get<1>(x) > occ_prob_thres_log;
+                               });
+    size_t n_v2 = thrust::distance(begin_tp, end);
+    size_t n_total = n_v1 * n_v2;
+    intersect_voxel_voxel_functor func(thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
+                                       thrust::raw_pointer_cast(occgrid.voxels_keys_.data()),
+                                       voxelgrid.voxel_size_, occgrid.voxel_size_,
+                                       voxelgrid.origin_, occgrid.origin_, n_v2);
     int n_coll = thrust::transform_reduce(thrust::make_counting_iterator<size_t>(0),
                                           thrust::make_counting_iterator(n_total),
                                           func, 0, thrust::plus<int>());
