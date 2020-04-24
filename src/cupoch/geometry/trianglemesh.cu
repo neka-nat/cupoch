@@ -50,17 +50,9 @@ struct compute_edge_list_functor {
 struct align_triangle_functor {
     __device__ Eigen::Vector3i operator() (const Eigen::Vector3i& tri) const {
         if (tri(0) <= tri(1)) {
-            if (tri(0) <= tri(2)) {
-                return Eigen::Vector3i(tri(0), tri(1), tri(2));
-            } else {
-                return Eigen::Vector3i(tri(2), tri(0), tri(1));
-            }
+            return (tri(0) <= tri(2)) ? Eigen::Vector3i(tri(0), tri(1), tri(2)) : Eigen::Vector3i(tri(2), tri(0), tri(1));
         } else {
-            if (tri(1) <= tri(2)) {
-                return Eigen::Vector3i(tri(1), tri(2), tri(0));
-            } else {
-                return Eigen::Vector3i(tri(2), tri(0), tri(1));
-            }
+            return (tri(1) <= tri(2)) ? Eigen::Vector3i(tri(1), tri(2), tri(0)) : Eigen::Vector3i(tri(2), tri(0), tri(1));
         }
     }
 };

@@ -17,7 +17,7 @@ using namespace cupoch::visualization::glsl;
 namespace {
 
 // Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
-__device__ const int cuboid_vertex_offsets[8][3] = {
+__constant__ int cuboid_vertex_offsets[8][3] = {
     {0, 0, 0}, {1, 0, 0},
     {0, 1, 0}, {1, 1, 0},
     {0, 0, 1}, {1, 0, 1},
@@ -25,7 +25,7 @@ __device__ const int cuboid_vertex_offsets[8][3] = {
 };
 
 // Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
-__device__ const int cuboid_triangles_vertex_indices[12][3] = {
+__constant__ int cuboid_triangles_vertex_indices[12][3] = {
     {0, 2, 1}, {0, 1, 4},
     {0, 4, 2}, {5, 1, 7},
     {5, 7, 4}, {5, 4, 1},
@@ -34,7 +34,7 @@ __device__ const int cuboid_triangles_vertex_indices[12][3] = {
     {6, 7, 2}, {6, 2, 4},
 };
 
-__device__ const int cuboid_normals[12][3] = {
+__constant__ int cuboid_normals[12][3] = {
     {0, 0, -1}, {0, -1, 0},
     {-1, 0, 0}, {1, 0, 0},
     {0, 0, 1}, {0, -1, 0},
@@ -51,28 +51,29 @@ struct copy_pointcloud_functor{
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
-    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>& pt_nm_cl) {
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector4f> operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>& pt_nm_cl) {
         const Eigen::Vector3f &point = thrust::get<0>(pt_nm_cl);
         const Eigen::Vector3f &normal = thrust::get<1>(pt_nm_cl);
         const Eigen::Vector3f &color = thrust::get<2>(pt_nm_cl);
-        Eigen::Vector3f color_tmp;
+        Eigen::Vector4f color_tmp;
+        color_tmp[3] = 1.0;
         switch (color_option_) {
             case RenderOption::PointColorOption::XCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(point(0)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(point(0)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::YCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(point(1)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(point(1)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::ZCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
                 break;
             case RenderOption::PointColorOption::Color:
             case RenderOption::PointColorOption::Default:
             default:
                 if (has_colors_) {
-                    color_tmp = color;
+                    color_tmp.head<3>() = color;
                 } else {
-                    color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
+                    color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(point(2)), colormap_option_);
                 }
                 break;
         }
@@ -103,30 +104,31 @@ struct copy_trianglemesh_functor {
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
-    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector4f> operator() (size_t k) const {
         int idx = k / 3;
         int vi = triangles_[k];
         const Eigen::Vector3f &vertex = vertices_[vi];
 
-        Eigen::Vector3f color_tmp;
+        Eigen::Vector4f color_tmp;
+        color_tmp[3] = 1.0;
         switch (color_option_) {
             case RenderOption::MeshColorOption::XCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertex(0)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertex(0)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::YCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertex(1)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertex(1)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::ZCoordinate:
-                color_tmp = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertex(2)), colormap_option_);
+                color_tmp.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertex(2)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (has_vertex_colors_) {
-                    color_tmp = vertex_colors_[vi];
+                    color_tmp.head<3>() = vertex_colors_[vi];
                     break;
                 }
             case RenderOption::MeshColorOption::Default:
             default:
-                color_tmp = default_mesh_color_;
+                color_tmp.head<3>() = default_mesh_color_;
                 break;
         }
 
@@ -162,47 +164,77 @@ struct compute_voxel_vertices_functor {
     }
 };
 
-template<typename VoxelType>
+struct default_color_functor {
+    __host__ __device__ default_color_functor() {};
+    __host__ __device__ ~default_color_functor() {};
+    __host__ __device__ default_color_functor(const default_color_functor& other) {};
+    __device__ Eigen::Vector3f color(const geometry::Voxel& voxel) const {
+        return voxel.color_;
+    }
+    __device__ float alpha(const geometry::Voxel& voxel) const {
+        return 1.0;
+    }
+};
+
+struct occupancy_color_functor {
+    __host__ __device__ occupancy_color_functor(float occ_prob_thres_log) : occ_prob_thres_log_(occ_prob_thres_log) {};
+    const float occ_prob_thres_log_;
+    __host__ __device__ ~occupancy_color_functor() {};
+    __host__ __device__ occupancy_color_functor(const occupancy_color_functor& other) : occ_prob_thres_log_(other.occ_prob_thres_log_) {};
+    __device__ Eigen::Vector3f color(const geometry::Voxel& voxel) const {
+        geometry::OccupancyVoxel ocv = (const geometry::OccupancyVoxel &)voxel;
+        return (ocv.prob_log_ > occ_prob_thres_log_) ? ocv.color_ : Eigen::Vector3f(0.0, 1.0, 0.0);
+    }
+    __device__ float alpha(const geometry::Voxel& voxel) const {
+        geometry::OccupancyVoxel ocv = (const geometry::OccupancyVoxel &)voxel;
+        return (ocv.prob_log_ > occ_prob_thres_log_) ? 1.0 : 0.2;
+    }
+};
+
+template<typename VoxelType, typename ColorFuncType>
 struct copy_voxelgrid_face_functor {
     copy_voxelgrid_face_functor(const Eigen::Vector3f* vertices, const VoxelType* voxels, bool has_colors,
-                                RenderOption::MeshColorOption color_option, const Eigen::Vector3f& default_mesh_color,
-                                const ViewControl& view)
+                                RenderOption::MeshColorOption color_option,
+                                const Eigen::Vector3f& default_mesh_color,
+                                const ViewControl& view, const ColorFuncType& cfunc)
                                 : vertices_(vertices), voxels_(voxels), has_colors_(has_colors),
                                  color_option_(color_option), default_mesh_color_(default_mesh_color),
-                                 view_(view) {};
+                                 view_(view), cfunc_(cfunc) {};
     const Eigen::Vector3f* vertices_;
     const VoxelType* voxels_;
     const bool has_colors_;
     const RenderOption::MeshColorOption color_option_;
     const Eigen::Vector3f default_mesh_color_;
     const ViewControl view_;
+    const ColorFuncType cfunc_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__
-    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> operator() (size_t idx) const {
+    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector4f> operator() (size_t idx) const {
         int i = idx / (12 * 3);
         int jk = idx % (12 * 3);
         int j = jk / 3;
         int k = jk % 3;
         // Voxel color (applied to all points)
-        Eigen::Vector3f voxel_color;
+        Eigen::Vector4f voxel_color;
+        voxel_color[3] = cfunc_.alpha(voxels_[i]);
         switch (color_option_) {
             case RenderOption::MeshColorOption::XCoordinate:
-                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertices_[i * 8](0)), colormap_option_);
+                voxel_color.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetXPercentage(vertices_[i * 8](0)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::YCoordinate:
-                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertices_[i * 8](1)), colormap_option_);
+                voxel_color.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetYPercentage(vertices_[i * 8](1)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::ZCoordinate:
-                voxel_color = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertices_[i * 8](2)), colormap_option_);
+                voxel_color.head<3>() = GetColorMapColor(view_.GetBoundingBox().GetZPercentage(vertices_[i * 8](2)), colormap_option_);
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (has_colors_) {
-                    voxel_color = voxels_[i].color_;
+                    voxel_color.head<3>() = cfunc_.color(voxels_[i]);
                     break;
                 }
             case RenderOption::MeshColorOption::Default:
             default:
-                voxel_color = default_mesh_color_;
+                voxel_color.head<3>() = default_mesh_color_;
                 break;
         }
         return thrust::make_tuple(vertices_[i * 8 + cuboid_triangles_vertex_indices[j][k]],
@@ -268,13 +300,13 @@ bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
     cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1], vertex_normal_buffer_, cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &vertex_color_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector4f), 0, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[2], vertex_color_buffer_, cudaGraphicsMapFlagsNone));
 
     Eigen::Vector3f* raw_points_ptr;
     Eigen::Vector3f* raw_normals_ptr;
-    Eigen::Vector3f* raw_colors_ptr;
+    Eigen::Vector4f* raw_colors_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(3, cuda_graphics_resources_));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
@@ -282,7 +314,7 @@ bool PhongShader::BindGeometry(const geometry::Geometry &geometry,
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_colors_ptr, &n_bytes, cuda_graphics_resources_[2]));
     thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
     thrust::device_ptr<Eigen::Vector3f> dev_normals_ptr = thrust::device_pointer_cast(raw_normals_ptr);
-    thrust::device_ptr<Eigen::Vector3f> dev_colors_ptr = thrust::device_pointer_cast(raw_colors_ptr);
+    thrust::device_ptr<Eigen::Vector4f> dev_colors_ptr = thrust::device_pointer_cast(raw_colors_ptr);
 
     if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_normals_ptr, dev_colors_ptr) ==
         false) {
@@ -322,7 +354,7 @@ bool PhongShader::RenderGeometry(const geometry::Geometry &geometry,
     glVertexAttribPointer(vertex_normal_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(vertex_color_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glVertexAttribPointer(vertex_color_, 4, GL_FLOAT, GL_FALSE, 0, NULL);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
     glDisableVertexAttribArray(vertex_position_);
     glDisableVertexAttribArray(vertex_normal_);
@@ -403,7 +435,7 @@ bool PhongShaderForPointCloud::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
         thrust::device_ptr<Eigen::Vector3f> &normals,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -473,7 +505,7 @@ bool PhongShaderForTriangleMesh::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
         thrust::device_ptr<Eigen::Vector3f> &normals,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
                 geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -538,7 +570,7 @@ bool PhongShaderForVoxelGridFace::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
         thrust::device_ptr<Eigen::Vector3f> &normals,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::VoxelGrid) {
         PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
@@ -559,10 +591,12 @@ bool PhongShaderForVoxelGridFace::PrepareBinding(
                       vertices.begin(), func1);
 
     size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
-    copy_voxelgrid_face_functor<geometry::Voxel> func2(thrust::raw_pointer_cast(vertices.data()),
-                                                       thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-                                                       voxel_grid.HasColors(), option.mesh_color_option_,
-                                                       option.default_mesh_color_, view);
+    copy_voxelgrid_face_functor<geometry::Voxel, default_color_functor> func2(
+        thrust::raw_pointer_cast(vertices.data()),
+        thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
+        voxel_grid.HasColors(), option.mesh_color_option_,
+        option.default_mesh_color_,
+        view, default_color_functor());
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);
@@ -600,6 +634,8 @@ bool PhongShaderForOccupancyGrid::PrepareRendering(
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
     SetLighting(view, option);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     return true;
 }
 
@@ -609,7 +645,7 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
         thrust::device_ptr<Eigen::Vector3f> &normals,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::OccupancyGrid) {
         PrintShaderWarning("Rendering type is not geometry::OccupancyGrid.");
@@ -630,10 +666,12 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
                       vertices.begin(), func1);
 
     size_t n_out = occupancy_grid.voxels_values_.size() * 12 * 3;
-    copy_voxelgrid_face_functor<geometry::OccupancyVoxel> func2(thrust::raw_pointer_cast(vertices.data()),
-                                                                thrust::raw_pointer_cast(occupancy_grid.voxels_values_.data()),
-                                                                occupancy_grid.HasColors(), option.mesh_color_option_,
-                                                                option.default_mesh_color_, view);
+    copy_voxelgrid_face_functor<geometry::OccupancyVoxel, occupancy_color_functor> func2(
+        thrust::raw_pointer_cast(vertices.data()),
+        thrust::raw_pointer_cast(occupancy_grid.voxels_values_.data()),
+        occupancy_grid.HasColors(), option.mesh_color_option_,
+        option.default_mesh_color_, view,
+        occupancy_color_functor(occupancy_grid.occ_prob_thres_log_));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);

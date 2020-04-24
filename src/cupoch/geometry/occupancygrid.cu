@@ -44,7 +44,8 @@ struct compute_free_voxels_functor{
         if (intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
                                                center - box_half_size_,
                                                center + box_half_size_)) {
-            return Eigen::device_vectorize<float, 3, ::round>((center - origin_) / voxel_size_).cast<int>();
+            return Eigen::device_vectorize<float, 3, ::floor>(Eigen::Vector3f(widx, hidx, didx) +
+                (min_bound_ + box_half_size_ - origin_) / voxel_size_).cast<int>();
         } else {
             return Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
                                    geometry::INVALID_VOXEL_INDEX,

@@ -37,7 +37,7 @@ protected:
                                 const ViewControl &view,
                                 thrust::device_ptr<Eigen::Vector3f> &points,
                                 thrust::device_ptr<Eigen::Vector3f> &normals,
-                                thrust::device_ptr<Eigen::Vector3f> &colors) = 0;
+                                thrust::device_ptr<Eigen::Vector4f> &colors) = 0;
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
@@ -81,7 +81,7 @@ protected:
                         const ViewControl &view,
                         thrust::device_ptr<Eigen::Vector3f> &points,
                         thrust::device_ptr<Eigen::Vector3f> &normals,
-                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector4f> &colors) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
@@ -98,7 +98,7 @@ protected:
                         const ViewControl &view,
                         thrust::device_ptr<Eigen::Vector3f> &points,
                         thrust::device_ptr<Eigen::Vector3f> &normals,
-                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector4f> &colors) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
@@ -115,7 +115,7 @@ protected:
                         const ViewControl &view,
                         thrust::device_ptr<Eigen::Vector3f> &points,
                         thrust::device_ptr<Eigen::Vector3f> &normals,
-                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector4f> &colors) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
@@ -132,7 +132,7 @@ protected:
                         const ViewControl &view,
                         thrust::device_ptr<Eigen::Vector3f> &points,
                         thrust::device_ptr<Eigen::Vector3f> &normals,
-                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+                        thrust::device_ptr<Eigen::Vector4f> &colors) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 

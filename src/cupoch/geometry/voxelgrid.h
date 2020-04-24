@@ -28,6 +28,8 @@ public:
     __host__ __device__ Voxel() {}
     __host__ __device__ Voxel(const Eigen::Vector3i &grid_index)
         : grid_index_(grid_index) {}
+    __host__ __device__ Voxel(const Eigen::Vector3f &color)
+        : color_(color) {}
     __host__ __device__ Voxel(const Eigen::Vector3i &grid_index,
                               const Eigen::Vector3f &color)
         : grid_index_(grid_index), color_(color) {}

@@ -7,11 +7,11 @@ namespace geometry {
 
 class OccupancyVoxel : public Voxel {
 public:
-    __host__ __device__ OccupancyVoxel() : Voxel() {}
+    __host__ __device__ OccupancyVoxel() : Voxel(Eigen::Vector3f(0.0, 0.0, 1.0)) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index)
-        : Voxel(grid_index) {}
+        : Voxel(grid_index, Eigen::Vector3f(0.0, 0.0, 1.0)) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index, float prob_log)
-        : Voxel(grid_index), prob_log_(prob_log) {}
+        : Voxel(grid_index, Eigen::Vector3f(0.0, 0.0, 1.0)), prob_log_(prob_log) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index,
                                        float prob_log,
                                        const Eigen::Vector3f &color)

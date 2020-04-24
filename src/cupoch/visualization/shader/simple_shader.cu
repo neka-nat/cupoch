@@ -19,7 +19,7 @@ using namespace cupoch::visualization::glsl;
 namespace {
 
 // Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
-__device__ const int cuboid_vertex_offsets[8][3] = {
+__constant__ int cuboid_vertex_offsets[8][3] = {
     {0, 0, 0}, {1, 0, 0},
     {0, 1, 0}, {1, 1, 0},
     {0, 0, 1}, {1, 0, 1},
@@ -27,7 +27,7 @@ __device__ const int cuboid_vertex_offsets[8][3] = {
 };
 
 // Vertex indices of 12 lines in a cuboid
-__device__ const int cuboid_lines_vertex_indices[12][2] = {
+__constant__ int cuboid_lines_vertex_indices[12][2] = {
     {0, 1}, {0, 2}, {0, 4},
     {3, 1}, {3, 2}, {3, 7},
     {5, 1}, {5, 4}, {5, 7},

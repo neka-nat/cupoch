@@ -25,6 +25,9 @@ struct compute_camera_distance_functor {
     }
 };
 
+__constant__ float grayscale_weights[2][3] = {{1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0},
+                                              {0.2990f, 0.5870f, 0.1140f}};
+
 struct make_float_image_functor {
     make_float_image_functor(const uint8_t *image,
                              int num_of_channels,
@@ -44,8 +47,6 @@ struct make_float_image_functor {
     __device__ void operator()(size_t idx) {
         typedef float (*grayfn)(const uint8_t *);
         typedef float (*colorfn)(const uint8_t *, const float *);
-        const float weights[2][3] = {{1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0},
-                                     {0.2990f, 0.5870f, 0.1140f}};
         grayfn gf[4] = {[] __device__ (const uint8_t *pi) { return (float)(*pi) / 255.0f; },
                         [] __device__ (const uint8_t *pi) { const uint16_t *pi16 = (const uint16_t *)pi; return (float)(*pi16); },
                         [] __device__ (const uint8_t *pi) { return 0.0f; },
@@ -70,7 +71,7 @@ struct make_float_image_functor {
             // grayscale image
             *p = gf[bytes_per_channel_ - 1](pi);
         } else if (num_of_channels_ == 3) {
-            *p = cf[bytes_per_channel_ - 1](pi, weights[(int)type_]);
+            *p = cf[bytes_per_channel_ - 1](pi, grayscale_weights[(int)type_]);
         }
     }
 };

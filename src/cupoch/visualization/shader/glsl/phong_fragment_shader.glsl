@@ -4,7 +4,7 @@ in vec3 vertex_position_world;
 in vec3 vertex_normal_camera;
 in vec3 eye_dir_camera;
 in mat4 light_dir_camera_4;
-in vec3 fragment_color;
+in vec4 fragment_color;
 
 uniform mat4 light_color_4;
 uniform vec4 light_diffuse_power_4;
@@ -16,7 +16,7 @@ out vec4 FragColor;
 
 void main()
 {
-    vec3 diffuse_color = fragment_color;
+    vec3 diffuse_color = fragment_color.xyz;
     vec3 ambient_color = light_ambient.xyz * diffuse_color;
     vec3 specular_color = vec3(1.0, 1.0, 1.0);
     vec4 cos_theta;
@@ -53,5 +53,5 @@ void main()
             diffuse_color * light_color_4[2].xyz * light_diffuse_power_4[2] * cos_theta[2] +
             specular_color * light_color_4[2].xyz * light_specular_power_4[2] * pow(cos_alpha[2], light_specular_shininess_4[2]) +
             diffuse_color * light_color_4[3].xyz * light_diffuse_power_4[3] * cos_theta[3] +
-            specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], light_specular_shininess_4[3]), 1);
+            specular_color * light_color_4[3].xyz * light_specular_power_4[3] * pow(cos_alpha[3], light_specular_shininess_4[3]), fragment_color.w);
 }
