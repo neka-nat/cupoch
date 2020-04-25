@@ -11,29 +11,28 @@ namespace geometry {
 
 namespace {
 
-struct compute_free_voxels_functor{
-    compute_free_voxels_functor(const Eigen::Vector3f* points,
-                                const Eigen::Vector3f& viewpoint,
-                                const Eigen::Vector3f& min_bound,
-                                float voxel_size,
-                                const Eigen::Vector3f& origin,
-                                int num_h, int num_d, int n_points)
-                                : points_(points), viewpoint_(viewpoint),
-                                 min_bound_(min_bound), voxel_size_(voxel_size),
-                                 box_half_size_(Eigen::Vector3f(
-                                    voxel_size / 2, voxel_size / 2, voxel_size / 2)),
-                                 origin_(origin),
-                                 num_h_(num_h), num_d_(num_d), n_points_(n_points) {};
+struct compute_intersect_voxels_functor{
+    compute_intersect_voxels_functor(const Eigen::Vector3f* points,
+                                     int* intersect_flags,
+                                     const Eigen::Vector3f& viewpoint,
+                                     const Eigen::Vector3f& min_bound,
+                                     float voxel_size,
+                                     int num_h, int num_d, int n_points)
+                                     : points_(points), intersect_flags_(intersect_flags), viewpoint_(viewpoint),
+                                      min_bound_(min_bound), voxel_size_(voxel_size),
+                                      box_half_size_(Eigen::Vector3f(
+                                         voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+                                      num_h_(num_h), num_d_(num_d), n_points_(n_points) {};
     const Eigen::Vector3f* points_;
+    int* intersect_flags_;
     const Eigen::Vector3f viewpoint_;
     const Eigen::Vector3f min_bound_;
     const float voxel_size_;
     const Eigen::Vector3f box_half_size_;
-    const Eigen::Vector3f origin_;
     const int num_h_;
     const int num_d_;
     const int n_points_;
-    __device__ Eigen::Vector3i operator() (size_t idx) {
+    __device__ void operator() (size_t idx) {
         int widx = idx / (num_h_ * num_d_ * n_points_);
         int hdpidx = idx % (num_h_ * num_d_ * n_points_);
         int hidx = hdpidx / (num_d_ * n_points_);
@@ -44,13 +43,39 @@ struct compute_free_voxels_functor{
         if (intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
                                                center - box_half_size_,
                                                center + box_half_size_)) {
-            return Eigen::device_vectorize<float, 3, ::floor>(Eigen::Vector3f(widx, hidx, didx) +
-                (min_bound_ + box_half_size_ - origin_) / voxel_size_).cast<int>();
-        } else {
-            return Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
-                                   geometry::INVALID_VOXEL_INDEX,
-                                   geometry::INVALID_VOXEL_INDEX);
+            intersect_flags_[widx * (num_h_ * num_d_) + hidx * num_d_ + didx] = 1;
         }
+    }
+};
+
+struct compute_voxel_index_functor {
+    compute_voxel_index_functor(const int* intersect_flags,
+                                const Eigen::Vector3f& min_bound,
+                                float voxel_size,
+                                const Eigen::Vector3f& origin,
+                                int num_h, int num_d)
+                                : intersect_flags_(intersect_flags),
+                                min_bound_(min_bound),
+                                voxel_size_(voxel_size),
+                                box_half_size_(Eigen::Vector3f(
+                                    voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+                                origin_(origin),
+                                num_h_(num_h), num_d_(num_d) {};
+    const int* intersect_flags_;
+    const Eigen::Vector3f min_bound_;
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;
+    const int num_h_;
+    const int num_d_;
+    __device__ Eigen::Vector3i operator() (size_t idx) const {
+        int widx = idx / (num_h_ * num_d_);
+        int hdidx = idx % (num_h_ * num_d_);
+        int hidx = hdidx / num_d_;
+        int didx = hdidx % num_d_;
+        return (intersect_flags_[idx]) ? Eigen::device_vectorize<float, 3, ::floor>(Eigen::Vector3f(widx, hidx, didx) +
+            (min_bound_ + box_half_size_ - origin_) / voxel_size_).cast<int>() : 
+            Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
     }
 };
 
@@ -68,15 +93,20 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     int num_w = int(std::floor(grid_size(0) / voxel_size));
     int num_h = int(std::floor(grid_size(1) / voxel_size));
     int num_d = int(std::floor(grid_size(2) / voxel_size));
-    size_t n_total = num_w * num_h * num_d * n_points;
+    size_t n_total = num_w * num_h * num_d;
 
+    thrust::device_vector<int> intersect_flags(n_total, 0);
     free_voxels.resize(n_total);
-    compute_free_voxels_functor func(thrust::raw_pointer_cast(points.data()),
-                                     viewpoint, min_bound,
-                                     voxel_size, origin,
-                                     num_h, num_d, n_points);
+    compute_intersect_voxels_functor func1(thrust::raw_pointer_cast(points.data()),
+                                           thrust::raw_pointer_cast(intersect_flags.data()),
+                                           viewpoint, min_bound,
+                                           voxel_size, num_h, num_d, n_points);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_total * n_points),
+                     func1);
+    compute_voxel_index_functor func2(thrust::raw_pointer_cast(intersect_flags.data()),
+                                      min_bound, voxel_size, origin, num_h, num_d);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_total),
-                      free_voxels.begin(), func);
+                      free_voxels.begin(), func2);
     auto end1 = thrust::remove_if(free_voxels.begin(), free_voxels.end(),
              [] __device__(
                     const Eigen::Vector3i &idx)
