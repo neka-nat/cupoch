@@ -32,16 +32,21 @@ void pybind_visualization_utility_methods(py::module &m) {
           [](const std::vector<std::shared_ptr<const geometry::Geometry>>
                      &geometry_ptrs,
              const std::string &window_name, int width, int height, int left,
-             int top) {
+             int top, bool point_show_normal, bool mesh_show_wireframe,
+             bool mesh_show_back_face) {
               std::string current_dir =
                       utility::filesystem::GetWorkingDirectory();
               visualization::DrawGeometries(geometry_ptrs, window_name, width,
-                                            height, left, top);
+                                            height, left, top,
+                                            point_show_normal, mesh_show_wireframe,
+                                            mesh_show_back_face);
               utility::filesystem::ChangeWorkingDirectory(current_dir);
           },
           "Function to draw a list of geometry::Geometry objects",
           "geometry_list"_a, "window_name"_a = "cupoch", "width"_a = 1920,
-          "height"_a = 1080, "left"_a = 50, "top"_a = 50);
+          "height"_a = 1080, "left"_a = 50, "top"_a = 50,
+          "point_show_normal"_a = false, "mesh_show_wireframe"_a = false,
+          "mesh_show_back_face"_a = false);
     docstring::FunctionDocInject(m, "draw_geometries",
                                  map_shared_argument_docstrings);
 }

@@ -80,7 +80,7 @@ void pybind_image(py::module &m) {
             }
             height = (int)info.shape[0];
             width = (int)info.shape[1];
-            auto img = new geometry::Image();
+            auto img = std::unique_ptr<geometry::Image>(new geometry::Image());
             img->Prepare(width, height, num_of_channels, bytes_per_channel);
             cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(img->data_.data()), info.ptr,
                                     img->data_.size(), cudaMemcpyHostToDevice));

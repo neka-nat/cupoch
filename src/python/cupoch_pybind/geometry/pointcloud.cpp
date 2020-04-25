@@ -20,6 +20,9 @@ void pybind_pointcloud(py::module &m) {
     pointcloud
             .def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
                  "Create a PointCloud from points", "points"_a)
+            .def(py::init([](const wrapper::device_vector_vector3f& points) {
+                    return std::unique_ptr<geometry::PointCloud>(new geometry::PointCloud(points.data_));
+               }), "Create a PointCloud from points", "points"_a)
             .def("__repr__",
                  [](const geometry::PointCloud &pcd) {
                      return std::string("geometry::PointCloud with ") +

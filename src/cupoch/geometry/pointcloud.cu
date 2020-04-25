@@ -36,6 +36,8 @@ struct check_nan_functor {
 PointCloud::PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
 PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
     : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+PointCloud::PointCloud(const utility::device_vector<Eigen::Vector3f> &points)
+    : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const PointCloud &other)
     : Geometry3D(Geometry::GeometryType::PointCloud),
       points_(other.points_),

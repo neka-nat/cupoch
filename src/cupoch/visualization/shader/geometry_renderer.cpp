@@ -46,6 +46,27 @@ bool PointCloudRenderer::UpdateGeometry() {
     return true;
 }
 
+bool LineSetRenderer::Render(const RenderOption &option,
+                             const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    return simple_lineset_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool LineSetRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool LineSetRenderer::UpdateGeometry() {
+    simple_lineset_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;

@@ -362,6 +362,54 @@ size_t SimpleShaderForPointCloud::GetDataSize(const geometry::Geometry &geometry
     return ((const geometry::PointCloud &)geometry).points_.size();
 }
 
+bool SimpleShaderForLineSet::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        PrintShaderWarning("Rendering type is not geometry::LineSet.");
+        return false;
+    }
+    glLineWidth(GLfloat(option.line_width_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForLineSet::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        PrintShaderWarning("Rendering type is not geometry::LineSet.");
+        return false;
+    }
+    const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
+    if (lineset.HasLines() == false) {
+        PrintShaderWarning("Binding failed with empty geometry::LineSet.");
+        return false;
+    }
+    utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(lineset.lines_.size());
+    line_coordinates_functor func_line(thrust::raw_pointer_cast(lineset.points_.data()));
+    thrust::transform(lineset.lines_.begin(), lineset.lines_.end(),
+                      line_coords.begin(), func_line);
+    copy_lineset_functor func_cp(thrust::raw_pointer_cast(line_coords.data()),
+                                 thrust::raw_pointer_cast(lineset.colors_.data()), lineset.HasColors());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lineset.lines_.size() * 2),
+                      make_tuple_iterator(points, colors), func_cp);
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(lineset.lines_.size() * 2);
+    return true;
+}
+
+size_t SimpleShaderForLineSet::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::LineSet &)geometry).lines_.size() * 2;
+}
+
 bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
@@ -392,7 +440,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
     }
     auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             (const geometry::AxisAlignedBoundingBox &)geometry);
-    thrust::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(lineset->lines_.size());
+    utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(lineset->lines_.size());
     line_coordinates_functor func_line(thrust::raw_pointer_cast(lineset->points_.data()));
     thrust::transform(lineset->lines_.begin(), lineset->lines_.end(),
                       line_coords.begin(), func_line);

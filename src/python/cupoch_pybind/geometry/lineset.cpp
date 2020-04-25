@@ -20,6 +20,11 @@ void pybind_lineset(py::module &m) {
                          const thrust::host_vector<Eigen::Vector2i> &>(),
                 "Create a LineSet from given points and line indices",
                 "points"_a, "lines"_a)
+            .def(py::init([](const wrapper::device_vector_vector3f& points,
+                             const wrapper::device_vector_vector2i& lines) {
+                    return std::unique_ptr<geometry::LineSet>(new geometry::LineSet(points.data_, lines.data_));
+               }), "Create a LineSet from given points and line indices",
+               "points"_a, "lines"_a)
             .def("__repr__",
                  [](const geometry::LineSet &lineset) {
                      return std::string("geometry::LineSet with ") +

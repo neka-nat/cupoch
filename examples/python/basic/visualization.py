@@ -32,6 +32,39 @@ if __name__ == "__main__":
     cph.visualization.draw_geometries(
         [mesh_box + mesh_sphere + mesh_cylinder + mesh_frame])
 
+    print("Let's draw a cubic using o3d.geometry.LineSet.")
+    points = [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+            [1, 1, 0],
+            [0, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1],
+            [1, 1, 1],
+    ]
+    lines = [
+            [0, 1],
+            [0, 2],
+            [1, 3],
+            [2, 3],
+            [4, 5],
+            [4, 6],
+            [5, 7],
+            [6, 7],
+            [0, 4],
+            [1, 5],
+            [2, 6],
+            [3, 7],
+    ]
+    colors = [[1, 0, 0] for i in range(len(lines))]
+    line_set = cph.geometry.LineSet(
+        points=cph.utility.Vector3fVector(points),
+        lines=cph.utility.Vector2iVector(lines),
+    )
+    line_set.colors = cph.utility.Vector3fVector(colors)
+    cph.visualization.draw_geometries([line_set])
+
     print("Let's draw a textured triangle mesh from obj file.")
     textured_mesh = cph.io.read_triangle_mesh("../../testdata/crate/crate.obj")
     textured_mesh.compute_vertex_normals()

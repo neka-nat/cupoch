@@ -15,5 +15,8 @@ bool ComputeIntersection(const geometry::VoxelGrid& voxelgrid1,
 bool ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
                          const geometry::OccupancyGrid& occgrid);
 
+bool ComputeIntersection(const geometry::OccupancyGrid& occgrid,
+                         const geometry::VoxelGrid& voxelgrid);
+
 }
 }
