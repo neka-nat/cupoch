@@ -50,9 +50,12 @@ public:
     int GetVoxelIndex(const Eigen::Vector3f& point) const;
     thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
 
-    OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
-    OccupancyGrid& Insert(const thrust::host_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint);
-    OccupancyGrid& Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint);
+    OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points,
+                          const Eigen::Vector3f& viewpoint, float max_range = 5.0);
+    OccupancyGrid& Insert(const thrust::host_vector<Eigen::Vector3f>& points,
+                          const Eigen::Vector3f& viewpoint, float max_range = 5.0);
+    OccupancyGrid& Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint,
+                          float max_range = 5.0);
 
     void AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
     void AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);

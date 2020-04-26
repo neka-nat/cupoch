@@ -128,18 +128,35 @@ struct create_occupancy_voxels_functor {
           voxel_size_(voxel_size) {};
     const Eigen::Vector3f origin_;
     const float voxel_size_;
-    __device__ Eigen::Vector3i operator()(const Eigen::Vector3f &point) const {
+    __device__ Eigen::Vector3i operator()(const thrust::tuple<Eigen::Vector3f, bool> &x) const {
+        const Eigen::Vector3f& point = thrust::get<0>(x);
+        bool hit_flag = thrust::get<1>(x);
         Eigen::Vector3f ref_coord = (point - origin_) / voxel_size_;
-        return Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>();
+        return (hit_flag) ? Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>() :
+            Eigen::Vector3i(INVALID_VOXEL_INDEX,
+                INVALID_VOXEL_INDEX,
+                INVALID_VOXEL_INDEX);;
     }
 };
 
 void ComputeOccupiedVoxels(const utility::device_vector<Eigen::Vector3f>& points,
+    const utility::device_vector<bool> hit_flags,
     float voxel_size, Eigen::Vector3f& origin,
     utility::device_vector<Eigen::Vector3i>& occupied_voxels) {
     occupied_voxels.resize(points.size());
     create_occupancy_voxels_functor func(origin, voxel_size);
-    thrust::transform(points.begin(), points.end(), occupied_voxels.begin(), func);
+    thrust::transform(make_tuple_iterator(points.begin(), hit_flags.begin()),
+                      make_tuple_iterator(points.end(), hit_flags.end()),
+                      occupied_voxels.begin(), func);
+    auto end1 = thrust::remove_if(occupied_voxels.begin(), occupied_voxels.end(),
+             [] __device__(
+                    const Eigen::Vector3i &idx)
+                    -> bool {
+                return idx == Eigen::Vector3i(INVALID_VOXEL_INDEX,
+                                              INVALID_VOXEL_INDEX,
+                                              INVALID_VOXEL_INDEX);
+            });
+    occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
     thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
     auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
@@ -292,14 +309,26 @@ OccupancyGrid &OccupancyGrid::Rotate(const Eigen::Matrix3f &R, bool center) {
     return *this;
 }
 
-OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
+OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points,
+                                     const Eigen::Vector3f& viewpoint, float max_range) {
+    utility::device_vector<Eigen::Vector3f> ranged_points(points.size());
+    utility::device_vector<bool> hit_flags(points.size());
     utility::device_vector<Eigen::Vector3i> free_voxels;
     utility::device_vector<Eigen::Vector3i> occupied_voxels;
 
+    thrust::transform(points.begin(), points.end(),
+                      make_tuple_iterator(ranged_points.begin(), hit_flags.begin()),
+                      [viewpoint, max_range] __device__ (const Eigen::Vector3f &pt) -> thrust::tuple<Eigen::Vector3f, bool> {
+                          Eigen::Vector3f pt_vp = pt - viewpoint;
+                          float dist = pt_vp.norm();
+                          bool is_hit = dist <= max_range;
+                          return thrust::make_tuple((is_hit) ? pt : viewpoint + pt_vp / dist * max_range, is_hit);
+                      });
+
     // comupute free voxels
-    ComputeFreeVoxels(points, viewpoint, voxel_size_, origin_, free_voxels);
+    ComputeFreeVoxels(ranged_points, viewpoint, voxel_size_, origin_, free_voxels);
     // compute occupied voxels
-    ComputeOccupiedVoxels(points, voxel_size_, origin_, occupied_voxels);
+    ComputeOccupiedVoxels(ranged_points, hit_flags, voxel_size_, origin_, occupied_voxels);
 
     utility::device_vector<Eigen::Vector3i> free_voxels_res(free_voxels.size());
     auto end = thrust::set_difference(free_voxels.begin(), free_voxels.end(),
@@ -311,13 +340,15 @@ OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3
     return *this;
 }
 
-OccupancyGrid& OccupancyGrid::Insert(const thrust::host_vector<Eigen::Vector3f>& points, const Eigen::Vector3f& viewpoint) {
+OccupancyGrid& OccupancyGrid::Insert(const thrust::host_vector<Eigen::Vector3f>& points,
+                                     const Eigen::Vector3f& viewpoint, float max_range) {
     utility::device_vector<Eigen::Vector3f> dev_points = points;
-    return Insert(dev_points, viewpoint);
+    return Insert(dev_points, viewpoint, max_range);
 }
 
-OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud, const Eigen::Vector3f& viewpoint) {
-    Insert(pointcloud.points_, viewpoint);
+OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud,
+                                     const Eigen::Vector3f& viewpoint, float max_range) {
+    Insert(pointcloud.points_, viewpoint, max_range);
     return *this;
 }
 
