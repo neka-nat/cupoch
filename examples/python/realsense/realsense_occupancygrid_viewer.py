@@ -62,7 +62,7 @@ if __name__ == "__main__":
     vis = x3d.visualization.Visualizer()
     vis.create_window()
 
-    ocgd = x3d.geometry.OccupancyGrid(0.05)
+    ocgd = x3d.geometry.OccupancyGrid(0.02)
     flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
     # Streaming loop
@@ -101,9 +101,9 @@ if __name__ == "__main__":
                 convert_rgb_to_intensity=False)
             temp = x3d.geometry.PointCloud.create_from_rgbd_image(
                 rgbd_image, intrinsic)
-            temp = temp.voxel_down_sample(0.01)
             temp.transform(flip_transform)
-            ocgd.insert(temp, np.zeros(3), 2.0)
+            temp = temp.voxel_down_sample(0.01)
+            ocgd.insert(temp, np.zeros(3))
 
             if frame_count == 0:
                 vis.add_geometry(ocgd)

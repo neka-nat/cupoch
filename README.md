@@ -76,6 +76,10 @@ python benchmarks.py
 
 ![vo](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/vo_gpu.gif)
 
+### Occupancy grid with intel realsense D435
+
+![og](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/og_gpu.gif)
+
 ### Visual odometry with ROS + D435
 
 This demo works in the following environment.
