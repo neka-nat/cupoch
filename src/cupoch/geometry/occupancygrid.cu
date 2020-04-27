@@ -163,7 +163,7 @@ OccupancyGrid::OccupancyGrid(const OccupancyGrid& other)
    origin_(other.origin_), voxels_keys_(other.voxels_keys_), voxels_values_(other.voxels_values_),
    clamping_thres_min_(other.clamping_thres_min_), clamping_thres_max_(other.clamping_thres_max_),
    prob_hit_log_(other.prob_hit_log_), prob_miss_log_(other.prob_miss_log_),
-   occ_prob_thres_log_(other.occ_prob_thres_log_) {}
+   occ_prob_thres_log_(other.occ_prob_thres_log_), visualize_free_area_(other.visualize_free_area_) {}
 
 OccupancyGrid &OccupancyGrid::Clear() {
     voxel_size_ = 0.0;

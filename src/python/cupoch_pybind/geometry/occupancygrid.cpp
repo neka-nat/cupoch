@@ -75,5 +75,11 @@ void pybind_occupanygrid(py::module &m) {
                                         wrapper::FromWrapper(og.voxels_keys_, og.voxels_values_, map);})
             .def("insert", py::overload_cast<const geometry::PointCloud&, const Eigen::Vector3f&, float>(&geometry::OccupancyGrid::Insert),
                  "Function to insert occupancy grid from pointcloud.",
-                 "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0);
+                 "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)
+            .def_readwrite("clamping_thres_min", &geometry::OccupancyGrid::clamping_thres_min_)
+            .def_readwrite("clamping_thres_max", &geometry::OccupancyGrid::clamping_thres_max_)
+            .def_readwrite("prob_hit_log", &geometry::OccupancyGrid::prob_hit_log_)
+            .def_readwrite("prob_miss_log", &geometry::OccupancyGrid::prob_miss_log_)
+            .def_readwrite("occ_prob_thres_log", &geometry::OccupancyGrid::occ_prob_thres_log_)
+            .def_readwrite("visualize_free_area", &geometry::OccupancyGrid::visualize_free_area_);
 }

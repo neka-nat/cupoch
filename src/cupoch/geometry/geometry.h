@@ -24,10 +24,12 @@ public:
         OccupancyGrid = 3,
         /// LineSet
         LineSet = 4,
+        /// Graph
+        Graph = 5,
         /// MeshBase
-        MeshBase = 5,
+        MeshBase = 6,
         /// TriangleMesh
-        TriangleMesh = 6,
+        TriangleMesh = 7,
         /// Image
         Image = 8,
         /// RGBDImage

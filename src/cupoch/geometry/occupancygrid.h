@@ -69,6 +69,7 @@ public:
     float prob_hit_log_ = 0.85;
     float prob_miss_log_ = -0.4;
     float occ_prob_thres_log_ = 0.0;
+    bool visualize_free_area_ = true;
 };
 
 }

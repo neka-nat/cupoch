@@ -19,6 +19,10 @@ class TriangleMesh;
 class LineSet : public Geometry3D {
 public:
     LineSet();
+    LineSet(Geometry::GeometryType type);
+    LineSet(Geometry::GeometryType type,
+            const utility::device_vector<Eigen::Vector3f> &points,
+            const utility::device_vector<Eigen::Vector2i> &lines);
     LineSet(const utility::device_vector<Eigen::Vector3f> &points,
             const utility::device_vector<Eigen::Vector2i> &lines);
     LineSet(const thrust::host_vector<Eigen::Vector3f> &points,

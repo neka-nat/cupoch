@@ -15,3 +15,5 @@ ocg = cph.geometry.OccupancyGrid()
 ocg.insert(pcd, np.zeros(3))
 print(ocg)
 cph.visualization.draw_geometries([ocg])
+ocg.visualize_free_area = False
+cph.visualization.draw_geometries([ocg])

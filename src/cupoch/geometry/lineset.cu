@@ -8,6 +8,15 @@ using namespace cupoch::geometry;
 
 LineSet::LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
 
+LineSet::LineSet(Geometry::GeometryType type) : Geometry3D(type) {}
+
+LineSet::LineSet(Geometry::GeometryType type,
+                 const utility::device_vector<Eigen::Vector3f> &points,
+                 const utility::device_vector<Eigen::Vector2i> &lines)
+    : Geometry3D(type),
+      points_(points),
+      lines_(lines) {}
+
 LineSet::LineSet(const utility::device_vector<Eigen::Vector3f> &points,
                  const utility::device_vector<Eigen::Vector2i> &lines)
     : Geometry3D(Geometry::GeometryType::LineSet),
