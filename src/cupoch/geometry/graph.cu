@@ -1,0 +1,231 @@
+#include "cupoch/geometry/graph.h"
+#include "cupoch/geometry/geometry_functor.h"
+
+#include <thrust/gather.h>
+
+namespace cupoch {
+namespace geometry {
+
+namespace {
+
+struct relax_functor {
+    relax_functor(const Eigen::Vector2i* lines,
+                  const int* edge_index_offsets,
+                  const float* edge_weights,
+                  int* open_flags,
+                  const Graph::SSSPResult* res,
+                  Graph::SSSPResult* res_tmp)
+                  : lines_(lines), edge_index_offsets_(edge_index_offsets),
+                  edge_weights_(edge_weights), open_flags_(open_flags),
+                  res_(res), res_tmp_(res_tmp) {};
+    const Eigen::Vector2i* lines_;
+    const int* edge_index_offsets_;
+    const float* edge_weights_;
+    int* open_flags_;
+    const Graph::SSSPResult* res_;
+    Graph::SSSPResult* res_tmp_;
+    __device__ void operator() (size_t idx) {
+        if (open_flags_[idx] == 0) return;
+        open_flags_[idx] = 0;
+        int s_edge = edge_index_offsets_[idx];
+        int e_edge = edge_index_offsets_[idx + 1];
+        for (int j = s_edge; j < e_edge; ++j) {
+            int k = lines_[j][0];
+            res_tmp_[j].shortest_distance_ = res_[k].shortest_distance_ + edge_weights_[j];
+            res_tmp_[j].prev_index_ = k;
+        }
+    }
+};
+
+struct update_shortest_distances_functor {
+    update_shortest_distances_functor(int* open_flags,
+                                      Graph::SSSPResult* res,
+                                      const Graph::SSSPResult* res_tmp)
+                                      : open_flags_(open_flags),
+                                      res_(res), res_tmp_(res_tmp) {};
+    int* open_flags_;
+    Graph::SSSPResult* res_;
+    const Graph::SSSPResult* res_tmp_;
+    __device__ void operator() (size_t idx) {
+        if (res_[idx].shortest_distance_ > res_tmp_[idx].shortest_distance_) {
+            res_[idx] = res_tmp_[idx];
+            open_flags_[idx] = 1;
+        }
+    }
+};
+
+}
+
+Graph::Graph() : LineSet(Geometry::GeometryType::Graph) {}
+Graph::Graph(const utility::device_vector<Eigen::Vector3f> &points)
+ : LineSet(Geometry::GeometryType::Graph, points, utility::device_vector<Eigen::Vector2i>()) {}
+Graph::Graph(const thrust::host_vector<Eigen::Vector3f> &points)
+ : LineSet(Geometry::GeometryType::Graph, points, utility::device_vector<Eigen::Vector2i>()) { ConstructGraph(); }
+Graph::~Graph() {}
+ Graph::Graph(const Graph &other)
+ : LineSet(Geometry::GeometryType::Graph, other.points_, other.lines_),
+ edge_index_offsets_(other.edge_index_offsets_), edge_weights_(other.edge_weights_),
+ is_directed_(other.is_directed_) {}
+
+thrust::host_vector<int> Graph::GetEdgeIndexOffsets() const {
+    thrust::host_vector<int> edge_index_offsets = edge_index_offsets_;
+    return edge_index_offsets;
+}
+
+void Graph::SetEdgeIndexOffsets(const thrust::host_vector<int>& edge_index_offsets) {
+    edge_index_offsets_ = edge_index_offsets;
+}
+
+thrust::host_vector<float> Graph::GetEdgeWeights() const {
+    thrust::host_vector<float> edge_weights = edge_weights_;
+    return edge_weights;
+}
+
+void Graph::SetEdgeWeights(const thrust::host_vector<float>& edge_weights) {
+    edge_weights_ = edge_weights;
+}
+
+Graph &Graph::Clear() {
+    LineSet::Clear();
+    edge_index_offsets_.clear();
+    edge_weights_.clear();
+    return *this;
+}
+
+Graph &Graph::ConstructGraph() {
+    if (lines_.empty()) {
+        utility::LogError("[ConstructGraph] Graph has no edges.");
+        return *this;
+    }
+
+    if (HasWeights()) {
+        thrust::sort_by_key(lines_.begin(), lines_.end(), edge_weights_.begin());
+    } else {
+        thrust::sort(lines_.begin(), lines_.end());
+        edge_weights_.resize(lines_.size());
+        thrust::fill(edge_weights_.begin(), edge_weights_.end(), 1.0);
+    }
+    edge_index_offsets_.resize(points_.size() + 1, 0);
+    utility::device_vector<int> indices(lines_.size());
+    utility::device_vector<int> counts(lines_.size());
+    const auto begin = thrust::make_transform_iterator(lines_.begin(), extract_element_functor<int, 2, 0>());
+    auto end = thrust::reduce_by_key(begin, begin + lines_.size(), thrust::make_constant_iterator<int>(1),
+                                     indices.begin(), counts.begin());
+    indices.resize(thrust::distance(indices.begin(), end.first));
+    counts.resize(thrust::distance(counts.begin(), end.second));
+    thrust::gather(indices.begin(), indices.end(), counts.begin(), edge_index_offsets_.begin());
+    thrust::exclusive_scan(edge_index_offsets_.begin(), edge_index_offsets_.end(), edge_index_offsets_.begin());
+    return *this;
+}
+
+Graph &Graph::AddEdge(const Eigen::Vector2i &edge, float weight) {
+    lines_.push_back(edge);
+    edge_weights_.push_back(weight);
+    if (!is_directed_) {
+        lines_.push_back(Eigen::Vector2i(edge[1], edge[0]));
+        edge_weights_.push_back(weight);
+    }
+    return ConstructGraph();
+}
+
+Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
+                       const utility::device_vector<float> &weights) {
+    if (!weights.empty() && edges.size() != weights.size()) {
+        utility::LogError("[AddEdges] edges size is not equal to weights size.");
+        return *this;
+    }
+    size_t n_old_lines = lines_.size();
+    lines_.insert(lines_.end(), edges.begin(), edges.end());
+    if (!is_directed_) {
+        lines_.insert(lines_.end(), thrust::make_transform_iterator(edges.begin(), reverse_index_functor<int>()),
+                      thrust::make_transform_iterator(edges.end(), reverse_index_functor<int>()));
+    }
+    if (weights.empty()) {
+        if (!is_directed_) {
+            edge_weights_.resize(2 * lines_.size());
+        } else {
+            edge_weights_.resize(lines_.size());
+        }
+        thrust::fill(edge_weights_.begin() + n_old_lines, edge_weights_.end(), 1.0);
+    } else {
+        edge_weights_.insert(edge_weights_.end(), weights.begin(), weights.end());
+        if (!is_directed_) edge_weights_.insert(edge_weights_.end(), weights.begin(), weights.end());
+    }
+    return ConstructGraph();
+}
+
+Graph &Graph::AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
+                       const thrust::host_vector<float> &weights) {
+    utility::device_vector<Eigen::Vector2i> d_edges = edges;
+    utility::device_vector<float> d_weights = weights;
+    return AddEdges(d_edges, d_weights);
+}
+
+Graph &Graph::SetEdgeWeightsFromDistance() {
+    edge_weights_.resize(lines_.size());
+    Eigen::Vector3f *pt_ptr = thrust::raw_pointer_cast(points_.data());
+    thrust::transform(lines_.begin(), lines_.end(), edge_weights_.begin(),
+                      [pt_ptr] __device__ (const Eigen::Vector2i& edge) {
+                          return (pt_ptr[edge[0]] - pt_ptr[edge[1]]).norm();
+                      });
+    return *this;
+}
+
+Graph::SSSPResultArray Graph::DijkstraPath(int start_node_index) const {
+    SSSPResultArray out(points_.size());
+
+    if (!IsConstructed()) {
+        utility::LogError("[DijkstraPath] this graph is not constructed.");
+        return out;
+    }
+
+    utility::device_vector<int> open_flags(points_.size(), 0);
+    utility::device_vector<int> indices(lines_.size());
+    utility::device_vector<Eigen::Vector2i> sorted_lines(lines_.size());
+    SSSPResultArray res_tmp_line(lines_.size());
+    SSSPResultArray sorted_res_tmp_line(lines_.size());
+    SSSPResultArray sorted_res_tmp_line_s(lines_.size());
+    SSSPResultArray res_tmp(points_.size());
+    open_flags[start_node_index] = 1;
+    out[start_node_index] = SSSPResult(0.0);
+    relax_functor func1(thrust::raw_pointer_cast(lines_.data()),
+                        thrust::raw_pointer_cast(edge_index_offsets_.data()),
+                        thrust::raw_pointer_cast(edge_weights_.data()),
+                        thrust::raw_pointer_cast(open_flags.data()),
+                        thrust::raw_pointer_cast(out.data()),
+                        thrust::raw_pointer_cast(res_tmp_line.data()));
+    update_shortest_distances_functor func2(thrust::raw_pointer_cast(open_flags.data()),
+                                            thrust::raw_pointer_cast(out.data()),
+                                            thrust::raw_pointer_cast(res_tmp.data()));
+    while (thrust::reduce(open_flags.begin(), open_flags.end()) > 0) {
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator(points_.size()), func1);
+        sorted_lines = lines_;
+        sorted_res_tmp_line = res_tmp_line;
+        thrust::sort_by_key(sorted_lines.begin(), sorted_lines.end(), sorted_res_tmp_line.begin(),
+                            [] __device__ (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+                                return lhs[1] < rhs[1];
+                            });
+        const auto begin = thrust::make_transform_iterator(sorted_lines.begin(), extract_element_functor<int, 2, 1>());
+        auto end = thrust::reduce_by_key(begin, begin + sorted_lines.size(), sorted_res_tmp_line.begin(),
+                                         indices.begin(), sorted_res_tmp_line_s.begin(),
+                                         thrust::equal_to<int>(),
+                                         [] __device__ (const SSSPResult& lhs, const SSSPResult& rhs) {
+                                             return (lhs.shortest_distance_<= rhs.shortest_distance_) ? lhs : rhs;
+                                         });
+        size_t ns = thrust::distance(indices.begin(), end.first);
+        thrust::gather(indices.begin(), indices.begin() + ns, sorted_res_tmp_line_s.begin(), res_tmp.begin());
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator(points_.size()), func2);
+    }
+    return out;
+}
+
+Graph::SSSPResultHostArray Graph::DijkstraPathHost(int start_node_index) const {
+    auto out = DijkstraPath(start_node_index);
+    SSSPResultHostArray h_out = out;
+    return h_out;
+}
+
+}
+}

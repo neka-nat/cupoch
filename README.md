@@ -23,6 +23,7 @@ This library is based on the functionality of Open3D, with additional features f
     * Visual Odometry
     * Collision checking
     * Occupancy grid
+    * Path finding on graph structure
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))

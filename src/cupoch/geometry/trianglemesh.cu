@@ -6,6 +6,7 @@
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/range.h"
@@ -57,10 +58,6 @@ struct align_triangle_functor {
     }
 };
 
-struct extract_second_functor {
-    __device__ int operator() (const Eigen::Vector2i& x) { return x[1]; };
-};
-
 struct edge_first_eq_functor {
     __device__ bool operator() (const Eigen::Vector2i& lhs, const Eigen::Vector2i& rhs) { return lhs[0] == rhs[0]; };
 };
@@ -101,7 +98,7 @@ void FilterSmoothLaplacianHelper(
             return prv + lambda * (sum / thrust::get<1>(x) - prv);
         };
     if (filter_vertex) {
-        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertices.begin(), tritr);
         thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
@@ -112,7 +109,7 @@ void FilterSmoothLaplacianHelper(
                           mesh->vertices_.begin(), filter_fn);
     }
     if (filter_normal) {
-        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_normals.begin(), tritr);
         thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
@@ -123,7 +120,7 @@ void FilterSmoothLaplacianHelper(
                           mesh->vertex_normals_.begin(), filter_fn);
     }
     if (filter_color) {
-        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+        auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_colors.begin(), tritr);
         thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
@@ -485,7 +482,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
                           counts.begin(), edge_first_eq_functor());
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         if (filter_vertex) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertices.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
@@ -495,7 +492,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
                               mesh->vertices_.begin(), filter_fn);
         }
         if (filter_normal) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_normals.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
@@ -505,7 +502,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
                               mesh->vertex_normals_.begin(), filter_fn);
         }
         if (filter_color) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_colors.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
@@ -564,7 +561,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
                           counts.begin(), edge_first_eq_functor());
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         if (filter_vertex) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertices.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
@@ -574,7 +571,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
                               mesh->vertices_.begin(), filter_fn);
         }
         if (filter_normal) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_normals.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
@@ -584,7 +581,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
                               mesh->vertex_normals_.begin(), filter_fn);
         }
         if (filter_color) {
-            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_second_functor());
+            auto tritr = thrust::make_transform_iterator(mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(prev_vertex_colors.begin(), tritr);
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),

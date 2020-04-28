@@ -15,19 +15,19 @@ __constant__ float voxel_offset[7][3] = {{0, 0, 0}, {1, 0, 0}, {-1, 0, 0},
                                          {0, 1, 0}, {0, -1, 0}, {0, 0, 1},
                                          {0, 0, -1}};
 
-struct compute_intersect_voxels_functor{
-    compute_intersect_voxels_functor(const Eigen::Vector3f* points,
-                                     const Eigen::Vector3f* steps,
-                                     const Eigen::Vector3f& viewpoint,
-                                     const Eigen::Vector3f& min_bound,
-                                     float voxel_size,
-                                     const Eigen::Vector3f& origin,
-                                     int n_div)
-                                     : points_(points), steps_(steps), viewpoint_(viewpoint),
-                                      min_bound_(min_bound), voxel_size_(voxel_size),
-                                      box_half_size_(Eigen::Vector3f(
-                                         voxel_size / 2, voxel_size / 2, voxel_size / 2)),
-                                      origin_(origin), n_div_(n_div) {};
+struct compute_intersect_voxel_segment_functor{
+    compute_intersect_voxel_segment_functor(const Eigen::Vector3f* points,
+                                            const Eigen::Vector3f* steps,
+                                            const Eigen::Vector3f& viewpoint,
+                                            const Eigen::Vector3f& min_bound,
+                                            float voxel_size,
+                                            const Eigen::Vector3f& origin,
+                                            int n_div)
+                                            : points_(points), steps_(steps), viewpoint_(viewpoint),
+                                             min_bound_(min_bound), voxel_size_(voxel_size),
+                                             box_half_size_(Eigen::Vector3f(
+                                                voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+                                             origin_(origin), n_div_(n_div) {};
     const Eigen::Vector3f* points_;
     const Eigen::Vector3f* steps_;
     const Eigen::Vector3f viewpoint_;
@@ -44,10 +44,10 @@ struct compute_intersect_voxels_functor{
         Eigen::Vector3f center = sidx * steps_[pidx] + viewpoint_;
         Eigen::Vector3f voxel_idx = Eigen::device_vectorize<float, 3, ::floor>((center - origin_) / voxel_size_);
         Eigen::Vector3f voxel_center = voxel_size_ * (voxel_idx + Eigen::Vector3f(voxel_offset[vidx][0], voxel_offset[vidx][1], voxel_offset[vidx][2]));
-        bool is_interset = intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
-                                                              voxel_center - box_half_size_,
-                                                              voxel_center + box_half_size_);
-        return (is_interset) ? voxel_idx.cast<int>() :
+        bool is_intersect = intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
+                                                               voxel_center - box_half_size_,
+                                                               voxel_center + box_half_size_);
+        return (is_intersect) ? voxel_idx.cast<int>() :
             Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
     }
 };
@@ -63,10 +63,10 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     const Eigen::Vector3f box_half_size(0.5 * voxel_size, 0.5 * voxel_size, 0.5 * voxel_size);
     Eigen::Vector3f min_bound = viewpoint.array().min(bbx.min_bound_.array()).matrix() - box_half_size;
     free_voxels.resize(n_div * n_points * 7);
-    compute_intersect_voxels_functor func(thrust::raw_pointer_cast(points.data()),
-                                          thrust::raw_pointer_cast(steps.data()),
-                                          viewpoint, min_bound,
-                                          voxel_size, origin, n_div);
+    compute_intersect_voxel_segment_functor func(thrust::raw_pointer_cast(points.data()),
+                                                 thrust::raw_pointer_cast(steps.data()),
+                                                 viewpoint, min_bound,
+                                                 voxel_size, origin, n_div);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_div * n_points * 7),
                       free_voxels.begin(), func);
     auto end1 = thrust::remove_if(free_voxels.begin(), free_voxels.end(),

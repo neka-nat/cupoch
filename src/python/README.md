@@ -4,9 +4,12 @@
 
 * 3D data processing and robotics computation using CUDA
     * Point cloud registration
-    * Collision checking
+    * Point cloud clustering
+    * Point cloud/Triangle mesh filtering, down sampling
     * Visual Odometry
-    * Filtering, down sampling
+    * Collision checking
+    * Occupancy grid
+    * Path finding on graph structure
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))

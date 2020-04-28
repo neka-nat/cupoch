@@ -19,5 +19,17 @@ struct compute_grid_center_functor {
     }
 };
 
+template<typename T, int Size, int Index>
+struct extract_element_functor {
+    __device__ T operator() (const Eigen::Matrix<T, Size, 1>& x) { return x[Index]; };
+};
+
+template<typename T>
+struct reverse_index_functor {
+    __device__ Eigen::Matrix<T, 2, 1> operator() (const Eigen::Matrix<T, 2, 1>& x) {
+        return Eigen::Matrix<T, 2, 1>(x[1], x[0]);
+    };
+};
+
 }
 }
