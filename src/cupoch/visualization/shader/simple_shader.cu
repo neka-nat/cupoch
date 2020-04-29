@@ -2,6 +2,7 @@
 
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/lineset.h"
+#include "cupoch/geometry/graph.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
@@ -81,7 +82,7 @@ struct copy_lineset_functor {
     thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (size_t k) const {
         int i = k / 2;
         int j = k % 2;
-        Eigen::Vector3f color_tmp = (has_colors_) ? line_colors_[i] : Eigen::Vector3f::Zero();
+        Eigen::Vector3f color_tmp = (has_colors_) ? line_colors_[i] : Eigen::Vector3f::Ones();
         if (j == 0) {
             return thrust::make_tuple(line_coords_[i].first, color_tmp);
         } else {
@@ -408,6 +409,107 @@ bool SimpleShaderForLineSet::PrepareBinding(
 
 size_t SimpleShaderForLineSet::GetDataSize(const geometry::Geometry &geometry) const {
     return ((const geometry::LineSet &)geometry).lines_.size() * 2;
+}
+
+bool SimpleShaderForGraphNode::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Graph) {
+        PrintShaderWarning("Rendering type is not geometry::Graph.");
+        return false;
+    }
+    glPointSize(GLfloat(option.point_size_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForGraphNode::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Graph) {
+        PrintShaderWarning("Rendering type is not geometry::Graph.");
+        return false;
+    }
+    const geometry::Graph &graph =
+            (const geometry::Graph &)geometry;
+    if (graph.HasPoints() == false) {
+        PrintShaderWarning("Binding failed with empty graph.");
+        return false;
+    }
+    copy_pointcloud_functor func(graph.HasColors(), option.point_color_option_, view);
+    if (graph.HasColors()) {
+        thrust::transform(make_tuple_iterator(graph.points_.begin(), graph.colors_.begin()),
+                          make_tuple_iterator(graph.points_.end(), graph.colors_.end()),
+                          make_tuple_iterator(points, colors), func);
+    } else {
+        thrust::transform(make_tuple_iterator(graph.points_.begin(),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                          make_tuple_iterator(graph.points_.end(),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                          make_tuple_iterator(points, colors), func);
+    }
+    draw_arrays_mode_ = GL_POINTS;
+    draw_arrays_size_ = GLsizei(graph.points_.size());
+    return true;
+}
+
+size_t SimpleShaderForGraphNode::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::Graph &)geometry).points_.size();
+}
+
+bool SimpleShaderForGraphEdge::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Graph) {
+        PrintShaderWarning("Rendering type is not geometry::Graph.");
+        return false;
+    }
+    glLineWidth(GLfloat(option.line_width_));
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForGraphEdge::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector3f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::Graph) {
+        PrintShaderWarning("Rendering type is not geometry::Graph.");
+        return false;
+    }
+    const geometry::Graph &graph = (const geometry::Graph &)geometry;
+    if (graph.HasLines() == false) {
+        PrintShaderWarning("Binding failed with empty geometry::Graph.");
+        return false;
+    }
+    utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(graph.lines_.size());
+    line_coordinates_functor func_line(thrust::raw_pointer_cast(graph.points_.data()));
+    thrust::transform(graph.lines_.begin(), graph.lines_.end(),
+                      line_coords.begin(), func_line);
+    copy_lineset_functor func_cp(thrust::raw_pointer_cast(line_coords.data()),
+                                 thrust::raw_pointer_cast(graph.colors_.data()), graph.HasColors());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(graph.lines_.size() * 2),
+                      make_tuple_iterator(points, colors), func_cp);
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(graph.lines_.size() * 2);
+    return true;
+}
+
+size_t SimpleShaderForGraphEdge::GetDataSize(const geometry::Geometry &geometry) const {
+    return ((const geometry::Graph &)geometry).lines_.size() * 2;
 }
 
 bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(

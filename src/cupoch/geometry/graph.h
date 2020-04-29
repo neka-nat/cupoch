@@ -54,6 +54,7 @@ public:
 
     SSSPResultArray DijkstraPath(int start_node_index) const;
     SSSPResultHostArray DijkstraPathHost(int start_node_index) const;
+    thrust::host_vector<int> DijkstraPath(int start_node_index, int end_node_index) const;
 
 public:
     utility::device_vector<int> edge_index_offsets_;

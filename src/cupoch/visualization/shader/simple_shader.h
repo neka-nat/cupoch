@@ -78,6 +78,38 @@ protected:
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
+class SimpleShaderForGraphNode : public SimpleShader {
+public:
+    SimpleShaderForGraphNode() : SimpleShader("SimpleShaderForGraphNode") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
+};
+
+class SimpleShaderForGraphEdge : public SimpleShader {
+public:
+    SimpleShaderForGraphEdge() : SimpleShader("SimpleShaderForGraphEdge") {}
+
+protected:
+    bool PrepareRendering(const geometry::Geometry &geometry,
+                          const RenderOption &option,
+                          const ViewControl &view) final;
+    bool PrepareBinding(const geometry::Geometry &geometry,
+                        const RenderOption &option,
+                        const ViewControl &view,
+                        thrust::device_ptr<Eigen::Vector3f> &points,
+                        thrust::device_ptr<Eigen::Vector3f> &colors) final;
+    size_t GetDataSize(const geometry::Geometry &geometry) const final;
+};
+
 class SimpleShaderForAxisAlignedBoundingBox : public SimpleShader {
 public:
     SimpleShaderForAxisAlignedBoundingBox()

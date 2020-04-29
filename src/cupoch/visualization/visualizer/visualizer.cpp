@@ -329,6 +329,12 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::Graph) {
+        renderer_ptr = std::make_shared<glsl::GraphRenderer>();
+        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
                        geometry::Geometry::GeometryType::TriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {

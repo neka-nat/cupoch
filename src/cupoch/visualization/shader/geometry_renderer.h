@@ -84,6 +84,21 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+class GraphRenderer : public GeometryRenderer {
+public:
+    ~GraphRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForGraphNode simple_graph_node_shader_;
+    SimpleShaderForGraphEdge simple_graph_edge_shader_;
+};
+
 class TriangleMeshRenderer : public GeometryRenderer {
 public:
     ~TriangleMeshRenderer() override {}

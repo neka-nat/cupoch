@@ -158,6 +158,7 @@ void pybind_geometry(py::module &m) {
     pybind_voxelgrid(m_submodule);
     pybind_occupanygrid(m_submodule);
     pybind_lineset(m_submodule);
+    pybind_graph(m_submodule);
     pybind_meshbase(m_submodule);
     pybind_trianglemesh(m_submodule);
     pybind_image(m_submodule);

@@ -227,5 +227,21 @@ Graph::SSSPResultHostArray Graph::DijkstraPathHost(int start_node_index) const {
     return h_out;
 }
 
+thrust::host_vector<int> Graph::DijkstraPath(int start_node_index, int end_node_index) const {
+    auto res = DijkstraPath(start_node_index);
+    SSSPResultHostArray h_res = res;
+    if (h_res[end_node_index].prev_index_ < 0) return thrust::host_vector<int>();
+    thrust::host_vector<int> path_nodes;
+    path_nodes.push_back(end_node_index);
+    int prev_index = h_res[end_node_index].prev_index_;
+    while (prev_index != start_node_index) {
+        path_nodes.push_back(prev_index);
+        prev_index = h_res[prev_index].prev_index_;
+    }
+    path_nodes.push_back(start_node_index);
+    thrust::reverse(path_nodes.begin(), path_nodes.end());
+    return path_nodes;
+}
+
 }
 }

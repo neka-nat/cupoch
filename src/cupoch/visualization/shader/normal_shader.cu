@@ -29,11 +29,8 @@ struct copy_trianglemesh_functor {
         int i = k / 3;
         int vi = triangles_[k];
         const auto &vertex = vertices_[vi];
-        if (shade_option_ == RenderOption::MeshShadeOption::FlatShade) {
-            return thrust::make_tuple(vertex, triangle_normals_[i]);
-        } else {
-            return thrust::make_tuple(vertex, vertex_normals_[vi]);
-        }
+        return (shade_option_ == RenderOption::MeshShadeOption::FlatShade) ? thrust::make_tuple(vertex, triangle_normals_[i]) :
+            thrust::make_tuple(vertex, vertex_normals_[vi]);
     }
 };
 

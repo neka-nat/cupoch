@@ -67,6 +67,29 @@ bool LineSetRenderer::UpdateGeometry() {
     return true;
 }
 
+bool GraphRenderer::Render(const RenderOption &option,
+                             const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    return simple_graph_node_shader_.Render(*geometry_ptr_, option, view) &&
+        simple_graph_edge_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool GraphRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::Graph) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool GraphRenderer::UpdateGeometry() {
+    simple_graph_node_shader_.InvalidateGeometry();
+    simple_graph_edge_shader_.InvalidateGeometry();
+    return true;
+}
+
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
