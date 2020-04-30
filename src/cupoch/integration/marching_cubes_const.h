@@ -1,19 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
-#include <mutex>
-
-#include "cupoch/utility/platform.h"
-
 namespace {
 
-__constant__ int edge_table[256];
-__constant__ short tri_table[256][12][6];
-__constant__ int shift[8][3];
-__constant__ int edge_shift[12][4];
-__constant__ int edge_to_vert[12][2];
-
-const int edge_table_host[256] = {
+__constant__ int edge_table[256] = {
         0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905,
         0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x99,  0x393, 0x29a,
         0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93,
@@ -41,7 +30,7 @@ const int edge_table_host[256] = {
         0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605,
         0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0};
 
-const short tri_table_host[256][12][6] = {{{-1, -1, -1, -1, -1, -1},
+__constant__ short tri_table[256][12][6] = {{{-1, -1, -1, -1, -1, -1},
                                            {-1, -1, -1, -1, -1, -1},
                                            {-1, -1, -1, -1, -1, -1},
                                            {-1, -1, -1, -1, -1, -1},
@@ -3114,14 +3103,14 @@ const short tri_table_host[256][12][6] = {{{-1, -1, -1, -1, -1, -1},
                                            {-1, -1, -1, -1, -1, -1},
                                            {-1, -1, -1, -1, -1, -1}}};
 
-const int shift_host[8][3] = {
+__constant__ int shift[8][3] = {
         {0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
         {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1},
 };
 
 // First 3 elements: edge start vertex coordinate (assume origin at (0, 0, 0))
 // The last element: edge direction {0: x, 1: y, 2: z}
-const int edge_shift_host[12][4] = {
+__constant__ int edge_shift[12][4] = {
         {0, 0, 0, 0},  // Edge  0: {0, 1}
         {1, 0, 0, 1},  // Edge  1: {1, 2}
         {0, 1, 0, 0},  // Edge  2: {3, 2}
@@ -3136,25 +3125,9 @@ const int edge_shift_host[12][4] = {
         {0, 1, 0, 2},  // Edge 11: {3, 7}
 };
 
-const int edge_to_vert_host[12][2] = {
+__constant__ int edge_to_vert[12][2] = {
         {0, 1}, {1, 2}, {3, 2}, {0, 3}, {4, 5}, {5, 6},
         {7, 6}, {4, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
-
-void SetConstants() {
-    static std::once_flag setConstantsFlag;
-    std::call_once(setConstantsFlag, []() {
-        cudaSafeCall(cudaMemcpyToSymbol(edge_table, edge_shift_host,
-                                        sizeof(int) * 256));
-        cudaSafeCall(cudaMemcpyToSymbol(tri_table, tri_table_host,
-                                        sizeof(short) * 256 * 12 * 6));
-        cudaSafeCall(
-                cudaMemcpyToSymbol(shift, shift_host, sizeof(int) * 8 * 3));
-        cudaSafeCall(cudaMemcpyToSymbol(edge_shift, edge_shift_host,
-                                        sizeof(int) * 12 * 4));
-        cudaSafeCall(cudaMemcpyToSymbol(edge_to_vert, edge_to_vert_host,
-                                        sizeof(int) * 12 * 2));
-    });
-}
 
 }  // unnamed namespace

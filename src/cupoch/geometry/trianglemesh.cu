@@ -48,6 +48,25 @@ struct compute_edge_list_functor {
     }
 };
 
+struct compute_old_to_new_index_functor {
+    compute_old_to_new_index_functor(const int* idx_offsets,
+                                     const int* index_new_to_old,
+                                     int* index_old_to_new)
+     : idx_offsets_(idx_offsets),
+       index_new_to_old_(index_new_to_old),
+       index_old_to_new_(index_old_to_new) {};
+    const int* idx_offsets_;
+    const int* index_new_to_old_;
+    int* index_old_to_new_;
+    __device__ void operator() (size_t idx) {
+        int si = idx_offsets_[idx];
+        int ei = idx_offsets_[idx + 1];
+        for (int i = si; i < ei; ++i) {
+            index_old_to_new_[index_new_to_old_[i]] = idx;
+        }
+    }
+};
+
 struct align_triangle_functor {
     __device__ Eigen::Vector3i operator() (const Eigen::Vector3i& tri) const {
         if (tri(0) <= tri(1)) {
@@ -809,11 +828,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
 TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     size_t old_vertex_num = vertices_.size();
     utility::device_vector<int> index_new_to_old(old_vertex_num);
-    utility::device_vector<int> index_old_to_new(old_vertex_num);
-    thrust::sequence(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
-                     index_new_to_old.begin(), index_new_to_old.end(), 0);
-    thrust::sequence(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
-                     index_old_to_new.begin(), index_old_to_new.end(), 0);
+    thrust::sequence(index_new_to_old.begin(), index_new_to_old.end());
+    utility::device_vector<int> idx_offsets(old_vertex_num, 0);
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
     size_t k = 0;
@@ -822,40 +838,56 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                             make_tuple_iterator(index_new_to_old.begin(),
                                                 vertex_normals_.begin(),
                                                 vertex_colors_.begin()));
-        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin(), vertex_colors_.begin());
-        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
-        k = thrust::distance(begin, end.second);
+        auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
+                                          thrust::make_discard_iterator(), idx_offsets.begin());
+        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
+        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(), idx_offsets.begin());
+        auto begin = make_tuple_iterator(vertex_normals_.begin(), vertex_colors_.begin());
+        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
+        k = thrust::distance(begin, end1.second);
     } else if (has_vert_normal) {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(),
-                            make_tuple_iterator(index_new_to_old.begin(),
-                                                vertex_normals_.begin()));
-        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin());
-        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
-        k = thrust::distance(begin, end.second);
+                            make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin()));
+        auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
+                                          thrust::make_discard_iterator(), idx_offsets.begin());
+        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
+        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(), idx_offsets.begin());
+        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(), vertex_normals_.begin());
+        k = thrust::distance(vertex_normals_.begin(), end1.second);
     } else if (has_vert_color) {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(),
-                            make_tuple_iterator(index_new_to_old.begin(),
-                                                vertex_colors_.begin()));
-        auto begin = make_tuple_iterator(index_new_to_old.begin(), vertex_colors_.begin());
-        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
-        k = thrust::distance(begin, end.second);
+                            make_tuple_iterator(index_new_to_old.begin(), vertex_colors_.begin()));
+        auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
+                                          thrust::make_discard_iterator(), idx_offsets.begin());
+        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
+        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(), idx_offsets.begin());
+        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(), vertex_colors_.begin());
+        k = thrust::distance(vertex_colors_.begin(), end1.second);
     } else {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(), index_new_to_old.begin());
-        auto end = thrust::unique_by_key(vertices_.begin(), vertices_.end(), index_new_to_old.begin());
-        k = thrust::distance(index_new_to_old.begin(), end.second);
+        auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
+                                          thrust::make_discard_iterator(), idx_offsets.begin());
+        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
+        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(), idx_offsets.begin());
+        auto end1 = thrust::unique(vertices_.begin(), vertices_.end());
+        k = thrust::distance(vertices_.begin(), end1);
     }
     vertices_.resize(k);
-    index_new_to_old.resize(k);
     if (has_vert_normal) vertex_normals_.resize(k);
     if (has_vert_color) vertex_colors_.resize(k);
-    thrust::gather(index_new_to_old.begin(), index_new_to_old.end(),
-                   thrust::make_counting_iterator<size_t>(0), index_old_to_new.begin());
+    utility::device_vector<int> index_old_to_new(old_vertex_num);
+    compute_old_to_new_index_functor func(thrust::raw_pointer_cast(idx_offsets.data()),
+                                          thrust::raw_pointer_cast(index_new_to_old.data()),
+                                          thrust::raw_pointer_cast(index_old_to_new.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(k), func);
     utility::device_vector<Eigen::Vector3i> new_tri(triangles_.size());
     int* tri_ptr = (int*)thrust::raw_pointer_cast(triangles_.data());
     int* tri_new_ptr = (int*)thrust::raw_pointer_cast(new_tri.data());
     int* index_old_to_new_ptr = thrust::raw_pointer_cast(index_old_to_new.data());
     thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
-                      [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
+                      [index_old_to_new_ptr] __device__ (int idx) {
+                          return index_old_to_new_ptr[idx];
+                      });
     triangles_ = new_tri;
     if (HasEdgeList()) {
         ComputeEdgeList();
@@ -913,11 +945,7 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     bool has_vert_color = HasVertexColors();
     size_t old_vertex_num = vertices_.size();
     utility::device_vector<int> index_new_to_old(old_vertex_num);
-    utility::device_vector<int> index_old_to_new(old_vertex_num);
-    thrust::sequence(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
-                     index_new_to_old.begin(), index_new_to_old.end(), 0);
-    thrust::sequence(utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
-                     index_old_to_new.begin(), index_old_to_new.end(), 0);
+    thrust::sequence(index_new_to_old.begin(), index_new_to_old.end(), 0);
     size_t k = 0;                                  // new index
     if (!has_vert_normal && !has_vert_color) {
         check_ref_functor<int, Eigen::Vector3f> func;
@@ -959,9 +987,11 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     vertices_.resize(k);
     if (has_vert_normal) vertex_normals_.resize(k);
     if (has_vert_color) vertex_colors_.resize(k);
-    thrust::gather(index_new_to_old.begin(), index_new_to_old.end(),
-                   thrust::make_counting_iterator<size_t>(0), index_old_to_new.begin());
     if (k < old_vertex_num) {
+        thrust::fill(index_new_to_old.begin() + k, index_new_to_old.end(), old_vertex_num);
+        utility::device_vector<int> index_old_to_new(old_vertex_num + 1, -1);
+        thrust::scatter(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(old_vertex_num),
+                        index_new_to_old.begin(), index_old_to_new.begin());
         utility::device_vector<Eigen::Vector3i> new_tri(triangles_.size());
         int* tri_ptr = (int*)thrust::raw_pointer_cast(triangles_.data());
         int* tri_new_ptr = (int*)thrust::raw_pointer_cast(new_tri.data());

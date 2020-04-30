@@ -465,6 +465,199 @@ TEST(TriangleMesh, ComputeEdgeList) {
     ExpectEQ(ref, tm.GetEdgeList());
 }
 
+TEST(TriangleMesh, Purge) {
+    Vector3f ref_vertices_raw[] = {{839.215686, 392.156863, 780.392157},
+                                   {796.078431, 909.803922, 196.078431},
+                                   {333.333333, 764.705882, 274.509804},
+                                   {552.941176, 474.509804, 627.450980},
+                                   {364.705882, 509.803922, 949.019608},
+                                   {913.725490, 635.294118, 713.725490},
+                                   {141.176471, 603.921569, 15.686275},
+                                   {239.215686, 133.333333, 803.921569},
+                                   {152.941176, 400.000000, 129.411765},
+                                   {105.882353, 996.078431, 215.686275},
+                                   {509.803922, 835.294118, 611.764706},
+                                   {294.117647, 635.294118, 521.568627},
+                                   {490.196078, 972.549020, 290.196078},
+                                   {768.627451, 525.490196, 768.627451},
+                                   {400.000000, 890.196078, 282.352941},
+                                   {349.019608, 803.921569, 917.647059},
+                                   {66.666667, 949.019608, 525.490196},
+                                   {82.352941, 192.156863, 662.745098},
+                                   {890.196078, 345.098039, 62.745098},
+                                   {19.607843, 454.901961, 62.745098},
+                                   {235.294118, 968.627451, 901.960784},
+                                   {847.058824, 262.745098, 537.254902},
+                                   {372.549020, 756.862745, 509.803922},
+                                   {666.666667, 529.411765, 39.215686}};
+    thrust::host_vector<Vector3f> ref_vertices(24);
+    for (int i = 0; i < 24; ++i) ref_vertices[i] = ref_vertices_raw[i];
+
+    Vector3f ref_vertex_normals_raw[] = {{839.215686, 392.156863, 780.392157},
+                                         {796.078431, 909.803922, 196.078431},
+                                         {333.333333, 764.705882, 274.509804},
+                                         {552.941176, 474.509804, 627.450980},
+                                         {364.705882, 509.803922, 949.019608},
+                                         {913.725490, 635.294118, 713.725490},
+                                         {141.176471, 603.921569, 15.686275},
+                                         {239.215686, 133.333333, 803.921569},
+                                         {152.941176, 400.000000, 129.411765},
+                                         {105.882353, 996.078431, 215.686275},
+                                         {509.803922, 835.294118, 611.764706},
+                                         {294.117647, 635.294118, 521.568627},
+                                         {490.196078, 972.549020, 290.196078},
+                                         {768.627451, 525.490196, 768.627451},
+                                         {400.000000, 890.196078, 282.352941},
+                                         {349.019608, 803.921569, 917.647059},
+                                         {66.666667, 949.019608, 525.490196},
+                                         {82.352941, 192.156863, 662.745098},
+                                         {890.196078, 345.098039, 62.745098},
+                                         {19.607843, 454.901961, 62.745098},
+                                         {235.294118, 968.627451, 901.960784},
+                                         {847.058824, 262.745098, 537.254902},
+                                         {372.549020, 756.862745, 509.803922},
+                                         {666.666667, 529.411765, 39.215686}};
+    thrust::host_vector<Vector3f> ref_vertex_normals(24);
+    for (int i = 0; i < 24; ++i) ref_vertex_normals[i] = ref_vertex_normals_raw[i];
+
+    Vector3f ref_vertex_colors_raw[] = {{839.215686, 392.156863, 780.392157},
+                                        {796.078431, 909.803922, 196.078431},
+                                        {333.333333, 764.705882, 274.509804},
+                                        {552.941176, 474.509804, 627.450980},
+                                        {364.705882, 509.803922, 949.019608},
+                                        {913.725490, 635.294118, 713.725490},
+                                        {141.176471, 603.921569, 15.686275},
+                                        {239.215686, 133.333333, 803.921569},
+                                        {152.941176, 400.000000, 129.411765},
+                                        {105.882353, 996.078431, 215.686275},
+                                        {509.803922, 835.294118, 611.764706},
+                                        {294.117647, 635.294118, 521.568627},
+                                        {490.196078, 972.549020, 290.196078},
+                                        {768.627451, 525.490196, 768.627451},
+                                        {400.000000, 890.196078, 282.352941},
+                                        {349.019608, 803.921569, 917.647059},
+                                        {66.666667, 949.019608, 525.490196},
+                                        {82.352941, 192.156863, 662.745098},
+                                        {890.196078, 345.098039, 62.745098},
+                                        {19.607843, 454.901961, 62.745098},
+                                        {235.294118, 968.627451, 901.960784},
+                                        {847.058824, 262.745098, 537.254902},
+                                        {372.549020, 756.862745, 509.803922},
+                                        {666.666667, 529.411765, 39.215686}};
+    thrust::host_vector<Vector3f> ref_vertex_colors(24);
+    for (int i = 0; i < 24; ++i) ref_vertex_colors[i] = ref_vertex_colors_raw[i];
+
+    Vector3i ref_triangles_raw[] = {
+            {20, 9, 18},  {19, 21, 4}, {8, 18, 6}, {13, 11, 15}, {8, 12, 22},
+            {21, 15, 17}, {3, 14, 0},  {5, 3, 19}, {2, 23, 5},   {12, 20, 14},
+            {7, 15, 12},  {11, 23, 6}, {9, 21, 6}, {8, 19, 22},  {1, 22, 12},
+            {1, 4, 15},   {21, 8, 1},  {0, 10, 1}, {5, 23, 21},  {20, 6, 12},
+            {8, 18, 12},  {16, 12, 0}};
+    thrust::host_vector<Vector3i> ref_triangles(22);
+    for (int i = 0; i < 22; ++i) ref_triangles[i] = ref_triangles_raw[i];
+
+    Vector3f ref_triangle_normals_raw[] = {
+            {839.215686, 392.156863, 780.392157},
+            {796.078431, 909.803922, 196.078431},
+            {333.333333, 764.705882, 274.509804},
+            {552.941176, 474.509804, 627.450980},
+            {364.705882, 509.803922, 949.019608},
+            {913.725490, 635.294118, 713.725490},
+            {141.176471, 603.921569, 15.686275},
+            {239.215686, 133.333333, 803.921569},
+            {105.882353, 996.078431, 215.686275},
+            {509.803922, 835.294118, 611.764706},
+            {294.117647, 635.294118, 521.568627},
+            {490.196078, 972.549020, 290.196078},
+            {400.000000, 890.196078, 282.352941},
+            {349.019608, 803.921569, 917.647059},
+            {66.666667, 949.019608, 525.490196},
+            {82.352941, 192.156863, 662.745098},
+            {890.196078, 345.098039, 62.745098},
+            {19.607843, 454.901961, 62.745098},
+            {235.294118, 968.627451, 901.960784},
+            {847.058824, 262.745098, 537.254902},
+            {372.549020, 756.862745, 509.803922},
+            {666.666667, 529.411765, 39.215686}};
+    thrust::host_vector<Vector3f> ref_triangle_normals(22);
+    for (int i = 0; i < 22; ++i) ref_triangle_normals[i] = ref_triangle_normals_raw[i];
+
+    int size = 25;
+
+    Vector3f dmin(0.0, 0.0, 0.0);
+    Vector3f dmax(1000.0, 1000.0, 1000.0);
+
+    Vector3i imin(0, 0, 0);
+    Vector3i imax(size - 1, size - 1, size - 1);
+
+    geometry::TriangleMesh tm0;
+    geometry::TriangleMesh tm1;
+
+    thrust::host_vector<Vector3f> vertices(size);
+    thrust::host_vector<Vector3f> vertex_normals(size);
+    thrust::host_vector<Vector3f> vertex_colors(size);
+    thrust::host_vector<Vector3i> triangles(size);
+    thrust::host_vector<Vector3f> triangle_normals(size);
+    Rand(vertices, dmin, dmax, 0);
+    Rand(vertex_normals, dmin, dmax, 0);
+    Rand(vertex_colors, dmin, dmax, 0);
+    Rand(triangles, imin, imax, 0);
+    Rand(triangle_normals, dmin, dmax, 0);
+
+    tm0.SetVertices(vertices);
+    tm0.SetVertexNormals(vertex_normals);
+    tm0.SetVertexColors(vertex_colors);
+    tm0.SetTriangles(triangles);
+    tm0.SetTriangleNormals(triangle_normals);
+
+    Rand(vertices, dmin, dmax, 0);
+    Rand(vertex_normals, dmin, dmax, 0);
+    Rand(vertex_colors, dmin, dmax, 1);
+    Rand(triangles, imin, imax, 0);
+    Rand(triangle_normals, dmin, dmax, 0);
+
+    tm1.SetVertices(vertices);
+    tm1.SetVertexNormals(vertex_normals);
+    tm1.SetVertexColors(vertex_colors);
+    tm1.SetTriangles(triangles);
+    tm1.SetTriangleNormals(triangle_normals);
+
+    geometry::TriangleMesh tm = tm0 + tm1;
+
+    tm.RemoveDuplicatedVertices();
+    tm.RemoveDuplicatedTriangles();
+    tm.RemoveUnreferencedVertices();
+    tm.RemoveDegenerateTriangles();
+
+    {
+        auto out = tm.GetVertices();
+        sort::Do(ref_vertices);
+        sort::Do(out);
+        ExpectEQ(ref_vertices, out);
+    }
+    {
+        auto out = tm.GetVertexNormals();
+        sort::Do(ref_vertex_normals);
+        sort::Do(out);
+        ExpectEQ(ref_vertex_normals, out);
+    }
+    {
+        auto out = tm.GetVertexColors();
+        sort::Do(ref_vertex_colors);
+        sort::Do(out);
+        ExpectEQ(ref_vertex_colors, out);
+    }
+
+    EXPECT_EQ(ref_triangles.size(), tm.triangles_.size());
+
+    {
+        auto out = tm.GetTriangleNormals();
+        sort::Do(ref_triangle_normals);
+        sort::Do(out);
+        ExpectEQ(ref_triangle_normals, out);
+    }
+}
+
 TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
     EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);

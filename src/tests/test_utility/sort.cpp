@@ -3,9 +3,10 @@
 using namespace thrust;
 
 // ----------------------------------------------------------------------------
-// Greater than or Equal for sorting Eigen::Vector3d elements.
+// Greater than or Equal for sorting Eigen::Matrix<T, Dim, 1> elements.
 // ----------------------------------------------------------------------------
-bool unit_test::sort::GE(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1) {
+template<typename T, int Dim>
+bool unit_test::sort::GE(const Eigen::Matrix<T, Dim, 1>& v0, const Eigen::Matrix<T, Dim, 1>& v1) {
     if (v0(0, 0) > v1(0, 0)) return true;
 
     if (v0(0, 0) == v1(0, 0)) {
@@ -20,10 +21,11 @@ bool unit_test::sort::GE(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1) {
 }
 
 // ----------------------------------------------------------------------------
-// Sort a vector of Eigen::Vector3d elements.
+// Sort a vector of Eigen::Matrix elements.
 // ----------------------------------------------------------------------------
-void unit_test::sort::Do(host_vector<Eigen::Vector3f>& v) {
-    Eigen::Vector3f temp(0.0, 0.0, 0.0);
+template<typename T, int Dim>
+void unit_test::sort::Do(host_vector<Eigen::Matrix<T, Dim, 1>>& v) {
+    Eigen::Matrix<T, Dim, 1> temp = Eigen::Matrix<T, Dim, 1>::Zero();
     for (size_t i = 0; i < v.size(); i++) {
         for (size_t j = 0; j < v.size(); j++) {
             if (GE(v[i], v[j])) continue;
@@ -34,3 +36,8 @@ void unit_test::sort::Do(host_vector<Eigen::Vector3f>& v) {
         }
     }
 }
+
+template bool unit_test::sort::GE<float, 3>(const Eigen::Vector3f& v0, const Eigen::Vector3f& v1);
+template bool unit_test::sort::GE<int, 3>(const Eigen::Vector3i& v0, const Eigen::Vector3i& v1);
+template void unit_test::sort::Do<float, 3>(host_vector<Eigen::Vector3f>& v);
+template void unit_test::sort::Do<int, 3>(host_vector<Eigen::Vector3i>& v);

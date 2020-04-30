@@ -4,6 +4,8 @@
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/range.h"
 
+#include <thrust/iterator/discard_iterator.h>
+
 using namespace cupoch;
 using namespace cupoch::integration;
 
@@ -261,7 +263,7 @@ struct extract_mesh_phase3_functor {
         : cube_index_(cube_index),
           vert_no_(vert_no),
           key_index_(key_index),
-          triangles_(triangles){};
+          triangles_(triangles) {};
     const int *cube_index_;
     const int *vert_no_;
     const int *key_index_;
@@ -274,7 +276,7 @@ struct extract_mesh_phase3_functor {
             int tri_idx =
                     tri_table[cube_index_[k]][vert_no_[k]][j[vert_no_[k]]];
             if (tri_idx < 0) continue;
-            triangles_[idx + tri_idx / 3][tri_idx % 3] = k;
+            triangles_[idx / 4  * 4 + tri_idx / 3][tri_idx % 3] = k;
             j[k]++;
         }
     }
@@ -344,7 +346,9 @@ struct extract_voxel_grid_functor {
             Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
             return thrust::make_tuple(index, geometry::Voxel(index, color));
         }
-        return thrust::make_tuple(Eigen::Vector3i(-1, -1, -1),
+        return thrust::make_tuple(Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
+                                                  geometry::INVALID_VOXEL_INDEX,
+                                                  geometry::INVALID_VOXEL_INDEX),
                                   geometry::Voxel());
     }
 };
@@ -491,7 +495,6 @@ UniformTSDFVolume::UniformTSDFVolume(
       resolution_(resolution),
       voxel_num_(resolution * resolution * resolution) {
     voxels_.resize(voxel_num_);
-    SetConstants();
 }
 
 UniformTSDFVolume::~UniformTSDFVolume() {}
@@ -583,7 +586,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             [] __device__(
                     const thrust::tuple<Eigen::Vector3i, int> &x) -> bool {
                 int cidx = thrust::get<1>(x);
-                return (cidx <= 0 || cidx == 255) ? true : false;
+                return (cidx <= 0 || cidx == 255);
             });
     size_t n_result1 = thrust::distance(begin1, end1);
     keys.resize(n_result1);
@@ -628,7 +631,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             [] __device__(const thrust::tuple<Eigen::Vector4i, Eigen::Vector3i,
                                               int, int, Eigen::Vector3f,
                                               Eigen::Vector3f> &x) {
-                Eigen::Vector4i edge_index = thrust::get<0>(x);
+                const Eigen::Vector4i& edge_index = thrust::get<0>(x);
                 return edge_index[0] < 0;
             });
     size_t n_result3 = thrust::distance(begin2, end2);
@@ -662,21 +665,18 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                                 mesh->vertex_colors_.begin()));
 
     // compute triangles
-    utility::device_vector<int> seq(n_result4);
-    thrust::sequence(seq.begin(), seq.end(), 0);
-    auto end4 = thrust::unique_by_key(repeat_keys.begin(), repeat_keys.end(),
-                                      seq.begin());
-    size_t n_result5 = thrust::distance(repeat_keys.begin(), end4.first);
-    repeat_keys.resize(n_result5);
-    seq.resize(n_result5);
-    seq.push_back(n_result4);
-    mesh->triangles_.resize(n_result5 * 5);
-    thrust::fill(mesh->triangles_.begin(), mesh->triangles_.end(),
-                 Eigen::Vector3i(-1, -1, -1));
+    utility::device_vector<int> vt_offsets(n_result4 + 1, 0);
+    auto end4 = thrust::reduce_by_key(repeat_keys.begin(), repeat_keys.end(),
+                                      thrust::make_constant_iterator<int>(1),
+                                      thrust::make_discard_iterator(), vt_offsets.begin());
+    size_t n_result5 = thrust::distance(vt_offsets.begin(), end4.second);
+    vt_offsets.resize(n_result5 + 1);
+    thrust::exclusive_scan(vt_offsets.begin(), vt_offsets.end(), vt_offsets.begin());
+    mesh->triangles_.resize(n_result5 * 4, Eigen::Vector3i(-1, -1, -1));
     extract_mesh_phase3_functor func3(
             thrust::raw_pointer_cast(cube_indices.data()),
             thrust::raw_pointer_cast(vert_no.data()),
-            thrust::raw_pointer_cast(seq.data()),
+            thrust::raw_pointer_cast(vt_offsets.data()),
             thrust::raw_pointer_cast(mesh->triangles_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(n_result5), func3);
@@ -733,7 +733,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                     const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
                     -> bool {
                 Eigen::Vector3i index = thrust::get<0>(x);
-                return index[0] < 0;
+                return index == Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
+                    geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
             });
     size_t n_out = thrust::distance(begin, end);
     voxel_grid->voxels_keys_.resize(n_out);
