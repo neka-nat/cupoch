@@ -121,14 +121,43 @@ TEST(UniformTSDFVolume, RealData) {
     // to account for acccumulative floating point errors.
 
     // Extract mesh
-    std::shared_ptr<geometry::TriangleMesh> mesh =
-            tsdf_volume.ExtractTriangleMesh();
-    EXPECT_EQ(mesh->vertices_.size(), 3198u);
-    EXPECT_EQ(mesh->triangles_.size(), 4402u);
+    // std::shared_ptr<geometry::TriangleMesh> mesh =
+    //         tsdf_volume.ExtractTriangleMesh();
+    // EXPECT_EQ(mesh->vertices_.size(), 3198u);
+    // EXPECT_EQ(mesh->triangles_.size(), 4402u);
     Eigen::Vector3f color_sum(0, 0, 0);
-    for (const Eigen::Vector3f& color : mesh->GetVertexColors()) {
+    // for (const Eigen::Vector3f& color : mesh->GetVertexColors()) {
+    //     color_sum += color;
+    // }
+    // ExpectEQ(color_sum, Eigen::Vector3f(2703.841944, 2561.480949, 2481.503805),
+    //          /*threshold*/ 0.1);
+
+    // Extract point cloud
+    std::shared_ptr<geometry::PointCloud> pcd = tsdf_volume.ExtractPointCloud();
+    EXPECT_EQ(pcd->points_.size(), 2227u);
+    EXPECT_EQ(pcd->colors_.size(), 2227u);
+    color_sum << 0, 0, 0;
+    for (const Eigen::Vector3f& color : pcd->GetColors()) {
         color_sum += color;
     }
-    ExpectEQ(color_sum, Eigen::Vector3f(2703.841944, 2561.480949, 2481.503805),
+    ExpectEQ(color_sum, Eigen::Vector3f(1877.673116, 1862.126057, 1862.190616),
+             /*threshold*/ 0.1);
+    Eigen::Vector3f normal_sum(0, 0, 0);
+    for (const Eigen::Vector3f& normal : pcd->GetNormals()) {
+        normal_sum += normal;
+    }
+    ExpectEQ(normal_sum, Eigen::Vector3f(-161.569098, -95.969433, -1783.167177),
+             /*threshold*/ 0.1);
+
+    // Extract voxel cloud
+    std::shared_ptr<geometry::PointCloud> voxel_pcd =
+            tsdf_volume.ExtractVoxelPointCloud();
+    EXPECT_EQ(voxel_pcd->points_.size(), 4488u);
+    EXPECT_EQ(voxel_pcd->colors_.size(), 4488u);
+    color_sum << 0, 0, 0;
+    for (const Eigen::Vector3f& color : voxel_pcd->GetColors()) {
+        color_sum += color;
+    }
+    ExpectEQ(color_sum, Eigen::Vector3f(2096.428416, 2096.428416, 2096.428416),
              /*threshold*/ 0.1);
 }

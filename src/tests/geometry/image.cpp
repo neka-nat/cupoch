@@ -124,6 +124,27 @@ TEST(Image, FloatValueAt) {
     EXPECT_NEAR(1.0f, geometry::FloatValueAt(h_data.data(), 1.5, 1.5, width, height, num_of_channels, bytes_per_channel).second, THRESHOLD_1E_4);
 }
 
+TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+
+    auto image =
+            geometry::Image::CreateDepthToCameraDistanceMultiplierFloatImage(
+                    intrinsic);
+
+    // test image dimensions
+    int width = 640;
+    int height = 480;
+    int num_of_channels = 1;
+    int bytes_per_channel = 4;
+
+    EXPECT_FALSE(image->IsEmpty());
+    EXPECT_EQ(width, image->width_);
+    EXPECT_EQ(height, image->height_);
+    EXPECT_EQ(num_of_channels, image->num_of_channels_);
+    EXPECT_EQ(bytes_per_channel, image->bytes_per_channel_);
+}
+
 void TEST_CreateFloatImage(
         const int& num_of_channels,
         const int& bytes_per_channel,

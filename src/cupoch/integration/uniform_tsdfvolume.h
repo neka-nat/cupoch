@@ -34,6 +34,7 @@ public:
                       TSDFVolumeColorType color_type,
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
     ~UniformTSDFVolume() override;
+    UniformTSDFVolume(const UniformTSDFVolume &other);
 
 public:
     void Reset() override;

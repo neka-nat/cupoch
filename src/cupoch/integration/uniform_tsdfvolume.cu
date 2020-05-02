@@ -68,31 +68,30 @@ __device__ Eigen::Vector3f GetNormalAt(const Eigen::Vector3f &p,
 }
 
 struct extract_pointcloud_functor {
-    extract_pointcloud_functor(const geometry::TSDFVoxel *voxels,
+    extract_pointcloud_functor(const geometry::TSDFVoxel* voxels,
                                int resolution,
                                float voxel_length,
                                const Eigen::Vector3f &origin,
                                TSDFVolumeColorType color_type)
-        : voxels_(voxels),
-          resolution_(resolution),
+        : voxels_(voxels), resolution_(resolution),
           voxel_length_(voxel_length),
           origin_(origin),
           half_voxel_length_(0.5 * voxel_length_),
           color_type_(color_type){};
-    const geometry::TSDFVoxel *voxels_;
+    const geometry::TSDFVoxel* voxels_;
     const int resolution_;
     const float voxel_length_;
     const Eigen::Vector3f origin_;
     const float half_voxel_length_;
     const TSDFVolumeColorType color_type_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>
-    operator()(size_t idx) {
-        int res2 = (resolution_ - 1) * (resolution_ - 1);
-        int x = idx / (3 * res2);
+    operator()(const size_t idx) {
+        int res2 = (resolution_ - 2) * (resolution_ - 2);
+        int x = idx / (3 * res2) + 1;
         int yzi = idx % (3 * res2);
-        int y = yzi / (3 * (resolution_ - 1));
-        int zi = yzi % (3 * (resolution_ - 1));
-        int z = zi / 3;
+        int y = yzi / (3 * (resolution_ - 2)) + 1;
+        int zi = yzi % (3 * (resolution_ - 2));
+        int z = zi / 3 + 1;
         int i = zi % 3;
 
         Eigen::Vector3f point(std::numeric_limits<float>::quiet_NaN(),
@@ -105,9 +104,9 @@ struct extract_pointcloud_functor {
                               std::numeric_limits<float>::quiet_NaN(),
                               std::numeric_limits<float>::quiet_NaN());
         Eigen::Vector3i idx0(x, y, z);
-        float w0 = voxels_[idx].weight_;
-        float f0 = voxels_[idx].tsdf_;
-        const Eigen::Vector3f &c0 = voxels_[idx].color_;
+        float w0 = voxels_[IndexOf(idx0, resolution_)].weight_;
+        float f0 = voxels_[IndexOf(idx0, resolution_)].tsdf_;
+        const Eigen::Vector3f &c0 = voxels_[IndexOf(idx0, resolution_)].color_;
         if (!(w0 != 0.0f && f0 < 0.98f && f0 >= -0.98f)) {
             return thrust::make_tuple(point, normal, color);
         }
@@ -283,34 +282,27 @@ struct extract_mesh_phase3_functor {
 };
 
 struct extract_voxel_pointcloud_functor {
-    extract_voxel_pointcloud_functor(const geometry::TSDFVoxel *voxels,
-                                     const Eigen::Vector3f &origin,
+    extract_voxel_pointcloud_functor(const Eigen::Vector3f &origin,
                                      int resolution,
                                      float voxel_length)
-        : voxels_(voxels),
-          origin_(origin),
+        : origin_(origin),
           resolution_(resolution),
           voxel_length_(voxel_length),
           half_voxel_length_(0.5 * voxel_length){};
-    const geometry::TSDFVoxel *voxels_;
     const Eigen::Vector3f origin_;
     const int resolution_;
     const float voxel_length_;
     const float half_voxel_length_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
-            size_t idx) {
-        int res2 = resolution_ * resolution_;
-        int x = idx / res2;
-        int yz = idx % res2;
-        int y = yz / resolution_;
-        int z = yz % resolution_;
+            const geometry::TSDFVoxel& v) {
+        int x = v.grid_index_[0];
+        int y = v.grid_index_[1];
+        int z = v.grid_index_[2];
         Eigen::Vector3f pt(half_voxel_length_ + voxel_length_ * x,
                            half_voxel_length_ + voxel_length_ * y,
                            half_voxel_length_ + voxel_length_ * z);
-        int ind = IndexOf(x, y, z, resolution_);
-        if (voxels_[ind].weight_ != 0.0f && voxels_[ind].tsdf_ < 0.98f &&
-            voxels_[ind].tsdf_ >= -0.98f) {
-            float c = (voxels_[ind].tsdf_ + 1.0) * 0.5;
+        if (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f) {
+            float c = (v.tsdf_ + 1.0) * 0.5;
             return thrust::make_tuple(pt + origin_, Eigen::Vector3f(c, c, c));
         }
         return thrust::make_tuple(
@@ -324,27 +316,17 @@ struct extract_voxel_pointcloud_functor {
 };
 
 struct extract_voxel_grid_functor {
-    extract_voxel_grid_functor(const geometry::TSDFVoxel *voxels,
-                               int resolution)
-        : voxels_(voxels), resolution_(resolution){};
-    const geometry::TSDFVoxel *voxels_;
+    extract_voxel_grid_functor(int resolution)
+        : resolution_(resolution){};
     const int resolution_;
     __device__ thrust::tuple<Eigen::Vector3i, geometry::Voxel> operator()(
-            size_t idx) {
-        int res2 = resolution_ * resolution_;
-        int x = idx / res2;
-        int yz = idx % res2;
-        int y = yz / resolution_;
-        int z = yz % resolution_;
-
-        const int ind = IndexOf(x, y, z, resolution_);
-        const float w = voxels_[ind].weight_;
-        const float f = voxels_[ind].tsdf_;
+            const geometry::TSDFVoxel& v) {
+        const float w = v.weight_;
+        const float f = v.tsdf_;
         if (w != 0.0f && f < 0.98f && f >= -0.98f) {
             float c = (f + 1.0) * 0.5;
-            Eigen::Vector3f color = Eigen::Vector3f(c, c, c);
-            Eigen::Vector3i index = Eigen::Vector3i(x, y, z);
-            return thrust::make_tuple(index, geometry::Voxel(index, color));
+            return thrust::make_tuple(v.grid_index_,
+                                      geometry::Voxel(v.grid_index_, Eigen::Vector3f(c, c, c)));
         }
         return thrust::make_tuple(Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
                                                   geometry::INVALID_VOXEL_INDEX,
@@ -421,6 +403,7 @@ struct integrate_functor {
         int yz = idx % res2;
         int y = yz / resolution_;
         int z = yz % resolution_;
+        voxels_[idx].grid_index_ = Eigen::Vector3i(x, y, z);
 
         Eigen::Vector4f pt_3d_homo(
                 float(half_voxel_length_ + voxel_length_ * x + origin_(0)),
@@ -449,34 +432,33 @@ struct integrate_functor {
             return;
         }
 
-        int v_ind = IndexOf(x, y, z, resolution_);
         float sdf =
                 (d - pt_camera(2)) *
                 (*geometry::PointerAt<float>(
                         depth_to_camera_distance_multiplier_, width_, u, v));
         if (sdf > -sdf_trunc_) {
             // integrate
-            float tsdf = std::min(1.0f, sdf * sdf_trunc_inv_);
-            voxels_[v_ind].tsdf_ =
-                    (voxels_[v_ind].tsdf_ * voxels_[v_ind].weight_ + tsdf) /
-                    (voxels_[v_ind].weight_ + 1.0f);
+            float tsdf = min(1.0f, sdf * sdf_trunc_inv_);
+            voxels_[idx].tsdf_ =
+                    (voxels_[idx].tsdf_ * voxels_[idx].weight_ + tsdf) /
+                    (voxels_[idx].weight_ + 1.0f);
             if (color_type_ == TSDFVolumeColorType::RGB8) {
                 const uint8_t *rgb = geometry::PointerAt<uint8_t>(
                         color_, width_, num_of_channels_, u, v, 0);
                 Eigen::Vector3f rgb_f(rgb[0], rgb[1], rgb[2]);
-                voxels_[v_ind].color_ =
-                        (voxels_[v_ind].color_ * voxels_[v_ind].weight_ +
+                voxels_[idx].color_ =
+                        (voxels_[idx].color_ * voxels_[idx].weight_ +
                          rgb_f) /
-                        (voxels_[v_ind].weight_ + 1.0f);
+                        (voxels_[idx].weight_ + 1.0f);
             } else if (color_type_ == TSDFVolumeColorType::Gray32) {
                 const float *intensity = geometry::PointerAt<float>(
                         color_, width_, num_of_channels_, u, v, 0);
-                voxels_[v_ind].color_ = (voxels_[v_ind].color_.array() *
-                                                 voxels_[v_ind].weight_ +
+                voxels_[idx].color_ = (voxels_[idx].color_.array() *
+                                                voxels_[idx].weight_ +
                                          (*intensity)) /
-                                        (voxels_[v_ind].weight_ + 1.0f);
+                                        (voxels_[idx].weight_ + 1.0f);
             }
-            voxels_[v_ind].weight_ += 1.0f;
+            voxels_[idx].weight_ += 1.0f;
         }
     }
 };
@@ -488,7 +470,7 @@ UniformTSDFVolume::UniformTSDFVolume(
         int resolution,
         float sdf_trunc,
         TSDFVolumeColorType color_type,
-        const Eigen::Vector3f &origin /* = Eigen::Vector3d::Zero()*/)
+        const Eigen::Vector3f &origin /* = Eigen::Vector3f::Zero()*/)
     : TSDFVolume(length / (float)resolution, sdf_trunc, color_type),
       origin_(origin),
       length_(length),
@@ -498,6 +480,11 @@ UniformTSDFVolume::UniformTSDFVolume(
 }
 
 UniformTSDFVolume::~UniformTSDFVolume() {}
+
+UniformTSDFVolume::UniformTSDFVolume(const UniformTSDFVolume &other)
+ : TSDFVolume(other), voxels_(other.voxels_), origin_(other.origin_),
+ length_(other.length_), resolution_(other.resolution_), voxel_num_(other.voxel_num_)
+{}
 
 void UniformTSDFVolume::Reset() { voxels_.clear(); }
 
@@ -536,20 +523,32 @@ void UniformTSDFVolume::Integrate(
 
 std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
+    size_t n_valid_voxel = thrust::count_if(voxels_.begin(), voxels_.end(),
+                                            [] __device__ (const geometry::TSDFVoxel& v) {
+                                                return (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f);
+                                            });
     extract_pointcloud_functor func(thrust::raw_pointer_cast(voxels_.data()),
                                     resolution_, voxel_length_, origin_,
                                     color_type_);
-    size_t n_total = 3 * (resolution_ - 1) * (resolution_ - 1);
-    pointcloud->points_.resize(n_total);
-    pointcloud->normals_.resize(n_total);
-    pointcloud->colors_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      make_tuple_iterator(pointcloud->points_.begin(),
-                                          pointcloud->normals_.begin(),
-                                          pointcloud->colors_.begin()),
-                      func);
-    pointcloud->RemoveNoneFinitePoints(true, false);
+    pointcloud->points_.resize(n_valid_voxel);
+    pointcloud->normals_.resize(n_valid_voxel);
+    pointcloud->colors_.resize(n_valid_voxel);
+    size_t n_total = (resolution_ - 2) * (resolution_ - 2) * (resolution_ - 2) * 3;
+    auto begin = make_tuple_iterator(pointcloud->points_.begin(),
+                                     pointcloud->normals_.begin(),
+                                     pointcloud->colors_.begin());
+    auto end_p = thrust::copy_if(thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func),
+                                 thrust::make_transform_iterator(thrust::make_counting_iterator(n_total), func),
+                                 begin,
+                                 [] __device__ (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>& x) {
+                                     const Eigen::Vector3f& pt = thrust::get<0>(x);
+                                     return !(isnan(pt(0)) || isnan(pt(1)) || isnan(pt(2)));
+                                 });
+    size_t n_out = thrust::distance(begin, end_p);
+    pointcloud->points_.resize(n_out);
+    pointcloud->normals_.resize(n_out);
+    pointcloud->colors_.resize(n_out);
+    if (color_type_ == TSDFVolumeColorType::NoColor) pointcloud->colors_.clear();
     return pointcloud;
 }
 
@@ -693,17 +692,21 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
     // const float *p_tsdf = (const float *)tsdf_.data();
     // const float *p_weight = (const float *)weight_.data();
     // const float *p_color = (const float *)color_.data();
-    extract_voxel_pointcloud_functor func(
-            thrust::raw_pointer_cast(voxels_.data()), origin_, resolution_,
-            voxel_length_);
-    size_t n_total = resolution_ * resolution_ * resolution_;
-    voxel->points_.resize(n_total);
-    voxel->colors_.resize(n_total);
-    thrust::transform(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(n_total),
+    size_t n_valid_voxel = thrust::count_if(voxels_.begin(), voxels_.end(),
+                                            [] __device__ (const geometry::TSDFVoxel& v) {
+                                                return (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f);
+                                            });
+    extract_voxel_pointcloud_functor func(origin_, resolution_, voxel_length_);
+    voxel->points_.resize(n_valid_voxel);
+    voxel->colors_.resize(n_valid_voxel);
+    thrust::copy_if(
+            thrust::make_transform_iterator(voxels_.begin(), func),
+            thrust::make_transform_iterator(voxels_.end(), func),
             make_tuple_iterator(voxel->points_.begin(), voxel->colors_.begin()),
-            func);
+            [] __device__ (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& x) {
+                const Eigen::Vector3f& pt = thrust::get<0>(x);
+                return !(isnan(pt(0)) || isnan(pt(1)) || isnan(pt(2)));
+            });
     voxel->RemoveNoneFinitePoints(true, false);
     return voxel;
 }
@@ -713,32 +716,21 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_;
-    size_t n_total = resolution_ * resolution_ * resolution_;
-    voxel_grid->voxels_keys_.resize(n_total);
-    voxel_grid->voxels_values_.resize(n_total);
-    extract_voxel_grid_functor func(thrust::raw_pointer_cast(voxels_.data()),
-                                    resolution_);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      make_tuple_iterator(voxel_grid->voxels_keys_.begin(),
-                                          voxel_grid->voxels_values_.begin()),
-                      func);
-    auto begin = make_tuple_iterator(voxel_grid->voxels_keys_.begin(),
-                                     voxel_grid->voxels_values_.begin());
-    auto end = thrust::remove_if(
-            begin,
-            make_tuple_iterator(voxel_grid->voxels_keys_.end(),
-                                voxel_grid->voxels_values_.end()),
-            [] __device__(
-                    const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
-                    -> bool {
-                Eigen::Vector3i index = thrust::get<0>(x);
-                return index == Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
-                    geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
-            });
-    size_t n_out = thrust::distance(begin, end);
-    voxel_grid->voxels_keys_.resize(n_out);
-    voxel_grid->voxels_values_.resize(n_out);
+    size_t n_valid_voxel = thrust::count_if(voxels_.begin(), voxels_.end(),
+                                            [] __device__ (const geometry::TSDFVoxel& v) {
+                                                return (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f);
+                                            });
+    voxel_grid->voxels_keys_.resize(n_valid_voxel);
+    voxel_grid->voxels_values_.resize(n_valid_voxel);
+    extract_voxel_grid_functor func(resolution_);
+    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), func),
+                    thrust::make_transform_iterator(voxels_.end(), func),
+                    make_tuple_iterator(voxel_grid->voxels_keys_.begin(),
+                                        voxel_grid->voxels_values_.begin()),
+                    [] __device__ (const thrust::tuple<Eigen::Vector3i, geometry::Voxel>& x) {
+                        return thrust::get<0>(x) != Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
+                            geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
+                    });
     return voxel_grid;
 }
 
@@ -753,6 +745,7 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
     const float cy = intrinsic.GetPrincipalPoint().second;
     const float safe_width = intrinsic.width_ - 0.0001f;
     const float safe_height = intrinsic.height_ - 0.0001f;
+    voxels_.resize(voxel_num_);
     integrate_functor func(
             origin_, fx, fy, cx, cy, extrinsic, voxel_length_, sdf_trunc_,
             safe_width, safe_height, resolution_,
