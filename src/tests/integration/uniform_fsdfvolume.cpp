@@ -121,8 +121,8 @@ TEST(UniformTSDFVolume, RealData) {
     // to account for acccumulative floating point errors.
 
     // Extract mesh
-    // std::shared_ptr<geometry::TriangleMesh> mesh =
-    //         tsdf_volume.ExtractTriangleMesh();
+    std::shared_ptr<geometry::TriangleMesh> mesh =
+            tsdf_volume.ExtractTriangleMesh();
     // EXPECT_EQ(mesh->vertices_.size(), 3198u);
     // EXPECT_EQ(mesh->triangles_.size(), 4402u);
     Eigen::Vector3f color_sum(0, 0, 0);

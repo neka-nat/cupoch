@@ -46,7 +46,7 @@ struct cnmem_error : public std::runtime_error {
   do {                                                                   \
     cnmemStatus_t const error = (_call);                                 \
     if (CNMEM_STATUS_SUCCESS != error) {                                 \
-      throw _exception_type{std::string{"CNMEM error at: "} + __FILE__ + \
+      throw _exception_type{std::string{"CNMEM error at: "} + __FILENAME__ + \
                             RMM_STRINGIFY(__LINE__) + ": " +             \
                             cnmemGetErrorString(error)};                 \
     }                                                                    \

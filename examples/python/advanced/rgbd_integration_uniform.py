@@ -27,10 +27,10 @@ if __name__ == "__main__":
             np.linalg.inv(camera_poses[i].pose),
         )
 
-    # print("Extract triangle mesh")
-    # mesh = volume.extract_triangle_mesh()
-    # mesh.compute_vertex_normals()
-    # cph.visualization.draw_geometries([mesh])
+    print("Extract triangle mesh")
+    mesh = volume.extract_triangle_mesh()
+    mesh.compute_vertex_normals()
+    cph.visualization.draw_geometries([mesh])
 
     print("Extract voxel-aligned debugging point cloud")
     voxel_pcd = volume.extract_voxel_point_cloud()

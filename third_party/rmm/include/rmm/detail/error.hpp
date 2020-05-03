@@ -19,6 +19,7 @@
 #include <cuda_runtime_api.h>
 #include <stdexcept>
 #include <string>
+#include <string.h>
 
 namespace rmm {
 
@@ -66,6 +67,13 @@ class bad_alloc : public std::bad_alloc {
 
 #define STRINGIFY_DETAIL(x) #x
 #define RMM_STRINGIFY(x) STRINGIFY_DETAIL(x)
+#ifdef _WIN32
+#define __FILENAME__ \
+    (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#else
+#define __FILENAME__ \
+    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#endif
 
 /**
  * @brief Macro for checking (pre-)conditions that throws an exception when
@@ -97,7 +105,7 @@ class bad_alloc : public std::bad_alloc {
 #define RMM_EXPECTS_3(_condition, _exception_type, _what) \
   (!!(_condition))                                        \
       ? static_cast<void>(0)                              \
-      : throw _exception_type("RMM failure at: " __FILE__ \
+      : throw _exception_type("RMM failure at: " __FILENAME__ \
                               ":" RMM_STRINGIFY(__LINE__) ": " _what)
 #define RMM_EXPECTS_2(_condition, _reason) \
   RMM_EXPECTS_3(_condition, rmm::logic_error, _reason)
@@ -119,7 +127,7 @@ class bad_alloc : public std::bad_alloc {
   (__VA_ARGS__)
 #define GET_RMM_FAIL_MACRO(_1, _2, NAME, ...) NAME
 #define RMM_FAIL_2(_what, _exception_type)         \
-  throw _exception_type{"RMM failure at:" __FILE__ \
+  throw _exception_type{"RMM failure at:" __FILENAME__ \
                         ":" RMM_STRINGIFY(__LINE__) ": " _what};
 #define RMM_FAIL_1(_what) RMM_FAIL_2(_call, rmm::logic_error)
 
@@ -153,7 +161,7 @@ class bad_alloc : public std::bad_alloc {
     cudaError_t const error = (_call);                                  \
     if (cudaSuccess != error) {                                         \
       cudaGetLastError();                                               \
-      throw _exception_type{std::string{"CUDA error at: "} + __FILE__ + \
+      throw _exception_type{std::string{"CUDA error at: "} + __FILENAME__ + \
                             RMM_STRINGIFY(__LINE__) + ": " +            \
                             cudaGetErrorName(error) + " " +             \
                             cudaGetErrorString(error)};                 \

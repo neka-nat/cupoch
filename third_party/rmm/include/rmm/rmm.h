@@ -6,16 +6,24 @@
 
 #include "rmm_api.h"
 
+#ifdef _WIN32
+#define __FILENAME__ \
+    (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#else
+#define __FILENAME__ \
+    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#endif
+
 /** ---------------------------------------------------------------------------*
  * @brief Device memory alloc / realloc / free macros that pass the calling file
  * and line number to RMM for tracking.
  * ---------------------------------------------------------------------------**/
 #define RMM_ALLOC(ptr, sz, stream) \
-  rmm::alloc((ptr), (sz), (stream), __FILE__, __LINE__)
+  rmm::alloc((ptr), (sz), (stream), __FILENAME__, __LINE__)
 
 //#define RMM_REALLOC(ptr, new_sz, stream) 
-//  rmm::realloc((ptr), (new_sz), (stream), __FILE__, __LINE__)
+//  rmm::realloc((ptr), (new_sz), (stream), __FILENAME__, __LINE__)
 
-#define RMM_FREE(ptr, stream) rmm::free((ptr), (stream), __FILE__, __LINE__)
+#define RMM_FREE(ptr, stream) rmm::free((ptr), (stream), __FILENAME__, __LINE__)
 
 #endif // RMM_H
