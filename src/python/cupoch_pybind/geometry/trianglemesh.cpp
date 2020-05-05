@@ -217,12 +217,6 @@ void pybind_trianglemesh(py::module &m) {
                         "rendered as red, green, and blue arrows respectively.",
                         "size"_a = 1.0,
                         "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_property("vertices", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertices_);},
-                                      [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertices_, vec);})
-            .def_property("vertex_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_normals_);},
-                                            [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_normals_, vec);})
-            .def_property("vertex_colors", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_colors_);},
-                                           [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_colors_, vec);})
             .def_property("triangles", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3i(mesh.triangles_);},
                                        [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3i& vec) {wrapper::FromWrapper(mesh.triangles_, vec);})
             .def_property("triangle_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.triangle_normals_);},

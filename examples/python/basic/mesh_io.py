@@ -10,12 +10,12 @@ import meshes
 if __name__ == "__main__":
     mesh = meshes.bunny()
     mesh.remove_unreferenced_vertices()
-    triangles = np.asarray(mesh.triangles)
-    vertices = np.asarray(mesh.vertices)
-    vertex_normals = np.asarray(mesh.vertex_normals)
+    triangles = np.asarray(mesh.triangles.cpu())
+    vertices = np.asarray(mesh.vertices.cpu())
+    vertex_normals = np.asarray(mesh.vertex_normals.cpu())
     n_vertices = vertices.shape[0]
     vertex_colors = np.random.uniform(0, 1, size=(n_vertices, 3))
-    mesh.vertex_colors = cph.utility.Vector3dVector(vertex_colors)
+    mesh.vertex_colors = cph.utility.Vector3fVector(vertex_colors)
 
     def test_float_array(array_a, array_b, eps=1e-6):
         diff = array_a - array_b
@@ -28,18 +28,18 @@ if __name__ == "__main__":
 
     def compare_mesh(mesh):
         success = True
-        if not test_float_array(vertices, np.asarray(mesh.vertices)):
+        if not test_float_array(vertices, np.asarray(mesh.vertices.cpu())):
             success = False
             print('[WARNING] vertices are not the same')
         if not test_float_array(vertex_normals, np.asarray(
-                mesh.vertex_normals)):
+                mesh.vertex_normals.cpu())):
             success = False
             print('[WARNING] vertex_normals are not the same')
         if not test_float_array(
-                vertex_colors, np.asarray(mesh.vertex_colors), eps=1e-2):
+                vertex_colors, np.asarray(mesh.vertex_colors.cpu()), eps=1e-2):
             success = False
             print('[WARNING] vertex_colors are not the same')
-        if not test_int_array(triangles, np.asarray(mesh.triangles)):
+        if not test_int_array(triangles, np.asarray(mesh.triangles.cpu())):
             success = False
             print('[WARNING] triangles are not the same')
         if success:

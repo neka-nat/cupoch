@@ -1,5 +1,4 @@
 #include "cupoch/geometry/voxelgrid.h"
-#include "cupoch/camera/pinhole_camera_intrinsic.h"
 
 namespace cupoch {
 
