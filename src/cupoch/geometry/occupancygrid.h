@@ -56,8 +56,8 @@ public:
     OccupancyGrid& Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint,
                           float max_range = -1.0);
 
-    void AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
-    void AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
+    OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
+    OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
 public:
     float voxel_size_ = 0.05;
     Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();

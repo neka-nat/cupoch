@@ -161,6 +161,75 @@ Graph &Graph::AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
     return AddEdges(d_edges, d_weights);
 }
 
+Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
+    if (HasWeights()) {
+        auto begin = make_tuple_iterator(lines_.begin(), edge_weights_.begin());
+        auto end = thrust::remove_if(begin,
+                make_tuple_iterator(lines_.end(), edge_weights_.end()),
+                [edge, is_directed = is_directed_] __device__ (const thrust::tuple<Eigen::Vector2i, float> &x) {
+                    const Eigen::Vector2i& l = thrust::get<0>(x);
+                    return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
+                });
+        size_t n_out = thrust::distance(begin, end);
+        lines_.resize(n_out);
+        edge_weights_.resize(n_out);
+    } else {
+        auto end = thrust::remove_if(lines_.begin(), lines_.end(),
+            [edge, is_directed = is_directed_] __device__ (const Eigen::Vector2i &l) {
+                return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
+            });
+        lines_.resize(thrust::distance(lines_.begin(), end));
+    }
+    return ConstructGraph();
+}
+
+Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) {
+    utility::device_vector<Eigen::Vector2i> new_lines;
+    utility::device_vector<float> new_weights;
+    if (HasWeights()) {
+        auto func = tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, float>, 0, thrust::greater<Eigen::Vector2i>>();
+        auto constraints = thrust::make_constant_iterator<float>(1.0);
+        auto begin = make_tuple_iterator(new_lines.begin(), new_weights.end());
+        auto end1 = thrust::set_difference(make_tuple_iterator(lines_.begin(), edge_weights_.begin()),
+                make_tuple_iterator(lines_.end(), edge_weights_.end()),
+                make_tuple_iterator(edges.begin(), constraints),
+                make_tuple_iterator(edges.end(), constraints),
+                begin, func);
+        size_t n_out1 = thrust::distance(begin, end1);
+        new_lines.resize(n_out1);
+        new_weights.resize(n_out1);
+        if (!is_directed_) {
+            auto end2 = thrust::set_difference(make_tuple_iterator(lines_.begin(), edge_weights_.begin()),
+                    make_tuple_iterator(lines_.end(), edge_weights_.end()),
+                    make_tuple_iterator(thrust::make_transform_iterator(edges.begin(), reverse_index_functor<int>()), constraints),
+                    make_tuple_iterator(thrust::make_transform_iterator(edges.end(), reverse_index_functor<int>()), constraints),
+                    begin, func);
+            size_t n_out2 = thrust::distance(begin, end1);
+            new_lines.resize(n_out2);
+            new_weights.resize(n_out2);
+        }
+    } else {
+        auto end1 = thrust::set_difference(lines_.begin(), lines_.end(),
+                edges.begin(), edges.end(), new_lines.begin());
+        new_lines.resize(thrust::distance(new_lines.begin(), end1));
+        if (!is_directed_) {
+            auto end2 = thrust::set_difference(lines_.begin(), lines_.end(),
+                    thrust::make_transform_iterator(edges.begin(), reverse_index_functor<int>()),
+                    thrust::make_transform_iterator(edges.end(), reverse_index_functor<int>()),
+                    new_lines.begin());
+            new_lines.resize(thrust::distance(new_lines.begin(), end2));
+        }
+    }
+    lines_ = new_lines;
+    edge_weights_ = new_weights;
+    return ConstructGraph();
+}
+
+Graph &Graph::RemoveEdges(const thrust::host_vector<Eigen::Vector2i> &edges) {
+    utility::device_vector<Eigen::Vector2i> d_edges = edges;
+    return RemoveEdges(d_edges);
+}
+
 Graph &Graph::SetEdgeWeightsFromDistance() {
     edge_weights_.resize(lines_.size());
     Eigen::Vector3f *pt_ptr = thrust::raw_pointer_cast(points_.data());

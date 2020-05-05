@@ -50,6 +50,10 @@ public:
     Graph &AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
                     const thrust::host_vector<float> &weights = thrust::host_vector<float>());
 
+    Graph &RemoveEdge(const Eigen::Vector2i &edge);
+    Graph &RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges);
+    Graph &RemoveEdges(const thrust::host_vector<Eigen::Vector2i> &edges);
+
     Graph &SetEdgeWeightsFromDistance();
 
     SSSPResultArray DijkstraPath(int start_node_index) const;

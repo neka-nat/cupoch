@@ -81,6 +81,18 @@ __host__ __device__ bool operator>(const Eigen::Matrix<T, Dim, 1> &lhs,
 }
 
 template <typename T>
+__host__ __device__ inline bool operator==(const Eigen::Matrix<T, 2, 1> &lhs,
+                                           const Eigen::Matrix<T, 2, 1> &rhs) {
+    return (lhs[0] == rhs[0] && lhs[1] == rhs[1]);
+}
+
+template <typename T>
+__host__ __device__ inline bool operator!=(const Eigen::Matrix<T, 2, 1> &lhs,
+                                           const Eigen::Matrix<T, 2, 1> &rhs) {
+    return (lhs[0] != rhs[0] || lhs[1] != rhs[1]);
+}
+
+template <typename T>
 __host__ __device__ inline bool operator==(const Eigen::Matrix<T, 3, 1> &lhs,
                                            const Eigen::Matrix<T, 3, 1> &rhs) {
     return (lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2]);

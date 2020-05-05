@@ -332,7 +332,7 @@ OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud,
     return *this;
 }
 
-void OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
+OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
     voxels_keys_.push_back(voxel);
     voxels_values_.push_back(OccupancyVoxel(voxel, (occupied) ? prob_hit_log_ : prob_miss_log_));
     thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
@@ -348,9 +348,10 @@ void OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
     new_voxels_values.resize(out_size);
     voxels_keys_ = new_voxels_keys;
     voxels_values_ = new_voxels_values;
+    return *this;
 }
 
-void OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
+OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
     voxels_keys_.insert(voxels_keys_.end(), voxels.begin(), voxels.end());
     create_occupancy_voxel_functor func(prob_hit_log_, prob_miss_log_, occupied);
     voxels_values_.insert(voxels_values_.end(),
@@ -369,6 +370,7 @@ void OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& vox
     new_voxels_values.resize(out_size);
     voxels_keys_ = new_voxels_keys;
     voxels_values_ = new_voxels_values;
+    return *this;
 }
 
 }

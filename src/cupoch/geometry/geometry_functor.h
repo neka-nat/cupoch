@@ -31,5 +31,12 @@ struct reverse_index_functor {
     };
 };
 
+template <typename TupleType, int Index, typename Func>
+struct tuple_element_compare_functor {
+    __device__ bool operator() (const TupleType& rhs, const TupleType& lhs) {
+        return Func()(thrust::get<Index>(rhs), thrust::get<Index>(lhs));
+    }
+};
+
 }
 }

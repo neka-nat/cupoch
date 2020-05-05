@@ -19,9 +19,14 @@ void pybind_graph(py::module &m) {
          .def("construct_graph", &geometry::Graph::ConstructGraph)
          .def("add_edge", &geometry::Graph::AddEdge,
               "Add an edge to the graph", "edge"_a, "weight"_a = 1.0)
-         .def("add_edges", [] (geometry::Graph& self, const thrust::host_vector<Eigen::Vector2i>& edges, const thrust::host_vector<float>& weights) {
-                  return self.AddEdges(edges, weights);
-              }, "Add edges to the graph", "edges"_a, "weights"_a = thrust::host_vector<float>())
+         .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&>(&geometry::Graph::AddEdges),
+              "Add edges to the graph", "edges"_a, "weights"_a = thrust::host_vector<float>())
+         .def("remove_edge", &geometry::Graph::RemoveEdge,
+              "Remove an edge from the graph", "edge"_a)
+         .def("remove_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&>(&geometry::Graph::RemoveEdges),
+              "Remove edges from the graph", "edges"_a)
          .def("set_edge_weights_from_distance", &geometry::Graph::SetEdgeWeightsFromDistance)
-         .def("dijkstra_path", py::overload_cast<int, int>(&geometry::Graph::DijkstraPath, py::const_));
+         .def("dijkstra_path", py::overload_cast<int, int>(&geometry::Graph::DijkstraPath, py::const_))
+         .def_property("edges", [] (geometry::LineSet &line) {return wrapper::device_vector_vector2i(line.lines_);},
+                       [] (geometry::LineSet &line, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(line.lines_, vec);});
 }
