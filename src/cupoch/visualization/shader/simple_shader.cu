@@ -444,15 +444,15 @@ bool SimpleShaderForGraphNode::PrepareBinding(
         return false;
     }
     copy_pointcloud_functor func(graph.HasColors(), option.point_color_option_, view);
-    if (graph.HasColors()) {
-        thrust::transform(make_tuple_iterator(graph.points_.begin(), graph.colors_.begin()),
-                          make_tuple_iterator(graph.points_.end(), graph.colors_.end()),
+    if (graph.HasNodeColors()) {
+        thrust::transform(make_tuple_iterator(graph.points_.begin(), graph.node_colors_.begin()),
+                          make_tuple_iterator(graph.points_.end(), graph.node_colors_.end()),
                           make_tuple_iterator(points, colors), func);
     } else {
         thrust::transform(make_tuple_iterator(graph.points_.begin(),
-                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Ones())),
                           make_tuple_iterator(graph.points_.end(),
-                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Zero())),
+                                              thrust::constant_iterator<Eigen::Vector3f>(Eigen::Vector3f::Ones())),
                           make_tuple_iterator(points, colors), func);
     }
     draw_arrays_mode_ = GL_POINTS;

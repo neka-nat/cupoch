@@ -456,6 +456,30 @@ Graph::SSSPResultArray Graph::DijkstraPath(int start_node_index) const {
     return out;
 }
 
+Graph &Graph::PaintNodeColor(int node, const Eigen::Vector3f &color) {
+    if (!HasNodeColors()) {
+        node_colors_.resize(points_.size(), Eigen::Vector3f::Ones());
+    }
+    node_colors_[node] = color;
+    return *this;
+}
+
+Graph &Graph::PaintNodesColor(const utility::device_vector<int> &nodes, const Eigen::Vector3f &color) {
+    if (!HasNodeColors()) {
+        node_colors_.resize(points_.size(), Eigen::Vector3f::Ones());
+    }
+    replace_colors_functor func(thrust::raw_pointer_cast(node_colors_.data()), color);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator(nodes.size()),
+                     func);
+    return *this;
+}
+
+Graph &Graph::PaintNodesColor(const thrust::host_vector<int> &nodes, const Eigen::Vector3f &color) {
+    utility::device_vector<int> d_nodes = nodes;
+    return PaintNodesColor(d_nodes, color);
+}
+
 Graph::SSSPResultHostArray Graph::DijkstraPathHost(int start_node_index) const {
     auto out = DijkstraPath(start_node_index);
     SSSPResultHostArray h_out = out;

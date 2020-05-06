@@ -29,8 +29,16 @@ void pybind_graph(py::module &m) {
               "Paint an edge with the color", "edge"_a, "color"_a)
          .def("paint_edges_color", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const Eigen::Vector3f&>(&geometry::Graph::PaintEdgesColor),
               "Paint edges with the color", "edges"_a, "color"_a)
+         .def("paint_node_color", &geometry::Graph::PaintNodeColor,
+              "Paint a node with the color", "node"_a, "color"_a)
+         .def("paint_nodes_color", py::overload_cast<const thrust::host_vector<int>&, const Eigen::Vector3f&>(&geometry::Graph::PaintNodesColor),
+              "Paint nodes with the color", "nodes"_a, "color"_a)
          .def("set_edge_weights_from_distance", &geometry::Graph::SetEdgeWeightsFromDistance)
          .def("dijkstra_path", py::overload_cast<int, int>(&geometry::Graph::DijkstraPath, py::const_))
+         .def_static("create_from_triangle_mesh",
+                     &geometry::Graph::CreateFromTriangleMesh,
+                     "Function to make graph from a TriangleMesh",
+                     "input"_a)
          .def_property("edges", [] (geometry::LineSet &line) {return wrapper::device_vector_vector2i(line.lines_);},
                        [] (geometry::LineSet &line, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(line.lines_, vec);});
 }

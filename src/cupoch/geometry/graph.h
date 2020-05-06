@@ -37,6 +37,11 @@ public:
     };
 
     __host__ __device__
+    bool HasNodeColors() const {
+        return node_colors_.size() > 0 && points_.size() == node_colors_.size();
+    };
+
+    __host__ __device__
     bool IsConstructed() const {
         return edge_index_offsets_.size() == points_.size() + 1 && lines_.size() == edge_weights_.size();
     }
@@ -58,15 +63,22 @@ public:
     Graph &PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edges, const Eigen::Vector3f &color);
     Graph &PaintEdgesColor(const thrust::host_vector<Eigen::Vector2i> &edges, const Eigen::Vector3f &color);
 
+    Graph &PaintNodeColor(int node, const Eigen::Vector3f &color);
+    Graph &PaintNodesColor(const utility::device_vector<int> &nodes, const Eigen::Vector3f &color);
+    Graph &PaintNodesColor(const thrust::host_vector<int> &nodes, const Eigen::Vector3f &color);
+
     Graph &SetEdgeWeightsFromDistance();
 
     SSSPResultArray DijkstraPath(int start_node_index) const;
     SSSPResultHostArray DijkstraPathHost(int start_node_index) const;
     thrust::host_vector<int> DijkstraPath(int start_node_index, int end_node_index) const;
 
+    static std::shared_ptr<Graph> CreateFromTriangleMesh(const TriangleMesh &input);
+
 public:
     utility::device_vector<int> edge_index_offsets_;
     utility::device_vector<float> edge_weights_;
+    utility::device_vector<Eigen::Vector3f> node_colors_;
     bool is_directed_ = false;
 };
 
