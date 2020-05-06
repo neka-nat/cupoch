@@ -39,6 +39,8 @@ void pybind_graph(py::module &m) {
                      &geometry::Graph::CreateFromTriangleMesh,
                      "Function to make graph from a TriangleMesh",
                      "input"_a)
-         .def_property("edges", [] (geometry::LineSet &line) {return wrapper::device_vector_vector2i(line.lines_);},
-                       [] (geometry::LineSet &line, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(line.lines_, vec);});
+         .def_property("edges", [] (geometry::Graph &graph) {return wrapper::device_vector_vector2i(graph.lines_);},
+                       [] (geometry::Graph &graph, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(graph.lines_, vec);})
+         .def_property("edge_weights", [] (geometry::Graph &graph) {return wrapper::device_vector_float(graph.edge_weights_);},
+                       [] (geometry::Graph &graph, const wrapper::device_vector_float& vec) {wrapper::FromWrapper(graph.edge_weights_, vec);});
 }

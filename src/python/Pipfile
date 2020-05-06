@@ -16,5 +16,6 @@ pyrealsense2 = "*"
 mkdocs = "*"
 mkdocs-material = "*"
 pymdown-extensions = "*"
+networkx = "*"
 
 [requires]
