@@ -54,6 +54,10 @@ public:
     Graph &RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges);
     Graph &RemoveEdges(const thrust::host_vector<Eigen::Vector2i> &edges);
 
+    Graph &PaintEdgeColor(const Eigen::Vector2i &edge, const Eigen::Vector3f &color);
+    Graph &PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edges, const Eigen::Vector3f &color);
+    Graph &PaintEdgesColor(const thrust::host_vector<Eigen::Vector2i> &edges, const Eigen::Vector3f &color);
+
     Graph &SetEdgeWeightsFromDistance();
 
     SSSPResultArray DijkstraPath(int start_node_index) const;

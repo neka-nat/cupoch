@@ -25,6 +25,10 @@ void pybind_graph(py::module &m) {
               "Remove an edge from the graph", "edge"_a)
          .def("remove_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&>(&geometry::Graph::RemoveEdges),
               "Remove edges from the graph", "edges"_a)
+         .def("paint_edge_color", &geometry::Graph::PaintEdgeColor,
+              "Paint an edge with the color", "edge"_a, "color"_a)
+         .def("paint_edges_color", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const Eigen::Vector3f&>(&geometry::Graph::PaintEdgesColor),
+              "Paint edges with the color", "edges"_a, "color"_a)
          .def("set_edge_weights_from_distance", &geometry::Graph::SetEdgeWeightsFromDistance)
          .def("dijkstra_path", py::overload_cast<int, int>(&geometry::Graph::DijkstraPath, py::const_))
          .def_property("edges", [] (geometry::LineSet &line) {return wrapper::device_vector_vector2i(line.lines_);},
