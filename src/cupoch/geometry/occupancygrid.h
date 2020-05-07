@@ -21,24 +21,12 @@ public:
     float prob_log_ = 0;
 };
 
-class OccupancyGrid : public Geometry3D {
+class OccupancyGrid : public VoxelGridBase<OccupancyVoxel> {
 public:
     OccupancyGrid();
     OccupancyGrid(float voxel_size, const Eigen::Vector3f& origin = Eigen::Vector3f::Zero());
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);
-    OccupancyGrid &Clear() override;
-    bool IsEmpty() const override;
-    Eigen::Vector3f GetMinBound() const override;
-    Eigen::Vector3f GetMaxBound() const override;
-    Eigen::Vector3f GetCenter() const override;
-    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const;
-    OccupancyGrid &Transform(const Eigen::Matrix4f &transformation) override;
-    OccupancyGrid &Translate(const Eigen::Vector3f &translation,
-                             bool relative = true) override;
-    OccupancyGrid &Scale(const float scale, bool center = true) override;
-    OccupancyGrid &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     bool HasVoxels() const { return voxels_keys_.size() > 0; }
     bool HasColors() const {
@@ -59,10 +47,6 @@ public:
     OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
     OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
 public:
-    float voxel_size_ = 0.05;
-    Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
-    utility::device_vector<Eigen::Vector3i> voxels_keys_;
-    utility::device_vector<OccupancyVoxel> voxels_values_;
     float clamping_thres_min_ = -2.0;
     float clamping_thres_max_ = 3.5;
     float prob_hit_log_ = 0.85;

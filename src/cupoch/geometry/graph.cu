@@ -501,7 +501,7 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
 }
 
 Graph::SSSPResultHostArray Graph::DijkstraPathsHost(int start_node_index, int end_node_index) const {
-    auto out = DijkstraPath(start_node_index, end_node_index);
+    auto out = DijkstraPaths(start_node_index, end_node_index);
     SSSPResultHostArray h_out = out;
     return h_out;
 }
