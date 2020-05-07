@@ -36,7 +36,7 @@ mesh.remove_unreferenced_vertices()
 gp = cph.geometry.Graph.create_from_triangle_mesh(mesh)
 gp.set_edge_weights_from_distance()
 start = time.time()
-path = gp.dijkstra_path(0, 500)
+path = gp.dijkstra_path(0, 100)
 elapsed_time = time.time() - start
 print("Find path (GPU): ", path, " Time: ", elapsed_time)
 for i in range(len(path[:-1])):
@@ -51,6 +51,6 @@ h_g = nx.Graph()
 for e, w in zip(h_edges, h_weights):
     h_g.add_edge(e[0], e[1], weight=w)
 start = time.time()
-path = nx.dijkstra_path(h_g, 0, 500)
+path = nx.dijkstra_path(h_g, 0, 100)
 elapsed_time = time.time() - start
 print("Find path (CPU, networkx): ", path, " Time: ", elapsed_time)

@@ -46,15 +46,17 @@ struct relax_functor {
     relax_functor(const Eigen::Vector2i* lines,
                   const int* edge_index_offsets,
                   const float* edge_weights,
+                  const int* edge_table,
                   int* open_flags,
                   const Graph::SSSPResult* res,
                   Graph::SSSPResult* res_tmp)
                   : lines_(lines), edge_index_offsets_(edge_index_offsets),
-                  edge_weights_(edge_weights), open_flags_(open_flags),
-                  res_(res), res_tmp_(res_tmp) {};
+                  edge_weights_(edge_weights), edge_table_(edge_table),
+                  open_flags_(open_flags), res_(res), res_tmp_(res_tmp) {};
     const Eigen::Vector2i* lines_;
     const int* edge_index_offsets_;
     const float* edge_weights_;
+    const int* edge_table_;
     int* open_flags_;
     const Graph::SSSPResult* res_;
     Graph::SSSPResult* res_tmp_;
@@ -65,8 +67,8 @@ struct relax_functor {
         int e_edge = edge_index_offsets_[idx + 1];
         for (int j = s_edge; j < e_edge; ++j) {
             int k = lines_[j][0];
-            res_tmp_[j].shortest_distance_ = res_[k].shortest_distance_ + edge_weights_[j];
-            res_tmp_[j].prev_index_ = k;
+            res_tmp_[edge_table_[j]].shortest_distance_ = res_[k].shortest_distance_ + edge_weights_[j];
+            res_tmp_[edge_table_[j]].prev_index_ = k;
         }
     }
 };
@@ -450,24 +452,33 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
         return out;
     }
 
+    utility::device_vector<Eigen::Vector2i> sorted_lines = lines_;
+    utility::device_vector<int> new_to_old_edge_table(lines_.size());
+    utility::device_vector<int> old_to_new_edge_table(lines_.size());
+    thrust::sequence(new_to_old_edge_table.begin(), new_to_old_edge_table.end(), 0);
+    thrust::sort_by_key(sorted_lines.begin(), sorted_lines.end(), new_to_old_edge_table.begin(),
+            [] __device__ (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
+                return lhs[1] < rhs[1];
+            });
+    thrust::scatter(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lines_.size()),
+            new_to_old_edge_table.begin(), old_to_new_edge_table.begin());
     utility::device_vector<int> open_flags(points_.size(), 0);
     utility::device_vector<size_t> indices(points_.size());
     thrust::sequence(indices.begin(), indices.end(), 0);
-    utility::device_vector<Eigen::Vector2i> sorted_lines(lines_.size());
     SSSPResultArray res_tmp(lines_.size());
-    SSSPResultArray sorted_res_tmp(lines_.size());
-    SSSPResultArray sorted_res_tmp_s(points_.size());
+    SSSPResultArray res_tmp_s(points_.size());
     open_flags[start_node_index] = 1;
     out[start_node_index] = SSSPResult(0.0, start_node_index);
     relax_functor func1(thrust::raw_pointer_cast(lines_.data()),
                         thrust::raw_pointer_cast(edge_index_offsets_.data()),
                         thrust::raw_pointer_cast(edge_weights_.data()),
+                        thrust::raw_pointer_cast(old_to_new_edge_table.data()),
                         thrust::raw_pointer_cast(open_flags.data()),
                         thrust::raw_pointer_cast(out.data()),
                         thrust::raw_pointer_cast(res_tmp.data()));
     update_shortest_distances_functor func2(thrust::raw_pointer_cast(open_flags.data()),
                                             thrust::raw_pointer_cast(out.data()),
-                                            thrust::raw_pointer_cast(sorted_res_tmp_s.data()));
+                                            thrust::raw_pointer_cast(res_tmp_s.data()));
     compare_path_length_functor func3(thrust::raw_pointer_cast(out.data()),
                                       thrust::raw_pointer_cast(open_flags.data()),
                                       end_node_index);
@@ -476,31 +487,14 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
         if (end_node_index >= 0 &&
             thrust::count_if(indices.begin(), indices.begin() + nt, func3) == 0) break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
-        if (is_directed_) {
-            sorted_lines = lines_;
-            sorted_res_tmp = res_tmp;
-            thrust::sort_by_key(sorted_lines.begin(), sorted_lines.end(), sorted_res_tmp.begin(),
-                            [] __device__ (const Eigen::Vector2i &lhs, const Eigen::Vector2i &rhs) {
-                                return lhs[1] < rhs[1];
-                            });
-            const auto begin = thrust::make_transform_iterator(sorted_lines.begin(), extract_element_functor<int, 2, 1>());
-            auto end = thrust::reduce_by_key(begin, begin + sorted_lines.size(), sorted_res_tmp.begin(),
-                                             indices.begin(), sorted_res_tmp_s.begin(),
-                                             thrust::equal_to<int>(),
-                                             [] __device__ (const SSSPResult& lhs, const SSSPResult& rhs) {
-                                                 return (lhs.shortest_distance_<= rhs.shortest_distance_) ? lhs : rhs;
-                                             });
-            nt = thrust::distance(indices.begin(), end.first);
-        } else {
-            const auto begin = thrust::make_transform_iterator(lines_.begin(), extract_element_functor<int, 2, 1>());
-            auto end = thrust::reduce_by_key(begin, begin + lines_.size(), res_tmp.begin(),
-                                             indices.begin(), sorted_res_tmp_s.begin(),
-                                             thrust::equal_to<int>(),
-                                             [] __device__ (const SSSPResult& lhs, const SSSPResult& rhs) {
-                                                 return (lhs.shortest_distance_<= rhs.shortest_distance_) ? lhs : rhs;
-                                             }); 
-            nt = thrust::distance(indices.begin(), end.first);
-        }
+        const auto begin = thrust::make_transform_iterator(sorted_lines.begin(), extract_element_functor<int, 2, 1>());
+        auto end = thrust::reduce_by_key(begin, begin + sorted_lines.size(), res_tmp.begin(),
+                                         indices.begin(), res_tmp_s.begin(),
+                                         thrust::equal_to<int>(),
+                                         [] __device__ (const SSSPResult& lhs, const SSSPResult& rhs) {
+                                             return (lhs.shortest_distance_<= rhs.shortest_distance_) ? lhs : rhs;
+                                         });
+        nt = thrust::distance(indices.begin(), end.first);
         thrust::for_each(indices.begin(), indices.begin() + nt, func2);
     }
     return out;
