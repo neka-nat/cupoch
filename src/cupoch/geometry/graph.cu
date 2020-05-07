@@ -458,7 +458,7 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
     SSSPResultArray sorted_res_tmp(lines_.size());
     SSSPResultArray sorted_res_tmp_s(points_.size());
     open_flags[start_node_index] = 1;
-    out[start_node_index] = SSSPResult(0.0, 0);
+    out[start_node_index] = SSSPResult(0.0, start_node_index);
     relax_functor func1(thrust::raw_pointer_cast(lines_.data()),
                         thrust::raw_pointer_cast(edge_index_offsets_.data()),
                         thrust::raw_pointer_cast(edge_weights_.data()),
@@ -476,7 +476,7 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
         if (end_node_index >= 0 &&
             thrust::count_if(indices.begin(), indices.begin() + nt, func3) == 0) break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
-        if (!is_directed_) {
+        if (is_directed_) {
             sorted_lines = lines_;
             sorted_res_tmp = res_tmp;
             thrust::sort_by_key(sorted_lines.begin(), sorted_lines.end(), sorted_res_tmp.begin(),
