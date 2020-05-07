@@ -6,6 +6,20 @@ namespace cupoch {
 namespace geometry {
 
 template<class VoxelType>
+VoxelGridBase<VoxelType>::VoxelGridBase(Geometry::GeometryType type) : Geometry3D(type) {}
+template<class VoxelType>
+VoxelGridBase<VoxelType>::VoxelGridBase(Geometry::GeometryType type, float voxel_size, const Eigen::Vector3f& origin)
+ : Geometry3D(type), voxel_size_(voxel_size), origin_(origin_) {}
+template<class VoxelType>
+VoxelGridBase<VoxelType>::VoxelGridBase(Geometry::GeometryType type, const VoxelGridBase &src_voxel_grid)
+ : Geometry3D(type), voxel_size_(src_voxel_grid.voxel_size_),
+  origin_(src_voxel_grid.origin_),
+  voxels_keys_(src_voxel_grid.voxels_keys_),
+  voxels_values_(src_voxel_grid.voxels_values_) {}
+template<class VoxelType>
+VoxelGridBase<VoxelType>::~VoxelGridBase() {}
+
+template<class VoxelType>
 VoxelGridBase<VoxelType> &VoxelGridBase<VoxelType>::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3f::Zero();

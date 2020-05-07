@@ -9,6 +9,7 @@ using namespace unit_test;
 
 TEST(OccupancyGrid, Bounds) {
     auto occupancy_grid = std::make_shared<geometry::OccupancyGrid>();
+    EXPECT_FLOAT_EQ(occupancy_grid->voxel_size_, 0.05);
     occupancy_grid->origin_ = Eigen::Vector3f(0, 0, 0);
     occupancy_grid->voxel_size_ = 5;
     occupancy_grid->AddVoxel(Eigen::Vector3i(1, 0, 0));

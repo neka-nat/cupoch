@@ -54,6 +54,7 @@ if __name__ == "__main__":
     vis.create_window()
 
     ocgd = x3d.geometry.OccupancyGrid(0.04)
+    ocgd.visualize_free_area = False
     flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
     prev_rgbd_image = None
     option = x3d.odometry.OdometryOption()

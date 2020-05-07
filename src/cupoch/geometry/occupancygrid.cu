@@ -195,6 +195,11 @@ thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(const Eigen::Vector3
     return thrust::make_tuple(true, voxel);
 }
 
+OccupancyGrid& OccupancyGrid::ReconstructVoxels() {
+    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels_values_.begin());
+    return *this;
+}
+
 OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3f>& points,
                                      const Eigen::Vector3f& viewpoint, float max_range) {
     if (points.empty()) return *this;
@@ -257,43 +262,39 @@ OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud,
 }
 
 OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
-    voxels_keys_.push_back(voxel);
-    voxels_values_.push_back(OccupancyVoxel(voxel, (occupied) ? prob_hit_log_ : prob_miss_log_));
-    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
-                        voxels_values_.begin());
-    utility::device_vector<Eigen::Vector3i> new_voxels_keys(voxels_keys_.size());
-    utility::device_vector<OccupancyVoxel> new_voxels_values(voxels_keys_.size());
-    auto end = thrust::reduce_by_key(voxels_keys_.begin(), voxels_keys_.end(),
-                                     voxels_values_.begin(), new_voxels_keys.begin(),
-                                     new_voxels_values.begin(), thrust::equal_to<Eigen::Vector3i>(),
-                                     add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
-    size_t out_size = thrust::distance(new_voxels_keys.begin(), end.first);
-    new_voxels_keys.resize(out_size);
-    new_voxels_values.resize(out_size);
-    voxels_keys_ = new_voxels_keys;
-    voxels_values_ = new_voxels_values;
+    auto itr = thrust::find(voxels_keys_.begin(), voxels_keys_.end(), voxel);
+    if (itr != voxels_keys_.end()) {
+        size_t idx = thrust::distance(voxels_keys_.begin(), itr);
+        OccupancyVoxel org_ov = voxels_values_[idx];
+        org_ov.prob_log_ += (occupied) ? prob_hit_log_ : prob_miss_log_;
+        org_ov.prob_log_ = std::min(std::max(org_ov.prob_log_, clamping_thres_min_), clamping_thres_max_);
+        voxels_values_[idx] = org_ov;
+    } else {
+        voxels_keys_.push_back(voxel);
+        voxels_values_.push_back(OccupancyVoxel(voxel, (occupied) ? prob_hit_log_ : prob_miss_log_));
+        thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+                            voxels_values_.begin());
+    }
     return *this;
 }
 
 OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
-    voxels_keys_.insert(voxels_keys_.end(), voxels.begin(), voxels.end());
+    size_t n_total = voxels_keys_.size() + voxels.size();
+    utility::device_vector<Eigen::Vector3i> new_voxels_keys(n_total);
+    utility::device_vector<OccupancyVoxel> new_voxels_values(n_total);
     create_occupancy_voxel_functor func(prob_hit_log_, prob_miss_log_, occupied);
-    voxels_values_.insert(voxels_values_.end(),
-                          thrust::make_transform_iterator(voxels.begin(), func),
-                          thrust::make_transform_iterator(voxels.end(), func));
-    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
-                        voxels_values_.begin());
-    utility::device_vector<Eigen::Vector3i> new_voxels_keys(voxels_keys_.size());
-    utility::device_vector<OccupancyVoxel> new_voxels_values(voxels_keys_.size());
-    auto end = thrust::reduce_by_key(voxels_keys_.begin(), voxels_keys_.end(),
-                                     voxels_values_.begin(), new_voxels_keys.begin(),
-                                     new_voxels_values.begin(), thrust::equal_to<Eigen::Vector3i>(),
+    thrust::merge_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels.begin(), voxels.end(),
+                         voxels_values_.begin(), thrust::make_transform_iterator(voxels.begin(), func),
+                         new_voxels_keys.begin(), new_voxels_values.begin());
+    voxels_keys_.resize(n_total);
+    voxels_values_.resize(n_total);
+    auto end = thrust::reduce_by_key(new_voxels_keys.begin(), new_voxels_keys.end(),
+                                     new_voxels_values.begin(), voxels_keys_.begin(),
+                                     voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
                                      add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
-    size_t out_size = thrust::distance(new_voxels_keys.begin(), end.first);
-    new_voxels_keys.resize(out_size);
-    new_voxels_values.resize(out_size);
-    voxels_keys_ = new_voxels_keys;
-    voxels_values_ = new_voxels_values;
+    size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
+    voxels_keys_.resize(out_size);
+    voxels_values_.resize(out_size);
     return *this;
 }
 

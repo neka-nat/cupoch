@@ -63,7 +63,7 @@ void pybind_occupanygrid(py::module &m) {
     py::detail::bind_copy_functions<geometry::OccupancyGrid>(occupancygrid);
     occupancygrid
             .def(py::init<float, const Eigen::Vector3f&>(),
-                 "Create a Occupancy grid", "voxel_grid"_a, "origin"_a = Eigen::Vector3f::Zero())
+                 "Create a Occupancy grid", "voxel_size"_a, "origin"_a = Eigen::Vector3f::Zero())
             .def("__repr__",
                  [](const geometry::OccupancyGrid &occupancygrid) {
                      return std::string("geometry::OccupancyGrid with ") +
@@ -73,9 +73,13 @@ void pybind_occupanygrid(py::module &m) {
             .def_property("voxels", [] (geometry::OccupancyGrid &og) {return wrapper::OccupancyVoxelMap(og.voxels_keys_, og.voxels_values_);},
                                     [] (geometry::OccupancyGrid &og, const wrapper::OccupancyVoxelMap& map) {
                                         wrapper::FromWrapper(og.voxels_keys_, og.voxels_values_, map);})
+            .def("reconstruct_voxels", &geometry::OccupancyGrid::ReconstructVoxels,
+                 "Resort voxel indices to insert observations correctly.")
             .def("insert", py::overload_cast<const geometry::PointCloud&, const Eigen::Vector3f&, float>(&geometry::OccupancyGrid::Insert),
                  "Function to insert occupancy grid from pointcloud.",
                  "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)
+            .def_readwrite("voxel_size", &geometry::OccupancyGrid::voxel_size_)
+            .def_readwrite("origin", &geometry::OccupancyGrid::origin_)
             .def_readwrite("clamping_thres_min", &geometry::OccupancyGrid::clamping_thres_min_)
             .def_readwrite("clamping_thres_max", &geometry::OccupancyGrid::clamping_thres_max_)
             .def_readwrite("prob_hit_log", &geometry::OccupancyGrid::prob_hit_log_)

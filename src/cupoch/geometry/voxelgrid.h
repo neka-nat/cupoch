@@ -43,15 +43,10 @@ public:
 template <class VoxelType>
 class VoxelGridBase : public Geometry3D {
 public:
-    VoxelGridBase(Geometry::GeometryType type) : Geometry3D(type) {};
-    VoxelGridBase(Geometry::GeometryType type, float voxel_size, const Eigen::Vector3f& origin)
-     : Geometry3D(type), voxel_size_(voxel_size_), origin_(origin_) {}
-    VoxelGridBase(Geometry::GeometryType type, const VoxelGridBase &src_voxel_grid)
-     : Geometry3D(type), voxel_size_(src_voxel_grid.voxel_size_),
-      origin_(src_voxel_grid.origin_),
-      voxels_keys_(src_voxel_grid.voxels_keys_),
-      voxels_values_(src_voxel_grid.voxels_values_) {};
-    virtual ~VoxelGridBase() {};
+    VoxelGridBase(Geometry::GeometryType type);
+    VoxelGridBase(Geometry::GeometryType type, float voxel_size, const Eigen::Vector3f& origin);
+    VoxelGridBase(Geometry::GeometryType type, const VoxelGridBase &src_voxel_grid);
+    virtual ~VoxelGridBase();
 
     virtual VoxelGridBase &Clear();
     virtual bool IsEmpty() const;
