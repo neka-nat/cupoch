@@ -2,17 +2,10 @@ import sys
 import pyrealsense2 as rs
 import numpy as np
 from enum import IntEnum
-import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d.axes3d as p3
-import matplotlib.animation as animation
 
 from datetime import datetime
-
-if len(sys.argv) == 2 and sys.argv[1] == "CPU":
-    import open3d as x3d
-else:
-    import cupoch as x3d
-    x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
+import cupoch as x3d
+x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
 
 
 class Preset(IntEnum):
@@ -57,26 +50,21 @@ if __name__ == "__main__":
     align_to = rs.stream.color
     align = rs.align(align_to)
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    ax2 = fig.add_subplot(2, 2, 2)
-    ax3 = fig.add_subplot(2, 2, 4)
+    vis = x3d.visualization.Visualizer()
+    vis.create_window()
 
-    # Streaming loop
+    ocgd = x3d.geometry.OccupancyGrid(0.04)
+    flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
     prev_rgbd_image = None
     option = x3d.odometry.OdometryOption()
     cur_trans = np.identity(4)
-    path = []
-    path.append(cur_trans[:3, 3].tolist())
-    line = ax1.plot(*list(zip(*path)), 'r-')[0]
-    pos = ax1.plot(*list(zip(*path)), 'yo')[0]
-    depth_im = ax2.imshow(np.zeros((480, 640), dtype=np.uint8), cmap="gray", vmin=0, vmax=255)
-    color_im = ax3.imshow(np.zeros((480, 640, 3), dtype=np.uint8))
-    try:
-        def update_odom(frame):
-            global prev_rgbd_image, cur_trans
 
-            dt = datetime.now()
+    # Streaming loop
+    frame_count = 0
+    try:
+        while True:
+
+            dt0 = datetime.now()
 
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
@@ -92,16 +80,16 @@ if __name__ == "__main__":
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
-                return
+                continue
 
             depth_temp = np.array(aligned_depth_frame.get_data())
             depth_image = x3d.geometry.Image(depth_temp)
             color_temp = np.asarray(color_frame.get_data())
             color_image = x3d.geometry.Image(color_temp)
 
-            rgbd_image = x3d.geometry.RGBDImage.create_from_color_and_depth(color_image,
-                                                                            depth_image)
-
+            rgbd_image = x3d.geometry.RGBDImage.create_from_color_and_depth(
+                color_image,
+                depth_image)
             if not prev_rgbd_image is None:
                 res, odo_trans, _ = x3d.odometry.compute_rgbd_odometry(
                                 prev_rgbd_image, rgbd_image, intrinsic,
@@ -110,23 +98,24 @@ if __name__ == "__main__":
                     cur_trans = np.matmul(cur_trans, odo_trans)
 
             prev_rgbd_image = rgbd_image
-            process_time = datetime.now() - dt
-            print("FPS: " + str(1 / process_time.total_seconds()))
-            print(cur_trans)
-            path.append(cur_trans[:3, 3])
-            data = list(zip(*path))
-            line.set_data(data[:2])
-            line.set_3d_properties(data[2])
-            pos.set_data([cur_trans[0, 3]], [cur_trans[1, 3]])
-            pos.set_3d_properties(cur_trans[2, 3])
-            depth_offset = depth_temp.min()
-            depth_scale = depth_temp.max() - depth_offset
-            depth_temp = np.clip((depth_temp - depth_offset) / depth_scale, 0.0, 1.0)
-            depth_im.set_array((255.0 * depth_temp).astype(np.uint8))
-            color_im.set_array(color_temp)
+            temp = x3d.geometry.PointCloud.create_from_rgbd_image(
+                rgbd_image, intrinsic)
+            temp.transform(np.matmul(cur_trans, flip_transform))
+            temp = temp.voxel_down_sample(0.02)
+            ocgd.insert(temp, cur_trans[:3, 3])
 
-        anim = animation.FuncAnimation(fig, update_odom, interval=10)
-        plt.show()
+            if frame_count == 0:
+                vis.add_geometry(ocgd)
+
+            vis.update_geometry(ocgd)
+            vis.poll_events()
+            vis.update_renderer()
+
+            dt1 = datetime.now()
+            process_time = dt1 - dt0
+            print("FPS: " + str(1 / process_time.total_seconds()))
+            frame_count += 1
 
     finally:
         pipeline.stop()
+    vis.destroy_window()
