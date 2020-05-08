@@ -243,7 +243,7 @@ OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3
                                           occupied_voxels.begin(), occupied_voxels.end(),
                                           free_voxels_res.begin());
         free_voxels_res.resize(thrust::distance(free_voxels_res.begin(), end));
-        AddVoxels(free_voxels_res, false);
+        AddVoxels(free_voxels_res, false, false);
     }
     AddVoxels(occupied_voxels, true);
     return *this;
@@ -278,7 +278,7 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupi
     return *this;
 }
 
-OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
+OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied, bool reduce) {
     size_t n_total = voxels_keys_.size() + voxels.size();
     utility::device_vector<Eigen::Vector3i> new_voxels_keys(n_total);
     utility::device_vector<OccupancyVoxel> new_voxels_values(n_total);
@@ -286,15 +286,20 @@ OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vect
     thrust::merge_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels.begin(), voxels.end(),
                          voxels_values_.begin(), thrust::make_transform_iterator(voxels.begin(), func),
                          new_voxels_keys.begin(), new_voxels_values.begin());
-    voxels_keys_.resize(n_total);
-    voxels_values_.resize(n_total);
-    auto end = thrust::reduce_by_key(new_voxels_keys.begin(), new_voxels_keys.end(),
-                                     new_voxels_values.begin(), voxels_keys_.begin(),
-                                     voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
-                                     add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
-    size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
-    voxels_keys_.resize(out_size);
-    voxels_values_.resize(out_size);
+    if (reduce) {
+        voxels_keys_.resize(n_total);
+        voxels_values_.resize(n_total);
+        auto end = thrust::reduce_by_key(new_voxels_keys.begin(), new_voxels_keys.end(),
+                                         new_voxels_values.begin(), voxels_keys_.begin(),
+                                         voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
+                                         add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
+        size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
+        voxels_keys_.resize(out_size);
+        voxels_values_.resize(out_size);
+    } else {
+        thrust::swap(voxels_keys_, new_voxels_keys);
+        thrust::swap(voxels_values_, new_voxels_values);
+    }
     return *this;
 }
 

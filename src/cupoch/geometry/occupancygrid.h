@@ -47,7 +47,7 @@ public:
                           float max_range = -1.0);
 
     OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
-    OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
+    OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false, bool reduce = true);
 public:
     float clamping_thres_min_ = -2.0;
     float clamping_thres_max_ = 3.5;
