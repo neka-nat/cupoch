@@ -133,8 +133,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
     output->origin_ = origin;
     output->voxel_size_ = voxel_size;
     int n_total = num_w * num_h * num_d;
-    output->voxels_keys_.resize(n_total);
-    output->voxels_values_.resize(n_total);
+    resize_all(n_total, output->voxels_keys_, output->voxels_values_);
     create_dense_functor func(num_h, num_d);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(n_total),
@@ -147,9 +146,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
     auto end = thrust::unique_by_key(output->voxels_keys_.begin(),
                                      output->voxels_keys_.end(),
                                      output->voxels_values_.begin());
-    size_t out_size = thrust::distance(output->voxels_keys_.begin(), end.first);
-    output->voxels_keys_.resize(out_size);
-    output->voxels_values_.resize(out_size);
+    resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),
+               output->voxels_keys_, output->voxels_values_);
     return output;
 }
 
@@ -194,10 +192,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                                      thrust::make_constant_iterator(1),
                                      thrust::make_discard_iterator(),
                                      counts.begin());
-    int n_out = thrust::distance(counts.begin(), end.second);
-    counts.resize(n_out);
-    output->voxels_keys_.resize(n_out);
-    output->voxels_values_.resize(n_out);
+    resize_all(thrust::distance(counts.begin(), end.second), counts,
+               output->voxels_keys_, output->voxels_values_);
     thrust::reduce_by_key(
             voxels_keys.begin(), voxels_keys.end(), voxels_values.begin(),
             output->voxels_keys_.begin(), output->voxels_values_.begin(),
@@ -247,8 +243,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
             thrust::raw_pointer_cast(input.vertices_.data()),
             thrust::raw_pointer_cast(input.triangles_.data()),
             input.triangles_.size(), min_bound, voxel_size, num_h, num_d);
-    output->voxels_keys_.resize(n_total);
-    output->voxels_values_.resize(n_total);
+    resize_all(n_total, output->voxels_keys_, output->voxels_values_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
                       make_tuple_iterator(output->voxels_keys_.begin(),
@@ -268,9 +263,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                                                INVALID_VOXEL_INDEX,
                                                INVALID_VOXEL_INDEX);
             });
-    size_t n_out = thrust::distance(begin, end);
-    output->voxels_keys_.resize(n_out);
-    output->voxels_values_.resize(n_out);
+    resize_all(thrust::distance(begin, end), output->voxels_keys_, output->voxels_values_);
     return output;
 }
 

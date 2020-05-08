@@ -242,6 +242,14 @@ thrust::zip_iterator<thrust::tuple<Args...>> make_tuple_iterator(
     return thrust::make_zip_iterator(thrust::make_tuple(args...));
 }
 
+template <class T>
+void resize_fn(size_t new_size, T& a){ a.resize(new_size); }
+
+template <class... Args>
+void resize_all(size_t new_size, Args &... args) {
+    std::initializer_list<int>{((void)resize_fn(new_size, args), 0)...};
+}
+
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {
     return x * resolution * resolution + y * resolution + z;
 }

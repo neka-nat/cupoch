@@ -196,8 +196,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                                             sorted_normals.begin()),
                         make_tuple_iterator(output->points_.begin(),
                                             output->normals_.begin()));
-        output->points_.resize(n_out);
-        output->normals_.resize(n_out);
+        resize_all(n_out, output->points_, output->normals_);
         thrust::for_each(
                 output->normals_.begin(), output->normals_.end(),
                 [] __device__(Eigen::Vector3f & nl) { nl.normalize(); });
@@ -215,8 +214,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                                             sorted_colors.begin()),
                         make_tuple_iterator(output->points_.begin(),
                                             output->colors_.begin()));
-        output->points_.resize(n_out);
-        output->colors_.resize(n_out);
+        resize_all(n_out, output->points_, output->colors_);
     } else {
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
@@ -236,9 +234,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                 make_tuple_iterator(output->points_.begin(),
                                     output->normals_.begin(),
                                     output->colors_.begin()));
-        output->points_.resize(n_out);
-        output->normals_.resize(n_out);
-        output->colors_.resize(n_out);
+        resize_all(n_out, output->points_, output->normals_, output->colors_);
         thrust::for_each(
                 output->normals_.begin(), output->normals_.end(),
                 [] __device__(Eigen::Vector3f & nl) { nl.normalize(); });

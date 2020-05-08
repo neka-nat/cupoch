@@ -244,9 +244,8 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
                 voxels_values_.begin(), new_keys.begin(),
                 voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
                 add_voxel_color_functor());
-        new_keys.resize(n_out);
+        resize_all(n_out, new_keys, voxels_values_);
         voxels_keys_ = new_keys;
-        voxels_values_.resize(n_out);
         thrust::transform(voxels_values_.begin(), voxels_values_.end(),
                           counts.begin(), voxels_values_.begin(),
                           devide_voxel_color_functor());
@@ -267,9 +266,7 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
-    size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
-    voxels_keys_.resize(out_size);
-    voxels_values_.resize(out_size);
+    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_, voxels_values_);
 }
 
 void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
@@ -283,9 +280,7 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
-    size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
-    voxels_keys_.resize(out_size);
-    voxels_values_.resize(out_size);
+    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_, voxels_values_);
 }
 
 void VoxelGrid::AddVoxels(const thrust::host_vector<Voxel> &voxels) {
@@ -361,9 +356,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             begin,
             make_tuple_iterator(voxels_keys_.end(), voxels_values_.end()),
             func);
-    size_t out_size = thrust::distance(begin, end);
-    voxels_keys_.resize(out_size);
-    voxels_values_.resize(out_size);
+    resize_all(thrust::distance(begin, end), voxels_keys_, voxels_values_);
     return *this;
 }
 
@@ -396,8 +389,6 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             begin,
             make_tuple_iterator(voxels_keys_.end(), voxels_values_.end()),
             func);
-    size_t out_size = thrust::distance(begin, end);
-    voxels_keys_.resize(out_size);
-    voxels_values_.resize(out_size);
+    resize_all(thrust::distance(begin, end), voxels_keys_, voxels_values_);
     return *this;
 }

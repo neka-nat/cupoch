@@ -577,10 +577,7 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
                                      const Eigen::Vector3f& pt = thrust::get<0>(x);
                                      return !(isnan(pt(0)) || isnan(pt(1)) || isnan(pt(2)));
                                  });
-    size_t n_out = thrust::distance(begin, end_p);
-    pointcloud->points_.resize(n_out);
-    pointcloud->normals_.resize(n_out);
-    pointcloud->colors_.resize(n_out);
+    resize_all(thrust::distance(begin, end_p), pointcloud->points_, pointcloud->normals_, pointcloud->colors_);
     if (color_type_ == TSDFVolumeColorType::NoColor) pointcloud->colors_.clear();
     return pointcloud;
 }
@@ -617,8 +614,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                 return (cidx <= 0 || cidx >= 255);
             });
     size_t n_result1 = thrust::distance(begin1, end1);
-    keys.resize(n_result1);
-    cube_indices.resize(n_result1);
+    resize_all(n_result1, keys, cube_indices);
 
     utility::device_vector<float> fs(n_result1 * 8);
     utility::device_vector<Eigen::Vector3f> cs(n_result1 * 8);
@@ -638,8 +634,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                                                 int j = idx % 12;
                                                 return (edge_table[ci_p[i]] & (1 << j)) > 0;
                                             });
-    mesh->vertices_.resize(n_valid_cubes);
-    mesh->vertex_colors_.resize(n_valid_cubes);
+    resize_all(n_valid_cubes, mesh->vertices_, mesh->vertex_colors_);
     utility::device_vector<Eigen::Vector3i> repeat_keys(n_valid_cubes);
     utility::device_vector<int> repeat_cube_indices(n_valid_cubes);
     utility::device_vector<int> vert_no(n_valid_cubes);
@@ -696,8 +691,7 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
                                                  return (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f);
                                              });
     extract_voxel_pointcloud_functor func(origin_, resolution_, voxel_length_);
-    voxel->points_.resize(n_valid_voxels);
-    voxel->colors_.resize(n_valid_voxels);
+    resize_all(n_valid_voxels, voxel->points_, voxel->colors_);
     thrust::copy_if(
             thrust::make_transform_iterator(voxels_.begin(), func),
             thrust::make_transform_iterator(voxels_.end(), func),
@@ -719,8 +713,7 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                                              [] __device__ (const geometry::TSDFVoxel& v) {
                                                  return (v.weight_ != 0.0f && v.tsdf_ < 0.98f && v.tsdf_ >= -0.98f);
                                              });
-    voxel_grid->voxels_keys_.resize(n_valid_voxels);
-    voxel_grid->voxels_values_.resize(n_valid_voxels);
+    resize_all(n_valid_voxels, voxel_grid->voxels_keys_, voxel_grid->voxels_values_);
     extract_voxel_grid_functor func(resolution_);
     thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), func),
                     thrust::make_transform_iterator(voxels_.end(), func),

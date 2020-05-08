@@ -234,10 +234,7 @@ Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
                     const Eigen::Vector2i& l = thrust::get<0>(x);
                     return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
                 });
-        size_t n_out = thrust::distance(begin, end);
-        lines_.resize(n_out);
-        edge_weights_.resize(n_out);
-        colors_.resize(n_out);
+        resize_all(thrust::distance(begin, end), lines_, edge_weights_, colors_);
     } else if (has_colors && !has_weights) {
         auto begin = make_tuple_iterator(lines_.begin(), colors_.begin());
         auto end = thrust::remove_if(begin,
@@ -246,9 +243,7 @@ Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
                     const Eigen::Vector2i& l = thrust::get<0>(x);
                     return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
                 });
-        size_t n_out = thrust::distance(begin, end);
-        lines_.resize(n_out);
-        colors_.resize(n_out);
+        resize_all(thrust::distance(begin, end), lines_, colors_);
     } else if (!has_colors && has_weights) {
         auto begin = make_tuple_iterator(lines_.begin(), edge_weights_.begin());
         auto end = thrust::remove_if(begin,
@@ -257,9 +252,7 @@ Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
                     const Eigen::Vector2i& l = thrust::get<0>(x);
                     return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
                 });
-        size_t n_out = thrust::distance(begin, end);
-        lines_.resize(n_out);
-        edge_weights_.resize(n_out);
+        resize_all(thrust::distance(begin, end), lines_, edge_weights_);
     } else {
         auto end = thrust::remove_if(lines_.begin(), lines_.end(),
             [edge, is_directed = is_directed_] __device__ (const Eigen::Vector2i &l) {
@@ -288,20 +281,14 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
                 make_tuple_iterator(sorted_edges.begin(), cnst_w, cnst_c),
                 make_tuple_iterator(sorted_edges.end(), cnst_w, cnst_c),
                 begin, func);
-        size_t n_out1 = thrust::distance(begin, end1);
-        new_lines.resize(n_out1);
-        new_weights.resize(n_out1);
-        new_colors.resize(n_out1);
+        resize_all(thrust::distance(begin, end1), new_lines, new_weights, new_colors);
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_iterator(lines_.begin(), edge_weights_.begin(), colors_.begin()),
                     make_tuple_iterator(lines_.end(), edge_weights_.end(), colors_.end()),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_w, cnst_c),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_w, cnst_c),
                     begin, func);
-            size_t n_out2 = thrust::distance(begin, end1);
-            new_lines.resize(n_out2);
-            new_weights.resize(n_out2);
-            new_colors.resize(n_out2);
+            resize_all(thrust::distance(begin, end2), new_lines, new_weights, new_colors);
         }
     } else if (has_colors && !has_weights) {
         auto func = tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, Eigen::Vector3f>, 0, thrust::greater<Eigen::Vector2i>>();
@@ -311,18 +298,14 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
                 make_tuple_iterator(sorted_edges.begin(), cnst_c),
                 make_tuple_iterator(sorted_edges.end(), cnst_c),
                 begin, func);
-        size_t n_out1 = thrust::distance(begin, end1);
-        new_lines.resize(n_out1);
-        new_colors.resize(n_out1);
+        resize_all(thrust::distance(begin, end1), new_lines, new_colors);
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_iterator(lines_.begin(), colors_.begin()),
                     make_tuple_iterator(lines_.end(), colors_.end()),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_c),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_c),
                     begin, func);
-            size_t n_out2 = thrust::distance(begin, end1);
-            new_lines.resize(n_out2);
-            new_colors.resize(n_out2);
+            resize_all(thrust::distance(begin, end2), new_lines, new_colors);
         }
     } else if (!has_colors && has_weights) {
         auto func = tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, float>, 0, thrust::greater<Eigen::Vector2i>>();
@@ -332,18 +315,14 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
                 make_tuple_iterator(sorted_edges.begin(), cnst_w),
                 make_tuple_iterator(sorted_edges.end(), cnst_w),
                 begin, func);
-        size_t n_out1 = thrust::distance(begin, end1);
-        new_lines.resize(n_out1);
-        new_weights.resize(n_out1);
+        resize_all(thrust::distance(begin, end1), new_lines, new_weights);
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_iterator(lines_.begin(), edge_weights_.begin()),
                     make_tuple_iterator(lines_.end(), edge_weights_.end()),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_w),
                     make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_w),
                     begin, func);
-            size_t n_out2 = thrust::distance(begin, end1);
-            new_lines.resize(n_out2);
-            new_weights.resize(n_out2);
+            resize_all(thrust::distance(begin, end2), new_lines, new_weights);
         }
     } else {
         auto end1 = thrust::set_difference(lines_.begin(), lines_.end(),
