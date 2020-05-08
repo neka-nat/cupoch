@@ -242,6 +242,14 @@ thrust::zip_iterator<thrust::tuple<Args...>> make_tuple_iterator(
     return thrust::make_zip_iterator(thrust::make_tuple(args...));
 }
 
+__host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {
+    return x * resolution * resolution + y * resolution + z;
+}
+
+__host__ __device__ inline int IndexOf(const Eigen::Vector3i &xyz, int resolution) {
+    return IndexOf(xyz(0), xyz(1), xyz(2), resolution);
+}
+
 namespace utility {
 
 /// Function to split a string, mimics boost::split

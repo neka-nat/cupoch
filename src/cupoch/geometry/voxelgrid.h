@@ -40,38 +40,24 @@ public:
     Eigen::Vector3f color_ = Eigen::Vector3f(1.0, 1.0, 1.0);
 };
 
-template <class VoxelType>
-class VoxelGridBase : public Geometry3D {
-public:
-    VoxelGridBase(Geometry::GeometryType type);
-    VoxelGridBase(Geometry::GeometryType type, float voxel_size, const Eigen::Vector3f& origin);
-    VoxelGridBase(Geometry::GeometryType type, const VoxelGridBase &src_voxel_grid);
-    virtual ~VoxelGridBase();
-
-    virtual VoxelGridBase &Clear();
-    virtual bool IsEmpty() const;
-    virtual Eigen::Vector3f GetMinBound() const;
-    virtual Eigen::Vector3f GetMaxBound() const;
-    virtual Eigen::Vector3f GetCenter() const;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const;
-    virtual VoxelGridBase &Transform(const Eigen::Matrix4f &transformation);
-    virtual VoxelGridBase &Translate(const Eigen::Vector3f &translation,
-                                     bool relative = true);
-    virtual VoxelGridBase &Scale(const float scale, bool center = true);
-    virtual VoxelGridBase &Rotate(const Eigen::Matrix3f &R, bool center = true);
-public:
-    float voxel_size_ = 0.0;
-    Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
-    utility::device_vector<Eigen::Vector3i> voxels_keys_;
-    utility::device_vector<VoxelType> voxels_values_;
-};
-
-class VoxelGrid : public VoxelGridBase<Voxel> {
+class VoxelGrid : public Geometry3D {
 public:
     VoxelGrid();
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid();
+
+    VoxelGrid &Clear() override;
+    bool IsEmpty() const override;
+    Eigen::Vector3f GetMinBound() const override;
+    Eigen::Vector3f GetMaxBound() const override;
+    Eigen::Vector3f GetCenter() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+    VoxelGrid &Transform(const Eigen::Matrix4f &transformation) override;
+    VoxelGrid &Translate(const Eigen::Vector3f &translation,
+                             bool relative = true) override;
+    VoxelGrid &Scale(const float scale, bool center = true) override;
+    VoxelGrid &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 
     VoxelGrid &operator+=(const VoxelGrid &voxelgrid);
     VoxelGrid operator+(const VoxelGrid &voxelgrid) const;
@@ -157,6 +143,12 @@ public:
             float voxel_size,
             const Eigen::Vector3f &min_bound,
             const Eigen::Vector3f &max_bound);
+
+public:
+    float voxel_size_ = 0.0;
+    Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
+    utility::device_vector<Eigen::Vector3i> voxels_keys_;
+    utility::device_vector<Voxel> voxels_values_;
 };
 
 }  // namespace geometry

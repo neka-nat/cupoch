@@ -10,14 +10,6 @@ using namespace cupoch::integration;
 
 namespace {
 
-__device__ int IndexOf(int x, int y, int z, int resolution) {
-    return x * resolution * resolution + y * resolution + z;
-}
-
-__device__ int IndexOf(const Eigen::Vector3i &xyz, int resolution) {
-    return IndexOf(xyz(0), xyz(1), xyz(2), resolution);
-}
-
 __device__ float GetTSDFAt(const Eigen::Vector3f &p,
                            const geometry::TSDFVoxel *voxels,
                            float voxel_length,

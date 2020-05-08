@@ -4,7 +4,7 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/voxelgrid.h"
-#include "cupoch/geometry/voxelgrid.inl"
+#include "cupoch/geometry/geometry_functor.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -116,13 +116,93 @@ struct compute_carve_functor {
 
 }  // namespace
 
-template class VoxelGridBase<Voxel>;
-
-VoxelGrid::VoxelGrid() : VoxelGridBase<Voxel>(Geometry::GeometryType::VoxelGrid) {}
+VoxelGrid::VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
 VoxelGrid::~VoxelGrid() {}
 
 VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
-    : VoxelGridBase<Voxel>(Geometry::GeometryType::VoxelGrid, src_voxel_grid) {}
+: Geometry3D(Geometry::GeometryType::VoxelGrid), voxel_size_(src_voxel_grid.voxel_size_),
+origin_(src_voxel_grid.origin_),
+voxels_keys_(src_voxel_grid.voxels_keys_),
+voxels_values_(src_voxel_grid.voxels_values_) {}
+
+VoxelGrid &VoxelGrid::Clear() {
+    voxel_size_ = 0.0;
+    origin_ = Eigen::Vector3f::Zero();
+    voxels_keys_.clear();
+    voxels_values_.clear();
+    return *this;
+}
+
+bool VoxelGrid::IsEmpty() const { return voxels_keys_.empty(); }
+
+Eigen::Vector3f VoxelGrid::GetMinBound() const {
+    if (voxels_keys_.empty()) {
+        return origin_;
+    } else {
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i min_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_minimum<Eigen::Vector3i>());
+        return min_grid_index.cast<float>() * voxel_size_ + origin_;
+    }
+}
+
+Eigen::Vector3f VoxelGrid::GetMaxBound() const {
+    if (voxels_keys_.empty()) {
+        return origin_;
+    } else {
+        Eigen::Vector3i init = voxels_keys_[0];
+        Eigen::Vector3i max_grid_index = thrust::reduce(voxels_keys_.begin(),
+                voxels_keys_.end(), init, thrust::elementwise_maximum<Eigen::Vector3i>());
+        return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
+                       voxel_size_ +
+               origin_;
+    }
+}
+
+Eigen::Vector3f VoxelGrid::GetCenter() const {
+    Eigen::Vector3f init(0, 0, 0);
+    if (voxels_keys_.empty()) {
+        return init;
+    }
+    compute_grid_center_functor func(voxel_size_, origin_);
+    Eigen::Vector3f center = thrust::transform_reduce(voxels_keys_.begin(),
+            voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
+    center /= float(voxels_values_.size());
+    return center;
+}
+
+AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox box;
+    box.min_bound_ = GetMinBound();
+    box.max_bound_ = GetMaxBound();
+    return box;
+}
+
+OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
+VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4f &transformation) {
+    utility::LogError("VoxelGrid::Transform is not supported");
+    return *this;
+}
+
+VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3f &translation,
+                                               bool relative) {
+    origin_ += translation;
+    return *this;
+}
+
+VoxelGrid &VoxelGrid::Scale(const float scale, bool center) {
+    voxel_size_ *= scale;
+    return *this;
+}
+
+VoxelGrid &VoxelGrid::Rotate(const Eigen::Matrix3f &R, bool center) {
+    utility::LogError("VoxelGrid::Rotate is not supported");
+    return *this;
+}
 
 VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
     if (voxel_size_ != voxelgrid.voxel_size_) {

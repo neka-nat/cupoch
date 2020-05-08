@@ -1,11 +1,12 @@
 #include "cupoch/geometry/occupancygrid.h"
-#include "cupoch/geometry/voxelgrid.inl"
+#include "cupoch/geometry/densegrid.inl"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/geometry_functor.h"
 
 #include "cupoch/utility/eigen.h"
+#include <thrust/iterator/discard_iterator.h>
 
 namespace cupoch {
 namespace geometry {
@@ -16,23 +17,29 @@ __constant__ float voxel_offset[7][3] = {{0, 0, 0}, {1, 0, 0}, {-1, 0, 0},
                                          {0, 1, 0}, {0, -1, 0}, {0, 0, 1},
                                          {0, 0, -1}};
 
+struct extract_index_and_prob_functor {
+    __device__ thrust::tuple<Eigen::Vector3i, float> operator() (const OccupancyVoxel& v) const {
+        return thrust::make_tuple(v.grid_index_, v.prob_log_);
+    }
+};
+
 struct compute_intersect_voxel_segment_functor{
     compute_intersect_voxel_segment_functor(const Eigen::Vector3f* points,
                                             const Eigen::Vector3f* steps,
                                             const Eigen::Vector3f& viewpoint,
-                                            const Eigen::Vector3f& min_bound,
+                                            const Eigen::Vector3i& half_resolution,
                                             float voxel_size,
                                             const Eigen::Vector3f& origin,
                                             int n_div)
                                             : points_(points), steps_(steps), viewpoint_(viewpoint),
-                                             min_bound_(min_bound), voxel_size_(voxel_size),
+                                             half_resolution_(half_resolution), voxel_size_(voxel_size),
                                              box_half_size_(Eigen::Vector3f(
                                                 voxel_size / 2, voxel_size / 2, voxel_size / 2)),
                                              origin_(origin), n_div_(n_div) {};
     const Eigen::Vector3f* points_;
     const Eigen::Vector3f* steps_;
     const Eigen::Vector3f viewpoint_;
-    const Eigen::Vector3f min_bound_;
+    const Eigen::Vector3i half_resolution_;
     const float voxel_size_;
     const Eigen::Vector3f box_half_size_;
     const Eigen::Vector3f origin_;
@@ -48,35 +55,32 @@ struct compute_intersect_voxel_segment_functor{
         bool is_intersect = intersection_test::LineSegmentAABB(viewpoint_, points_[pidx],
                                                                voxel_center - box_half_size_,
                                                                voxel_center + box_half_size_);
-        return (is_intersect) ? voxel_idx.cast<int>() :
+        return (is_intersect) ? voxel_idx.cast<int>() + half_resolution_ :
             Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);
     }
 };
 
 void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        const Eigen::Vector3f& viewpoint,
-                       float voxel_size, Eigen::Vector3f& origin,
+                       float voxel_size, int resolution, Eigen::Vector3f& origin,
                        const utility::device_vector<Eigen::Vector3f>& steps, int n_div,
                        utility::device_vector<Eigen::Vector3i>& free_voxels) {
     if (points.empty()) return;
     size_t n_points = points.size();
-    auto bbx = AxisAlignedBoundingBox::CreateFromPoints(points);
-    const Eigen::Vector3f box_half_size(0.5 * voxel_size, 0.5 * voxel_size, 0.5 * voxel_size);
-    Eigen::Vector3f min_bound = viewpoint.array().min(bbx.min_bound_.array()).matrix() - box_half_size;
+    size_t max_idx = resolution * resolution * resolution;
+    Eigen::Vector3i half_resolution = Eigen::Vector3i::Constant(resolution / 2);
     free_voxels.resize(n_div * n_points * 7);
     compute_intersect_voxel_segment_functor func(thrust::raw_pointer_cast(points.data()),
                                                  thrust::raw_pointer_cast(steps.data()),
-                                                 viewpoint, min_bound,
+                                                 viewpoint, half_resolution,
                                                  voxel_size, origin, n_div);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_div * n_points * 7),
                       free_voxels.begin(), func);
     auto end1 = thrust::remove_if(free_voxels.begin(), free_voxels.end(),
-             [] __device__(
+             [max_idx] __device__(
                     const Eigen::Vector3i &idx)
                     -> bool {
-                return idx == Eigen::Vector3i(INVALID_VOXEL_INDEX,
-                                              INVALID_VOXEL_INDEX,
-                                              INVALID_VOXEL_INDEX);
+                return idx[0] < 0 || idx[1] < 0 || idx[2] < 0 || idx[0] >= max_idx || idx[1] >= max_idx || idx[2] >= max_idx;
             });
     free_voxels.resize(thrust::distance(free_voxels.begin(), end1));
     thrust::sort(free_voxels.begin(), free_voxels.end());
@@ -86,16 +90,19 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
 
 struct create_occupancy_voxels_functor {
     create_occupancy_voxels_functor(const Eigen::Vector3f &origin,
+                                    const Eigen::Vector3i &half_resolution,
                                     float voxel_size)
         : origin_(origin),
+          half_resolution_(half_resolution),
           voxel_size_(voxel_size) {};
     const Eigen::Vector3f origin_;
+    const Eigen::Vector3i half_resolution_;
     const float voxel_size_;
     __device__ Eigen::Vector3i operator()(const thrust::tuple<Eigen::Vector3f, bool> &x) const {
         const Eigen::Vector3f& point = thrust::get<0>(x);
         bool hit_flag = thrust::get<1>(x);
         Eigen::Vector3f ref_coord = (point - origin_) / voxel_size_;
-        return (hit_flag) ? Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>() :
+        return (hit_flag) ? Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>() + half_resolution_ :
             Eigen::Vector3i(INVALID_VOXEL_INDEX,
                 INVALID_VOXEL_INDEX,
                 INVALID_VOXEL_INDEX);;
@@ -104,20 +111,20 @@ struct create_occupancy_voxels_functor {
 
 void ComputeOccupiedVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     const utility::device_vector<bool> hit_flags,
-    float voxel_size, Eigen::Vector3f& origin,
+    float voxel_size, int resolution, Eigen::Vector3f& origin,
     utility::device_vector<Eigen::Vector3i>& occupied_voxels) {
     occupied_voxels.resize(points.size());
-    create_occupancy_voxels_functor func(origin, voxel_size);
+    size_t max_idx = resolution * resolution * resolution;
+    Eigen::Vector3i half_resolution = Eigen::Vector3i::Constant(resolution / 2);
+    create_occupancy_voxels_functor func(origin, half_resolution, voxel_size);
     thrust::transform(make_tuple_iterator(points.begin(), hit_flags.begin()),
                       make_tuple_iterator(points.end(), hit_flags.end()),
                       occupied_voxels.begin(), func);
     auto end1 = thrust::remove_if(occupied_voxels.begin(), occupied_voxels.end(),
-             [] __device__(
+             [max_idx] __device__(
                     const Eigen::Vector3i &idx)
                     -> bool {
-                return idx == Eigen::Vector3i(INVALID_VOXEL_INDEX,
-                                              INVALID_VOXEL_INDEX,
-                                              INVALID_VOXEL_INDEX);
+                return idx[0] < 0 || idx[1] < 0 || idx[2] < 0 || idx[0] >= max_idx || idx[1] >= max_idx || idx[2] >= max_idx;
             });
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
     thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
@@ -125,78 +132,186 @@ void ComputeOccupiedVoxels(const utility::device_vector<Eigen::Vector3f>& points
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
 }
 
-struct create_occupancy_voxel_functor{
-    create_occupancy_voxel_functor(float prob_hit_log,
-                                   float prob_miss_log,
-                                   bool occupied)
-                                   : prob_hit_log_(prob_hit_log),
-                                   prob_miss_log_(prob_miss_log),
-                                   occupied_(occupied) {};
-    const float prob_hit_log_;
-    const float prob_miss_log_;
-    const bool occupied_;
-    __device__ OccupancyVoxel operator() (const Eigen::Vector3i& idx) const {
-        return OccupancyVoxel(idx, (occupied_)? prob_hit_log_ : prob_miss_log_);
-    }
-};
-
 struct add_occupancy_functor{
-    add_occupancy_functor(float clamping_thres_min, float clamping_thres_max)
-     : clamping_thres_min_(clamping_thres_min), clamping_thres_max_(clamping_thres_max) {};
+    add_occupancy_functor(OccupancyVoxel* voxels, int resolution,
+                          float clamping_thres_min, float clamping_thres_max,
+                          float prob_miss_log, float prob_hit_log, bool occupied)
+     : voxels_(voxels), resolution_(resolution), clamping_thres_min_(clamping_thres_min), clamping_thres_max_(clamping_thres_max),
+     prob_miss_log_(prob_miss_log), prob_hit_log_(prob_hit_log), occupied_(occupied) {};
+    OccupancyVoxel* voxels_;
+    const int resolution_;
     const float clamping_thres_min_;
     const float clamping_thres_max_;
-    __device__ OccupancyVoxel operator() (const OccupancyVoxel& lhs, const OccupancyVoxel& rhs) const {
-        float sum_prob = lhs.prob_log_ + rhs.prob_log_;
-        return OccupancyVoxel(lhs.grid_index_,
-                              min(max(sum_prob, clamping_thres_min_), clamping_thres_max_),
-                              (lhs.color_ + rhs.color_) * 0.5);
+    const float prob_miss_log_;
+    const float prob_hit_log_;
+    const bool occupied_;
+    __device__ void operator() (const Eigen::Vector3i& voxel) {
+        size_t idx = IndexOf(voxel, resolution_);
+        float p = voxels_[idx].prob_log_;
+        p = (isnan(p)) ? 0 : p;
+        p += (occupied_) ? prob_hit_log_ : prob_miss_log_;
+        voxels_[idx].prob_log_ = min(max(p, clamping_thres_min_), clamping_thres_max_);
+        voxels_[idx].grid_index_ = voxel;
     }
 };
 
 }
 
-template class VoxelGridBase<OccupancyVoxel>;
+template class DenseGrid<OccupancyVoxel>;
 
 OccupancyGrid::OccupancyGrid()
- : VoxelGridBase<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, 0.05, Eigen::Vector3f::Zero()) {}
-OccupancyGrid::OccupancyGrid(float voxel_size, const Eigen::Vector3f& origin)
- : VoxelGridBase<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, voxel_size, origin) {}
+ : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, 0.05, 512, Eigen::Vector3f::Zero()) {}
+OccupancyGrid::OccupancyGrid(float voxel_size, int resolution, const Eigen::Vector3f& origin)
+ : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, voxel_size, resolution, origin) {}
 OccupancyGrid::~OccupancyGrid() {}
 OccupancyGrid::OccupancyGrid(const OccupancyGrid& other)
- : VoxelGridBase<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, other),
+ : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, other),
    clamping_thres_min_(other.clamping_thres_min_), clamping_thres_max_(other.clamping_thres_max_),
    prob_hit_log_(other.prob_hit_log_), prob_miss_log_(other.prob_miss_log_),
    occ_prob_thres_log_(other.occ_prob_thres_log_), visualize_free_area_(other.visualize_free_area_) {}
 
+Eigen::Vector3f OccupancyGrid::GetMinBound() const {
+    auto vs = ExtractKnownVoxels();
+    if (vs.empty()) return origin_;
+    OccupancyVoxel v = vs.front();
+    return (v.grid_index_ - Eigen::Vector3i::Constant(resolution_ / 2)).cast<float>() * voxel_size_ - origin_;
+}
+
+Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
+    auto vs = ExtractKnownVoxels();
+    if (vs.empty()) return origin_;
+    OccupancyVoxel v = vs.back();
+    return (v.grid_index_ - Eigen::Vector3i::Constant(resolution_ / 2 - 1)).cast<float>() * voxel_size_ - origin_;
+}
+
 bool OccupancyGrid::IsOccupied(const Eigen::Vector3f &point) const{
     auto idx = GetVoxelIndex(point);
     if (idx < 0) return false;
-    OccupancyVoxel voxel = voxels_values_[idx];
-    return voxel.prob_log_ > occ_prob_thres_log_;
+    OccupancyVoxel voxel = voxels_[idx];
+    return !std::isnan(voxel.prob_log_) && voxel.prob_log_ > occ_prob_thres_log_;
 }
 
 bool OccupancyGrid::IsUnknown(const Eigen::Vector3f &point) const{
     auto idx = GetVoxelIndex(point);
-    return idx < 0;
+    if (idx < 0) return true;
+    OccupancyVoxel voxel = voxels_[idx];
+    return std::isnan(voxel.prob_log_);
 }
 
 int OccupancyGrid::GetVoxelIndex(const Eigen::Vector3f& point) const {
     Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
-    Eigen::Vector3i voxel_idx = (Eigen::floor(voxel_f.array())).cast<int>();
-    auto itr = thrust::find(voxels_keys_.begin(), voxels_keys_.end(), voxel_idx);
-    if (itr == voxels_keys_.end()) return -1;
-    return thrust::distance(voxels_keys_.begin(), itr);
+    int h_res = resolution_ / 2;
+    Eigen::Vector3i voxel_idx = (Eigen::floor(voxel_f.array())).matrix().cast<int>() + Eigen::Vector3i::Constant(h_res);
+    int idx = IndexOf(voxel_idx, resolution_);
+    if (idx < 0 || idx >= resolution_ * resolution_ * resolution_) return -1;
+    return idx;
 }
 
 thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(const Eigen::Vector3f &point) const {
     auto idx = GetVoxelIndex(point);
     if (idx < 0) return thrust::make_tuple(false, OccupancyVoxel());
-    OccupancyVoxel voxel = voxels_values_[idx];
-    return thrust::make_tuple(true, voxel);
+    OccupancyVoxel voxel = voxels_[idx];
+    return thrust::make_tuple(!std::isnan(voxel.prob_log_), voxel);
 }
 
-OccupancyGrid& OccupancyGrid::ReconstructVoxels() {
-    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels_values_.begin());
+size_t OccupancyGrid::CountKnownVoxels() const {
+    return thrust::count_if(voxels_.begin(), voxels_.end(),
+        [] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_);
+        });
+}
+
+size_t OccupancyGrid::CountFreeVoxels() const {
+    return thrust::count_if(voxels_.begin(), voxels_.end(),
+        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_) && v.prob_log_ <= th;
+        });
+}
+
+size_t OccupancyGrid::CountOccupiedVoxels() const {
+    return thrust::count_if(voxels_.begin(), voxels_.end(),
+        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_) && v.prob_log_ > th;
+        });
+}
+
+utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractKnownVoxels() const {
+    size_t n_out = CountKnownVoxels();
+    utility::device_vector<OccupancyVoxel> out(n_out);
+    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
+        [] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_);
+        });
+    return out;
+}
+
+utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractFreeVoxels() const {
+    size_t n_out = CountFreeVoxels();
+    utility::device_vector<OccupancyVoxel> out(n_out);
+    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
+        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_) && v.prob_log_ <= th;
+        });
+    return out;
+}
+
+utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractOccupiedVoxels() const {
+    size_t n_out = CountOccupiedVoxels();
+    utility::device_vector<OccupancyVoxel> out(n_out);
+    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
+        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
+            return !isnan(v.prob_log_) && v.prob_log_ > th;
+        });
+    return out;
+}
+
+utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractKnownVoxelIndices() const{
+    size_t n_out = CountKnownVoxels();
+    utility::device_vector<Eigen::Vector3i> out(n_out);
+    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
+        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
+        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
+        [] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
+            float p = thrust::get<1>(x);
+            return !isnan(p);
+        });
+    return out;
+}
+
+utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractFreeVoxelIndices() const{
+    size_t n_out = CountFreeVoxels();
+    utility::device_vector<Eigen::Vector3i> out(n_out);
+    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
+        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
+        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
+        [th = occ_prob_thres_log_] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
+            float p = thrust::get<1>(x);
+            return !isnan(p) && p <= th;
+        });
+    return out;
+}
+
+utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractOccupiedVoxelIndices() const{
+    size_t n_out = CountOccupiedVoxels();
+    utility::device_vector<Eigen::Vector3i> out(n_out);
+    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
+        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
+        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
+        [th = occ_prob_thres_log_] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
+            float p = thrust::get<1>(x);
+            return !isnan(p) && p > th;
+        });
+    return out;
+}
+
+void OccupancyGrid::ExtractKnownVoxelIndices(utility::device_vector<Eigen::Vector3i>& indices) const {
+    indices = ExtractKnownVoxelIndices();
+}
+
+OccupancyGrid& OccupancyGrid::ReconstructVoxels(float voxel_size, int resolution) {
+    voxel_size_ = voxel_size;
+    resolution_ = resolution;
+    voxels_.resize(resolution_ * resolution_ * resolution_, OccupancyVoxel());
     return *this;
 }
 
@@ -229,13 +344,13 @@ OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3
                               return (pt - viewpoint) / n_div;
                           });
         // comupute free voxels
-        ComputeFreeVoxels(ranged_points, viewpoint, voxel_size_, origin_, steps, n_div + 1, free_voxels);
+        ComputeFreeVoxels(ranged_points, viewpoint, voxel_size_, resolution_, origin_, steps, n_div + 1, free_voxels);
     } else {
         thrust::copy(points.begin(), points.end(), ranged_points.begin());
         thrust::fill(hit_flags.begin(), hit_flags.end(), true);
     }
     // compute occupied voxels
-    ComputeOccupiedVoxels(ranged_points, hit_flags, voxel_size_, origin_, occupied_voxels);
+    ComputeOccupiedVoxels(ranged_points, hit_flags, voxel_size_, resolution_, origin_, occupied_voxels);
 
     if (n_div > 0) {
         utility::device_vector<Eigen::Vector3i> free_voxels_res(free_voxels.size());
@@ -243,7 +358,7 @@ OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3
                                           occupied_voxels.begin(), occupied_voxels.end(),
                                           free_voxels_res.begin());
         free_voxels_res.resize(thrust::distance(free_voxels_res.begin(), end));
-        AddVoxels(free_voxels_res, false, false);
+        AddVoxels(free_voxels_res, false);
     }
     AddVoxels(occupied_voxels, true);
     return *this;
@@ -262,44 +377,26 @@ OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud,
 }
 
 OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupied) {
-    auto itr = thrust::find(voxels_keys_.begin(), voxels_keys_.end(), voxel);
-    if (itr != voxels_keys_.end()) {
-        size_t idx = thrust::distance(voxels_keys_.begin(), itr);
-        OccupancyVoxel org_ov = voxels_values_[idx];
+    int idx = IndexOf(voxel, resolution_);
+    size_t max_idx = resolution_ * resolution_ * resolution_;
+    if (idx < 0 || idx >= max_idx) {
+        return *this;
+    } else {
+        OccupancyVoxel org_ov = voxels_[idx];
+        if (std::isnan(org_ov.prob_log_)) org_ov.prob_log_ = 0.0;
         org_ov.prob_log_ += (occupied) ? prob_hit_log_ : prob_miss_log_;
         org_ov.prob_log_ = std::min(std::max(org_ov.prob_log_, clamping_thres_min_), clamping_thres_max_);
-        voxels_values_[idx] = org_ov;
-    } else {
-        voxels_keys_.push_back(voxel);
-        voxels_values_.push_back(OccupancyVoxel(voxel, (occupied) ? prob_hit_log_ : prob_miss_log_));
-        thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
-                            voxels_values_.begin());
+        org_ov.grid_index_ = voxel;
+        voxels_[idx] = org_ov;
     }
     return *this;
 }
 
-OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied, bool reduce) {
-    size_t n_total = voxels_keys_.size() + voxels.size();
-    utility::device_vector<Eigen::Vector3i> new_voxels_keys(n_total);
-    utility::device_vector<OccupancyVoxel> new_voxels_values(n_total);
-    create_occupancy_voxel_functor func(prob_hit_log_, prob_miss_log_, occupied);
-    thrust::merge_by_key(voxels_keys_.begin(), voxels_keys_.end(), voxels.begin(), voxels.end(),
-                         voxels_values_.begin(), thrust::make_transform_iterator(voxels.begin(), func),
-                         new_voxels_keys.begin(), new_voxels_values.begin());
-    if (reduce) {
-        voxels_keys_.resize(n_total);
-        voxels_values_.resize(n_total);
-        auto end = thrust::reduce_by_key(new_voxels_keys.begin(), new_voxels_keys.end(),
-                                         new_voxels_values.begin(), voxels_keys_.begin(),
-                                         voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
-                                         add_occupancy_functor(clamping_thres_min_, clamping_thres_max_));
-        size_t out_size = thrust::distance(voxels_keys_.begin(), end.first);
-        voxels_keys_.resize(out_size);
-        voxels_values_.resize(out_size);
-    } else {
-        thrust::swap(voxels_keys_, new_voxels_keys);
-        thrust::swap(voxels_values_, new_voxels_values);
-    }
+OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
+    add_occupancy_functor func(thrust::raw_pointer_cast(voxels_.data()),
+                               resolution_, clamping_thres_min_, clamping_thres_max_,
+                               prob_miss_log_, prob_hit_log_, occupied);
+    thrust::for_each(voxels.begin(), voxels.end(), func);
     return *this;
 }
 

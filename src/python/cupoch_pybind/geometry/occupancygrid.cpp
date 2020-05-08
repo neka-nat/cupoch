@@ -11,10 +11,6 @@
 using namespace cupoch;
 
 void pybind_occupanygrid(py::module &m) {
-    py::class_<wrapper::OccupancyVoxelMap, std::shared_ptr<wrapper::OccupancyVoxelMap>> voxel_map(m, "DeviceOccupancyVoxelMap");
-    voxel_map.def(py::init<>())
-             .def("__len__", &wrapper::OccupancyVoxelMap::size)
-             .def("cpu", &wrapper::OccupancyVoxelMap::cpu);
     py::class_<geometry::OccupancyVoxel, std::shared_ptr<geometry::OccupancyVoxel>> voxel(
             m, "OccupancyVoxel", "Occupancy Voxel class, containing grid id, occupancy log odds and color");
     py::detail::bind_default_constructor<geometry::OccupancyVoxel>(voxel);
@@ -62,23 +58,26 @@ void pybind_occupanygrid(py::module &m) {
     py::detail::bind_default_constructor<geometry::OccupancyGrid>(occupancygrid);
     py::detail::bind_copy_functions<geometry::OccupancyGrid>(occupancygrid);
     occupancygrid
-            .def(py::init<float, const Eigen::Vector3f&>(),
-                 "Create a Occupancy grid", "voxel_size"_a, "origin"_a = Eigen::Vector3f::Zero())
+            .def(py::init<float, int, const Eigen::Vector3f&>(),
+                 "Create a Occupancy grid", "voxel_size"_a, "resolution"_a, "origin"_a = Eigen::Vector3f::Zero())
             .def("__repr__",
                  [](const geometry::OccupancyGrid &occupancygrid) {
                      return std::string("geometry::OccupancyGrid with ") +
-                            std::to_string(occupancygrid.voxels_keys_.size()) +
+                            std::to_string(occupancygrid.CountKnownVoxels()) +
                             " voxels.";
                  })
-            .def_property("voxels", [] (geometry::OccupancyGrid &og) {return wrapper::OccupancyVoxelMap(og.voxels_keys_, og.voxels_values_);},
-                                    [] (geometry::OccupancyGrid &og, const wrapper::OccupancyVoxelMap& map) {
-                                        wrapper::FromWrapper(og.voxels_keys_, og.voxels_values_, map);})
+            .def_property_readonly("voxels", [] (const geometry::OccupancyGrid &og) {
+                     wrapper::device_vector_vector3i out;
+                     og.ExtractKnownVoxelIndices(out.data_);
+                     return out;
+                 })
             .def("reconstruct_voxels", &geometry::OccupancyGrid::ReconstructVoxels,
                  "Resort voxel indices to insert observations correctly.")
             .def("insert", py::overload_cast<const geometry::PointCloud&, const Eigen::Vector3f&, float>(&geometry::OccupancyGrid::Insert),
                  "Function to insert occupancy grid from pointcloud.",
                  "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)
             .def_readwrite("voxel_size", &geometry::OccupancyGrid::voxel_size_)
+            .def_readwrite("resolution", &geometry::OccupancyGrid::resolution_)
             .def_readwrite("origin", &geometry::OccupancyGrid::origin_)
             .def_readwrite("clamping_thres_min", &geometry::OccupancyGrid::clamping_thres_min_)
             .def_readwrite("clamping_thres_max", &geometry::OccupancyGrid::clamping_thres_max_)

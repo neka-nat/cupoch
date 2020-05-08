@@ -2,7 +2,6 @@
 #include <thrust/host_vector.h>
 
 #include "cupoch/geometry/voxelgrid.h"
-#include "cupoch/geometry/occupancygrid.h"
 
 namespace cupoch {
 namespace wrapper {
@@ -76,11 +75,6 @@ template class device_map_wrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::
 template void FromWrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>(
     utility::device_vector<Eigen::Vector3i>& dk, utility::device_vector<geometry::Voxel>& dv,
     const device_map_wrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>& vec);
-
-template class device_map_wrapper<Eigen::Vector3i, geometry::OccupancyVoxel, hash<Eigen::Vector3i>>;
-template void FromWrapper<Eigen::Vector3i, geometry::OccupancyVoxel, hash<Eigen::Vector3i>>(
-    utility::device_vector<Eigen::Vector3i>& dk, utility::device_vector<geometry::OccupancyVoxel>& dv,
-    const device_map_wrapper<Eigen::Vector3i, geometry::OccupancyVoxel, hash<Eigen::Vector3i>>& vec);
 
 }
 }
