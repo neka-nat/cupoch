@@ -23,7 +23,6 @@ This library is based on the functionality of Open3D, with additional features f
     * Visual Odometry
     * Collision checking
     * Occupancy grid
-    * Distance transform
     * Path finding on graph structure
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
@@ -55,7 +54,7 @@ Please set up Jetson using [jetcard](https://github.com/NVIDIA-AI-IOT/jetcard) a
 
 ```
 sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
-pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.8/cupoch-0.0.8.0-cp36-cp36m-linux_aarch64.whl
+pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.0.9/cupoch-0.0.9.0-cp36-cp36m-linux_aarch64.whl
 ```
 
 ## Results
