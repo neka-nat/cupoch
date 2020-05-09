@@ -1,4 +1,5 @@
 #include "cupoch/geometry/occupancygrid.h"
+#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/geometry/densegrid.inl"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/boundingvolume.h"
@@ -19,7 +20,7 @@ __constant__ float voxel_offset[7][3] = {{0, 0, 0}, {1, 0, 0}, {-1, 0, 0},
 
 struct extract_index_and_prob_functor {
     __device__ thrust::tuple<Eigen::Vector3i, float> operator() (const OccupancyVoxel& v) const {
-        return thrust::make_tuple(v.grid_index_, v.prob_log_);
+        return thrust::make_tuple(v.grid_index_.cast<int>(), v.prob_log_);
     }
 };
 
@@ -151,7 +152,7 @@ struct add_occupancy_functor{
         p = (isnan(p)) ? 0 : p;
         p += (occupied_) ? prob_hit_log_ : prob_miss_log_;
         voxels_[idx].prob_log_ = min(max(p, clamping_thres_min_), clamping_thres_max_);
-        voxels_[idx].grid_index_ = voxel;
+        voxels_[idx].grid_index_ = voxel.cast<unsigned short>();
     }
 };
 
@@ -174,14 +175,14 @@ Eigen::Vector3f OccupancyGrid::GetMinBound() const {
     auto vs = ExtractKnownVoxels();
     if (vs.empty()) return origin_;
     OccupancyVoxel v = vs.front();
-    return (v.grid_index_ - Eigen::Vector3i::Constant(resolution_ / 2)).cast<float>() * voxel_size_ - origin_;
+    return (v.grid_index_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2)).cast<float>() * voxel_size_ - origin_;
 }
 
 Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
     auto vs = ExtractKnownVoxels();
     if (vs.empty()) return origin_;
     OccupancyVoxel v = vs.back();
-    return (v.grid_index_ - Eigen::Vector3i::Constant(resolution_ / 2 - 1)).cast<float>() * voxel_size_ - origin_;
+    return (v.grid_index_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2 - 1)).cast<float>() * voxel_size_ - origin_;
 }
 
 bool OccupancyGrid::IsOccupied(const Eigen::Vector3f &point) const{
@@ -386,7 +387,7 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupi
         if (std::isnan(org_ov.prob_log_)) org_ov.prob_log_ = 0.0;
         org_ov.prob_log_ += (occupied) ? prob_hit_log_ : prob_miss_log_;
         org_ov.prob_log_ = std::min(std::max(org_ov.prob_log_, clamping_thres_min_), clamping_thres_max_);
-        org_ov.grid_index_ = voxel;
+        org_ov.grid_index_ = voxel.cast<unsigned short>();
         voxels_[idx] = org_ov;
     }
     return *this;

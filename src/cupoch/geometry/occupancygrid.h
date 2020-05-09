@@ -1,25 +1,27 @@
 #pragma once
-#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/geometry/densegrid.h"
 
 namespace cupoch {
 
 namespace geometry {
+class PointCloud;
 
-class OccupancyVoxel : public Voxel {
+class OccupancyVoxel {
 public:
-    __host__ __device__ OccupancyVoxel() : Voxel(Eigen::Vector3f(0.0, 0.0, 1.0)) {}
+    __host__ __device__ OccupancyVoxel() {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index)
-        : Voxel(grid_index, Eigen::Vector3f(0.0, 0.0, 1.0)) {}
+        : grid_index_(grid_index.cast<unsigned short>()) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index, float prob_log)
-        : Voxel(grid_index, Eigen::Vector3f(0.0, 0.0, 1.0)), prob_log_(prob_log) {}
+        : grid_index_(grid_index.cast<unsigned short>()), prob_log_(prob_log) {}
     __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index,
                                        float prob_log,
                                        const Eigen::Vector3f &color)
-        : Voxel(grid_index, color), prob_log_(prob_log) {}
+        : grid_index_(grid_index.cast<unsigned short>()), color_(color), prob_log_(prob_log) {}
     __host__ __device__ ~OccupancyVoxel() {}
 
 public:
+    Eigen::Vector3ui16 grid_index_ = Eigen::Vector3ui16::Zero();
+    Eigen::Vector3f color_ = Eigen::Vector3f(0.0, 0.0, 1.0);
     float prob_log_ = std::numeric_limits<float>::quiet_NaN();
 };
 

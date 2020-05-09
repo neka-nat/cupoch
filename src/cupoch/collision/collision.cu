@@ -68,8 +68,8 @@ bool ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
                                    });
     utility::device_vector<Eigen::Vector3i> occupied_voxels(n_v2);
     auto begin_tr = thrust::make_transform_iterator(occgrid.voxels_.begin(),
-            [] __device__ (const geometry::OccupancyVoxel& voxel) {
-                return thrust::make_tuple(voxel.grid_index_, voxel.prob_log_);
+            [] __device__ (const geometry::OccupancyVoxel& voxel) -> thrust::tuple<Eigen::Vector3i, float> {
+                return thrust::make_tuple(voxel.grid_index_.cast<int>(), voxel.prob_log_);
             });
     auto begin_tp = make_tuple_iterator(occupied_voxels.begin(), thrust::make_discard_iterator());
     auto end = thrust::copy_if(begin_tr, begin_tr + occgrid.voxels_.size(), begin_tp,

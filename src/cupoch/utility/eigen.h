@@ -12,6 +12,8 @@ typedef Eigen::Matrix<float, 6, 1> Vector6f;
 typedef Eigen::Matrix<float, 4, 4, Eigen::DontAlign> Matrix4f_u;
 typedef Eigen::Matrix<float, 6, 6, Eigen::DontAlign> Matrix6f_u;
 
+typedef Eigen::Matrix<unsigned short, 3, 1> Vector3ui16;
+
 }  // namespace Eigen
 
 namespace cupoch {

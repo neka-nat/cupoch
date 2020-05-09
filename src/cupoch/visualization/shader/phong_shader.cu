@@ -183,12 +183,10 @@ struct occupancy_color_functor {
     __host__ __device__ ~occupancy_color_functor() {};
     __host__ __device__ occupancy_color_functor(const occupancy_color_functor& other)
      : occ_prob_thres_log_(other.occ_prob_thres_log_) {};
-    __device__ Eigen::Vector3f color(const geometry::Voxel& voxel) const {
-        geometry::OccupancyVoxel ocv = (const geometry::OccupancyVoxel &)voxel;
+    __device__ Eigen::Vector3f color(geometry::OccupancyVoxel ocv) const {
         return (ocv.prob_log_ > occ_prob_thres_log_) ? ocv.color_ : Eigen::Vector3f(0.0, 1.0, 0.0);
     }
-    __device__ float alpha(const geometry::Voxel& voxel) const {
-        geometry::OccupancyVoxel ocv = (const geometry::OccupancyVoxel &)voxel;
+    __device__ float alpha(geometry::OccupancyVoxel ocv) const {
         return (ocv.prob_log_ > occ_prob_thres_log_) ? 1.0 : 0.2;
     }
 };
