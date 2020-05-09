@@ -245,7 +245,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
                 voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
                 add_voxel_color_functor());
         resize_all(n_out, new_keys, voxels_values_);
-        voxels_keys_ = new_keys;
+        thrust::swap(voxels_keys_, new_keys);
         thrust::transform(voxels_values_.begin(), voxels_values_.end(),
                           counts.begin(), voxels_values_.begin(),
                           devide_voxel_color_functor());

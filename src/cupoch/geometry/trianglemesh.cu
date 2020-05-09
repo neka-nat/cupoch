@@ -920,7 +920,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
         k = thrust::distance(new_triangles.begin(), end);
     }
     new_triangles.resize(k);
-    triangles_ = new_triangles;
+    thrust::swap(triangles_, new_triangles);
     if (has_tri_normal) triangle_normals_.resize(k);
     if (k < old_triangle_num && HasEdgeList()) {
         ComputeEdgeList();
@@ -998,7 +998,7 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
         int* index_old_to_new_ptr = thrust::raw_pointer_cast(index_old_to_new.data());
         thrust::transform(thrust::device, tri_ptr, tri_ptr + triangles_.size() * 3, tri_new_ptr,
                           [index_old_to_new_ptr] __device__ (int idx) { return index_old_to_new_ptr[idx]; } );
-        triangles_ = new_tri;
+        thrust::swap(triangles_, new_tri);
         if (HasEdgeList()) {
             ComputeEdgeList();
         }

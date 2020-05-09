@@ -20,6 +20,10 @@ public:
     typedef utility::device_vector<SSSPResult> SSSPResultArray;
     typedef thrust::host_vector<SSSPResult> SSSPResultHostArray;
 
+    typedef thrust::tuple<Eigen::Vector2i, float, Eigen::Vector3f> EdgeWeightColor;
+    typedef thrust::tuple<Eigen::Vector2i, Eigen::Vector3f> EdgeColor;
+    typedef thrust::tuple<Eigen::Vector2i, float> EdgeWeight;
+
     Graph();
     Graph(const utility::device_vector<Eigen::Vector3f> &points);
     Graph(const thrust::host_vector<Eigen::Vector3f> &points);
