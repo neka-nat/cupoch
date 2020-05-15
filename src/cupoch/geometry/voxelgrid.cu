@@ -350,11 +350,9 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             depth_map.height_, depth_map.num_of_channels_,
             depth_map.bytes_per_channel_, voxel_size_, origin_, intrinsic, rot,
             trans, keep_voxels_outside_image);
-    auto begin =
-            make_tuple_iterator(voxels_keys_.begin(), voxels_values_.begin());
+    auto begin = make_tuple_begin(voxels_keys_, voxels_values_);
     auto end = thrust::remove_if(
-            begin,
-            make_tuple_iterator(voxels_keys_.end(), voxels_values_.end()),
+            begin, make_tuple_end(voxels_keys_, voxels_values_),
             func);
     resize_all(thrust::distance(begin, end), voxels_keys_, voxels_values_);
     return *this;
@@ -383,11 +381,9 @@ VoxelGrid &VoxelGrid::CarveSilhouette(
             silhouette_mask.num_of_channels_,
             silhouette_mask.bytes_per_channel_, voxel_size_, origin_, intrinsic,
             rot, trans, keep_voxels_outside_image);
-    auto begin =
-            make_tuple_iterator(voxels_keys_.begin(), voxels_values_.begin());
+    auto begin = make_tuple_begin(voxels_keys_, voxels_values_);
     auto end = thrust::remove_if(
-            begin,
-            make_tuple_iterator(voxels_keys_.end(), voxels_values_.end()),
+            begin, make_tuple_end(voxels_keys_, voxels_values_),
             func);
     resize_all(thrust::distance(begin, end), voxels_keys_, voxels_values_);
     return *this;

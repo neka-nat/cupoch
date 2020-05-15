@@ -123,8 +123,8 @@ void FilterSmoothLaplacianHelper(
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
                               thrust::make_discard_iterator(),
                               vertex_sums.begin(), edge_first_eq_functor());
-        thrust::transform(make_tuple_iterator(prev_vertices.begin(), total_weights.begin(), vertex_sums.begin()),
-                          make_tuple_iterator(prev_vertices.end(), total_weights.end(), vertex_sums.end()),
+        thrust::transform(make_tuple_begin(prev_vertices, total_weights, vertex_sums),
+                          make_tuple_end(prev_vertices, total_weights, vertex_sums),
                           mesh->vertices_.begin(), filter_fn);
     }
     if (filter_normal) {
@@ -134,8 +134,8 @@ void FilterSmoothLaplacianHelper(
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
                               thrust::make_discard_iterator(),
                               normal_sums.begin(), edge_first_eq_functor());
-        thrust::transform(make_tuple_iterator(prev_vertex_normals.begin(), total_weights.begin(), normal_sums.begin()),
-                          make_tuple_iterator(prev_vertex_normals.end(), total_weights.end(), normal_sums.end()),
+        thrust::transform(make_tuple_begin(prev_vertex_normals, total_weights, normal_sums),
+                          make_tuple_end(prev_vertex_normals, total_weights, normal_sums),
                           mesh->vertex_normals_.begin(), filter_fn);
     }
     if (filter_color) {
@@ -145,8 +145,8 @@ void FilterSmoothLaplacianHelper(
                               thrust::make_transform_iterator(make_tuple_iterator(pmitr, weights.begin()), weighted_vec_functor()),
                               thrust::make_discard_iterator(),
                               color_sums.begin(), edge_first_eq_functor());
-        thrust::transform(make_tuple_iterator(prev_vertex_colors.begin(), total_weights.begin(), color_sums.begin()),
-                          make_tuple_iterator(prev_vertex_colors.end(), total_weights.end(), color_sums.end()),
+        thrust::transform(make_tuple_begin(prev_vertex_colors, total_weights, color_sums),
+                          make_tuple_end(prev_vertex_colors, total_weights, color_sums),
                           mesh->vertex_colors_.begin(), filter_fn);
     }
 }
@@ -506,8 +506,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   vertex_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertices.begin(), counts.begin(), vertex_sums.begin()),
-                              make_tuple_iterator(prev_vertices.end(), counts.end(), vertex_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertices, counts, vertex_sums),
+                              make_tuple_end(prev_vertices, counts, vertex_sums),
                               mesh->vertices_.begin(), filter_fn);
         }
         if (filter_normal) {
@@ -516,8 +516,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   normal_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertex_normals.begin(), counts.begin(), normal_sums.begin()),
-                              make_tuple_iterator(prev_vertex_normals.end(), counts.end(), normal_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertex_normals, counts, normal_sums),
+                              make_tuple_end(prev_vertex_normals, counts, normal_sums),
                               mesh->vertex_normals_.begin(), filter_fn);
         }
         if (filter_color) {
@@ -526,8 +526,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   color_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertex_colors.begin(), counts.begin(), color_sums.begin()),
-                              make_tuple_iterator(prev_vertex_colors.end(), counts.end(), color_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertex_colors, counts, color_sums),
+                              make_tuple_end(prev_vertex_colors, counts, color_sums),
                               mesh->vertex_colors_.begin(), filter_fn);
         }
         if (iter < number_of_iterations - 1) {
@@ -585,8 +585,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   vertex_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertices.begin(), counts.begin(), vertex_sums.begin()),
-                              make_tuple_iterator(prev_vertices.end(), counts.end(), vertex_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertices, counts, vertex_sums),
+                              make_tuple_end(prev_vertices, counts, vertex_sums),
                               mesh->vertices_.begin(), filter_fn);
         }
         if (filter_normal) {
@@ -595,8 +595,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   normal_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertex_normals.begin(), counts.begin(), normal_sums.begin()),
-                              make_tuple_iterator(prev_vertex_normals.end(), counts.end(), normal_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertex_normals, counts, normal_sums),
+                              make_tuple_end(prev_vertex_normals, counts, normal_sums),
                               mesh->vertex_normals_.begin(), filter_fn);
         }
         if (filter_color) {
@@ -605,8 +605,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
             thrust::reduce_by_key(mesh->edge_list_.begin(), mesh->edge_list_.end(),
                                   pmitr, thrust::make_discard_iterator(),
                                   color_sums.begin(), edge_first_eq_functor());
-            thrust::transform(make_tuple_iterator(prev_vertex_colors.begin(), counts.begin(), color_sums.begin()),
-                              make_tuple_iterator(prev_vertex_colors.end(), counts.end(), color_sums.end()),
+            thrust::transform(make_tuple_begin(prev_vertex_colors, counts, color_sums),
+                              make_tuple_end(prev_vertex_colors, counts, color_sums),
                               mesh->vertex_colors_.begin(), filter_fn);
         }
         if (iter < number_of_iterations - 1) {
@@ -835,19 +835,17 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     size_t k = 0;
     if (has_vert_normal && has_vert_color) {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(),
-                            make_tuple_iterator(index_new_to_old.begin(),
-                                                vertex_normals_.begin(),
-                                                vertex_colors_.begin()));
+                            make_tuple_begin(index_new_to_old, vertex_normals_, vertex_colors_));
         auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
                                           thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
         thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(), idx_offsets.begin());
-        auto begin = make_tuple_iterator(vertex_normals_.begin(), vertex_colors_.begin());
+        auto begin = make_tuple_begin(vertex_normals_, vertex_colors_);
         auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(), begin);
         k = thrust::distance(begin, end1.second);
     } else if (has_vert_normal) {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(),
-                            make_tuple_iterator(index_new_to_old.begin(), vertex_normals_.begin()));
+                            make_tuple_begin(index_new_to_old, vertex_normals_));
         auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
                                           thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
@@ -856,7 +854,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
         k = thrust::distance(vertex_normals_.begin(), end1.second);
     } else if (has_vert_color) {
         thrust::sort_by_key(vertices_.begin(), vertices_.end(),
-                            make_tuple_iterator(index_new_to_old.begin(), vertex_colors_.begin()));
+                            make_tuple_begin(index_new_to_old, vertex_colors_));
         auto end0 = thrust::reduce_by_key(vertices_.begin(), vertices_.end(), thrust::make_constant_iterator<int>(1),
                                           thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) + 1);
@@ -949,38 +947,36 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     size_t k = 0;                                  // new index
     if (!has_vert_normal && !has_vert_color) {
         check_ref_functor<int, Eigen::Vector3f> func;
-        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
-                                         vertices_.begin());
+        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old, vertices_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
-                                           vertices_.end()),
+                begin, make_tuple_end(vertex_has_reference, index_new_to_old, vertices_),
                 func);
         k = thrust::distance(begin, end);
     } else if (has_vert_normal && !has_vert_color) {
         check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
-                                         vertices_.begin(), vertex_normals_.begin());
+        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_normals_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
-                                           vertices_.end(), vertex_normals_.end()),
+                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_normals_),
                 func);
         k = thrust::distance(begin, end);
     } else if (!has_vert_normal && has_vert_color) {
         check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
-                                         vertices_.begin(), vertex_colors_.begin());
+        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_colors_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
-                                           vertices_.end(), vertex_colors_.end()),
+                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_colors_),
                 func);
         k = thrust::distance(begin, end);
     } else {
         check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_iterator(vertex_has_reference.begin(), index_new_to_old.begin(),
-                                         vertices_.begin(), vertex_normals_.begin(), vertex_colors_.begin());
+        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_normals_, vertex_colors_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(vertex_has_reference.end(), index_new_to_old.end(),
-                                           vertices_.end(), vertex_normals_.end(), vertex_colors_.end()),
+                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
+                                      vertices_, vertex_normals_, vertex_colors_),
                 func);
         k = thrust::distance(begin, end);
     }
@@ -1033,18 +1029,15 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
     size_t k = 0;
     if (!has_tri_normal) {
         check_ref_functor<Eigen::Vector3i> func;
-        auto begin = make_tuple_iterator(is_degenerate.begin(), triangles_.begin());
+        auto begin = make_tuple_begin(is_degenerate, triangles_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(is_degenerate.end(), triangles_.end()),
-                func);
+                begin, make_tuple_end(is_degenerate, triangles_), func);
         k = thrust::distance(begin, end);
     } else {
         check_ref_functor<Eigen::Vector3i, Eigen::Vector3f> func;
-        auto begin = make_tuple_iterator(is_degenerate.begin(), triangles_.begin(),
-                                         triangle_normals_.begin());
+        auto begin = make_tuple_begin(is_degenerate, triangles_, triangle_normals_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(is_degenerate.end(), triangles_.end(),
-                                           triangle_normals_.end()),
+                begin, make_tuple_end(is_degenerate, triangles_, triangle_normals_),
                 func);
         k = thrust::distance(begin, end);
     }

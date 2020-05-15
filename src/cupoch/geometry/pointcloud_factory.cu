@@ -169,11 +169,8 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
             scale, project_valid_depth_only);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(num_valid_pixels),
-                      make_tuple_iterator(pointcloud->points_.begin(),
-                                          pointcloud->colors_.begin()),
+                      make_tuple_begin(pointcloud->points_, pointcloud->colors_),
                       func);
-    auto begin = make_tuple_iterator(pointcloud->points_.begin(),
-                                     pointcloud->colors_.begin());
     pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, true);
     return pointcloud;
 }

@@ -179,8 +179,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                 IteratorTuple;
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f>(
-                keys, make_tuple_iterator(sorted_points.begin()),
-                make_tuple_iterator(output->points_.begin()));
+                keys, make_tuple_begin(sorted_points),
+                make_tuple_begin(output->points_));
         output->points_.resize(n_out);
     } else if (has_normals && !has_colors) {
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
@@ -192,10 +192,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto n_out =
                 CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(
                         keys,
-                        make_tuple_iterator(sorted_points.begin(),
-                                            sorted_normals.begin()),
-                        make_tuple_iterator(output->points_.begin(),
-                                            output->normals_.begin()));
+                        make_tuple_begin(sorted_points, sorted_normals),
+                        make_tuple_begin(output->points_, output->normals_));
         resize_all(n_out, output->points_, output->normals_);
         thrust::for_each(
                 output->normals_.begin(), output->normals_.end(),
@@ -210,10 +208,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto n_out =
                 CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(
                         keys,
-                        make_tuple_iterator(sorted_points.begin(),
-                                            sorted_colors.begin()),
-                        make_tuple_iterator(output->points_.begin(),
-                                            output->colors_.begin()));
+                        make_tuple_begin(sorted_points, sorted_colors),
+                        make_tuple_begin(output->points_, output->colors_));
         resize_all(n_out, output->points_, output->colors_);
     } else {
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
@@ -228,12 +224,10 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f,
                                       Eigen::Vector3f, Eigen::Vector3f>(
                 keys,
-                make_tuple_iterator(sorted_points.begin(),
-                                    sorted_normals.begin(),
-                                    sorted_colors.begin()),
-                make_tuple_iterator(output->points_.begin(),
-                                    output->normals_.begin(),
-                                    output->colors_.begin()));
+                make_tuple_begin(sorted_points, sorted_normals,
+                                 sorted_colors),
+                make_tuple_begin(output->points_, output->normals_,
+                                 output->colors_));
         resize_all(n_out, output->points_, output->normals_, output->colors_);
         thrust::for_each(
                 output->normals_.begin(), output->normals_.end(),

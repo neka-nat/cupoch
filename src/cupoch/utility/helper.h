@@ -184,6 +184,26 @@ thrust::zip_iterator<thrust::tuple<Args...>> make_tuple_iterator(
     return thrust::make_zip_iterator(thrust::make_tuple(args...));
 }
 
+template <class... Args>
+auto make_tuple_begin(const Args &... args) {
+    return make_tuple_iterator(std::begin(args)...);
+}
+
+template <class... Args>
+auto make_tuple_begin(Args &... args) {
+    return make_tuple_iterator(std::begin(args)...);
+}
+
+template <class... Args>
+auto make_tuple_end(const Args &... args) {
+    return make_tuple_iterator(std::end(args)...);
+}
+
+template <class... Args>
+auto make_tuple_end(Args &... args) {
+    return make_tuple_iterator(std::end(args)...);
+}
+
 template <class T>
 void resize_fn(size_t new_size, T& a){ a.resize(new_size); }
 

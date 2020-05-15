@@ -109,8 +109,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
         if (h_visited[i] != 1) {
             thrust::fill_n(make_tuple_iterator(visited.begin() + i, clusters.begin() + i),
                            1, thrust::make_tuple(1, cluster));
-            thrust::fill(make_tuple_iterator(xa.begin(), fa.begin()),
-                         make_tuple_iterator(xa.end(), fa.end()), thrust::make_tuple(0, 0));
+            thrust::fill(make_tuple_begin(xa, fa), make_tuple_end(xa, fa), thrust::make_tuple(0, 0));
             fa[i] = 1;
             while (thrust::find(fa.begin(), fa.end(), 1) != fa.end()) {
                 bfs_functor bfs_func(thrust::raw_pointer_cast(vertex_degrees.data()),

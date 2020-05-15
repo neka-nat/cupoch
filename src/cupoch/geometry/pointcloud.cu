@@ -205,26 +205,24 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
         k = thrust::distance(points_.begin(), end);
     } else if (has_normal && !has_color) {
         check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
-        auto begin = make_tuple_iterator(points_.begin(), normals_.begin());
+        auto begin = make_tuple_begin(points_, normals_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(points_.end(), normals_.end()),
+                begin, make_tuple_end(points_, normals_),
                 func);
         k = thrust::distance(begin, end);
     } else if (!has_normal && has_color) {
         check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
-        auto begin = make_tuple_iterator(points_.begin(), colors_.begin());
+        auto begin = make_tuple_begin(points_, colors_);
         auto end = thrust::remove_if(
-                begin, make_tuple_iterator(points_.end(), colors_.end()), func);
+                begin, make_tuple_end(points_, colors_), func);
         k = thrust::distance(begin, end);
     } else {
         check_nan_functor<Eigen::Vector3f, Eigen::Vector3f> func(
                 remove_nan, remove_infinite);
-        auto begin = make_tuple_iterator(points_.begin(), normals_.begin(),
-                                         colors_.begin());
+        auto begin = make_tuple_begin(points_, normals_, colors_);
         auto end = thrust::remove_if(
                 begin,
-                make_tuple_iterator(points_.end(), normals_.end(),
-                                    colors_.end()),
+                make_tuple_end(points_, normals_, colors_),
                 func);
         k = thrust::distance(begin, end);
     }

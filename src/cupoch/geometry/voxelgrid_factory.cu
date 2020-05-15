@@ -137,8 +137,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
     create_dense_functor func(num_h, num_d);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator<size_t>(n_total),
-                      make_tuple_iterator(output->voxels_keys_.begin(),
-                                          output->voxels_values_.begin()),
+                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
                       func);
     thrust::sort_by_key(output->voxels_keys_.begin(),
                         output->voxels_keys_.end(),
@@ -175,13 +174,13 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         thrust::transform(
                 input.points_.begin(), input.points_.end(),
                 thrust::make_constant_iterator(Eigen::Vector3f(0.0, 0.0, 0.0)),
-                make_tuple_iterator(voxels_keys.begin(), voxels_values.begin()),
+                make_tuple_begin(voxels_keys, voxels_values),
                 func);
     } else {
         thrust::transform(
                 input.points_.begin(), input.points_.end(),
                 input.colors_.begin(),
-                make_tuple_iterator(voxels_keys.begin(), voxels_values.begin()),
+                make_tuple_begin(voxels_keys, voxels_values),
                 func);
     }
     thrust::sort_by_key(voxels_keys.begin(), voxels_keys.end(),
@@ -246,15 +245,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
     resize_all(n_total, output->voxels_keys_, output->voxels_values_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
-                      make_tuple_iterator(output->voxels_keys_.begin(),
-                                          output->voxels_values_.begin()),
+                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
                       func);
-    auto begin = make_tuple_iterator(output->voxels_keys_.begin(),
-                                     output->voxels_values_.begin());
+    auto begin = make_tuple_begin(output->voxels_keys_, output->voxels_values_);
     auto end = thrust::remove_if(
             begin,
-            make_tuple_iterator(output->voxels_keys_.end(),
-                                output->voxels_values_.end()),
+            make_tuple_end(output->voxels_keys_, output->voxels_values_),
             [] __device__(
                     const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
                     -> bool {
