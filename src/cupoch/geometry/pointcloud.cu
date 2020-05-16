@@ -20,7 +20,7 @@ struct check_nan_functor {
     const bool remove_nan_;
     const bool remove_infinite_;
     __device__ bool operator()(
-            const thrust::tuple<Eigen::Vector3f, Args...> &x) const {
+            const thrust::tuple<Args...> &x) const {
         const Eigen::Vector3f &point = thrust::get<0>(x);
         bool is_nan = remove_nan_ &&
                       (isnan(point(0)) || isnan(point(1)) || isnan(point(2)));
@@ -200,35 +200,17 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     size_t old_point_num = points_.size();
     size_t k = 0;
     if (!has_normal && !has_color) {
-        check_nan_functor<> func(remove_nan, remove_infinite);
-        auto end = thrust::remove_if(points_.begin(), points_.end(), func);
-        k = thrust::distance(points_.begin(), end);
+        remove_if_vectors(check_nan_functor<Eigen::Vector3f>(remove_nan, remove_infinite), points_);
     } else if (has_normal && !has_color) {
-        check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
-        auto begin = make_tuple_begin(points_, normals_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(points_, normals_),
-                func);
-        k = thrust::distance(begin, end);
+        remove_if_vectors(check_nan_functor<Eigen::Vector3f, Eigen::Vector3f>(remove_nan, remove_infinite),
+                points_, normals_);
     } else if (!has_normal && has_color) {
-        check_nan_functor<Eigen::Vector3f> func(remove_nan, remove_infinite);
-        auto begin = make_tuple_begin(points_, colors_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(points_, colors_), func);
-        k = thrust::distance(begin, end);
+        remove_if_vectors(check_nan_functor<Eigen::Vector3f, Eigen::Vector3f>(remove_nan, remove_infinite),
+                points_, colors_);
     } else {
-        check_nan_functor<Eigen::Vector3f, Eigen::Vector3f> func(
-                remove_nan, remove_infinite);
-        auto begin = make_tuple_begin(points_, normals_, colors_);
-        auto end = thrust::remove_if(
-                begin,
-                make_tuple_end(points_, normals_, colors_),
-                func);
-        k = thrust::distance(begin, end);
+        remove_if_vectors(check_nan_functor<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>(remove_nan, remove_infinite),
+                points_, normals_, colors_);
     }
-    points_.resize(k);
-    if (has_normal) normals_.resize(k);
-    if (has_color) colors_.resize(k);
     utility::LogDebug(
             "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));

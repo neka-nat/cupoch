@@ -1,6 +1,7 @@
 #pragma once
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
+#include <thrust/remove.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/type_traits/integer_sequence.h>
 
@@ -210,6 +211,20 @@ void resize_fn(size_t new_size, T& a){ a.resize(new_size); }
 template <class... Args>
 void resize_all(size_t new_size, Args &... args) {
     std::initializer_list<int>{((void)resize_fn(new_size, args), 0)...};
+}
+
+template <class Func, class... Args>
+void remove_if_vectors(Func fn, utility::device_vector<Args>&... args) {
+    auto begin = make_tuple_begin(args...);
+    auto end = thrust::remove_if(begin, make_tuple_end(args...), fn);
+    resize_all(thrust::distance(begin, end), args...);
+}
+
+template <class Func, class... Args>
+size_t remove_if_vectors_without_resize(Func fn, utility::device_vector<Args>&... args) {
+    auto begin = make_tuple_begin(args...);
+    auto end = thrust::remove_if(begin, make_tuple_end(args...), fn);
+    return thrust::distance(begin, end);
 }
 
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {

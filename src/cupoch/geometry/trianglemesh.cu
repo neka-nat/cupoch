@@ -154,7 +154,7 @@ void FilterSmoothLaplacianHelper(
 template <class... Args>
 struct check_ref_functor {
     __device__ bool operator()(
-            const thrust::tuple<bool, Args...> &x) const {
+            const thrust::tuple<Args...> &x) const {
         const bool ref = thrust::get<0>(x);
         return !ref;
     }
@@ -944,41 +944,18 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     size_t old_vertex_num = vertices_.size();
     utility::device_vector<int> index_new_to_old(old_vertex_num);
     thrust::sequence(index_new_to_old.begin(), index_new_to_old.end(), 0);
-    size_t k = 0;                                  // new index
+    size_t k = 0;
     if (!has_vert_normal && !has_vert_color) {
-        check_ref_functor<int, Eigen::Vector3f> func;
-        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old, vertices_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(vertex_has_reference, index_new_to_old, vertices_),
-                func);
-        k = thrust::distance(begin, end);
+        k = remove_if_vectors_without_resize(check_ref_functor<bool, int, Eigen::Vector3f>(), vertex_has_reference, index_new_to_old, vertices_);
     } else if (has_vert_normal && !has_vert_color) {
-        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_normals_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_normals_),
-                func);
-        k = thrust::distance(begin, end);
+        k = remove_if_vectors_without_resize(check_ref_functor<bool, int, Eigen::Vector3f, Eigen::Vector3f>(),
+            vertex_has_reference, index_new_to_old, vertices_, vertex_normals_);
     } else if (!has_vert_normal && has_vert_color) {
-        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_colors_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_colors_),
-                func);
-        k = thrust::distance(begin, end);
+        k = remove_if_vectors_without_resize(check_ref_functor<bool, int, Eigen::Vector3f, Eigen::Vector3f>(),
+            vertex_has_reference, index_new_to_old, vertices_, vertex_colors_);
     } else {
-        check_ref_functor<int, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> func;
-        auto begin = make_tuple_begin(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_normals_, vertex_colors_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(vertex_has_reference, index_new_to_old,
-                                      vertices_, vertex_normals_, vertex_colors_),
-                func);
-        k = thrust::distance(begin, end);
+        k = remove_if_vectors_without_resize(check_ref_functor<bool, int, Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>(),
+            vertex_has_reference, index_new_to_old, vertices_, vertex_normals_, vertex_colors_);
     }
     vertices_.resize(k);
     if (has_vert_normal) vertex_normals_.resize(k);
@@ -1026,23 +1003,13 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
                             ref_ptr[i] = true;
                         }
                      });
-    size_t k = 0;
     if (!has_tri_normal) {
-        check_ref_functor<Eigen::Vector3i> func;
-        auto begin = make_tuple_begin(is_degenerate, triangles_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(is_degenerate, triangles_), func);
-        k = thrust::distance(begin, end);
+        remove_if_vectors(check_ref_functor<bool, Eigen::Vector3i>(), is_degenerate, triangles_);
     } else {
-        check_ref_functor<Eigen::Vector3i, Eigen::Vector3f> func;
-        auto begin = make_tuple_begin(is_degenerate, triangles_, triangle_normals_);
-        auto end = thrust::remove_if(
-                begin, make_tuple_end(is_degenerate, triangles_, triangle_normals_),
-                func);
-        k = thrust::distance(begin, end);
+        remove_if_vectors(check_ref_functor<bool, Eigen::Vector3i, Eigen::Vector3f>(),
+                is_degenerate, triangles_, triangle_normals_);
     }
-    triangles_.resize(k);
-    if (has_tri_normal) triangle_normals_.resize(k);
+    size_t k = triangles_.size();
     if (k < old_triangle_num && HasEdgeList()) {
         ComputeEdgeList();
     }

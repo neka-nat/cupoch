@@ -567,9 +567,8 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::ExtractPointCloud() {
     pointcloud->normals_.resize(n_valid_voxels);
     pointcloud->colors_.resize(n_valid_voxels);
     size_t n_total = (resolution_ - 2) * (resolution_ - 2) * (resolution_ - 2) * 3;
-    auto begin = make_tuple_iterator(pointcloud->points_.begin(),
-                                     pointcloud->normals_.begin(),
-                                     pointcloud->colors_.begin());
+    auto begin = make_tuple_begin(pointcloud->points_, pointcloud->normals_,
+                                  pointcloud->colors_);
     auto end_p = thrust::copy_if(thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func),
                                  thrust::make_transform_iterator(thrust::make_counting_iterator(n_total), func),
                                  begin,
@@ -600,14 +599,13 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     thrust::copy_if(
             thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func0),
             thrust::make_transform_iterator(thrust::make_counting_iterator(res3), func0),
-            make_tuple_iterator(keys.begin(), cube_indices.begin()),
+            make_tuple_begin(keys, cube_indices),
             [] __device__ (const thrust::tuple<Eigen::Vector3i, int>& x) {
                 return thrust::get<1>(x) >= 0;
             });
-    auto begin1 = make_tuple_iterator(keys.begin(), cube_indices.begin());
+    auto begin1 = make_tuple_begin(keys, cube_indices);
     auto end1 = thrust::remove_if(
-            begin1,
-            make_tuple_iterator(keys.end(), cube_indices.end()),
+            begin1, make_tuple_end(keys, cube_indices),
             [] __device__(
                     const thrust::tuple<Eigen::Vector3i, int> &x) -> bool {
                 int cidx = thrust::get<1>(x);
@@ -623,7 +621,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                                       resolution_, color_type_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_result1 * 8),
-                      make_tuple_iterator(fs.begin(), cs.begin()), func1);
+                      make_tuple_begin(fs, cs), func1);
 
     // compute vertices and vertex_colors
     int* ci_p = thrust::raw_pointer_cast(cube_indices.data());
@@ -647,11 +645,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     thrust::copy_if(
             thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func2),
             thrust::make_transform_iterator(thrust::make_counting_iterator(n_result1 * 12), func2),
-            make_tuple_iterator(repeat_keys.begin(),
-                                repeat_cube_indices.begin(),
-                                vert_no.begin(),
-                                mesh->vertices_.begin(),
-                                mesh->vertex_colors_.begin()),
+            make_tuple_begin(repeat_keys, repeat_cube_indices, vert_no,
+                             mesh->vertices_, mesh->vertex_colors_),
             [] __device__ (const thrust::tuple<Eigen::Vector3i, int, int, Eigen::Vector3f, Eigen::Vector3f>& x) {
                 return thrust::get<0>(x)[0] >= 0;
             });
@@ -695,7 +690,7 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
     thrust::copy_if(
             thrust::make_transform_iterator(voxels_.begin(), func),
             thrust::make_transform_iterator(voxels_.end(), func),
-            make_tuple_iterator(voxel->points_.begin(), voxel->colors_.begin()),
+            make_tuple_begin(voxel->points_, voxel->colors_),
             [] __device__ (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& x) {
                 const Eigen::Vector3f& pt = thrust::get<0>(x);
                 return !(isnan(pt(0)) || isnan(pt(1)) || isnan(pt(2)));
@@ -717,8 +712,7 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     extract_voxel_grid_functor func(resolution_);
     thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), func),
                     thrust::make_transform_iterator(voxels_.end(), func),
-                    make_tuple_iterator(voxel_grid->voxels_keys_.begin(),
-                                        voxel_grid->voxels_values_.begin()),
+                    make_tuple_begin(voxel_grid->voxels_keys_, voxel_grid->voxels_values_),
                     [] __device__ (const thrust::tuple<Eigen::Vector3i, geometry::Voxel>& x) {
                         return thrust::get<0>(x) != Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
                             geometry::INVALID_VOXEL_INDEX, geometry::INVALID_VOXEL_INDEX);

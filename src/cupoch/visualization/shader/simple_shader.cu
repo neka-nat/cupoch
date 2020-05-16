@@ -344,8 +344,8 @@ bool SimpleShaderForPointCloud::PrepareBinding(
     }
     copy_pointcloud_functor func(pointcloud.HasColors(), option.point_color_option_, view);
     if (pointcloud.HasColors()) {
-        thrust::transform(make_tuple_iterator(pointcloud.points_.begin(), pointcloud.colors_.begin()),
-                          make_tuple_iterator(pointcloud.points_.end(), pointcloud.colors_.end()),
+        thrust::transform(make_tuple_begin(pointcloud.points_, pointcloud.colors_),
+                          make_tuple_end(pointcloud.points_, pointcloud.colors_),
                           make_tuple_iterator(points, colors), func);
     } else {
         thrust::transform(make_tuple_iterator(pointcloud.points_.begin(),
@@ -445,8 +445,8 @@ bool SimpleShaderForGraphNode::PrepareBinding(
     }
     copy_pointcloud_functor func(graph.HasColors(), option.point_color_option_, view);
     if (graph.HasNodeColors()) {
-        thrust::transform(make_tuple_iterator(graph.points_.begin(), graph.node_colors_.begin()),
-                          make_tuple_iterator(graph.points_.end(), graph.node_colors_.end()),
+        thrust::transform(make_tuple_begin(graph.points_, graph.node_colors_),
+                          make_tuple_end(graph.points_, graph.node_colors_),
                           make_tuple_iterator(points, colors), func);
     } else {
         thrust::transform(make_tuple_iterator(graph.points_.begin(),

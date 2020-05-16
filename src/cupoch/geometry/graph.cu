@@ -102,6 +102,19 @@ struct compare_path_length_functor {
     }
 };
 
+
+template <class... Args>
+struct check_edge_functor {
+    check_edge_functor(const Eigen::Vector2i& edge, bool is_directed)
+    : edge_(edge), is_directed_(is_directed) {};
+    const Eigen::Vector2i edge_;
+    const bool is_directed_;
+    __device__ bool operator() (const thrust::tuple<Args...> &x) const {
+        const Eigen::Vector2i& l = thrust::get<0>(x);
+        return l == edge_ || (!is_directed_ && l == Eigen::Vector2i(edge_[1], edge_[0]));
+    }
+};
+
 }
 
 Graph::Graph() : LineSet(Geometry::GeometryType::Graph) {}
@@ -226,39 +239,15 @@ Graph &Graph::AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
 Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
     bool has_colors = HasColors();
     bool has_weights = HasWeights();
-    auto check_edge = [edge, is_directed = is_directed_] __device__ (const Eigen::Vector2i& l) -> bool {
-        return l == edge || (!is_directed && l == Eigen::Vector2i(edge[1], edge[0]));
-    };
     if (has_colors && has_weights) {
-        auto begin = make_tuple_iterator(lines_.begin(), edge_weights_.begin(), colors_.begin());
-        auto end = thrust::remove_if(begin,
-                make_tuple_iterator(lines_.end(), edge_weights_.end(), colors_.end()),
-                [check_edge] __device__ (const EdgeWeightColor &x) {
-                    return check_edge(thrust::get<0>(x));
-                });
-        resize_all(thrust::distance(begin, end), lines_, edge_weights_, colors_);
+        remove_if_vectors(check_edge_functor<Eigen::Vector2i, float, Eigen::Vector3f>(edge, is_directed_),
+                lines_, edge_weights_, colors_);
     } else if (has_colors && !has_weights) {
-        auto begin = make_tuple_iterator(lines_.begin(), colors_.begin());
-        auto end = thrust::remove_if(begin,
-                make_tuple_iterator(lines_.end(), colors_.end()),
-                [check_edge] __device__ (const EdgeColor &x) {
-                    return check_edge(thrust::get<0>(x));
-                });
-        resize_all(thrust::distance(begin, end), lines_, colors_);
+        remove_if_vectors(check_edge_functor<Eigen::Vector2i, Eigen::Vector3f>(edge, is_directed_), lines_, colors_);
     } else if (!has_colors && has_weights) {
-        auto begin = make_tuple_iterator(lines_.begin(), edge_weights_.begin());
-        auto end = thrust::remove_if(begin,
-                make_tuple_iterator(lines_.end(), edge_weights_.end()),
-                [check_edge] __device__ (const EdgeWeight &x) {
-                    return check_edge(thrust::get<0>(x));
-                });
-        resize_all(thrust::distance(begin, end), lines_, edge_weights_);
+        remove_if_vectors(check_edge_functor<Eigen::Vector2i, float>(edge, is_directed_), lines_, edge_weights_);
     } else {
-        auto end = thrust::remove_if(lines_.begin(), lines_.end(),
-            [check_edge] __device__ (const Eigen::Vector2i &l) {
-                return check_edge(l);
-            });
-        lines_.resize(thrust::distance(lines_.begin(), end));
+        remove_if_vectors(check_edge_functor<Eigen::Vector2i>(edge, is_directed_), lines_);
     }
     return ConstructGraph();
 }
