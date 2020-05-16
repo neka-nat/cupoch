@@ -247,19 +247,13 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                       thrust::make_counting_iterator(n_total),
                       make_tuple_begin(output->voxels_keys_, output->voxels_values_),
                       func);
-    auto begin = make_tuple_begin(output->voxels_keys_, output->voxels_values_);
-    auto end = thrust::remove_if(
-            begin,
-            make_tuple_end(output->voxels_keys_, output->voxels_values_),
-            [] __device__(
-                    const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
-                    -> bool {
-                Eigen::Vector3i idxs = thrust::get<0>(x);
-                return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX,
-                                               INVALID_VOXEL_INDEX,
-                                               INVALID_VOXEL_INDEX);
-            });
-    resize_all(thrust::distance(begin, end), output->voxels_keys_, output->voxels_values_);
+    auto check_fn = [] __device__(const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x) -> bool {
+        Eigen::Vector3i idxs = thrust::get<0>(x);
+        return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX,
+                                       INVALID_VOXEL_INDEX,
+                                       INVALID_VOXEL_INDEX);
+    };
+    remove_if_vectors(check_fn, output->voxels_keys_, output->voxels_values_);
     return output;
 }
 

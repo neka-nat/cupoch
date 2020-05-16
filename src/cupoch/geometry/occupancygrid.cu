@@ -118,8 +118,7 @@ void ComputeOccupiedVoxels(const utility::device_vector<Eigen::Vector3f>& points
     size_t max_idx = resolution * resolution * resolution;
     Eigen::Vector3i half_resolution = Eigen::Vector3i::Constant(resolution / 2);
     create_occupancy_voxels_functor func(origin, half_resolution, voxel_size);
-    thrust::transform(make_tuple_iterator(points.begin(), hit_flags.begin()),
-                      make_tuple_iterator(points.end(), hit_flags.end()),
+    thrust::transform(make_tuple_begin(points, hit_flags), make_tuple_end(points, hit_flags),
                       occupied_voxels.begin(), func);
     auto end1 = thrust::remove_if(occupied_voxels.begin(), occupied_voxels.end(),
              [max_idx] __device__(
@@ -325,7 +324,7 @@ OccupancyGrid& OccupancyGrid::Insert(const utility::device_vector<Eigen::Vector3
     utility::device_vector<bool> hit_flags(points.size());
 
     thrust::transform(points.begin(), points.end(),
-                      make_tuple_iterator(ranged_points.begin(), ranged_dists.begin(), hit_flags.begin()),
+                      make_tuple_begin(ranged_points, ranged_dists, hit_flags),
                       [viewpoint, max_range] __device__ (const Eigen::Vector3f &pt) {
                           Eigen::Vector3f pt_vp = pt - viewpoint;
                           float dist = pt_vp.norm();

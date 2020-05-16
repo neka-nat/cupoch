@@ -214,17 +214,17 @@ void resize_all(size_t new_size, Args &... args) {
 }
 
 template <class Func, class... Args>
-void remove_if_vectors(Func fn, utility::device_vector<Args>&... args) {
-    auto begin = make_tuple_begin(args...);
-    auto end = thrust::remove_if(begin, make_tuple_end(args...), fn);
-    resize_all(thrust::distance(begin, end), args...);
-}
-
-template <class Func, class... Args>
 size_t remove_if_vectors_without_resize(Func fn, utility::device_vector<Args>&... args) {
     auto begin = make_tuple_begin(args...);
     auto end = thrust::remove_if(begin, make_tuple_end(args...), fn);
     return thrust::distance(begin, end);
+}
+
+template <class Func, class... Args>
+size_t remove_if_vectors(Func fn, utility::device_vector<Args>&... args) {
+    size_t k = remove_if_vectors_without_resize(fn, args...);
+    resize_all(k, args...);
+    return k;
 }
 
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {

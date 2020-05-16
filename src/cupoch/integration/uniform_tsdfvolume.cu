@@ -603,16 +603,11 @@ UniformTSDFVolume::ExtractTriangleMesh() {
             [] __device__ (const thrust::tuple<Eigen::Vector3i, int>& x) {
                 return thrust::get<1>(x) >= 0;
             });
-    auto begin1 = make_tuple_begin(keys, cube_indices);
-    auto end1 = thrust::remove_if(
-            begin1, make_tuple_end(keys, cube_indices),
-            [] __device__(
-                    const thrust::tuple<Eigen::Vector3i, int> &x) -> bool {
-                int cidx = thrust::get<1>(x);
-                return (cidx <= 0 || cidx >= 255);
-            });
-    size_t n_result1 = thrust::distance(begin1, end1);
-    resize_all(n_result1, keys, cube_indices);
+    auto check_fn = [] __device__(const thrust::tuple<Eigen::Vector3i, int> &x) -> bool {
+        int cidx = thrust::get<1>(x);
+        return (cidx <= 0 || cidx >= 255);
+    };
+    size_t n_result1 = remove_if_vectors(check_fn, keys, cube_indices);
 
     utility::device_vector<float> fs(n_result1 * 8);
     utility::device_vector<Eigen::Vector3f> cs(n_result1 * 8);
