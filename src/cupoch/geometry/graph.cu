@@ -354,7 +354,7 @@ Graph &Graph::PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edg
     thrust::set_intersection(make_tuple_iterator(lines_.begin(), thrust::make_counting_iterator<size_t>(0)),
             make_tuple_iterator(lines_.end(), thrust::make_counting_iterator(lines_.size())),
             make_tuple_iterator(sorted_edges.begin(), thrust::make_constant_iterator<size_t>(0)),
-            make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator<size_t>(0)),
+            make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator(sorted_edges.size())),
             make_tuple_iterator(thrust::make_discard_iterator(), indices.begin()),
             tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, size_t>, 0, thrust::greater<Eigen::Vector2i>>());
     replace_colors_functor func(thrust::raw_pointer_cast(colors_.data()), color);
@@ -365,7 +365,7 @@ Graph &Graph::PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edg
         thrust::set_intersection(make_tuple_iterator(lines_.begin(), thrust::make_counting_iterator<size_t>(0)),
                 make_tuple_iterator(lines_.end(), thrust::make_counting_iterator(lines_.size())),
                 make_tuple_iterator(sorted_edges.begin(), thrust::make_constant_iterator<size_t>(0)),
-                make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator<size_t>(0)),
+                make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator(sorted_edges.size())),
                 make_tuple_iterator(thrust::make_discard_iterator(), indices.begin()),
                 tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, size_t>, 0, thrust::greater<Eigen::Vector2i>>());
         thrust::for_each(indices.begin(), indices.end(), func);

@@ -10,6 +10,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, '../misc'))
 import meshes
 
+# Graph from random nodes
 n_nodes = 50
 points = np.random.rand(n_nodes, 3)
 gp = cph.geometry.Graph()
@@ -45,6 +46,7 @@ for i in range(len(path[:-1])):
 gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])
 
+# Compare with NetworkX
 h_edges = gp.edges.cpu()
 h_weights = gp.edge_weights.cpu()
 h_g = nx.Graph()
