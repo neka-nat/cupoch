@@ -32,6 +32,8 @@ public:
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);
 
+    OccupancyGrid &Clear() override;
+
     Eigen::Vector3f GetMinBound() const override;
     Eigen::Vector3f GetMaxBound() const override;
 
@@ -66,6 +68,8 @@ public:
     OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
     OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
 public:
+    Eigen::Vector3ui16 min_bound_ = Eigen::Vector3ui16::Zero();
+    Eigen::Vector3ui16 max_bound_ = Eigen::Vector3ui16::Zero();
     float clamping_thres_min_ = -2.0;
     float clamping_thres_max_ = 3.5;
     float prob_hit_log_ = 0.85;

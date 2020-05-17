@@ -160,28 +160,34 @@ struct add_occupancy_functor{
 template class DenseGrid<OccupancyVoxel>;
 
 OccupancyGrid::OccupancyGrid()
- : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, 0.05, 512, Eigen::Vector3f::Zero()) {}
+ : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, 0.05, 512, Eigen::Vector3f::Zero()),
+   min_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)),
+   max_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)) {}
 OccupancyGrid::OccupancyGrid(float voxel_size, int resolution, const Eigen::Vector3f& origin)
- : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, voxel_size, resolution, origin) {}
+ : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, voxel_size, resolution, origin),
+   min_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)),
+   max_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)) {}
 OccupancyGrid::~OccupancyGrid() {}
 OccupancyGrid::OccupancyGrid(const OccupancyGrid& other)
  : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid, other),
+   min_bound_(other.min_bound_), max_bound_(other.max_bound_),
    clamping_thres_min_(other.clamping_thres_min_), clamping_thres_max_(other.clamping_thres_max_),
    prob_hit_log_(other.prob_hit_log_), prob_miss_log_(other.prob_miss_log_),
    occ_prob_thres_log_(other.occ_prob_thres_log_), visualize_free_area_(other.visualize_free_area_) {}
 
+OccupancyGrid &OccupancyGrid::Clear() {
+    DenseGrid::Clear();
+    min_bound_ = Eigen::Vector3ui16::Constant(resolution_ / 2);
+    max_bound_ = Eigen::Vector3ui16::Constant(resolution_ / 2);
+    return *this;
+}
+
 Eigen::Vector3f OccupancyGrid::GetMinBound() const {
-    auto vs = ExtractKnownVoxels();
-    if (vs.empty()) return origin_;
-    OccupancyVoxel v = vs.front();
-    return (v.grid_index_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2)).cast<float>() * voxel_size_ - origin_;
+    return (min_bound_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2)).cast<float>() * voxel_size_ - origin_;
 }
 
 Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
-    auto vs = ExtractKnownVoxels();
-    if (vs.empty()) return origin_;
-    OccupancyVoxel v = vs.back();
-    return (v.grid_index_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2 - 1)).cast<float>() * voxel_size_ - origin_;
+    return (max_bound_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2 - 1)).cast<float>() * voxel_size_ - origin_;
 }
 
 bool OccupancyGrid::IsOccupied(const Eigen::Vector3f &point) const{
@@ -380,6 +386,8 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupi
     int idx = IndexOf(voxel, resolution_);
     size_t max_idx = resolution_ * resolution_ * resolution_;
     if (idx < 0 || idx >= max_idx) {
+        utility::LogError(
+            "[OccupancyGrid] a provided voxeld is not occupancy grid range.");
         return *this;
     } else {
         OccupancyVoxel org_ov = voxels_[idx];
@@ -388,11 +396,18 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupi
         org_ov.prob_log_ = std::min(std::max(org_ov.prob_log_, clamping_thres_min_), clamping_thres_max_);
         org_ov.grid_index_ = voxel.cast<unsigned short>();
         voxels_[idx] = org_ov;
+        min_bound_ = (min_bound_.array() > org_ov.grid_index_.array()).select(org_ov.grid_index_, min_bound_);
+        max_bound_ = (max_bound_.array() < org_ov.grid_index_.array()).select(org_ov.grid_index_, max_bound_);
     }
     return *this;
 }
 
 OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
+    if (voxels.empty()) return *this;
+    Eigen::Vector3i fv = voxels.front();
+    Eigen::Vector3i bv = voxels.back();
+    min_bound_ = (min_bound_.array() > fv.cast<unsigned short>().array()).select(fv.cast<unsigned short>(), min_bound_);
+    max_bound_ = (max_bound_.array() < bv.cast<unsigned short>().array()).select(bv.cast<unsigned short>(), max_bound_);
     add_occupancy_functor func(thrust::raw_pointer_cast(voxels_.data()),
                                resolution_, clamping_thres_min_, clamping_thres_max_,
                                prob_miss_log_, prob_hit_log_, occupied);
