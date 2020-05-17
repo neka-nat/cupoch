@@ -177,17 +177,18 @@ struct default_color_functor {
 };
 
 struct occupancy_color_functor {
-    __host__ __device__ occupancy_color_functor(float occ_prob_thres_log)
-     : occ_prob_thres_log_(occ_prob_thres_log) {};
+    __host__ __device__ occupancy_color_functor(float occ_prob_thres_log, bool visualize_free_area)
+     : occ_prob_thres_log_(occ_prob_thres_log), visualize_free_area_(visualize_free_area) {};
     const float occ_prob_thres_log_;
+    const bool visualize_free_area_;
     __host__ __device__ ~occupancy_color_functor() {};
     __host__ __device__ occupancy_color_functor(const occupancy_color_functor& other)
-     : occ_prob_thres_log_(other.occ_prob_thres_log_) {};
+     : occ_prob_thres_log_(other.occ_prob_thres_log_), visualize_free_area_(other.visualize_free_area_) {};
     __device__ Eigen::Vector3f color(geometry::OccupancyVoxel ocv) const {
         return (ocv.prob_log_ > occ_prob_thres_log_) ? ocv.color_ : Eigen::Vector3f(0.0, 1.0, 0.0);
     }
     __device__ float alpha(geometry::OccupancyVoxel ocv) const {
-        return (ocv.prob_log_ > occ_prob_thres_log_) ? 1.0 : 0.2;
+        return (ocv.prob_log_ > occ_prob_thres_log_) ? 1.0 : ((visualize_free_area_) ? 0.2 : 0.0);
     }
 };
 
@@ -667,23 +668,22 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
         return false;
     }
 
-    utility::device_vector<geometry::OccupancyVoxel> voxels =
-            (occupancy_grid.visualize_free_area_) ? occupancy_grid.ExtractKnownVoxels() : occupancy_grid.ExtractOccupiedVoxels();
-    utility::device_vector<Eigen::Vector3f> vertices(voxels.size() * 8);
+    auto voxels = occupancy_grid.ExtractKnownVoxels();
+    utility::device_vector<Eigen::Vector3f> vertices(voxels->size() * 8);
     Eigen::Vector3f origin = occupancy_grid.origin_ - 0.5 * occupancy_grid.voxel_size_ * Eigen::Vector3f::Constant(occupancy_grid.resolution_);
-    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(thrust::raw_pointer_cast(voxels.data()),
+    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(thrust::raw_pointer_cast(voxels->data()),
                                                                    origin, occupancy_grid.voxel_size_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(voxels.size() * 8),
+                      thrust::make_counting_iterator<size_t>(voxels->size() * 8),
                       vertices.begin(), func1);
 
-    size_t n_out = voxels.size() * 12 * 3;
+    size_t n_out = voxels->size() * 12 * 3;
     copy_voxelgrid_face_functor<geometry::OccupancyVoxel, occupancy_color_functor> func2(
         thrust::raw_pointer_cast(vertices.data()),
-        thrust::raw_pointer_cast(voxels.data()),
+        thrust::raw_pointer_cast(voxels->data()),
         occupancy_grid.HasColors(), option.mesh_color_option_,
         option.default_mesh_color_, view,
-        occupancy_color_functor(occupancy_grid.occ_prob_thres_log_));
+        occupancy_color_functor(occupancy_grid.occ_prob_thres_log_, occupancy_grid.visualize_free_area_));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);
@@ -697,5 +697,6 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
 
 size_t PhongShaderForOccupancyGrid::GetDataSize(const geometry::Geometry &geometry) const {
     const geometry::OccupancyGrid &occupancy_grid = (const geometry::OccupancyGrid &)geometry;
-    return (occupancy_grid.visualize_free_area_) ? occupancy_grid.CountKnownVoxels() * 12 * 3 : occupancy_grid.CountOccupiedVoxels() * 12 * 3;
+    Eigen::Vector3ui16 diff = occupancy_grid.max_bound_ - occupancy_grid.min_bound_ + Eigen::Vector3ui16::Ones();
+    return diff[0] * diff[1] * diff[2] * 12 * 3;
 }

@@ -63,13 +63,11 @@ void pybind_occupanygrid(py::module &m) {
             .def("__repr__",
                  [](const geometry::OccupancyGrid &occupancygrid) {
                      return std::string("geometry::OccupancyGrid with ") +
-                            std::to_string(occupancygrid.CountKnownVoxels()) +
+                            std::to_string(occupancygrid.ExtractKnownVoxels()->size()) +
                             " voxels.";
                  })
             .def_property_readonly("voxels", [] (const geometry::OccupancyGrid &og) {
-                     wrapper::device_vector_vector3i out;
-                     og.ExtractKnownVoxelIndices(out.data_);
-                     return out;
+                     return og.ExtractKnownVoxels();
                  })
             .def("reconstruct_voxels", &geometry::OccupancyGrid::ReconstructVoxels,
                  "Resort voxel indices to insert observations correctly.")

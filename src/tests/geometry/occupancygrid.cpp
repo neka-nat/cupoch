@@ -47,7 +47,7 @@ TEST(OccupancyGrid, Insert) {
     thrust::host_vector<Eigen::Vector3f> host_points;
     host_points.push_back({0.0, 0.0, 3.5});
     occupancy_grid->Insert(host_points, Eigen::Vector3f::Zero());
-    EXPECT_EQ(occupancy_grid->CountKnownVoxels(), 4);
+    EXPECT_EQ(occupancy_grid->ExtractKnownVoxels()->size(), 4);
     auto res1 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 0.5));
     EXPECT_TRUE(thrust::get<0>(res1));
     auto res2 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 1.5));

@@ -25,6 +25,14 @@ public:
     float prob_log_ = std::numeric_limits<float>::quiet_NaN();
 };
 
+inline OccupancyVoxel operator+(const OccupancyVoxel &lhs, const OccupancyVoxel& rhs) {
+    OccupancyVoxel out = lhs;
+    out.prob_log_ += rhs.prob_log_;
+    out.color_ += rhs.color_;
+    out.color_ *= 0.5;
+    return out;
+}
+
 class OccupancyGrid : public DenseGrid<OccupancyVoxel> {
 public:
     OccupancyGrid();
@@ -45,16 +53,10 @@ public:
     bool IsUnknown(const Eigen::Vector3f &point) const;
     int GetVoxelIndex(const Eigen::Vector3f& point) const;
     thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
-    size_t CountKnownVoxels() const;
-    size_t CountFreeVoxels() const;
-    size_t CountOccupiedVoxels() const;
-    utility::device_vector<OccupancyVoxel> ExtractKnownVoxels() const;
-    utility::device_vector<OccupancyVoxel> ExtractFreeVoxels() const;
-    utility::device_vector<OccupancyVoxel> ExtractOccupiedVoxels() const;
-    utility::device_vector<Eigen::Vector3i> ExtractKnownVoxelIndices() const;
-    utility::device_vector<Eigen::Vector3i> ExtractFreeVoxelIndices() const;
-    utility::device_vector<Eigen::Vector3i> ExtractOccupiedVoxelIndices() const;
-    void ExtractKnownVoxelIndices(utility::device_vector<Eigen::Vector3i>& indices) const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels() const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractKnownVoxels() const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractFreeVoxels() const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractOccupiedVoxels() const;
 
     OccupancyGrid& ReconstructVoxels(float voxel_size, int resolution);
 

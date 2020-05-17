@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 
 #include "cupoch/utility/device_vector.h"
+#include "cupoch/geometry/occupancygrid.h"
 
 namespace cupoch {
 
@@ -38,6 +39,7 @@ using device_vector_vector2i = device_vector_wrapper<Eigen::Vector2i>;
 using device_vector_int = device_vector_wrapper<int>;
 using device_vector_size_t = device_vector_wrapper<size_t>;
 using device_vector_float = device_vector_wrapper<float>;
+using device_vector_occupancyvoxel = device_vector_wrapper<geometry::OccupancyVoxel>;
 
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,

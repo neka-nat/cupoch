@@ -69,6 +69,7 @@ template class device_vector_wrapper<Eigen::Vector2i>;
 template class device_vector_wrapper<float>;
 template class device_vector_wrapper<int>;
 template class device_vector_wrapper<size_t>;
+template class device_vector_wrapper<geometry::OccupancyVoxel>;
 
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,
@@ -94,6 +95,8 @@ template void FromWrapper<int>(utility::device_vector<int>& dv,
                                const device_vector_wrapper<int>& vec);
 template void FromWrapper<size_t>(utility::device_vector<size_t>& dv,
                                   const device_vector_wrapper<size_t>& vec);
+template void FromWrapper<geometry::OccupancyVoxel>(utility::device_vector<geometry::OccupancyVoxel>& dv,
+                                                    const device_vector_wrapper<geometry::OccupancyVoxel>& vec);
 
 }  // namespace wrapper
 }  // namespace cupoch

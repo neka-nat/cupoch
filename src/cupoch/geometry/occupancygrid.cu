@@ -18,9 +18,24 @@ __constant__ float voxel_offset[7][3] = {{0, 0, 0}, {1, 0, 0}, {-1, 0, 0},
                                          {0, 1, 0}, {0, -1, 0}, {0, 0, 1},
                                          {0, 0, -1}};
 
-struct extract_index_and_prob_functor {
-    __device__ thrust::tuple<Eigen::Vector3i, float> operator() (const OccupancyVoxel& v) const {
-        return thrust::make_tuple(v.grid_index_.cast<int>(), v.prob_log_);
+struct extract_range_voxels_functor {
+    extract_range_voxels_functor(const OccupancyVoxel* voxels,
+                                 const Eigen::Vector3i& extents,
+                                 int resolution,
+                                 const Eigen::Vector3i& min_bound)
+                                 : voxels_(voxels), extents_(extents),
+                                 resolution_(resolution), min_bound_(min_bound) {};
+    const OccupancyVoxel* voxels_;
+    const Eigen::Vector3i extents_;
+    const int resolution_;
+    const Eigen::Vector3i min_bound_;
+    __device__ OccupancyVoxel operator() (size_t idx) const {
+        int x = idx / (extents_[1] * extents_[2]);
+        int yz = idx % (extents_[1] * extents_[2]);
+        int y = yz / extents_[2];
+        int z = yz % extents_[2];
+        Eigen::Vector3i gidx = min_bound_ + Eigen::Vector3i(x, y, z);
+        return voxels_[IndexOf(gidx, resolution_)];
     }
 };
 
@@ -220,98 +235,47 @@ thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(const Eigen::Vector3
     return thrust::make_tuple(!std::isnan(voxel.prob_log_), voxel);
 }
 
-size_t OccupancyGrid::CountKnownVoxels() const {
-    return thrust::count_if(voxels_.begin(), voxels_.end(),
-        [] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_);
-        });
-}
-
-size_t OccupancyGrid::CountFreeVoxels() const {
-    return thrust::count_if(voxels_.begin(), voxels_.end(),
-        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_) && v.prob_log_ <= th;
-        });
-}
-
-size_t OccupancyGrid::CountOccupiedVoxels() const {
-    return thrust::count_if(voxels_.begin(), voxels_.end(),
-        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_) && v.prob_log_ > th;
-        });
-}
-
-utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractKnownVoxels() const {
-    size_t n_out = CountKnownVoxels();
-    utility::device_vector<OccupancyVoxel> out(n_out);
-    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
-        [] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_);
-        });
+std::shared_ptr<utility::device_vector<OccupancyVoxel>> OccupancyGrid::ExtractBoundVoxels() const {
+    Eigen::Vector3ui16 diff = max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
+    auto out = std::make_shared<utility::device_vector<OccupancyVoxel>>();
+    out->resize(diff[0] * diff[1] * diff[2]);
+    extract_range_voxels_functor func(thrust::raw_pointer_cast(voxels_.data()),
+                                      diff.cast<int>(),
+                                      resolution_,
+                                      min_bound_.cast<int>());
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+        thrust::make_counting_iterator(out->size()), out->begin(), func);
     return out;
 }
 
-utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractFreeVoxels() const {
-    size_t n_out = CountFreeVoxels();
-    utility::device_vector<OccupancyVoxel> out(n_out);
-    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
-        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_) && v.prob_log_ <= th;
-        });
+std::shared_ptr<utility::device_vector<OccupancyVoxel>> OccupancyGrid::ExtractKnownVoxels() const {
+    auto out = ExtractBoundVoxels();
+    auto remove_fn = [th = occ_prob_thres_log_] __device__ (const thrust::tuple<OccupancyVoxel>& x) {
+        const OccupancyVoxel& v = thrust::get<0>(x);
+        return isnan(v.prob_log_);
+    };
+    remove_if_vectors(remove_fn, *out);
     return out;
 }
 
-utility::device_vector<OccupancyVoxel> OccupancyGrid::ExtractOccupiedVoxels() const {
-    size_t n_out = CountOccupiedVoxels();
-    utility::device_vector<OccupancyVoxel> out(n_out);
-    thrust::copy_if(voxels_.begin(), voxels_.end(), out.begin(),
-        [th = occ_prob_thres_log_] __device__ (const OccupancyVoxel& v) {
-            return !isnan(v.prob_log_) && v.prob_log_ > th;
-        });
+std::shared_ptr<utility::device_vector<OccupancyVoxel>> OccupancyGrid::ExtractFreeVoxels() const {
+    auto out = ExtractBoundVoxels();
+    auto remove_fn = [th = occ_prob_thres_log_] __device__ (const thrust::tuple<OccupancyVoxel>& x) {
+        const OccupancyVoxel& v = thrust::get<0>(x);
+        return isnan(v.prob_log_) || v.prob_log_ > th;
+    };
+    remove_if_vectors(remove_fn, *out);
     return out;
 }
 
-utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractKnownVoxelIndices() const{
-    size_t n_out = CountKnownVoxels();
-    utility::device_vector<Eigen::Vector3i> out(n_out);
-    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
-        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
-        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
-        [] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
-            float p = thrust::get<1>(x);
-            return !isnan(p);
-        });
+std::shared_ptr<utility::device_vector<OccupancyVoxel>> OccupancyGrid::ExtractOccupiedVoxels() const {
+    auto out = ExtractBoundVoxels();
+    auto remove_fn = [th = occ_prob_thres_log_] __device__ (const thrust::tuple<OccupancyVoxel>& x) {
+        const OccupancyVoxel& v = thrust::get<0>(x);
+        return isnan(v.prob_log_) || v.prob_log_ <= th;
+    };
+    remove_if_vectors(remove_fn, *out);
     return out;
-}
-
-utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractFreeVoxelIndices() const{
-    size_t n_out = CountFreeVoxels();
-    utility::device_vector<Eigen::Vector3i> out(n_out);
-    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
-        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
-        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
-        [th = occ_prob_thres_log_] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
-            float p = thrust::get<1>(x);
-            return !isnan(p) && p <= th;
-        });
-    return out;
-}
-
-utility::device_vector<Eigen::Vector3i> OccupancyGrid::ExtractOccupiedVoxelIndices() const{
-    size_t n_out = CountOccupiedVoxels();
-    utility::device_vector<Eigen::Vector3i> out(n_out);
-    thrust::copy_if(thrust::make_transform_iterator(voxels_.begin(), extract_index_and_prob_functor()),
-        thrust::make_transform_iterator(voxels_.end(), extract_index_and_prob_functor()),
-        make_tuple_iterator(out.begin(), thrust::make_discard_iterator()),
-        [th = occ_prob_thres_log_] __device__ (const thrust::tuple<Eigen::Vector3i, float> x) {
-            float p = thrust::get<1>(x);
-            return !isnan(p) && p > th;
-        });
-    return out;
-}
-
-void OccupancyGrid::ExtractKnownVoxelIndices(utility::device_vector<Eigen::Vector3i>& indices) const {
-    indices = ExtractKnownVoxelIndices();
 }
 
 OccupancyGrid& OccupancyGrid::ReconstructVoxels(float voxel_size, int resolution) {
@@ -406,8 +370,12 @@ OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vect
     if (voxels.empty()) return *this;
     Eigen::Vector3i fv = voxels.front();
     Eigen::Vector3i bv = voxels.back();
-    min_bound_ = (min_bound_.array() > fv.cast<unsigned short>().array()).select(fv.cast<unsigned short>(), min_bound_);
-    max_bound_ = (max_bound_.array() < bv.cast<unsigned short>().array()).select(bv.cast<unsigned short>(), max_bound_);
+    Eigen::Vector3ui16 fvu = fv.cast<unsigned short>();
+    Eigen::Vector3ui16 bvu = bv.cast<unsigned short>();
+    min_bound_ = (min_bound_.array() > fvu.array()).select(fvu, min_bound_);
+    min_bound_ = (min_bound_.array() > bvu.array()).select(bvu, min_bound_);
+    max_bound_ = (max_bound_.array() < fvu.array()).select(fvu, max_bound_);
+    max_bound_ = (max_bound_.array() < bvu.array()).select(bvu, max_bound_);
     add_occupancy_functor func(thrust::raw_pointer_cast(voxels_.data()),
                                resolution_, clamping_thres_min_, clamping_thres_max_,
                                prob_miss_log_, prob_hit_log_, occupied);
