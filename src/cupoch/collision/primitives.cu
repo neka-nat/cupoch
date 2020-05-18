@@ -128,59 +128,51 @@ void TransformAndResizeVoxel(geometry::VoxelGrid& voxelgrid, size_t n_total, Fun
     voxelgrid.voxels_values_.resize(n_out);
 }
 
-}
-
-Primitive::Primitive(Primitive::PrimitiveType type) : type_(type), transform_(Eigen::Matrix4f::Identity()) {};
-Primitive::~Primitive() {}
-
-Sphere::Sphere() : Primitive(Primitive::PrimitiveType::Sphere), radius_(0.0) {}
-Sphere::Sphere(float radius) : Primitive(Primitive::PrimitiveType::Sphere), radius_(radius) {}
-Sphere::Sphere(float radius, const Eigen::Vector3f& center)
-    : Primitive(Primitive::PrimitiveType::Sphere), radius_(radius) {
-    transform_.block<3, 1>(0, 3) = center;
-}
-
-Sphere::~Sphere() {}
-
-std::shared_ptr<geometry::VoxelGrid> Sphere::CreateVoxelGrid(float voxel_size) const {
+std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridFromSphere(float radius,
+        const Eigen::Matrix4f& transform, float voxel_size) {
     auto output = std::make_shared<geometry::VoxelGrid>();
-    if (radius_ <= 0.0) {
+    if (radius <= 0.0) {
         utility::LogError("[CreateVoxelGrid] radius <= 0.");
+        return output;
     }
     if (voxel_size <= 0.0) {
         utility::LogError("[CreateVoxelGrid] voxel_size <= 0.");
+        return output;
     }
     const Eigen::Vector3f voxel_size3(voxel_size, voxel_size, voxel_size);
-    const Eigen::Vector3f radius3(radius_, radius_, radius_);
+    const Eigen::Vector3f radius3(radius, radius, radius);
     const Eigen::Vector3f min_bound = -radius3 - voxel_size3 * 0.5;
     const Eigen::Vector3f max_bound = radius3 + voxel_size3 * 0.5;
     output->voxel_size_ = voxel_size;
-    output->origin_ = transform_.block<3, 1>(0, 3);
+    output->origin_ = transform.block<3, 1>(0, 3);
 
     Eigen::Vector3f grid_size = max_bound - min_bound;
     int num_w = int(std::round(grid_size(0) / voxel_size));
     int num_h = int(std::round(grid_size(1) / voxel_size));
     int num_d = int(std::round(grid_size(2) / voxel_size));
     size_t n_total = num_w * num_h * num_d;
-    create_from_sphere_functor func(radius_, voxel_size, num_w, num_h, num_d);
+    create_from_sphere_functor func(radius, voxel_size, num_w, num_h, num_d);
     output->voxels_keys_.resize(n_total);
     output->voxels_values_.resize(n_total);
     TransformAndResizeVoxel(*output, n_total, func);
     return output;
 }
 
-std::shared_ptr<geometry::VoxelGrid> Sphere::CreateVoxelGridWithSweeping(
-    float voxel_size, const Eigen::Matrix4f& dst, int sampling) const {
+std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweepingFromSphere(
+        float radius, const Eigen::Matrix4f& transform,
+        float voxel_size, const Eigen::Matrix4f& dst, int sampling) {
     auto output = std::make_shared<geometry::VoxelGrid>();
-    if (radius_ <= 0.0) {
+    if (radius <= 0.0) {
         utility::LogError("[CreateVoxelGrid] radius <= 0.");
+        return output;
     }
     if (voxel_size <= 0.0) {
         utility::LogError("[CreateVoxelGrid] voxel_size <= 0.");
+        return output;
     }
-    const Eigen::Vector3f diff = dst.block<3, 1>(0, 3) - transform_.block<3, 1>(0, 3);
+    const Eigen::Vector3f diff = dst.block<3, 1>(0, 3) - transform.block<3, 1>(0, 3);
     const Eigen::Vector3f voxel_size3(voxel_size, voxel_size, voxel_size);
-    const Eigen::Vector3f radius3(radius_, radius_, radius_);
+    const Eigen::Vector3f radius3(radius, radius, radius);
     const Eigen::Vector3f min_bound_st = -radius3 - voxel_size3 * 0.5;
     const Eigen::Vector3f max_bound_st = radius3 + voxel_size3 * 0.5;
     const Eigen::Vector3f min_bound_en = diff + min_bound_st;
@@ -188,14 +180,14 @@ std::shared_ptr<geometry::VoxelGrid> Sphere::CreateVoxelGridWithSweeping(
     const Eigen::Vector3f min_bound = min_bound_st.array().min(min_bound_en.array()).matrix();
     const Eigen::Vector3f max_bound = max_bound_st.array().max(max_bound_en.array()).matrix();
     output->voxel_size_ = voxel_size;
-    output->origin_ = transform_.block<3, 1>(0, 3);
+    output->origin_ = transform.block<3, 1>(0, 3);
 
     Eigen::Vector3f grid_size = max_bound - min_bound;
     int num_w = int(std::round(grid_size(0) / voxel_size));
     int num_h = int(std::round(grid_size(1) / voxel_size));
     int num_d = int(std::round(grid_size(2) / voxel_size));
     size_t n_total = num_w * num_h * num_d * sampling;
-    create_from_swept_sphere_functor func(radius_, voxel_size, num_w, num_h, num_d,
+    create_from_swept_sphere_functor func(radius, voxel_size, num_w, num_h, num_d,
                                           diff / (sampling - 1), sampling);
     output->voxels_keys_.resize(n_total);
     output->voxels_values_.resize(n_total);
@@ -203,10 +195,49 @@ std::shared_ptr<geometry::VoxelGrid> Sphere::CreateVoxelGridWithSweeping(
     return output;
 }
 
-std::shared_ptr<geometry::TriangleMesh> Sphere::CreateTriangleMesh() const {
-    auto output = geometry::TriangleMesh::CreateSphere();
-    output->Transform(transform_);
-    return output;
+}
+
+std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(const Primitive& primitive, float voxel_size) {
+    switch (primitive.type_) {
+        case Primitive::PrimitiveType::Sphere: {
+            const Sphere& sphere = (const Sphere&)primitive;
+            return CreateVoxelGridFromSphere(sphere.radius_, sphere.transform_, voxel_size);
+        }
+        default: {
+            utility::LogError("[CreateVoxelGrid] Unsupported primitive type.");
+            return std::shared_ptr<geometry::VoxelGrid>();
+        }
+    }
+}
+
+std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweeping(const Primitive& primitive,
+    float voxel_size, const Eigen::Matrix4f& dst, int sampling) {
+        switch (primitive.type_) {
+            case Primitive::PrimitiveType::Sphere: {
+                const Sphere& sphere = (const Sphere&)primitive;
+                return CreateVoxelGridWithSweepingFromSphere(sphere.radius_, sphere.transform_,
+                                                             voxel_size, dst, sampling);
+            }
+            default: {
+                utility::LogError("[CreateVoxelGridWithSweeping] Unsupported primitive type.");
+                return std::shared_ptr<geometry::VoxelGrid>();
+            }
+        }
+}
+
+std::shared_ptr<geometry::TriangleMesh> CreateTriangleMesh(const Primitive& primitive) {
+    switch (primitive.type_) {
+        case Primitive::PrimitiveType::Sphere: {
+            const Sphere& sphere = (const Sphere&)primitive;
+            auto output = geometry::TriangleMesh::CreateSphere(sphere.radius_);
+            output->Transform(primitive.transform_);
+            return output;
+        }
+        default: {
+            utility::LogError("[CreateTriangleMesh] Unsupported primitive type.");
+            return std::make_shared<geometry::TriangleMesh>();
+        }
+    }
 }
 
 }

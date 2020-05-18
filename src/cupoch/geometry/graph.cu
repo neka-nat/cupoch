@@ -208,8 +208,8 @@ Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
     size_t n_old_lines = lines_.size();
     lines_.insert(lines_.end(), edges.begin(), edges.end());
     if (!is_directed_) {
-        lines_.insert(lines_.end(), thrust::make_transform_iterator(edges.begin(), reverse_index_functor<int>()),
-                      thrust::make_transform_iterator(edges.end(), reverse_index_functor<int>()));
+        lines_.insert(lines_.end(), thrust::make_transform_iterator(edges.begin(), swap_index_functor<int>()),
+                      thrust::make_transform_iterator(edges.end(), swap_index_functor<int>()));
     }
     if (weights.empty()) {
         if (!is_directed_) {
@@ -274,8 +274,8 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_begin(lines_, edge_weights_, colors_),
                     make_tuple_end(lines_, edge_weights_, colors_),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_w, cnst_c),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_w, cnst_c),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), swap_index_functor<int>()), cnst_w, cnst_c),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), swap_index_functor<int>()), cnst_w, cnst_c),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_weights, new_colors);
         }
@@ -291,8 +291,8 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_begin(lines_, colors_),
                     make_tuple_end(lines_, colors_),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_c),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_c),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), swap_index_functor<int>()), cnst_c),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), swap_index_functor<int>()), cnst_c),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_colors);
         }
@@ -308,8 +308,8 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
         if (!is_directed_) {
             auto end2 = thrust::set_difference(make_tuple_begin(lines_, edge_weights_),
                     make_tuple_end(lines_, edge_weights_),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()), cnst_w),
-                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()), cnst_w),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.begin(), swap_index_functor<int>()), cnst_w),
+                    make_tuple_iterator(thrust::make_transform_iterator(sorted_edges.end(), swap_index_functor<int>()), cnst_w),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_weights);
         }
@@ -319,8 +319,8 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
         new_lines.resize(thrust::distance(new_lines.begin(), end1));
         if (!is_directed_) {
             auto end2 = thrust::set_difference(lines_.begin(), lines_.end(),
-                    thrust::make_transform_iterator(sorted_edges.begin(), reverse_index_functor<int>()),
-                    thrust::make_transform_iterator(sorted_edges.end(), reverse_index_functor<int>()),
+                    thrust::make_transform_iterator(sorted_edges.begin(), swap_index_functor<int>()),
+                    thrust::make_transform_iterator(sorted_edges.end(), swap_index_functor<int>()),
                     new_lines.begin());
             new_lines.resize(thrust::distance(new_lines.begin(), end2));
         }
@@ -360,7 +360,7 @@ Graph &Graph::PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edg
     replace_colors_functor func(thrust::raw_pointer_cast(colors_.data()), color);
     thrust::for_each(indices.begin(), indices.end(), func);
     if (!is_directed_) {
-        thrust::transform(sorted_edges.begin(), sorted_edges.end(), sorted_edges.begin(), reverse_index_functor<int>());
+        swap_index(sorted_edges);
         thrust::sort(sorted_edges.begin(), sorted_edges.end());
         thrust::set_intersection(make_tuple_iterator(lines_.begin(), thrust::make_counting_iterator<size_t>(0)),
                 make_tuple_iterator(lines_.end(), thrust::make_counting_iterator(lines_.size())),

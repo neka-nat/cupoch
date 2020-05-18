@@ -24,13 +24,6 @@ struct extract_element_functor {
     __device__ T operator() (const Eigen::Matrix<T, Size, 1>& x) { return x[Index]; };
 };
 
-template<typename T>
-struct reverse_index_functor {
-    __device__ Eigen::Matrix<T, 2, 1> operator() (const Eigen::Matrix<T, 2, 1>& x) {
-        return Eigen::Matrix<T, 2, 1>(x[1], x[0]);
-    };
-};
-
 template <typename TupleType, int Index, typename Func>
 struct tuple_element_compare_functor {
     __device__ bool operator() (const TupleType& rhs, const TupleType& lhs) {

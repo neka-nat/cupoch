@@ -227,6 +227,27 @@ size_t remove_if_vectors(Func fn, utility::device_vector<Args>&... args) {
     return k;
 }
 
+template<typename T>
+struct swap_index_functor {
+    __device__ Eigen::Matrix<T, 2, 1> operator() (const Eigen::Matrix<T, 2, 1>& x) {
+        return Eigen::Matrix<T, 2, 1>(x[1], x[0]);
+    };
+};
+
+template<typename T>
+void swap_index(utility::device_vector<Eigen::Matrix<T, 2, 1>>& v) {
+    thrust::transform(v.begin(), v.end(), v.begin(), swap_index_functor<T>());
+}
+
+template <int Dim>
+void remove_negative(utility::device_vector<Eigen::Matrix<int, Dim, 1>>& idxs) {
+    auto end = thrust::remove_if(idxs.begin(), idxs.end(),
+                                 [] __device__ (const Eigen::Matrix<int, Dim, 1>& idx) {
+                                     return Eigen::device_any(idx.array() < 0);
+                                 });
+    idxs.resize(thrust::distance(idxs.begin(), end));
+}
+
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {
     return x * resolution * resolution + y * resolution + z;
 }

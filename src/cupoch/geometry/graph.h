@@ -78,6 +78,8 @@ public:
     std::shared_ptr<thrust::host_vector<int>> DijkstraPath(int start_node_index, int end_node_index) const;
 
     static std::shared_ptr<Graph> CreateFromTriangleMesh(const TriangleMesh &input);
+    static std::shared_ptr<Graph> CreateFromAxisAlignedBoundingBox(const geometry::AxisAlignedBoundingBox& bbox,
+                                                                   const Eigen::Vector3i& resolutions);
 
 public:
     utility::device_vector<int> edge_index_offsets_;
