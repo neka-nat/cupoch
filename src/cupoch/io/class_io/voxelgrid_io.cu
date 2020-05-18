@@ -9,17 +9,15 @@ using namespace cupoch::io;
 void HostVoxelGrid::FromDevice(const geometry::VoxelGrid& voxelgrid) {
     voxels_keys_.resize(voxelgrid.voxels_keys_.size());
     voxels_values_.resize(voxelgrid.voxels_values_.size());
-    utility::CopyFromDeviceMultiStream(voxelgrid.voxels_keys_, voxels_keys_);
-    utility::CopyFromDeviceMultiStream(voxelgrid.voxels_values_, voxels_values_);
-    cudaDeviceSynchronize();
+    thrust::copy(voxelgrid.voxels_keys_.begin(), voxelgrid.voxels_keys_.end(), voxels_keys_.begin());
+    thrust::copy(voxelgrid.voxels_values_.begin(), voxelgrid.voxels_values_.end(), voxels_values_.begin());
 }
 
 void HostVoxelGrid::ToDevice(geometry::VoxelGrid& voxelgrid) const {
     voxelgrid.voxels_keys_.resize(voxels_keys_.size());
     voxelgrid.voxels_values_.resize(voxels_values_.size());
-    utility::CopyToDeviceMultiStream(voxels_keys_, voxelgrid.voxels_keys_);
-    utility::CopyToDeviceMultiStream(voxels_values_, voxelgrid.voxels_values_);
-    cudaDeviceSynchronize();
+    thrust::copy(voxels_keys_.begin(), voxels_keys_.end(), voxelgrid.voxels_keys_.begin());
+    thrust::copy(voxels_values_.begin(), voxels_values_.end(), voxelgrid.voxels_values_.begin());
 }
 
 void HostVoxelGrid::Clear() {

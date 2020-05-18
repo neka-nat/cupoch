@@ -10,20 +10,18 @@ void HostPointCloud::FromDevice(const geometry::PointCloud& pointcloud) {
     points_.resize(pointcloud.points_.size());
     normals_.resize(pointcloud.normals_.size());
     colors_.resize(pointcloud.colors_.size());
-    utility::CopyFromDeviceMultiStream(pointcloud.points_, points_);
-    utility::CopyFromDeviceMultiStream(pointcloud.normals_, normals_);
-    utility::CopyFromDeviceMultiStream(pointcloud.colors_, colors_);
-    cudaDeviceSynchronize();
+    thrust::copy(pointcloud.points_.begin(), pointcloud.points_.end(), points_.begin());
+    thrust::copy(pointcloud.normals_.begin(), pointcloud.normals_.end(), normals_.begin());
+    thrust::copy(pointcloud.colors_.begin(), pointcloud.colors_.end(), colors_.begin());
 }
 
 void HostPointCloud::ToDevice(geometry::PointCloud& pointcloud) const {
     pointcloud.points_.resize(points_.size());
     pointcloud.normals_.resize(normals_.size());
     pointcloud.colors_.resize(colors_.size());
-    utility::CopyToDeviceMultiStream(points_, pointcloud.points_);
-    utility::CopyToDeviceMultiStream(normals_, pointcloud.normals_);
-    utility::CopyToDeviceMultiStream(colors_, pointcloud.colors_);
-    cudaDeviceSynchronize();
+    thrust::copy(points_.begin(), points_.end(), pointcloud.points_.begin());
+    thrust::copy(normals_.begin(), normals_.end(), pointcloud.normals_.begin());
+    thrust::copy(colors_.begin(), colors_.end(), pointcloud.colors_.begin());
 }
 
 void HostPointCloud::Clear() {

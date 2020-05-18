@@ -100,7 +100,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(
     // Cluster identification
     int cluster = 0;
     utility::device_vector<int> visited(n_pt, 0);
-    thrust::host_vector<int> h_visited(n_pt, 0);
+    utility::pinned_host_vector<int> h_visited(n_pt, 0);
     utility::device_vector<int> clusters(n_pt, -1);
     utility::device_vector<int> xa(n_pt);
     utility::device_vector<int> fa(n_pt);

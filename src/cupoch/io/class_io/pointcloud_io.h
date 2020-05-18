@@ -2,7 +2,7 @@
 
 #include <Eigen/Core>
 #include <string>
-#include <thrust/host_vector.h>
+#include <cupoch/utility/device_vector.h>
 
 namespace cupoch {
 
@@ -18,9 +18,9 @@ struct HostPointCloud {
     void FromDevice(const geometry::PointCloud& pointcloud);
     void ToDevice(geometry::PointCloud& pointcloud) const;
     void Clear();
-    thrust::host_vector<Eigen::Vector3f> points_;
-    thrust::host_vector<Eigen::Vector3f> normals_;
-    thrust::host_vector<Eigen::Vector3f> colors_;
+    utility::pinned_host_vector<Eigen::Vector3f> points_;
+    utility::pinned_host_vector<Eigen::Vector3f> normals_;
+    utility::pinned_host_vector<Eigen::Vector3f> colors_;
 };
 
 /// Factory function to create a pointcloud from a file (PointCloudFactory.cpp)

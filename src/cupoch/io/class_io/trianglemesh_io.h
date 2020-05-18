@@ -19,12 +19,12 @@ struct HostTriangleMesh {
     void FromDevice(const geometry::TriangleMesh& mesh);
     void ToDevice(geometry::TriangleMesh& mesh) const;
     void Clear();
-    thrust::host_vector<Eigen::Vector3f> vertices_;
-    thrust::host_vector<Eigen::Vector3f> vertex_normals_;
-    thrust::host_vector<Eigen::Vector3f> vertex_colors_;
-    thrust::host_vector<Eigen::Vector3i> triangles_;
-    thrust::host_vector<Eigen::Vector3f> triangle_normals_;
-    thrust::host_vector<Eigen::Vector2f> triangle_uvs_;
+    utility::pinned_host_vector<Eigen::Vector3f> vertices_;
+    utility::pinned_host_vector<Eigen::Vector3f> vertex_normals_;
+    utility::pinned_host_vector<Eigen::Vector3f> vertex_colors_;
+    utility::pinned_host_vector<Eigen::Vector3i> triangles_;
+    utility::pinned_host_vector<Eigen::Vector3f> triangle_normals_;
+    utility::pinned_host_vector<Eigen::Vector2f> triangle_uvs_;
     HostImage texture_;
 };
 

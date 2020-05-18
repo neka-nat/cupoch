@@ -13,8 +13,8 @@ struct HostVoxelGrid {
     void FromDevice(const geometry::VoxelGrid& voxelgrid);
     void ToDevice(geometry::VoxelGrid& voxelgrid) const;
     void Clear();
-    thrust::host_vector<Eigen::Vector3i> voxels_keys_;
-    thrust::host_vector<geometry::Voxel> voxels_values_;
+    utility::pinned_host_vector<Eigen::Vector3i> voxels_keys_;
+    utility::pinned_host_vector<geometry::Voxel> voxels_values_;
 };
 
 /// Factory function to create a voxelgrid from a file.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <thrust/host_vector.h>
+#include <cupoch/utility/device_vector.h>
 
 namespace cupoch {
 
@@ -29,7 +29,7 @@ public:
     int height_ = 0;
     int num_of_channels_ = 0;
     int bytes_per_channel_ = 0;
-    thrust::host_vector<uint8_t> data_;
+    utility::pinned_host_vector<uint8_t> data_;
 };
 
 /// Factory function to create an image from a file (ImageFactory.cpp)

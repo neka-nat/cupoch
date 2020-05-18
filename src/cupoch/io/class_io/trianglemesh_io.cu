@@ -11,14 +11,13 @@ void HostTriangleMesh::FromDevice(const geometry::TriangleMesh& trianglemesh) {
     triangles_.resize(trianglemesh.triangles_.size());
     triangle_normals_.resize(trianglemesh.triangle_normals_.size());
     triangle_uvs_.resize(trianglemesh.triangle_uvs_.size());
-    utility::CopyFromDeviceMultiStream(trianglemesh.vertices_, vertices_);
-    utility::CopyFromDeviceMultiStream(trianglemesh.vertex_normals_, vertex_normals_);
-    utility::CopyFromDeviceMultiStream(trianglemesh.vertex_colors_, vertex_colors_);
-    utility::CopyFromDeviceMultiStream(trianglemesh.triangles_, triangles_);
-    utility::CopyFromDeviceMultiStream(trianglemesh.triangle_normals_, triangle_normals_);
-    utility::CopyFromDeviceMultiStream(trianglemesh.triangle_uvs_, triangle_uvs_);
+    thrust::copy(trianglemesh.vertices_.begin(), trianglemesh.vertices_.end(), vertices_.begin());
+    thrust::copy(trianglemesh.vertex_normals_.begin(), trianglemesh.vertex_normals_.end(), vertex_normals_.begin());
+    thrust::copy(trianglemesh.vertex_colors_.begin(), trianglemesh.vertex_colors_.end(), vertex_colors_.begin());
+    thrust::copy(trianglemesh.triangles_.begin(), trianglemesh.triangles_.end(), triangles_.begin());
+    thrust::copy(trianglemesh.triangle_normals_.begin(), trianglemesh.triangle_normals_.end(), triangle_normals_.begin());
+    thrust::copy(trianglemesh.triangle_uvs_.begin(), trianglemesh.triangle_uvs_.end(), triangle_uvs_.begin());
     texture_.FromDevice(trianglemesh.texture_);
-    cudaDeviceSynchronize();
 }
 
 void HostTriangleMesh::ToDevice(geometry::TriangleMesh& trianglemesh) const {
@@ -28,14 +27,13 @@ void HostTriangleMesh::ToDevice(geometry::TriangleMesh& trianglemesh) const {
     trianglemesh.triangles_.resize(triangles_.size());
     trianglemesh.triangle_normals_.resize(triangle_normals_.size());
     trianglemesh.triangle_uvs_.resize(triangle_uvs_.size());
-    utility::CopyToDeviceMultiStream(vertices_, trianglemesh.vertices_);
-    utility::CopyToDeviceMultiStream(vertex_normals_, trianglemesh.vertex_normals_);
-    utility::CopyToDeviceMultiStream(vertex_colors_, trianglemesh.vertex_colors_);
-    utility::CopyToDeviceMultiStream(triangles_, trianglemesh.triangles_);
-    utility::CopyToDeviceMultiStream(triangle_normals_, trianglemesh.triangle_normals_);
-    utility::CopyToDeviceMultiStream(triangle_uvs_, trianglemesh.triangle_uvs_);
+    thrust::copy(vertices_.begin(), vertices_.end(), trianglemesh.vertices_.begin());
+    thrust::copy(vertex_normals_.begin(), vertex_normals_.end(), trianglemesh.vertex_normals_.begin());
+    thrust::copy(vertex_colors_.begin(), vertex_colors_.end(), trianglemesh.vertex_colors_.begin());
+    thrust::copy(triangles_.begin(), triangles_.end(), trianglemesh.triangles_.begin());
+    thrust::copy(triangle_normals_.begin(), triangle_normals_.end(), trianglemesh.triangle_normals_.begin());
+    thrust::copy(triangle_uvs_.begin(), triangle_uvs_.end(), trianglemesh.triangle_uvs_.begin());
     texture_.ToDevice(trianglemesh.texture_);
-    cudaDeviceSynchronize();
 }
 
 void HostTriangleMesh::Clear() {

@@ -6,9 +6,14 @@
 #else
 #include <thrust/device_vector.h>
 #endif
+#include <thrust/host_vector.h>
+#include <thrust/system/cuda/experimental/pinned_allocator.h>
 
 namespace cupoch {
 namespace utility {
+
+template<typename T>
+using pinned_host_vector = thrust::host_vector<T, thrust::cuda::experimental::pinned_allocator<T>>;
 
 #ifdef USE_RMM
 template <typename T>
