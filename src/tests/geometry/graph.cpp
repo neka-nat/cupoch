@@ -77,9 +77,9 @@ TEST(Graph, DijkstraPath) {
     gp.AddEdge({3, 4});
 
     auto res = gp.DijkstraPathsHost(0);
-    EXPECT_EQ(res.size(), 5);
-    EXPECT_EQ(res[1].shortest_distance_, 1.0);
-    EXPECT_EQ(res[2].shortest_distance_, 2.0);
-    EXPECT_EQ(res[3].shortest_distance_, 2.0);
-    EXPECT_EQ(res[4].shortest_distance_, 3.0);
+    EXPECT_EQ(res->size(), 5);
+    EXPECT_EQ((*res)[1].shortest_distance_, 1.0);
+    EXPECT_EQ((*res)[2].shortest_distance_, 2.0);
+    EXPECT_EQ((*res)[3].shortest_distance_, 2.0);
+    EXPECT_EQ((*res)[4].shortest_distance_, 3.0);
 }

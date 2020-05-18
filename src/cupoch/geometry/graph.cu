@@ -412,8 +412,9 @@ Graph &Graph::SetEdgeWeightsFromDistance() {
     return *this;
 }
 
-Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_index) const {
-    SSSPResultArray out(points_.size());
+std::shared_ptr<Graph::SSSPResultArray> Graph::DijkstraPaths(int start_node_index, int end_node_index) const {
+    auto out = std::make_shared<Graph::SSSPResultArray>();
+    out->resize(points_.size());
 
     if (!IsConstructed()) {
         utility::LogError("[DijkstraPath] this graph is not constructed.");
@@ -436,18 +437,18 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
     SSSPResultArray res_tmp(lines_.size());
     SSSPResultArray res_tmp_s(points_.size());
     open_flags[start_node_index] = 1;
-    out[start_node_index] = SSSPResult(0.0, start_node_index);
+    (*out)[start_node_index] = SSSPResult(0.0, start_node_index);
     relax_functor func1(thrust::raw_pointer_cast(lines_.data()),
                         thrust::raw_pointer_cast(edge_index_offsets_.data()),
                         thrust::raw_pointer_cast(edge_weights_.data()),
                         thrust::raw_pointer_cast(old_to_new_edge_table.data()),
                         thrust::raw_pointer_cast(open_flags.data()),
-                        thrust::raw_pointer_cast(out.data()),
+                        thrust::raw_pointer_cast(out->data()),
                         thrust::raw_pointer_cast(res_tmp.data()));
     update_shortest_distances_functor func2(thrust::raw_pointer_cast(open_flags.data()),
-                                            thrust::raw_pointer_cast(out.data()),
+                                            thrust::raw_pointer_cast(out->data()),
                                             thrust::raw_pointer_cast(res_tmp_s.data()));
-    compare_path_length_functor func3(thrust::raw_pointer_cast(out.data()),
+    compare_path_length_functor func3(thrust::raw_pointer_cast(out->data()),
                                       thrust::raw_pointer_cast(open_flags.data()),
                                       end_node_index);
     size_t nt = points_.size();
@@ -468,25 +469,26 @@ Graph::SSSPResultArray Graph::DijkstraPaths(int start_node_index, int end_node_i
     return out;
 }
 
-Graph::SSSPResultHostArray Graph::DijkstraPathsHost(int start_node_index, int end_node_index) const {
+std::shared_ptr<Graph::SSSPResultHostArray> Graph::DijkstraPathsHost(int start_node_index, int end_node_index) const {
     auto out = DijkstraPaths(start_node_index, end_node_index);
-    SSSPResultHostArray h_out = out;
+    auto h_out = std::make_shared<Graph::SSSPResultHostArray>();
+    *h_out = *out;
     return h_out;
 }
 
-thrust::host_vector<int> Graph::DijkstraPath(int start_node_index, int end_node_index) const {
+std::shared_ptr<thrust::host_vector<int>> Graph::DijkstraPath(int start_node_index, int end_node_index) const {
     auto res = DijkstraPaths(start_node_index, end_node_index);
-    SSSPResultHostArray h_res = res;
-    if (h_res[end_node_index].prev_index_ < 0) return thrust::host_vector<int>();
-    thrust::host_vector<int> path_nodes;
-    path_nodes.push_back(end_node_index);
+    SSSPResultHostArray h_res = *res;
+    auto path_nodes = std::make_shared<thrust::host_vector<int>>();
+    if (h_res[end_node_index].prev_index_ < 0) return path_nodes;
+    path_nodes->push_back(end_node_index);
     int prev_index = h_res[end_node_index].prev_index_;
     while (prev_index != start_node_index) {
-        path_nodes.push_back(prev_index);
+        path_nodes->push_back(prev_index);
         prev_index = h_res[prev_index].prev_index_;
     }
-    path_nodes.push_back(start_node_index);
-    thrust::reverse(path_nodes.begin(), path_nodes.end());
+    path_nodes->push_back(start_node_index);
+    thrust::reverse(path_nodes->begin(), path_nodes->end());
     return path_nodes;
 }
 

@@ -73,9 +73,9 @@ public:
 
     Graph &SetEdgeWeightsFromDistance();
 
-    SSSPResultArray DijkstraPaths(int start_node_index, int end_node_index = -1) const;
-    SSSPResultHostArray DijkstraPathsHost(int start_node_index, int end_node_index = -1) const;
-    thrust::host_vector<int> DijkstraPath(int start_node_index, int end_node_index) const;
+    std::shared_ptr<SSSPResultArray> DijkstraPaths(int start_node_index, int end_node_index = -1) const;
+    std::shared_ptr<SSSPResultHostArray> DijkstraPathsHost(int start_node_index, int end_node_index = -1) const;
+    std::shared_ptr<thrust::host_vector<int>> DijkstraPath(int start_node_index, int end_node_index) const;
 
     static std::shared_ptr<Graph> CreateFromTriangleMesh(const TriangleMesh &input);
 

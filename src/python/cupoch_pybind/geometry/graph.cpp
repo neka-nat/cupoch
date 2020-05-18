@@ -34,7 +34,10 @@ void pybind_graph(py::module &m) {
          .def("paint_nodes_color", py::overload_cast<const thrust::host_vector<int>&, const Eigen::Vector3f&>(&geometry::Graph::PaintNodesColor),
               "Paint nodes with the color", "nodes"_a, "color"_a)
          .def("set_edge_weights_from_distance", &geometry::Graph::SetEdgeWeightsFromDistance)
-         .def("dijkstra_path", py::overload_cast<int, int>(&geometry::Graph::DijkstraPath, py::const_))
+         .def("dijkstra_path", [] (const geometry::Graph &graph, int start_node, int end_node) {
+                  auto res = graph.DijkstraPath(start_node, end_node);
+                  return *res;
+              })
          .def_static("create_from_triangle_mesh",
                      &geometry::Graph::CreateFromTriangleMesh,
                      "Function to make graph from a TriangleMesh",
