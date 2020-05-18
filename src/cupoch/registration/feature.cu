@@ -62,7 +62,7 @@ struct compute_spfh_functor {
     const int knn_;
     const float hist_incr_;
     __device__ Feature<33>::FeatureType operator()(size_t idx) const {
-        Feature<33>::FeatureType ft;
+        Feature<33>::FeatureType ft = Feature<33>::FeatureType::Zero();
         for (size_t k = 1; k < knn_; k++) {
             // skip the point itself, compute histogram
             auto pf = ComputePairFeatures(points_[idx], normals_[idx],
