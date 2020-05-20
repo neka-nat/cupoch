@@ -3,6 +3,7 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/visualization/shader/shader.h"
+#include "cupoch/utility/platform.h"
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 

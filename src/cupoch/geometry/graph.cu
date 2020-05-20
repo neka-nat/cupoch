@@ -42,6 +42,24 @@ struct replace_colors_functor {
     }
 };
 
+struct extract_near_edges_functor {
+    extract_near_edges_functor(const Eigen::Vector3f &point,
+                               int point_no,
+                               float max_edge_distance)
+                               : point_(point),
+                               point_no_(point_no),
+                               max_edge_distance_(max_edge_distance) {};
+    const Eigen::Vector3f point_;
+    const int point_no_;
+    const float max_edge_distance_;
+    __device__ thrust::tuple<Eigen::Vector2i, float> operator() (const thrust::tuple<int, Eigen::Vector3f>& x) const {
+        int i = thrust::get<0>(x);
+        const Eigen::Vector3f& p = thrust::get<1>(x);
+        float d = (p - point_).norm();
+        return thrust::make_tuple((d < max_edge_distance_) ? Eigen::Vector2i(i, point_no_) : Eigen::Vector2i(-1, -1), d);
+    }
+};
+
 struct relax_functor {
     relax_functor(const Eigen::Vector2i* lines,
                   const int* edge_index_offsets,
@@ -185,7 +203,24 @@ Graph &Graph::ConstructGraph() {
     return *this;
 }
 
-Graph &Graph::AddEdge(const Eigen::Vector2i &edge, float weight) {
+
+Graph &Graph::AddNodeAndConnect(const Eigen::Vector3f& point, float max_edge_distance, bool lazy_add) {
+    size_t n_points = points_.size();
+    utility::device_vector<Eigen::Vector2i> new_edges(n_points);
+    utility::device_vector<float> new_weights(n_points);
+    extract_near_edges_functor func(point, n_points, max_edge_distance);
+    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator(0), points_.begin()),
+                      make_tuple_iterator(thrust::make_counting_iterator<int>(n_points), points_.end()),
+                      make_tuple_begin(new_edges, new_weights), func);
+    auto remove_fn = [] __device__ (const thrust::tuple<Eigen::Vector2i, float>& x) {
+        return thrust::get<0>(x)[0] < 0;
+    };
+    remove_if_vectors(remove_fn, new_edges, new_weights);
+    points_.push_back(point);
+    return AddEdges(new_edges, new_weights, lazy_add);
+}
+
+Graph &Graph::AddEdge(const Eigen::Vector2i &edge, float weight, bool lazy_add) {
     lines_.push_back(edge);
     edge_weights_.push_back(weight);
     if (!is_directed_) {
@@ -196,11 +231,11 @@ Graph &Graph::AddEdge(const Eigen::Vector2i &edge, float weight) {
         colors_.push_back(Eigen::Vector3f::Ones());
         if (!is_directed_) colors_.push_back(Eigen::Vector3f::Ones());
     }
-    return ConstructGraph();
+    return (lazy_add) ? *this : ConstructGraph();
 }
 
 Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
-                       const utility::device_vector<float> &weights) {
+                       const utility::device_vector<float> &weights, bool lazy_add) {
     if (!weights.empty() && edges.size() != weights.size()) {
         utility::LogError("[AddEdges] edges size is not equal to weights size.");
         return *this;
@@ -226,14 +261,15 @@ Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
         colors_.resize(lines_.size());
         thrust::fill(colors_.begin() + n_old_lines, colors_.end(), Eigen::Vector3f::Ones());
     }
-    return ConstructGraph();
+    return (lazy_add) ? *this : ConstructGraph();
 }
 
 Graph &Graph::AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
-                       const thrust::host_vector<float> &weights) {
+                       const thrust::host_vector<float> &weights,
+                       bool lazy_add) {
     utility::device_vector<Eigen::Vector2i> d_edges = edges;
     utility::device_vector<float> d_weights = weights;
-    return AddEdges(d_edges, d_weights);
+    return AddEdges(d_edges, d_weights, lazy_add);
 }
 
 Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {

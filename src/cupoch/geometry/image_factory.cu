@@ -1,5 +1,6 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;

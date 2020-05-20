@@ -43,12 +43,16 @@ struct create_dense_grid_lines_functor {
         int zk = yzk % (resolutions_[2] * 26);
         int z = zk / 26;
         int k = zk % 26;
+        Eigen::Vector3i sidx = Eigen::Vector3i(x, y, z);
         Eigen::Vector3i gidx = Eigen::Vector3i(x + voxel_offset[k][0],
                                                y + voxel_offset[k][1],
                                                z + voxel_offset[k][2]);
+        if (gidx[0] < 0 || gidx[0] >= resolutions_[0] ||
+            gidx[1] < 0 || gidx[1] >= resolutions_[1] ||
+            gidx[2] < 0 || gidx[2] >= resolutions_[2]) return Eigen::Vector2i(-1, -1);
         int j = gidx[0] * resolutions_[1] * resolutions_[2]  + gidx[1] * resolutions_[2] + gidx[2];
-        if (j < 0 || j >= resolutions_.prod()) return Eigen::Vector2i(-1, -1);
-        return Eigen::Vector2i(idx, j);
+        int i = sidx[0] * resolutions_[1] * resolutions_[2]  + sidx[1] * resolutions_[2] + sidx[2];
+        return Eigen::Vector2i(i, j);
     }
 };
 
@@ -80,7 +84,7 @@ std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const geometry::A
                       out->points_.begin(), pfunc);
     out->lines_.resize(n_points * 26);
     create_dense_grid_lines_functor lfunc(resolutions);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_points),
+    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_points * 26),
                       out->lines_.begin(), lfunc);
     auto end = thrust::remove_if(out->lines_.begin(), out->lines_.end(),
                                  [] __device__ (const Eigen::Vector2i& l) {
@@ -89,6 +93,12 @@ std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const geometry::A
     out->lines_.resize(thrust::distance(out->lines_.begin(), end));
     out->ConstructGraph();
     return out;
+}
+
+std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const Eigen::Vector3f& min_bound,
+                                                               const Eigen::Vector3f& max_bound,
+                                                               const Eigen::Vector3i& resolutions) {
+    return Graph::CreateFromAxisAlignedBoundingBox(geometry::AxisAlignedBoundingBox(min_bound, max_bound), resolutions);
 }
 
 }

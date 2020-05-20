@@ -2,7 +2,7 @@
 <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/cupoch_logo.png" width="320" />
 </p>
 
-# CUDA-based 3D Data Processing and Robotics Library
+# Robotics with GPU computing
 
 [![Build Status](https://travis-ci.com/neka-nat/cupoch.svg?branch=master)](https://travis-ci.com/neka-nat/cupoch)
 [![PyPI version](https://badge.fury.io/py/cupoch.svg)](https://badge.fury.io/py/cupoch)
@@ -24,6 +24,7 @@ This library is based on the functionality of Open3D, with additional features f
     * Collision checking
     * Occupancy grid
     * Path finding on graph structure
+    * Path planning for collision avoidance
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
@@ -112,4 +113,5 @@ python realsense_rgbd_odometry_node.py
 ## References
 
 * CUDA repository forked from Open3D, https://github.com/theNded/Open3D
+* GPU computing in Robotics, https://github.com/JanuszBedkowski/gpu_computing_in_robotics
 * Voxel collision comupation for robotics, https://github.com/fzi-forschungszentrum-informatik/gpu-voxels

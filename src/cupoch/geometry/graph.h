@@ -53,11 +53,15 @@ public:
     Graph &Clear() override;
 
     Graph &ConstructGraph();
-    Graph &AddEdge(const Eigen::Vector2i &edge, float weight = 1.0);
+    Graph &AddNodeAndConnect(const Eigen::Vector3f& point, float max_edge_distance = 0.0f, bool lazy_add = false);
+
+    Graph &AddEdge(const Eigen::Vector2i &edge, float weight = 1.0, bool lazy_add = false);
     Graph &AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
-                    const utility::device_vector<float> &weights = utility::device_vector<float>());
+                    const utility::device_vector<float> &weights = utility::device_vector<float>(),
+                    bool lazy_add = false);
     Graph &AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
-                    const thrust::host_vector<float> &weights = thrust::host_vector<float>());
+                    const thrust::host_vector<float> &weights = thrust::host_vector<float>(),
+                    bool lazy_add = false);
 
     Graph &RemoveEdge(const Eigen::Vector2i &edge);
     Graph &RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges);
@@ -79,6 +83,9 @@ public:
 
     static std::shared_ptr<Graph> CreateFromTriangleMesh(const TriangleMesh &input);
     static std::shared_ptr<Graph> CreateFromAxisAlignedBoundingBox(const geometry::AxisAlignedBoundingBox& bbox,
+                                                                   const Eigen::Vector3i& resolutions);
+    static std::shared_ptr<Graph> CreateFromAxisAlignedBoundingBox(const Eigen::Vector3f& min_bound,
+                                                                   const Eigen::Vector3f& max_bound,
                                                                    const Eigen::Vector3i& resolutions);
 
 public:

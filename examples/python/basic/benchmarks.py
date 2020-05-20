@@ -68,7 +68,7 @@ speeds['cluster_dbscan'] = (tc / tg)
 
 import matplotlib.pyplot as plt
 plt.style.use('seaborn')
-plt.title("Speedup over open3d (%d points)" % np.asarray(pc_gpu.points.cpu()).shape[0])
+plt.title("Speedup over CPU (%d points)" % np.asarray(pc_gpu.points.cpu()).shape[0])
 plt.ylabel("Speedup")
 plt.bar(speeds.keys(), speeds.values())
 plt.xticks(rotation=70)

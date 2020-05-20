@@ -30,6 +30,11 @@ for i in range(len(path[:-1])):
 gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])
 
+# Graph from axis aligned bounding box
+gp = cph.geometry.Graph.create_from_axis_aligned_bounding_box([-1.0, -1.0, -1.0],
+                                                              [1.0, 1.0, 1.0],
+                                                              [10, 20, 5])
+cph.visualization.draw_geometries([gp])
 
 # Graph from triangle mesh
 mesh = meshes.bunny()

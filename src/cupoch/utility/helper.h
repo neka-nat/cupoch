@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "cupoch/utility/device_vector.h"
-#include "cupoch/utility/platform.h"
 
 namespace thrust {
 
@@ -248,6 +247,11 @@ void remove_negative(utility::device_vector<Eigen::Matrix<int, Dim, 1>>& idxs) {
     idxs.resize(thrust::distance(idxs.begin(), end));
 }
 
+template<typename T, int Size, int Index>
+struct extract_element_functor {
+    __device__ T operator() (const Eigen::Matrix<T, Size, 1>& x) { return x[Index]; };
+};
+
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {
     return x * resolution * resolution + y * resolution + z;
 }
@@ -282,24 +286,6 @@ std::string &RightStripString(std::string &str,
 /// str.strip()
 std::string &StripString(std::string &str,
                          const std::string &chars = "\t\n\v\f\r ");
-
-template <typename T>
-void CopyToDeviceAsync(const utility::pinned_host_vector<T> &src,
-                       utility::device_vector<T> &dst,
-                       size_t stream_no = 0) {
-    cudaMemcpyAsync(thrust::raw_pointer_cast(dst.data()),
-                    thrust::raw_pointer_cast(src.data()), src.size() * sizeof(T),
-                    cudaMemcpyHostToDevice, GetStream(stream_no));
-}
-
-template <typename T>
-void CopyFromDeviceAsync(const utility::device_vector<T> &src,
-                         utility::pinned_host_vector<T> &dst,
-                         size_t stream_no = 0) {
-    cudaMemcpyAsync(thrust::raw_pointer_cast(dst.data()),
-                    thrust::raw_pointer_cast(src.data()), src.size() * sizeof(T),
-                    cudaMemcpyDeviceToHost, GetStream(stream_no));
-}
 
 }  // namespace utility
 }  // namespace cupoch

@@ -18,9 +18,9 @@ void pybind_graph(py::module &m) {
               "points"_a)
          .def("construct_graph", &geometry::Graph::ConstructGraph)
          .def("add_edge", &geometry::Graph::AddEdge,
-              "Add an edge to the graph", "edge"_a, "weight"_a = 1.0)
-         .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&>(&geometry::Graph::AddEdges),
-              "Add edges to the graph", "edges"_a, "weights"_a = thrust::host_vector<float>())
+              "Add an edge to the graph", "edge"_a, "weight"_a = 1.0, "lazy_add"_a = false)
+         .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&, bool>(&geometry::Graph::AddEdges),
+              "Add edges to the graph", "edges"_a, "weights"_a = thrust::host_vector<float>(), "lazy_add"_a = false)
          .def("remove_edge", &geometry::Graph::RemoveEdge,
               "Remove an edge from the graph", "edge"_a)
          .def("remove_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&>(&geometry::Graph::RemoveEdges),
@@ -42,6 +42,14 @@ void pybind_graph(py::module &m) {
                      &geometry::Graph::CreateFromTriangleMesh,
                      "Function to make graph from a TriangleMesh",
                      "input"_a)
+         .def_static("create_from_axis_aligned_bounding_box",
+                     py::overload_cast<const geometry::AxisAlignedBoundingBox&, const Eigen::Vector3i&>(&geometry::Graph::CreateFromAxisAlignedBoundingBox),
+                     "Function to make graph from a AlignedBoundingBox",
+                     "input"_a, "resolutions"_a)
+         .def_static("create_from_axis_aligned_bounding_box",
+                     py::overload_cast<const Eigen::Vector3f&, const Eigen::Vector3f&, const Eigen::Vector3i&>(&geometry::Graph::CreateFromAxisAlignedBoundingBox),
+                     "Function to make graph from a AlignedBoundingBox",
+                     "min_bound"_a, "max_bound"_a, "resolutions"_a)
          .def_property("edges", [] (geometry::Graph &graph) {return wrapper::device_vector_vector2i(graph.lines_);},
                        [] (geometry::Graph &graph, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(graph.lines_, vec);})
          .def_property("edge_weights", [] (geometry::Graph &graph) {return wrapper::device_vector_float(graph.edge_weights_);},

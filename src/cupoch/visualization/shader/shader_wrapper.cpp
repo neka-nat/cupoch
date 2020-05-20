@@ -2,6 +2,7 @@
 
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 

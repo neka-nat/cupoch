@@ -3,13 +3,13 @@
 ## Core features
 
 * 3D data processing and robotics computation using CUDA
-    * Point cloud registration
-    * Point cloud clustering
+    * Point cloud registration (ICP, ColoredICP)
+    * Point cloud clustering (DBSCAN)
     * Point cloud/Triangle mesh filtering, down sampling
     * Visual Odometry
     * Collision checking
     * Occupancy grid
-    * Path finding on graph structure
+    * Path finding on graph structure (Dijkstra algorithm)
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))

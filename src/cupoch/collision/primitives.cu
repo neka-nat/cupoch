@@ -212,17 +212,17 @@ std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(const Primitive& primitive,
 
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweeping(const Primitive& primitive,
     float voxel_size, const Eigen::Matrix4f& dst, int sampling) {
-        switch (primitive.type_) {
-            case Primitive::PrimitiveType::Sphere: {
-                const Sphere& sphere = (const Sphere&)primitive;
-                return CreateVoxelGridWithSweepingFromSphere(sphere.radius_, sphere.transform_,
-                                                             voxel_size, dst, sampling);
-            }
-            default: {
-                utility::LogError("[CreateVoxelGridWithSweeping] Unsupported primitive type.");
-                return std::shared_ptr<geometry::VoxelGrid>();
-            }
+    switch (primitive.type_) {
+        case Primitive::PrimitiveType::Sphere: {
+            const Sphere& sphere = (const Sphere&)primitive;
+            return CreateVoxelGridWithSweepingFromSphere(sphere.radius_, sphere.transform_,
+                                                         voxel_size, dst, sampling);
         }
+        default: {
+            utility::LogError("[CreateVoxelGridWithSweeping] Unsupported primitive type.");
+            return std::shared_ptr<geometry::VoxelGrid>();
+        }
+    }
 }
 
 std::shared_ptr<geometry::TriangleMesh> CreateTriangleMesh(const Primitive& primitive) {

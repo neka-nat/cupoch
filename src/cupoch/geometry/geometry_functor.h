@@ -19,11 +19,6 @@ struct compute_grid_center_functor {
     }
 };
 
-template<typename T, int Size, int Index>
-struct extract_element_functor {
-    __device__ T operator() (const Eigen::Matrix<T, Size, 1>& x) { return x[Index]; };
-};
-
 template <typename TupleType, int Index, typename Func>
 struct tuple_element_compare_functor {
     __device__ bool operator() (const TupleType& rhs, const TupleType& lhs) {

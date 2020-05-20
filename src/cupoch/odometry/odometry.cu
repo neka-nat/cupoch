@@ -5,6 +5,8 @@
 #include "cupoch/odometry/odometry.h"
 #include "cupoch/odometry/rgbdodometry_jacobian.h"
 
+#include "cupoch/utility/platform.h"
+
 namespace cupoch {
 namespace odometry {
 

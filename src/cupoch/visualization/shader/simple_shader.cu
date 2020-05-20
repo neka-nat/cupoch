@@ -9,6 +9,7 @@
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/visualizer/render_option.h"
 #include "cupoch/visualization/utility/color_map.h"
+#include "cupoch/utility/platform.h"
 #include <thrust/iterator/constant_iterator.h>
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
