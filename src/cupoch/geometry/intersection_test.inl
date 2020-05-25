@@ -84,6 +84,61 @@ bool SphereAABB(const Eigen::Vector3f& center,
     return dist2 <= radius * radius;
 }
 
+bool BoxBox(const Eigen::Vector3f& extents1,
+            const Eigen::Matrix3f& rot1,
+            const Eigen::Vector3f& center1,
+            const Eigen::Vector3f& extents2,
+            const Eigen::Matrix3f& rot2,
+            const Eigen::Vector3f& center2) {
+    const Eigen::Matrix3f r = rot1 * rot2;
+    const Eigen::Vector3f t = rot1 * (center2 - center1);
+    const Eigen::Matrix3f absr = r.array().abs() + std::numeric_limits<float>::epsilon();
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(t[i]) > extents1[i] + absr.row(i).dot(extents2)) return false;
+    }
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(t.dot(r.col(i))) > absr.col(i).dot(extents1) + extents2[i]) return false;
+    }
+    float ra, rb;
+    ra = extents1[1] * absr(2, 0) + extents1[2] * absr(1, 0);
+    rb = extents2[1] * absr(0, 2) + extents2[2] * absr(0, 1);
+    if (std::abs(t[2] * r(1, 0) - t[1] * r(2, 0)) > ra + rb) return false;
+
+    ra = extents1[1] * absr(2, 1) + extents1[2] * absr(1, 1);
+    rb = extents2[0] * absr(0, 2) + extents2[2] * absr(0, 0);
+    if (std::abs(t[2] * r(1, 1) - t[1] * r(2, 1)) > ra + rb) return false;
+
+    ra = extents1[1] * absr(2, 2) + extents1[2] * absr(1, 2);
+    rb = extents2[0] * absr(0, 1) + extents2[1] * absr(0, 0);
+    if (std::abs(t[2] * r(1, 2) - t[1] * r(2, 2)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(2, 0) + extents1[2] * absr(0, 0);
+    rb = extents2[1] * absr(1, 2) + extents2[2] * absr(1, 1);
+    if (std::abs(t[0] * r(2, 0) - t[2] * r(0, 0)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(2, 1) + extents1[2] * absr(0, 1);
+    rb = extents2[0] * absr(1, 2) + extents2[2] * absr(1, 0);
+    if (std::abs(t[0] * r(2, 1) - t[2] * r(0, 1)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(2, 2) + extents1[2] * absr(0, 2);
+    rb = extents2[0] * absr(1, 1) + extents2[1] * absr(1, 0);
+    if (std::abs(t[0] * r(2, 2) - t[2] * r(0, 2)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(1, 0) + extents1[1] * absr(0, 0);
+    rb = extents2[1] * absr(2, 2) + extents2[2] * absr(2, 1);
+    if (std::abs(t[1] * r(0, 1) - t[0] * r(1, 0)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(1, 1) + extents1[1] * absr(0, 1);
+    rb = extents2[0] * absr(2, 2) + extents2[2] * absr(2, 0);
+    if (std::abs(t[1] * r(0, 1) - t[0] * r(1, 1)) > ra + rb) return false;
+
+    ra = extents1[0] * absr(1, 2) + extents1[1] * absr(0, 2);
+    rb = extents2[0] * absr(2, 1) + extents2[1] * absr(2, 0);
+    if (std::abs(t[1] * r(0, 2) - t[0] * r(1, 2)) > ra + rb) return false;
+
+    return true;
+}
+
 }  // namespace intersection_test
 
 }  // namespace geometry

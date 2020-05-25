@@ -14,6 +14,19 @@ void pybind_primitives(py::module &m) {
                       "Primitive shape class.");
     py::detail::bind_default_constructor<Primitive>(primitive);
     py::detail::bind_copy_functions<Primitive>(primitive);
+    primitive.def_readwrite("transform", &Primitive::transform_);
+
+    py::class_<Box, std::shared_ptr<Box>, Primitive>
+            box(m, "Box",
+                "Box class. A box consists of a center point "
+                "coordinate, and lengths.");
+    py::detail::bind_default_constructor<Box>(box);
+    py::detail::bind_copy_functions<Box>(box);
+    box.def(py::init<const Eigen::Vector3f&>(),
+           "Create a Box", "lengths"_a)
+       .def(py::init<const Eigen::Vector3f&, const Eigen::Matrix4f&>(),
+            "Create a Box", "lengths"_a, "transform"_a)
+       .def_readwrite("lengths", &Box::lengths_);
 
     py::class_<Sphere, std::shared_ptr<Sphere>, Primitive>
             sphere(m, "Sphere",
@@ -26,6 +39,7 @@ void pybind_primitives(py::module &m) {
           .def(py::init<float, const Eigen::Vector3f&>(),
                "Create a Sphere", "radius"_a, "center"_a)
           .def_readwrite("radius", &Sphere::radius_);
+
      m.def("create_voxel_grid", &CreateVoxelGrid);
      m.def("create_voxel_grid_with_sweeping", &CreateVoxelGridWithSweeping);
      m.def("create_triangle_mesh", &CreateTriangleMesh);

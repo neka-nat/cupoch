@@ -40,6 +40,14 @@ __host__ __device__ inline bool SphereAABB(
         const Eigen::Vector3f& min_bound,
         const Eigen::Vector3f& max_bound);
 
+__host__ __device__ inline bool BoxBox(
+        const Eigen::Vector3f& extents1,
+        const Eigen::Matrix3f& rot1,
+        const Eigen::Vector3f& center1,
+        const Eigen::Vector3f& extents2,
+        const Eigen::Matrix3f& rot2,
+        const Eigen::Vector3f& center2);
+
 }  // namespace intersection_test
 
 }  // namespace geometry

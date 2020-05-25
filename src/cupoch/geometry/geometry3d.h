@@ -17,7 +17,7 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    Geometry3D(GeometryType type);
+    __host__ __device__ Geometry3D(GeometryType type) : Geometry(type, 3) {};
 
 public:
     Geometry3D &Clear() override = 0;

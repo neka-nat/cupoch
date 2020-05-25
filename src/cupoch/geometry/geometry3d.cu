@@ -31,8 +31,6 @@ struct transform_normals_functor {
 };
 }  // namespace
 
-Geometry3D::Geometry3D(GeometryType type) : Geometry(type, 3) {}
-
 Eigen::Vector3f Geometry3D::ComputeMinBound(
         const utility::device_vector<Eigen::Vector3f> &points) const {
     return ComputeMinBound(0, points);

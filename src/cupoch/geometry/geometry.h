@@ -44,7 +44,7 @@ public:
     __host__ __device__ ~Geometry() {}  // non-virtual
 
 protected:
-    Geometry(GeometryType type, int dimension)
+    __host__ __device__ Geometry(GeometryType type, int dimension)
         : geometry_type_(type), dimension_(dimension) {}
 
 public:

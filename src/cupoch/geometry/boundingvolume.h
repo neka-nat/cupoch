@@ -22,6 +22,7 @@ public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Oriented Bounding Box.
+    __host__ __device__
     OrientedBoundingBox()
         : Geometry3D(Geometry::GeometryType::OrientedBoundingBox),
           center_(0, 0, 0),
@@ -34,6 +35,7 @@ public:
     /// \param R The rotation matrix specifying the orientation of the
     /// bounding box with the original frame of reference.
     /// \param extent The extent of the bounding box.
+    __host__ __device__
     OrientedBoundingBox(const Eigen::Vector3f &center,
                         const Eigen::Matrix3f &R,
                         const Eigen::Vector3f &extent)
@@ -100,6 +102,7 @@ public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Axis Aligned Bounding Box.
+    __host__ __device__
     AxisAlignedBoundingBox()
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
@@ -109,6 +112,7 @@ public:
     ///
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
+    __host__ __device__
     AxisAlignedBoundingBox(const Eigen::Vector3f &min_bound,
                            const Eigen::Vector3f &max_bound)
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),

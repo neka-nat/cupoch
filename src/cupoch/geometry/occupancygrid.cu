@@ -372,10 +372,10 @@ OccupancyGrid& OccupancyGrid::AddVoxels(const utility::device_vector<Eigen::Vect
     Eigen::Vector3i bv = voxels.back();
     Eigen::Vector3ui16 fvu = fv.cast<unsigned short>();
     Eigen::Vector3ui16 bvu = bv.cast<unsigned short>();
-    min_bound_ = (min_bound_.array() > fvu.array()).select(fvu, min_bound_);
-    min_bound_ = (min_bound_.array() > bvu.array()).select(bvu, min_bound_);
-    max_bound_ = (max_bound_.array() < fvu.array()).select(fvu, max_bound_);
-    max_bound_ = (max_bound_.array() < bvu.array()).select(bvu, max_bound_);
+    min_bound_ = min_bound_.array().min(fvu.array());
+    min_bound_ = min_bound_.array().min(bvu.array());
+    max_bound_ = max_bound_.array().max(fvu.array());
+    max_bound_ = max_bound_.array().max(bvu.array());
     add_occupancy_functor func(thrust::raw_pointer_cast(voxels_.data()),
                                resolution_, clamping_thres_min_, clamping_thres_max_,
                                prob_miss_log_, prob_hit_log_, occupied);
