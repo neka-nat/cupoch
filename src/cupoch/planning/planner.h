@@ -5,24 +5,31 @@
 namespace cupoch {
 namespace planning {
 
-class Planner {
+typedef std::vector<Eigen::Vector3f> Path;
+
+class PlannerBase {
 public:
-    typedef std::vector<Eigen::Vector3f> Path;
+    PlannerBase() {};
+    virtual ~PlannerBase() {};
+    virtual PlannerBase &AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle);
+    virtual std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const = 0;
+public:
+    std::vector<std::shared_ptr<geometry::Geometry>> obstacles_;
+};
 
-    Planner();
-    Planner(const geometry::Graph& graph);
-    ~Planner();
+class SimplePlanner : public PlannerBase {
+public:
+    SimplePlanner(float object_radius = 0.1);
+    SimplePlanner(const geometry::Graph& graph, float object_radius = 0.1);
+    ~SimplePlanner();
 
-    Planner &AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle);
-    Planner &UpdateGraph(float margin = 0.0f);
-
+    SimplePlanner &UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const;
 public:
     geometry::Graph graph_;
 
-    std::vector<std::shared_ptr<geometry::Geometry>> obstacles_;
+    float object_radius_;
     float max_edge_distance_ = 1.0;
-    float margin_ = 0.0;
 };
 
 }

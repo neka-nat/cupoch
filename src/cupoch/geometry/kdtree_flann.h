@@ -83,7 +83,6 @@ public:
                      thrust::host_vector<int> &indices,
                      thrust::host_vector<float> &distance2) const;
 
-private:
     template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);
 

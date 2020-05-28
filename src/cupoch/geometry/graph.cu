@@ -1,5 +1,6 @@
 #include "cupoch/geometry/graph.h"
 #include "cupoch/geometry/geometry_functor.h"
+#include "cupoch/geometry/kdtree_flann.h"
 
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
@@ -171,7 +172,7 @@ Graph &Graph::Clear() {
     return *this;
 }
 
-Graph &Graph::ConstructGraph() {
+Graph &Graph::ConstructGraph(bool set_edge_weights_from_distance) {
     if (lines_.empty()) {
         utility::LogError("[ConstructGraph] Graph has no edges.");
         return *this;
@@ -200,9 +201,45 @@ Graph &Graph::ConstructGraph() {
     counts.resize(thrust::distance(counts.begin(), end.second));
     thrust::gather(indices.begin(), indices.end(), counts.begin(), edge_index_offsets_.begin());
     thrust::exclusive_scan(edge_index_offsets_.begin(), edge_index_offsets_.end(), edge_index_offsets_.begin());
+    if (set_edge_weights_from_distance) {
+        SetEdgeWeightsFromDistance();
+    }
     return *this;
 }
 
+Graph &Graph::ConnectToNearestNeighbors(float max_edge_distance, int max_num_edges) {
+    utility::device_vector<int> indices;
+    utility::device_vector<float> weights;
+    utility::device_vector<Eigen::Vector2i> new_edges(points_.size() * (max_num_edges + 1));
+    geometry::KDTreeFlann kdtree;
+    kdtree.SetRawData(points_);
+    kdtree.SearchHybrid(points_, max_edge_distance, max_num_edges + 1, indices, weights);
+    thrust::transform(thrust::make_counting_iterator(0),
+                      thrust::make_counting_iterator<int>(new_edges.size()),
+                      indices.begin(), new_edges.begin(),
+                      [max_num_edges] __device__ (int idx, int j) {
+                          int i = idx / max_num_edges;
+                          return (j >= 0 && i != j) ? Eigen::Vector2i(i, j) : Eigen::Vector2i(-1, -1);
+                      });
+    auto remove_fn = [] __device__ (const thrust::tuple<Eigen::Vector2i, float>& x) {
+        return thrust::get<0>(x)[0] < 0;
+    };
+    remove_if_vectors(remove_fn, new_edges, weights);
+    thrust::sort_by_key(new_edges.begin(), new_edges.end(), weights.begin());
+    utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
+    utility::device_vector<float> res_weights(new_edges.size());
+    auto func = tuple_element_compare_functor<EdgeWeight, 0, thrust::greater<Eigen::Vector2i>>();
+    auto begin = make_tuple_begin(res_edges, res_weights);
+    auto end = thrust::set_difference(make_tuple_begin(new_edges, weights),
+                                      make_tuple_end(new_edges, weights),
+                                      make_tuple_begin(lines_, edge_weights_),
+                                      make_tuple_end(lines_, edge_weights_),
+                                      begin, func);
+    resize_all(thrust::distance(begin, end), res_edges, res_weights);
+    lines_.insert(lines_.end(), res_edges.begin(), res_edges.end());
+    edge_weights_.insert(edge_weights_.end(), res_weights.begin(), res_weights.end());
+    return ConstructGraph(false);
+}
 
 Graph &Graph::AddNodeAndConnect(const Eigen::Vector3f& point, float max_edge_distance, bool lazy_add) {
     size_t n_points = points_.size();
@@ -231,7 +268,7 @@ Graph &Graph::AddEdge(const Eigen::Vector2i &edge, float weight, bool lazy_add) 
         colors_.push_back(Eigen::Vector3f::Ones());
         if (!is_directed_) colors_.push_back(Eigen::Vector3f::Ones());
     }
-    return (lazy_add) ? *this : ConstructGraph();
+    return (lazy_add) ? *this : ConstructGraph(false);
 }
 
 Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
@@ -261,7 +298,7 @@ Graph &Graph::AddEdges(const utility::device_vector<Eigen::Vector2i> &edges,
         colors_.resize(lines_.size());
         thrust::fill(colors_.begin() + n_old_lines, colors_.end(), Eigen::Vector3f::Ones());
     }
-    return (lazy_add) ? *this : ConstructGraph();
+    return (lazy_add) ? *this : ConstructGraph(false);
 }
 
 Graph &Graph::AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
@@ -285,7 +322,7 @@ Graph &Graph::RemoveEdge(const Eigen::Vector2i &edge) {
     } else {
         remove_if_vectors(check_edge_functor<Eigen::Vector2i>(edge, is_directed_), lines_);
     }
-    return ConstructGraph();
+    return ConstructGraph(false);
 }
 
 Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) {
@@ -364,7 +401,7 @@ Graph &Graph::RemoveEdges(const utility::device_vector<Eigen::Vector2i> &edges) 
     thrust::swap(lines_, new_lines);
     thrust::swap(edge_weights_, new_weights);
     thrust::swap(colors_, new_colors);
-    return ConstructGraph();
+    return ConstructGraph(false);
 }
 
 Graph &Graph::RemoveEdges(const thrust::host_vector<Eigen::Vector2i> &edges) {

@@ -40,7 +40,6 @@ cph.visualization.draw_geometries([gp])
 mesh = meshes.bunny()
 mesh.remove_unreferenced_vertices()
 gp = cph.geometry.Graph.create_from_triangle_mesh(mesh)
-gp.set_edge_weights_from_distance()
 start = time.time()
 path = gp.dijkstra_path(0, 100)
 elapsed_time = time.time() - start

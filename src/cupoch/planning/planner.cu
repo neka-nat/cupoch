@@ -8,24 +8,24 @@
 namespace cupoch {
 namespace planning {
 
-Planner::Planner() {}
-Planner::Planner(const geometry::Graph& graph)
-: graph_(graph) {}
-
-Planner::~Planner() {}
-
-Planner &Planner::AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle) {
+PlannerBase &PlannerBase::AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle) {
     obstacles_.push_back(obstacle);
     return *this;
 }
 
-Planner &Planner::UpdateGraph(float margin) {
+SimplePlanner::SimplePlanner(float object_radius) : object_radius_(object_radius) {}
+SimplePlanner::SimplePlanner(const geometry::Graph& graph, float object_radius)
+: graph_(graph), object_radius_(object_radius) {}
+
+SimplePlanner::~SimplePlanner() {}
+
+SimplePlanner &SimplePlanner::UpdateGraph() {
     for (const auto& obstacle : obstacles_) {
         auto res = std::make_shared<collision::CollisionResult>();
         switch (obstacle->GetGeometryType()) {
             case geometry::Geometry::GeometryType::VoxelGrid: {
                 const geometry::VoxelGrid& voxel_grid = (const geometry::VoxelGrid&)(*obstacle);
-                res = collision::ComputeIntersection(voxel_grid, graph_, margin_);
+                res = collision::ComputeIntersection(voxel_grid, graph_, object_radius_);
             }
             default: {
                 utility::LogError("Unsupported obstacle type.");
@@ -44,7 +44,7 @@ Planner &Planner::UpdateGraph(float margin) {
     return *this;
 }
 
-std::shared_ptr<Planner::Path> Planner::FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
+std::shared_ptr<Path> SimplePlanner::FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
     auto ex_graph = graph_;
     size_t n_start = ex_graph.points_.size();
     size_t n_goal = n_start + 1;
@@ -53,7 +53,7 @@ std::shared_ptr<Planner::Path> Planner::FindPath(const Eigen::Vector3f& start, c
     ex_graph.ConstructGraph();
     auto path_idxs = ex_graph.DijkstraPath(n_start, n_goal);
     utility::pinned_host_vector<Eigen::Vector3f> h_points = ex_graph.points_;
-    auto out = std::make_shared<Planner::Path>();
+    auto out = std::make_shared<Path>();
     for (const auto& i : *path_idxs) {
         out->push_back(h_points[i]);
     }

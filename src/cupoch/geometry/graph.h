@@ -52,7 +52,8 @@ public:
 
     Graph &Clear() override;
 
-    Graph &ConstructGraph();
+    Graph &ConstructGraph(bool set_edge_weights_from_distance = true);
+    Graph &ConnectToNearestNeighbors(float max_edge_distance, int max_num_edges = 30);
     Graph &AddNodeAndConnect(const Eigen::Vector3f& point, float max_edge_distance = 0.0f, bool lazy_add = false);
 
     Graph &AddEdge(const Eigen::Vector2i &edge, float weight = 1.0, bool lazy_add = false);

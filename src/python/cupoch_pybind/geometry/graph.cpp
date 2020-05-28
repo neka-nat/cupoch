@@ -16,7 +16,8 @@ void pybind_graph(py::module &m) {
     graph.def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
               "Create a Graph from given nodes and edges",
               "points"_a)
-         .def("construct_graph", &geometry::Graph::ConstructGraph)
+         .def("construct_graph", &geometry::Graph::ConstructGraph,
+              "Construct graph structure, when given nodes and edges.", "set_edge_weights_from_distance"_a = true)
          .def("add_edge", &geometry::Graph::AddEdge,
               "Add an edge to the graph", "edge"_a, "weight"_a = 1.0, "lazy_add"_a = false)
          .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&, bool>(&geometry::Graph::AddEdges),
