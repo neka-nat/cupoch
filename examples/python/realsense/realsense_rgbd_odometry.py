@@ -103,7 +103,7 @@ if __name__ == "__main__":
                                                                             depth_image)
 
             if not prev_rgbd_image is None:
-                res, odo_trans, _ = x3d.odometry.compute_rgbd_odometry(
+                res, odo_trans, _ = x3d.odometry.compute_weighted_rgbd_odometry(
                                 prev_rgbd_image, rgbd_image, intrinsic,
                                 np.identity(4), x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
                 if res:

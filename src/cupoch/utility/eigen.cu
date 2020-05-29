@@ -8,12 +8,18 @@ using namespace cupoch::utility;
 Eigen::Matrix4f cupoch::utility::TransformVector6fToMatrix4f(
         const Eigen::Vector6f &input) {
     Eigen::Matrix4f output = Eigen::Matrix4f::Identity();
-    output.block<3, 3>(0, 0) =
-            (Eigen::AngleAxisf(input(2), Eigen::Vector3f::UnitZ()) *
-             Eigen::AngleAxisf(input(1), Eigen::Vector3f::UnitY()) *
-             Eigen::AngleAxisf(input(0), Eigen::Vector3f::UnitX()))
-                    .matrix();
-    output.block<3, 1>(0, 3) = input.block<3, 1>(3, 0);
+    output.block<3, 1>(0, 3) = input.tail<3>();
+    const float th = input.head<3>().norm();
+    if (th == 0) {
+        return output;
+    }
+    const Eigen::Vector3f w = input.head<3>() / th;
+    const float cth = std::cos(th);
+    const float sth = std::sin(th);
+    output.block<3, 3>(0, 0) = (Eigen::Matrix3f() <<
+            cth + w[0] * w[0] * (1 - cth), w[0] * w[1] * (1 - cth) - w[2] * sth, w[1] * sth + w[0] * w[2] * (1 - cth),
+            w[2] * sth + w[0] * w[1] * (1 - cth), cth + w[1] * w[1] * (1 - cth), -w[0] * sth + w[1] * w[2] * (1 - cth),
+            -w[1] * sth + w[0] * w[2] * (1 - cth), w[0] * sth + w[1] * w[2] * (1 - cth), cth + w[2] * w[2] * (1 - cth)).finished();
     return output;
 }
 

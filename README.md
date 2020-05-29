@@ -17,10 +17,13 @@ This library is based on the functionality of Open3D, with additional features f
 ## Core Features
 
 * 3D data processing and robotics computation using CUDA
-    * Point cloud registration
+    * Point cloud registration (ICP, ColoredICP)
     * Point cloud clustering
+        * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling
     * Visual Odometry
+        * [Real-time visual odometry from dense RGB-D images](https://ieeexplore.ieee.org/document/6130321)
+        * [Robust Odometry Estimation for RGB-D Cameras](https://ieeexplore.ieee.org/document/6631104)
     * Collision checking
     * Occupancy grid
     * Path finding on graph structure

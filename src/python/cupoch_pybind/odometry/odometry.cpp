@@ -54,6 +54,10 @@ void pybind_odometry_classes(py::module &m) {
             .def_readwrite("max_depth", &odometry::OdometryOption::max_depth_,
                            "Pixels that has larger than specified depth values "
                            "are ignored.")
+            .def_readwrite("nu", &odometry::OdometryOption::nu_,
+                           "Degree of freedom for computing weighted RGBD odometry.")
+            .def_readwrite("sigma2_init", &odometry::OdometryOption::sigma2_init_,
+                           "Initial variance for computing weighted RGBD odometry.")
             .def("__repr__", [](const odometry::OdometryOption &c) {
                 int num_pyramid_level =
                         (int)c.iteration_number_per_pyramid_level_.size();
@@ -130,6 +134,14 @@ Anonymous submission.)");
 
 void pybind_odometry_methods(py::module &m) {
     m.def("compute_rgbd_odometry", &odometry::ComputeRGBDOdometry,
+          "Function to estimate 6D rigid motion from two RGBD image pairs. "
+          "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
+          "rgbd_source"_a, "rgbd_target"_a,
+          "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
+          "odo_init"_a = Eigen::Matrix4f::Identity(),
+          "jacobian"_a = odometry::RGBDOdometryJacobianFromHybridTerm(),
+          "option"_a = odometry::OdometryOption());
+    m.def("compute_weighted_rgbd_odometry", &odometry::ComputeWeightedRGBDOdometry,
           "Function to estimate 6D rigid motion from two RGBD image pairs. "
           "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,
