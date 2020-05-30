@@ -28,6 +28,7 @@ struct CollisionResult {
     ~CollisionResult();
 
     bool IsCollided() const { return !collision_index_pairs_.empty(); };
+    thrust::host_vector<Eigen::Vector2i> GetCollisionIndexPairs() const;
 };
 
 std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid1,

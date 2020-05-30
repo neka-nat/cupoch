@@ -5,9 +5,7 @@ namespace cupoch {
 namespace geometry {
 
 template<class VoxelType>
-DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type) : Geometry3D(type) {
-    voxels_.resize(resolution_ * resolution_ * resolution_);
-}
+DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type) : Geometry3D(type) {}
 template<class VoxelType>
 DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type, float voxel_size, int resolution, const Eigen::Vector3f& origin)
 : Geometry3D(type), voxel_size_(voxel_size), resolution_(resolution), origin_(origin) {

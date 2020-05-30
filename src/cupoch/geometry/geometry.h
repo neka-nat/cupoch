@@ -22,18 +22,20 @@ public:
         VoxelGrid = 2,
         /// OccupancyGrid
         OccupancyGrid = 3,
+        /// DistanceTransform
+        DistanceTransform = 4,
         /// LineSet
-        LineSet = 4,
+        LineSet = 5,
         /// Graph
-        Graph = 5,
+        Graph = 6,
         /// MeshBase
-        MeshBase = 6,
+        MeshBase = 7,
         /// TriangleMesh
-        TriangleMesh = 7,
+        TriangleMesh = 8,
         /// Image
-        Image = 8,
+        Image = 9,
         /// RGBDImage
-        RGBDImage = 9,
+        RGBDImage = 10,
         /// OrientedBoundingBox
         OrientedBoundingBox = 11,
         /// AxisAlignedBoundingBox

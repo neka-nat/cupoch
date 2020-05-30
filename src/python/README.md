@@ -12,6 +12,8 @@
         * [Robust Odometry Estimation for RGB-D Cameras](https://ieeexplore.ieee.org/document/6631104)
     * Collision checking
     * Occupancy grid
+    * Distance transform
+        * [Parallel Banding Algorithm to Compute Exact Distance Transform with the GPU](https://www.comp.nus.edu.sg/~tants/pba.html)
     * Path finding on graph structure (Dijkstra algorithm)
 * [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators

@@ -110,6 +110,11 @@ CollisionResult::CollisionResult(const CollisionResult& other)
 
 CollisionResult::~CollisionResult() {};
 
+thrust::host_vector<Eigen::Vector2i> CollisionResult::GetCollisionIndexPairs() const {
+   thrust::host_vector<Eigen::Vector2i> h_collision_index_pairs = collision_index_pairs_;
+   return h_collision_index_pairs;
+}
+
 std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid1,
                                                      const geometry::VoxelGrid& voxelgrid2,
                                                      float margin) {

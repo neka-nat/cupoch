@@ -1,0 +1,242 @@
+#include "cupoch/geometry/distancetransform.h"
+#include "cupoch/geometry/boundingvolume.h"
+
+#include "cupoch/utility/platform.h"
+
+#define BLOCKSIZE 8
+
+namespace cupoch {
+namespace geometry {
+
+namespace {
+
+struct flood_z_functor {
+    flood_z_functor(const DistanceVoxel* input, DistanceVoxel* output, int resolution)
+    : input_(input), output_(output), resolution_(resolution) {};
+    const DistanceVoxel* input_;
+    DistanceVoxel* output_;
+    const int resolution_;
+    __device__ void operator() (size_t idx) {
+        int x = idx / resolution_;
+        int y = idx % resolution_;
+        DistanceVoxel v1;
+        for (int z = 0; z < resolution_; ++z) {
+            int id = IndexOf(x, y, z, resolution_);
+            DistanceVoxel v2 = input_[id];
+            if (!v2.IsNotSite()) {
+                v1 = v2;
+            }
+            output_[id] = v1;
+        }
+        for (int i = resolution_ - 2; i >= 0; --i) {
+            int id = IndexOf(x, y, i, resolution_);
+            unsigned short nz = v1.nearest_index_[2];
+            unsigned short dist1 = abs(nz - i);
+            DistanceVoxel v2 = output_[id];
+            nz = v2.nearest_index_[2];
+            unsigned short dist2 = abs(nz - i);
+            if (dist2 < dist1) {
+                v1 = v2;
+            }
+            output_[id] = v1;
+        }
+    }
+};
+
+__device__ bool dominate(int x_1, int y_1, int z_1,
+                         int x_2, int y_2, int z_2,
+                         int x_3, int y_3, int z_3,
+                         int x_0, int z_0) {
+    int k_1 = y_2 - y_1;
+    int k_2 = y_3 - y_2;
+	return (((y_1 + y_2) * k_1 + ((x_2 - x_1) * (x_1 + x_2 - (x_0 << 1)) + (z_2 - z_1) * (z_1 + z_2 - (z_0 << 1)))) * k_2 > \
+            ((y_2 + y_3) * k_2 + ((x_3 - x_2) * (x_2 + x_3 - (x_0 << 1)) + (z_3 - z_2) * (z_2 + z_3 - (z_0 << 1)))) * k_1);
+}
+
+struct maurer_axis_functor {
+    maurer_axis_functor(const DistanceVoxel* input, DistanceVoxel* output, int resolution)
+    : input_(input), output_(output), resolution_(resolution) {};
+    const DistanceVoxel* input_;
+    DistanceVoxel* output_;
+    const int resolution_;
+    __device__ void operator() (size_t idx) {
+        int x = idx / resolution_;
+        int z = idx % resolution_;
+        int lasty = 0;
+        int flag = 0;
+        DistanceVoxel s1;
+        DistanceVoxel s2;
+        DistanceVoxel p;
+        int i = 0;
+        for (; i < resolution_; ++i) {
+            int id = IndexOf(x, i, z, resolution_);
+            p = input_[id];
+            if (!p.IsNotSite()) {
+                while (s2.CheckHasNext()) {
+                    if (!dominate(s1.nearest_index_[0], s2.nearest_index_[1], s1.nearest_index_[2],
+                                  s2.nearest_index_[0], lasty, s2.nearest_index_[2],
+                                  p.nearest_index_[0], i, p.nearest_index_[2],
+                                  x, z)) {
+                        break;
+                    }
+                    lasty = s2.nearest_index_[1];
+                    s2 = s1;
+                    s2.nearest_index_[1] = s1.nearest_index_[1];
+                    if (s2.CheckHasNext()) {
+                        s1 = output_[IndexOf(x, s2.nearest_index_[1], z, resolution_)];
+                    }
+                }
+                s1 = s2;
+                s2.nearest_index_ = Eigen::Vector3ui16(p.nearest_index_[0], lasty, p.nearest_index_[2]);
+                s2.state_ = flag;
+                lasty = i;
+                output_[id] = s2;
+                flag = 1;
+            }
+        }
+
+        if (p.IsNotSite()) {
+            output_[IndexOf(x, i - 1, z, resolution_)] = DistanceVoxel(Eigen::Vector3ui16(0, lasty, 0),
+                                                                       DistanceVoxel::NotSite | flag);
+        }
+    }
+};
+
+__global__
+void color_axis_kernel(const DistanceVoxel* input, DistanceVoxel* output, int resolution) {
+    __shared__ DistanceVoxel block[BLOCKSIZE][BLOCKSIZE];
+    int col = threadIdx.x;
+    int tid = threadIdx.y;
+    int tx = blockIdx.x * blockDim.x + col; 
+    int tz = blockIdx.y;
+    int lasty = resolution - 1;
+    DistanceVoxel last1;
+    DistanceVoxel last2 = input[IndexOf(tx, lasty, tz, resolution)];
+    if (last2.IsNotSite()) {
+        lasty = last2.nearest_index_[1];
+        if (last2.CheckHasNext()) {
+            last2 = input[IndexOf(tx, lasty, tz, resolution)];
+        }
+    }
+    if (last2.CheckHasNext()) {
+        last1 = input[IndexOf(tx, last2.nearest_index_[1], tz, resolution)];
+    }
+
+    int n_step = resolution / blockDim.x;
+    for (int step = 0; step < n_step; ++step) {
+        int y_start = resolution - step * blockDim.x - 1;
+        int y_end = resolution - (step + 1) * blockDim.x;
+        for (int ty = y_start - tid; ty >= y_end; ty -= blockDim.y) {
+            int dx = last2.nearest_index_[0] - tx;
+            int dy = lasty - ty;
+            int dz = last2.nearest_index_[2] - tz;
+            int best = dx * dx + dy * dy + dz * dz;
+            while (last2.CheckHasNext()) {
+                dx = last1.nearest_index_[0] - tx;
+                dy = last2.nearest_index_[1] - ty;
+                dz = last1.nearest_index_[2] - tz;
+                int dist = dx * dx + dy * dy + dz * dz;
+                if (dist > best) break;
+                best = dist;
+                lasty = last2.nearest_index_[1];
+                last2 = last1;
+                if (last2.CheckHasNext()) {
+                    last1 = input[IndexOf(tx, last2.nearest_index_[1], tz, resolution)];
+                }
+            }
+            block[threadIdx.x][ty - y_end] = DistanceVoxel(Eigen::Vector3ui16(lasty, last2.nearest_index_[0], last2.nearest_index_[2]),
+                                                           last2.state_ & DistanceVoxel::State::NotSite);
+        }
+        __syncthreads();
+        if (!threadIdx.y) {
+            int id = IndexOf(y_end + threadIdx.x, blockIdx.x * blockDim.x, tz, resolution);
+            for (int i = 0; i < blockDim.x; ++i, id += resolution) {
+                output[id] = block[i][threadIdx.x];
+            }
+        }
+        __syncthreads();
+    }
+};
+
+struct set_points_functor {
+    set_points_functor(DistanceVoxel* voxels, int resolution)
+    : voxels_(voxels), resolution_(resolution) {};
+    DistanceVoxel* voxels_;
+    const int resolution_;
+    __device__ void operator() (const Eigen::Vector3i& idxs) {
+        int i = IndexOf(idxs, resolution_);
+        voxels_[i] = DistanceVoxel(idxs.cast<unsigned short>(), 0);
+    }
+};
+
+struct compute_distance_functor {
+    compute_distance_functor(DistanceVoxel* voxels, int resolution)
+    : voxels_(voxels), resolution_(resolution) {};
+    DistanceVoxel* voxels_;
+    const int resolution_;
+    __device__ void operator() (size_t idx) {
+        int x = idx / (resolution_ * resolution_);
+        int yz = idx % (resolution_ * resolution_);
+        int y = yz / resolution_;
+        int z = yz % resolution_;
+        auto diff = voxels_[idx].nearest_index_ - Eigen::Vector3ui16(x, y, z);
+        voxels_[idx].distance_ = diff.norm();
+    }
+};
+
+}
+
+DistanceTransform::DistanceTransform() : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform) {}
+
+DistanceTransform::DistanceTransform(float voxel_size, int resolution, const Eigen::Vector3f& origin)
+ : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform, voxel_size, resolution, origin) {
+    buffer_.resize(voxels_.size());
+}
+
+DistanceTransform::~DistanceTransform() {}
+
+DistanceTransform &DistanceTransform::ComputeEDT(const utility::device_vector<Eigen::Vector3i>& points) {
+    ComputeVoronoiDiagram(points);
+    compute_distance_functor func(thrust::raw_pointer_cast(voxels_.data()), resolution_);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator(voxels_.size()), func);
+    return *this;
+}
+
+DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const utility::device_vector<Eigen::Vector3i>& points) {
+    set_points_functor func0(thrust::raw_pointer_cast(buffer_.data()), resolution_);
+    thrust::for_each(points.begin(), points.end(), func0);
+
+    flood_z_functor func1(thrust::raw_pointer_cast(buffer_.data()),
+                          thrust::raw_pointer_cast(voxels_.data()),
+                          resolution_);
+    maurer_axis_functor func2(thrust::raw_pointer_cast(voxels_.data()),
+                              thrust::raw_pointer_cast(buffer_.data()),
+                              resolution_);
+
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(resolution_), func1);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(resolution_), func2);
+
+    dim3 block1 = dim3(BLOCKSIZE, 2);
+    dim3 grid1 = dim3(resolution_ / block1.x, resolution_);
+    color_axis_kernel<<<grid1, block1>>>(thrust::raw_pointer_cast(buffer_.data()),
+                                         thrust::raw_pointer_cast(voxels_.data()),
+                                         resolution_);
+    cudaSafeCall(cudaDeviceSynchronize());
+
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(resolution_), func2);
+
+    dim3 block2 = dim3(BLOCKSIZE, 2);
+    dim3 grid2 = dim3(resolution_ / block2.x, resolution_);
+    color_axis_kernel<<<grid2, block2>>>(thrust::raw_pointer_cast(buffer_.data()),
+                                         thrust::raw_pointer_cast(voxels_.data()),
+                                         resolution_);
+    cudaSafeCall(cudaDeviceSynchronize());
+    return *this;
+}
+
+}
+}
