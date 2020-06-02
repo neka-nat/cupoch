@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cupoch/utility/eigen.h"
 #include <vector>
 
 namespace cupoch {
@@ -15,14 +16,16 @@ public:
             float min_depth = 0.0,
             float max_depth = 4.0,
             float nu = 5.0,
-            float sigma2_init = 1.0)
+            float sigma2_init = 1.0,
+            const Eigen::Vector6f &inv_sigma_mat_diag = Eigen::Vector6f::Zero())
         : iteration_number_per_pyramid_level_(
                   iteration_number_per_pyramid_level),
           max_depth_diff_(max_depth_diff),
           min_depth_(min_depth),
           max_depth_(max_depth),
           nu_(nu),
-          sigma2_init_(sigma2_init) {}
+          sigma2_init_(sigma2_init),
+          inv_sigma_mat_diag_(inv_sigma_mat_diag) {}
     ~OdometryOption() {}
 
 public:
@@ -32,6 +35,7 @@ public:
     float max_depth_;
     float nu_;
     float sigma2_init_;
+    Eigen::Vector6f inv_sigma_mat_diag_;
 };
 
 }  // namespace odometry

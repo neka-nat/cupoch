@@ -665,6 +665,8 @@ std::tuple<bool, Eigen::Matrix4f, float> DoSingleIterationWeighted(
         const geometry::RGBDImage &target_dy,
         const Eigen::Matrix3f &intrinsic,
         const Eigen::Matrix4f &extrinsic_initial,
+        const Eigen::Vector6f &prev_twist,
+        const Eigen::Vector6f &curr_vel,
         const OdometryOption &option,
         float sigma2) {
     CorrespondenceSetPixelWise correspondence;
@@ -693,7 +695,8 @@ std::tuple<bool, Eigen::Matrix4f, float> DoSingleIterationWeighted(
             utility::ComputeWeightedJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f, 2>(
                     func, weight_reduce_functor(sigma2, option.nu_),
                     calc_weights_functor(option.nu_), corresps_count);
-
+    JTJ.diagonal() += option.inv_sigma_mat_diag_;
+    JTr -= (option.inv_sigma_mat_diag_.array() * (prev_twist - curr_vel).array()).matrix();
     bool is_success;
     Eigen::Matrix4f extrinsic;
     thrust::tie(is_success, extrinsic) =
@@ -765,11 +768,12 @@ std::tuple<bool, Eigen::Matrix4f> ComputeMultiscale(
 }
 
 template <typename JacobianType>
-std::tuple<bool, Eigen::Matrix4f> ComputeMultiscaleWeighted(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f> ComputeMultiscaleWeighted(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4f &extrinsic_initial,
+        const Eigen::Vector6f &prev_twist,
         const OdometryOption &option) {
     std::vector<int> iter_counts = option.iteration_number_per_pyramid_level_;
     int num_levels = (int)iter_counts.size();
@@ -789,6 +793,8 @@ std::tuple<bool, Eigen::Matrix4f> ComputeMultiscaleWeighted(
             CreateCameraMatrixPyramid(pinhole_camera_intrinsic,
                                       (int)iter_counts.size());
 
+    Eigen::Matrix4f curr_vel = Eigen::Matrix4f::Identity();
+    float sigma2 = option.sigma2_init_;
     for (int level = num_levels - 1; level >= 0; level--) {
         const Eigen::Matrix3f level_camera_matrix =
                 pyramid_camera_matrix[level];
@@ -803,37 +809,40 @@ std::tuple<bool, Eigen::Matrix4f> ComputeMultiscaleWeighted(
                                              target_pyramid_dx[level]->depth_);
         auto target_dy_level = PackRGBDImage(target_pyramid_dy[level]->color_,
                                              target_pyramid_dy[level]->depth_);
-        float sigma2 = option.sigma2_init_;
         for (int iter = 0; iter < iter_counts[num_levels - level - 1]; iter++) {
             Eigen::Matrix4f curr_odo;
             bool is_success;
             std::tie(is_success, curr_odo, sigma2) = DoSingleIterationWeighted<JacobianType>(
                     iter, level, *source_level, *target_level,
                     *source_xyz_level, *target_dx_level, *target_dy_level,
-                    level_camera_matrix, result_odo, option, sigma2);
+                    level_camera_matrix, result_odo, prev_twist, utility::TransformMatrix4fToVector6f(curr_vel),
+                    option, sigma2);
+            curr_vel = curr_odo * curr_vel;
             result_odo = curr_odo * result_odo;
 
             if (!is_success) {
                 utility::LogWarning("[ComputeOdometry] no solution!");
-                return std::make_tuple(false, Eigen::Matrix4f::Identity());
+                return std::make_tuple(false, Eigen::Matrix4f::Identity(), Eigen::Vector6f::Zero());
             }
         }
     }
-    return std::make_tuple(true, result_odo);
+    return std::make_tuple(true, result_odo, utility::TransformMatrix4fToVector6f(curr_vel));
 }
 
 template <typename JacobianType>
-std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f> ComputeRGBDOdometryT(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4f &odo_init,
+        const Eigen::Vector6f &prev_twist,
         const OdometryOption &option,
         bool is_weighted) {
     if (!CheckRGBDImagePair(source, target)) {
         utility::LogWarning(
                 "[RGBDOdometry] Two RGBD pairs should be same in size.");
         return std::make_tuple(false, Eigen::Matrix4f::Identity(),
+                               Eigen::Vector6f::Zero(),
                                Eigen::Matrix6f::Zero());
     }
 
@@ -842,11 +851,12 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT(
             source, target, pinhole_camera_intrinsic, odo_init, option);
 
     Eigen::Matrix4f extrinsic;
+    Eigen::Vector6f twist = Eigen::Vector6f::Zero();
     bool is_success;
     if (is_weighted) {
-        std::tie(is_success, extrinsic) = ComputeMultiscaleWeighted<JacobianType>(
+        std::tie(is_success, extrinsic, twist) = ComputeMultiscaleWeighted<JacobianType>(
                 *source_processed, *target_processed, pinhole_camera_intrinsic,
-                odo_init, option);
+                odo_init, prev_twist, option);
     } else {
         std::tie(is_success, extrinsic) = ComputeMultiscale<JacobianType>(
                 *source_processed, *target_processed, pinhole_camera_intrinsic,
@@ -858,28 +868,30 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometryT(
         Eigen::Matrix6f info_output = CreateInformationMatrix(
                 extrinsic, pinhole_camera_intrinsic, source_processed->depth_,
                 target_processed->depth_, option);
-        return std::make_tuple(true, trans_output, info_output);
+        return std::make_tuple(true, trans_output, twist, info_output);
     } else {
-        return std::make_tuple(false, Eigen::Matrix4f::Identity(),
+        return std::make_tuple(false, Eigen::Matrix4f::Identity(), twist,
                                Eigen::Matrix6f::Identity());
     }
 }
 
-template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f>
+template std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f>
 ComputeRGBDOdometryT<RGBDOdometryJacobianFromColorTerm>(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4f &odo_init,
+        const Eigen::Vector6f &prev_twist,
         const OdometryOption &option,
         bool is_weighted);
 
-template std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f>
+template std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f>
 ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic,
         const Eigen::Matrix4f &odo_init,
+        const Eigen::Vector6f &prev_twist,
         const OdometryOption &option,
         bool is_weighted);
 
@@ -895,25 +907,28 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
         /*=RGBDOdometryJacobianFromHybridTerm*/,
         const OdometryOption &option /*= OdometryOption()*/) {
     if (jacobian_method.jacobian_type_ == RGBDOdometryJacobian::COLOR_TERM) {
-        return ComputeRGBDOdometryT<RGBDOdometryJacobianFromColorTerm>(
-                source, target, pinhole_camera_intrinsic, odo_init, option, false);
+        auto res = ComputeRGBDOdometryT<RGBDOdometryJacobianFromColorTerm>(
+                source, target, pinhole_camera_intrinsic, odo_init, Eigen::Vector6f::Zero(), option, false);
+        return std::make_tuple(std::get<0>(res), std::get<1>(res), std::get<3>(res));
     } else {
-        return ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(
-                source, target, pinhole_camera_intrinsic, odo_init, option, false);
-    }
+        auto res = ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(
+                source, target, pinhole_camera_intrinsic, odo_init, Eigen::Vector6f::Zero(), option, false);
+        return std::make_tuple(std::get<0>(res), std::get<1>(res), std::get<3>(res));
+   }
 }
 
-std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeWeightedRGBDOdometry(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f> ComputeWeightedRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic
         /*= camera::PinholeCameraIntrinsic()*/,
         const Eigen::Matrix4f &odo_init /*= Eigen::Matrix4f::Identity()*/,
+        const Eigen::Vector6f &prev_twist /*= Eigen::Vector6f::Zero()*/,
         const RGBDOdometryJacobian &jacobian_method
         /*=RGBDOdometryJacobianFromHybridTerm*/,
         const OdometryOption &option /*= OdometryOption()*/) {
     return ComputeRGBDOdometryT<RGBDOdometryJacobianFromHybridTerm>(
-        source, target, pinhole_camera_intrinsic, odo_init, option, true);
+        source, target, pinhole_camera_intrinsic, odo_init, prev_twist, option, true);
 }
 
 }  // namespace odometry

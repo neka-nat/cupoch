@@ -65,7 +65,9 @@ if __name__ == "__main__":
     # Streaming loop
     prev_rgbd_image = None
     option = x3d.odometry.OdometryOption()
+    option.inv_sigma_mat_diag = 0.5 * np.ones(6)
     cur_trans = np.identity(4)
+    twist = np.zeros(6)
     path = []
     path.append(cur_trans[:3, 3].tolist())
     line = ax1.plot(*list(zip(*path)), 'r-')[0]
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     color_im = ax3.imshow(np.zeros((480, 640, 3), dtype=np.uint8))
     try:
         def update_odom(frame):
-            global prev_rgbd_image, cur_trans
+            global prev_rgbd_image, cur_trans, twist
 
             dt = datetime.now()
 
@@ -103,9 +105,10 @@ if __name__ == "__main__":
                                                                             depth_image)
 
             if not prev_rgbd_image is None:
-                res, odo_trans, _ = x3d.odometry.compute_weighted_rgbd_odometry(
+                res, odo_trans, twist, _ = x3d.odometry.compute_weighted_rgbd_odometry(
                                 prev_rgbd_image, rgbd_image, intrinsic,
-                                np.identity(4), x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                                np.identity(4), twist,
+                                x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
                 if res:
                     cur_trans = np.matmul(cur_trans, odo_trans)
 

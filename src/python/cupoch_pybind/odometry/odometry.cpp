@@ -58,6 +58,8 @@ void pybind_odometry_classes(py::module &m) {
                            "Degree of freedom for computing weighted RGBD odometry.")
             .def_readwrite("sigma2_init", &odometry::OdometryOption::sigma2_init_,
                            "Initial variance for computing weighted RGBD odometry.")
+            .def_readwrite("inv_sigma_mat_diag", &odometry::OdometryOption::inv_sigma_mat_diag_,
+                           "Covariance matrix for the influence of the motion prior.")
             .def("__repr__", [](const odometry::OdometryOption &c) {
                 int num_pyramid_level =
                         (int)c.iteration_number_per_pyramid_level_.size();
@@ -68,6 +70,13 @@ void pybind_odometry_classes(py::module &m) {
                                     c.iteration_number_per_pyramid_level_[i]) +
                             ", ";
                 str_iteration_number_per_pyramid_level_ += "] ";
+                std::string str_inv_sigma_mat_diag_ = "[ ";
+                for (int i = 0; i < 6; i++)
+                    str_inv_sigma_mat_diag_ +=
+                            std::to_string(
+                                    c.inv_sigma_mat_diag_[i]) +
+                            ", ";
+                str_inv_sigma_mat_diag_ += "] ";
                 return std::string("odometry::OdometryOption class.") +
                        /*std::string("\nodo_init = ") +
                           std::to_string(c.odo_init_) +*/
@@ -78,7 +87,13 @@ void pybind_odometry_classes(py::module &m) {
                        std::string("\nmin_depth = ") +
                        std::to_string(c.min_depth_) +
                        std::string("\nmax_depth = ") +
-                       std::to_string(c.max_depth_);
+                       std::to_string(c.max_depth_) +
+                       std::string("\nnu = ") +
+                       std::to_string(c.nu_) +
+                       std::string("\nsigma2_init = ") +
+                       std::to_string(c.sigma2_init_) +
+                       std::string("\ninv_sigma_mat_diag") +
+                       str_inv_sigma_mat_diag_;
             });
 
     // cupoch.odometry.RGBDOdometryJacobian
@@ -147,6 +162,7 @@ void pybind_odometry_methods(py::module &m) {
           "rgbd_source"_a, "rgbd_target"_a,
           "pinhole_camera_intrinsic"_a = camera::PinholeCameraIntrinsic(),
           "odo_init"_a = Eigen::Matrix4f::Identity(),
+          "prev_twist"_a = Eigen::Vector6f::Zero(),
           "jacobian"_a = odometry::RGBDOdometryJacobianFromHybridTerm(),
           "option"_a = odometry::OdometryOption());
     docstring::FunctionDocInject(

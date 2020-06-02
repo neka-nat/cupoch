@@ -6,7 +6,6 @@
 #include "cupoch/odometry/odometry_option.h"
 #include "cupoch/odometry/rgbdodometry_jacobian.h"
 #include "cupoch/utility/console.h"
-#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 
@@ -27,12 +26,13 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
-std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeWeightedRGBDOdometry(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f> ComputeWeightedRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =
                 camera::PinholeCameraIntrinsic(),
         const Eigen::Matrix4f &odo_init = Eigen::Matrix4f::Identity(),
+        const Eigen::Vector6f &prev_twist = Eigen::Vector6f::Zero(),
         const RGBDOdometryJacobian &jacobian_method =
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
