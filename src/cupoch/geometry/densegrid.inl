@@ -96,5 +96,23 @@ DenseGrid<VoxelType> &DenseGrid<VoxelType>::Reconstruct(float voxel_size, int re
     return *this;
 }
 
+template<class VoxelType>
+int DenseGrid<VoxelType>::GetVoxelIndex(const Eigen::Vector3f& point) const {
+    Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
+    int h_res = resolution_ / 2;
+    Eigen::Vector3i voxel_idx = (Eigen::floor(voxel_f.array())).matrix().cast<int>() + Eigen::Vector3i::Constant(h_res);
+    int idx = IndexOf(voxel_idx, resolution_);
+    if (idx < 0 || idx >= resolution_ * resolution_ * resolution_) return -1;
+    return idx;
+}
+
+template<class VoxelType>
+thrust::tuple<bool, VoxelType> DenseGrid<VoxelType>::GetVoxel(const Eigen::Vector3f &point) const {
+    auto idx = GetVoxelIndex(point);
+    if (idx < 0) return thrust::make_tuple(false, VoxelType());
+    VoxelType voxel = voxels_[idx];
+    return thrust::make_tuple(true, voxel);
+}
+
 }
 }

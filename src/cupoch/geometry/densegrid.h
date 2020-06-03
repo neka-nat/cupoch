@@ -26,6 +26,10 @@ public:
     virtual DenseGrid &Rotate(const Eigen::Matrix3f &R, bool center = true);
 
     virtual DenseGrid& Reconstruct(float voxel_size, int resolution);
+
+    int GetVoxelIndex(const Eigen::Vector3f& point) const;
+    thrust::tuple<bool, VoxelType> GetVoxel(const Eigen::Vector3f &point) const;
+
 public:
     float voxel_size_ = 0.0;
     int resolution_ = 0;

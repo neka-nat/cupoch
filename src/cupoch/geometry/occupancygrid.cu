@@ -219,15 +219,6 @@ bool OccupancyGrid::IsUnknown(const Eigen::Vector3f &point) const{
     return std::isnan(voxel.prob_log_);
 }
 
-int OccupancyGrid::GetVoxelIndex(const Eigen::Vector3f& point) const {
-    Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
-    int h_res = resolution_ / 2;
-    Eigen::Vector3i voxel_idx = (Eigen::floor(voxel_f.array())).matrix().cast<int>() + Eigen::Vector3i::Constant(h_res);
-    int idx = IndexOf(voxel_idx, resolution_);
-    if (idx < 0 || idx >= resolution_ * resolution_ * resolution_) return -1;
-    return idx;
-}
-
 thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(const Eigen::Vector3f &point) const {
     auto idx = GetVoxelIndex(point);
     if (idx < 0) return thrust::make_tuple(false, OccupancyVoxel());

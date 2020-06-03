@@ -51,7 +51,6 @@ public:
     }
     bool IsOccupied(const Eigen::Vector3f &point) const;
     bool IsUnknown(const Eigen::Vector3f &point) const;
-    int GetVoxelIndex(const Eigen::Vector3f& point) const;
     thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels() const;
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractKnownVoxels() const;

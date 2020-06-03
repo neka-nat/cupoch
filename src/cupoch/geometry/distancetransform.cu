@@ -255,9 +255,9 @@ DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const utility::devic
                               resolution_);
 
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(resolution_), func1);
+                     thrust::make_counting_iterator<size_t>(resolution_ * resolution_), func1);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(resolution_), func2);
+                     thrust::make_counting_iterator<size_t>(resolution_ * resolution_), func2);
 
     dim3 block1 = dim3(BLOCKSIZE, 2);
     dim3 grid1 = dim3(resolution_ / block1.x, resolution_);
@@ -267,7 +267,7 @@ DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const utility::devic
     cudaSafeCall(cudaDeviceSynchronize());
 
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(resolution_), func2);
+                     thrust::make_counting_iterator<size_t>(resolution_ * resolution_), func2);
 
     dim3 block2 = dim3(BLOCKSIZE, 2);
     dim3 grid2 = dim3(resolution_ / block2.x, resolution_);
