@@ -24,6 +24,8 @@ public:
                                      bool relative = true);
     virtual DenseGrid &Scale(const float scale, bool center = true);
     virtual DenseGrid &Rotate(const Eigen::Matrix3f &R, bool center = true);
+
+    virtual DenseGrid& Reconstruct(float voxel_size, int resolution);
 public:
     float voxel_size_ = 0.0;
     int resolution_ = 0;

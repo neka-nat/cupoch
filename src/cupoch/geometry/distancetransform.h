@@ -3,6 +3,7 @@
 
 namespace cupoch {
 namespace geometry {
+class VoxelGrid;
 
 class DistanceVoxel {
 public:
@@ -31,8 +32,12 @@ public:
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
     ~DistanceTransform();
 
+    DistanceTransform &Reconstruct(float voxel_size, int resolution);
+
     DistanceTransform &ComputeEDT(const utility::device_vector<Eigen::Vector3i>& points);
+    DistanceTransform &ComputeEDT(const VoxelGrid& voxelgrid);
     DistanceTransform &ComputeVoronoiDiagram(const utility::device_vector<Eigen::Vector3i>& points);
+    DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid& voxelgrid);
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;

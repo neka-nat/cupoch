@@ -69,8 +69,8 @@ void pybind_occupanygrid(py::module &m) {
             .def_property_readonly("voxels", [] (const geometry::OccupancyGrid &og) {
                      return og.ExtractKnownVoxels();
                  })
-            .def("reconstruct_voxels", &geometry::OccupancyGrid::ReconstructVoxels,
-                 "Resort voxel indices to insert observations correctly.")
+            .def("reconstruct", &geometry::OccupancyGrid::Reconstruct,
+                 "Reconstruct dense voxel grid.")
             .def("insert", py::overload_cast<const geometry::PointCloud&, const Eigen::Vector3f&, float>(&geometry::OccupancyGrid::Insert),
                  "Function to insert occupancy grid from pointcloud.",
                  "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)

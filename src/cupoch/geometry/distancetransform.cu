@@ -1,5 +1,7 @@
 #include "cupoch/geometry/distancetransform.h"
+#include "cupoch/geometry/densegrid.inl"
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/voxelgrid.h"
 
 #include "cupoch/utility/platform.h"
 
@@ -184,9 +186,30 @@ struct compute_distance_functor {
     }
 };
 
+struct compute_obstacle_cells_functor {
+    compute_obstacle_cells_functor(float voxel_size, int resolution,
+                                   const Eigen::Vector3f& origin1,
+                                   const Eigen::Vector3f& origin2)
+                                   : voxel_size_(voxel_size), resolution_(resolution),
+                                   origin1_(origin1), origin2_(origin2) {};
+    const float voxel_size_;
+    const int resolution_;
+    const Eigen::Vector3f origin1_;
+    const Eigen::Vector3f origin2_;
+    __device__ Eigen::Vector3i operator() (const Eigen::Vector3i& key) const {
+        Eigen::Vector3f abs_pos = key.cast<float>() * voxel_size_ + origin1_;
+        return Eigen::device_vectorize<float, 3, ::floor>((abs_pos - origin2_) / voxel_size_).cast<int>() + Eigen::Vector3i::Constant(resolution_ / 2);
+    };
+};
+
 }
 
-DistanceTransform::DistanceTransform() : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform) {}
+template class DenseGrid<DistanceVoxel>;
+
+DistanceTransform::DistanceTransform()
+ : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform, 0.05, 512, Eigen::Vector3f::Zero()) {
+    buffer_.resize(voxels_.size());
+}
 
 DistanceTransform::DistanceTransform(float voxel_size, int resolution, const Eigen::Vector3f& origin)
  : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform, voxel_size, resolution, origin) {
@@ -195,12 +218,29 @@ DistanceTransform::DistanceTransform(float voxel_size, int resolution, const Eig
 
 DistanceTransform::~DistanceTransform() {}
 
+DistanceTransform &DistanceTransform::Reconstruct(float voxel_size, int resolution) {
+    DenseGrid::Reconstruct(voxel_size, resolution);
+    buffer_.resize(voxels_.size());
+    return *this;
+}
+
 DistanceTransform &DistanceTransform::ComputeEDT(const utility::device_vector<Eigen::Vector3i>& points) {
     ComputeVoronoiDiagram(points);
     compute_distance_functor func(thrust::raw_pointer_cast(voxels_.data()), resolution_);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(voxels_.size()), func);
     return *this;
+}
+
+DistanceTransform &DistanceTransform::ComputeEDT(const VoxelGrid& voxelgrid) {
+    if (std::abs(voxel_size_ - voxelgrid.voxel_size_) > std::numeric_limits<float>::epsilon()) {
+        utility::LogError("Unsupport computing Voronoi diagrams from different voxel size.");
+        return *this;
+    }
+    utility::device_vector<Eigen::Vector3i> obs_cells(voxelgrid.voxels_keys_.size());
+    compute_obstacle_cells_functor func(voxel_size_, resolution_, voxelgrid.origin_, origin_);
+    thrust::transform(voxelgrid.voxels_keys_.begin(), voxelgrid.voxels_keys_.end(), obs_cells.begin(), func);
+    return ComputeEDT(obs_cells);
 }
 
 DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const utility::device_vector<Eigen::Vector3i>& points) {
@@ -236,6 +276,17 @@ DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const utility::devic
                                          resolution_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;
+}
+
+DistanceTransform &DistanceTransform::ComputeVoronoiDiagram(const VoxelGrid& voxelgrid) {
+    if (std::abs(voxel_size_ - voxelgrid.voxel_size_) > std::numeric_limits<float>::epsilon()) {
+        utility::LogError("Unsupport computing Voronoi diagrams from different voxel size.");
+        return *this;
+    }
+    utility::device_vector<Eigen::Vector3i> obs_cells(voxelgrid.voxels_keys_.size());
+    compute_obstacle_cells_functor func(voxel_size_, resolution_, voxelgrid.origin_, origin_);
+    thrust::transform(voxelgrid.voxels_keys_.begin(), voxelgrid.voxels_keys_.end(), obs_cells.begin(), func);
+    return ComputeVoronoiDiagram(obs_cells);
 }
 
 }

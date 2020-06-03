@@ -262,9 +262,25 @@ std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweeping(const Primitive
 
 std::shared_ptr<geometry::TriangleMesh> CreateTriangleMesh(const Primitive& primitive) {
     switch (primitive.type_) {
+        case Primitive::PrimitiveType::Box: {
+            const Box& box = (const Box&)primitive;
+            auto output = geometry::TriangleMesh::CreateBox(box.lengths_[0],
+                                                            box.lengths_[1],
+                                                            box.lengths_[2]);
+            Eigen::Matrix4f tf = primitive.transform_;
+            tf.topRightCorner<3, 1>() -= box.lengths_ * 0.5;
+            output->Transform(primitive.transform_);
+            return output;
+        }
         case Primitive::PrimitiveType::Sphere: {
             const Sphere& sphere = (const Sphere&)primitive;
             auto output = geometry::TriangleMesh::CreateSphere(sphere.radius_);
+            output->Transform(primitive.transform_);
+            return output;
+        }
+        case Primitive::PrimitiveType::Cylinder: {
+            const Cylinder& cylinder = (const Cylinder&)primitive;
+            auto output = geometry::TriangleMesh::CreateCylinder(cylinder.radius_, cylinder.height_);
             output->Transform(primitive.transform_);
             return output;
         }

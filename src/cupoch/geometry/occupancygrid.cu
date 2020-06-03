@@ -278,10 +278,8 @@ std::shared_ptr<utility::device_vector<OccupancyVoxel>> OccupancyGrid::ExtractOc
     return out;
 }
 
-OccupancyGrid& OccupancyGrid::ReconstructVoxels(float voxel_size, int resolution) {
-    voxel_size_ = voxel_size;
-    resolution_ = resolution;
-    voxels_.resize(resolution_ * resolution_ * resolution_, OccupancyVoxel());
+OccupancyGrid& OccupancyGrid::Reconstruct(float voxel_size, int resolution) {
+    DenseGrid::Reconstruct(voxel_size, resolution);
     return *this;
 }
 

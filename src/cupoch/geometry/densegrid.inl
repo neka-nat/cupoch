@@ -88,5 +88,13 @@ DenseGrid<VoxelType> &DenseGrid<VoxelType>::Rotate(const Eigen::Matrix3f &R, boo
     return *this;
 }
 
+template<class VoxelType>
+DenseGrid<VoxelType> &DenseGrid<VoxelType>::Reconstruct(float voxel_size, int resolution) {
+    voxel_size_ = voxel_size;
+    resolution_ = resolution;
+    voxels_.resize(resolution_ * resolution_ * resolution_, VoxelType());
+    return *this;
+}
+
 }
 }

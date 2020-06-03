@@ -58,7 +58,7 @@ public:
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractFreeVoxels() const;
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractOccupiedVoxels() const;
 
-    OccupancyGrid& ReconstructVoxels(float voxel_size, int resolution);
+    OccupancyGrid& Reconstruct(float voxel_size, int resolution);
 
     OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points,
                           const Eigen::Vector3f& viewpoint, float max_range = -1.0);

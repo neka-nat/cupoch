@@ -125,6 +125,18 @@ origin_(src_voxel_grid.origin_),
 voxels_keys_(src_voxel_grid.voxels_keys_),
 voxels_values_(src_voxel_grid.voxels_values_) {}
 
+thrust::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>> VoxelGrid::GetVoxels() const {
+    thrust::host_vector<Eigen::Vector3i> h_keys = voxels_keys_;
+    thrust::host_vector<Voxel> h_values = voxels_values_;
+    return thrust::make_pair(h_keys, h_values);
+}
+
+void VoxelGrid::SetVoxels(const thrust::host_vector<Eigen::Vector3i>& voxels_keys,
+                          const thrust::host_vector<Voxel>& voxels_values) {
+    voxels_keys_ = voxels_keys;
+    voxels_values_ = voxels_values;
+}
+
 VoxelGrid &VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3f::Zero();
