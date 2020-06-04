@@ -14,7 +14,8 @@ void pybind_primitives(py::module &m) {
                       "Primitive shape class.");
     py::detail::bind_default_constructor<Primitive>(primitive);
     py::detail::bind_copy_functions<Primitive>(primitive);
-    primitive.def_readwrite("transform", &Primitive::transform_);
+    primitive.def("get_axis_aligned_bounding_box", &Primitive::GetAxisAlignedBoundingBox)
+             .def_readwrite("transform", &Primitive::transform_);
 
     py::class_<Box, std::shared_ptr<Box>, Primitive>
             box(m, "Box",
