@@ -19,7 +19,6 @@ public:
         Sphere = 2,
         Cylinder = 3,
         Cone = 4,
-        Mesh = 5,
     };
     __host__ __device__ Primitive()
     : type_(PrimitiveType::Unspecified), transform_(Eigen::Matrix4f::Identity()) {};
@@ -96,6 +95,38 @@ public:
     float radius_;
     float height_;
 };
+
+class Cone : public Primitive {
+public:
+    __host__ __device__ Cone() : Primitive(Primitive::PrimitiveType::Cone), radius_(0), height_(0) {};
+    __host__ __device__ Cone(float radius, float height) : Primitive(Primitive::PrimitiveType::Cone), radius_(radius), height_(height) {};
+    __host__ __device__ Cone(float radius, float height, const Eigen::Matrix4f& transform)
+    : Primitive(Primitive::PrimitiveType::Cone, transform), radius_(radius), height_(height) {};
+    __host__ __device__ ~Cone() {};
+
+    __host__ __device__
+    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const {
+        const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) * Eigen::Vector3f(0.0, 0.0, 1.0 * height_);
+        const Eigen::Vector3f a = -pa;
+        const Eigen::Vector3f e = radius_ * (1.0 - a.array() * a.array() / a.squaredNorm()).sqrt();
+        const Eigen::Vector3f min_bound = pa.array().min((-e).array()).matrix() + transform_.block<3, 1>(0, 3);
+        const Eigen::Vector3f max_bound = pa.array().max(e.array()).matrix() + transform_.block<3, 1>(0, 3);
+        return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
+    };
+
+    float radius_;
+    float height_;
+};
+
+union PrimitivePack {
+    Primitive primitive_;
+    Box box_;
+    Sphere sphere_;
+    Cylinder cylinder_;
+    Cone cone_;
+};
+
+typedef utility::device_vector<PrimitivePack> PrimitiveArray;
 
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(const Primitive& primitive, float voxel_size);
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweeping(const Primitive& primitive, 
