@@ -3,7 +3,7 @@
 #include <Eigen/Core>
 
 #include "cupoch/geometry/geometry.h"
-#include "cupoch/utility/device_vector.h"
+#include "cupoch/collision/primitives.h"
 
 namespace cupoch {
 
@@ -49,6 +49,26 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
 
 std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::OccupancyGrid& occgrid,
                                                      const geometry::VoxelGrid& voxelgrid,
+                                                     float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const PrimitiveArray& primitives,
+                                                     const geometry::VoxelGrid& voxelgrid,
+                                                     float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
+                                                     const PrimitiveArray& primitives,
+                                                     float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const PrimitiveArray& primitives,
+                                                     const geometry::OccupancyGrid& occgrid,
+                                                     float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::OccupancyGrid& occgrid,
+                                                     const PrimitiveArray& primitives,
+                                                     float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const PrimitiveArray& primitives1,
+                                                     const PrimitiveArray& primitives2,
                                                      float margin = 0.0f);
 
 }

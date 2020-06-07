@@ -13,13 +13,13 @@ PlannerBase &PlannerBase::AddObstacle(const std::shared_ptr<geometry::Geometry>&
     return *this;
 }
 
-SimplePlanner::SimplePlanner(float object_radius) : object_radius_(object_radius) {}
-SimplePlanner::SimplePlanner(const geometry::Graph& graph, float object_radius)
+XyPlanner::XyPlanner(float object_radius) : object_radius_(object_radius) {}
+XyPlanner::XyPlanner(const geometry::Graph& graph, float object_radius)
 : graph_(graph), object_radius_(object_radius) {}
 
-SimplePlanner::~SimplePlanner() {}
+XyPlanner::~XyPlanner() {}
 
-SimplePlanner &SimplePlanner::UpdateGraph() {
+XyPlanner &XyPlanner::UpdateGraph() {
     for (const auto& obstacle : obstacles_) {
         auto res = std::make_shared<collision::CollisionResult>();
         switch (obstacle->GetGeometryType()) {
@@ -44,7 +44,7 @@ SimplePlanner &SimplePlanner::UpdateGraph() {
     return *this;
 }
 
-std::shared_ptr<Path> SimplePlanner::FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
+std::shared_ptr<Path> XyPlanner::FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
     auto ex_graph = graph_;
     size_t n_start = ex_graph.points_.size();
     size_t n_goal = n_start + 1;

@@ -17,8 +17,8 @@ if __name__ == "__main__":
     mesh_sphere = cph.geometry.TriangleMesh.create_sphere(radius=1.0)
     mesh_sphere.compute_vertex_normals()
     mesh_sphere.paint_uniform_color([0.1, 0.1, 0.7])
-    mesh_cylinder = cph.geometry.TriangleMesh.create_cylinder(radius=0.3,
-                                                              height=4.0)
+    mesh_cylinder = cph.geometry.TriangleMesh.create_capsule(radius=0.3,
+                                                             height=4.0)
     mesh_cylinder.compute_vertex_normals()
     mesh_cylinder.paint_uniform_color([0.1, 0.9, 0.1])
     mesh_frame = cph.geometry.TriangleMesh.create_coordinate_frame(

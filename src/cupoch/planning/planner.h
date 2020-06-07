@@ -17,13 +17,13 @@ public:
     std::vector<std::shared_ptr<geometry::Geometry>> obstacles_;
 };
 
-class SimplePlanner : public PlannerBase {
+class XyPlanner : public PlannerBase {
 public:
-    SimplePlanner(float object_radius = 0.1);
-    SimplePlanner(const geometry::Graph& graph, float object_radius = 0.1);
-    ~SimplePlanner();
+    XyPlanner(float object_radius = 0.1);
+    XyPlanner(const geometry::Graph& graph, float object_radius = 0.1);
+    ~XyPlanner();
 
-    SimplePlanner &UpdateGraph();
+    XyPlanner &UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const;
 public:
     geometry::Graph graph_;

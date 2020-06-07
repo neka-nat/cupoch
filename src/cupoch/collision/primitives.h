@@ -17,8 +17,7 @@ public:
         Unspecified = 0,
         Box = 1,
         Sphere = 2,
-        Cylinder = 3,
-        Cone = 4,
+        Capsule = 3,
     };
     __host__ __device__ Primitive()
     : type_(PrimitiveType::Unspecified), transform_(Eigen::Matrix4f::Identity()) {};
@@ -73,44 +72,20 @@ public:
     float radius_;
 };
 
-class Cylinder : public Primitive {
+class Capsule : public Primitive {
 public:
-    __host__ __device__ Cylinder() : Primitive(Primitive::PrimitiveType::Cylinder), radius_(0), height_(0) {};
-    __host__ __device__ Cylinder(float radius, float height) : Primitive(Primitive::PrimitiveType::Cylinder), radius_(radius), height_(height) {};
-    __host__ __device__ Cylinder(float radius, float height, const Eigen::Matrix4f& transform)
-    : Primitive(Primitive::PrimitiveType::Cylinder, transform), radius_(radius), height_(height) {};
-    __host__ __device__ ~Cylinder() {};
+    __host__ __device__ Capsule() : Primitive(Primitive::PrimitiveType::Capsule), radius_(0), height_(0) {};
+    __host__ __device__ Capsule(float radius, float height) : Primitive(Primitive::PrimitiveType::Capsule), radius_(radius), height_(height) {};
+    __host__ __device__ Capsule(float radius, float height, const Eigen::Matrix4f& transform)
+    : Primitive(Primitive::PrimitiveType::Capsule, transform), radius_(radius), height_(height) {};
+    __host__ __device__ ~Capsule() {};
 
     __host__ __device__
     geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const {
         const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) * Eigen::Vector3f(0.0, 0.0, 0.5 * height_);
         const Eigen::Vector3f pb = -pa;
-        const Eigen::Vector3f a = pb - pa;
-        const Eigen::Vector3f e = radius_ * (1.0 - a.array() * a.array() / a.squaredNorm()).sqrt();
-        const Eigen::Vector3f min_bound = (pa - e).array().min((pb - e).array()).matrix() + transform_.block<3, 1>(0, 3);
-        const Eigen::Vector3f max_bound = (pa + e).array().max((pb + e).array()).matrix() + transform_.block<3, 1>(0, 3);
-        return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
-    };
-
-    float radius_;
-    float height_;
-};
-
-class Cone : public Primitive {
-public:
-    __host__ __device__ Cone() : Primitive(Primitive::PrimitiveType::Cone), radius_(0), height_(0) {};
-    __host__ __device__ Cone(float radius, float height) : Primitive(Primitive::PrimitiveType::Cone), radius_(radius), height_(height) {};
-    __host__ __device__ Cone(float radius, float height, const Eigen::Matrix4f& transform)
-    : Primitive(Primitive::PrimitiveType::Cone, transform), radius_(radius), height_(height) {};
-    __host__ __device__ ~Cone() {};
-
-    __host__ __device__
-    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const {
-        const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) * Eigen::Vector3f(0.0, 0.0, 1.0 * height_);
-        const Eigen::Vector3f a = -pa;
-        const Eigen::Vector3f e = radius_ * (1.0 - a.array() * a.array() / a.squaredNorm()).sqrt();
-        const Eigen::Vector3f min_bound = pa.array().min((-e).array()).matrix() + transform_.block<3, 1>(0, 3);
-        const Eigen::Vector3f max_bound = pa.array().max(e.array()).matrix() + transform_.block<3, 1>(0, 3);
+        const Eigen::Vector3f min_bound = (pa.array().min(pb.array()) - radius_).matrix() + transform_.block<3, 1>(0, 3);
+        const Eigen::Vector3f max_bound = (pa.array().max(pb.array()) + radius_).matrix() + transform_.block<3, 1>(0, 3);
         return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
     };
 
@@ -122,8 +97,7 @@ union PrimitivePack {
     Primitive primitive_;
     Box box_;
     Sphere sphere_;
-    Cylinder cylinder_;
-    Cone cone_;
+    Capsule capsule_;
 };
 
 typedef utility::device_vector<PrimitivePack> PrimitiveArray;

@@ -36,6 +36,58 @@ float PointAABBSquared(const Eigen::Vector3f &p,
     return dist2;
 }
 
+float LineSegmentLineSegmentSquared(const Eigen::Vector3f &p0,
+                                    const Eigen::Vector3f &q0,
+                                    const Eigen::Vector3f &p1,
+                                    const Eigen::Vector3f &q1,
+                                    float &param0,
+                                    float &param1,
+                                    Eigen::Vector3f &c0,
+                                    Eigen::Vector3f &c1) {
+    const Eigen::Vector3f d0 = q0 - p0;
+    const Eigen::Vector3f d1 = q1 - p1;
+    const Eigen::Vector3f r = p0 - p1;
+    const float a = d0.squaredNorm();
+    const float e = d1.squaredNorm();
+    const float f = d1.dot(r);
+    if (a <= std::numeric_limits<float>::epsilon() && e <= std::numeric_limits<float>::epsilon()) {
+        param0 = 0.0;
+        param1 = 0.0;
+        c0 = p0;
+        c1 = p1;
+        return (c0 - c1).squaredNorm();
+    }
+    if (a <= std::numeric_limits<float>::epsilon()) {
+        param0 = 0.0;
+        param1 = min(max(f / e, 0.0), 1.0);
+    } else {
+        float c = d0.dot(r);
+        if (e <= std::numeric_limits<float>::epsilon()) {
+            param1 = 0.0;
+            param0 = min(max(-c / a, 0.0), 1.0);
+        } else {
+            const float b = d0.dot(d1);
+            const float denom = a * e - b * b;
+            if (denom != 0.0) {
+                param0 = min(max((b * f - c * e) / denom, 0.0), 1.0);
+            } else {
+                param0 = 0.0;
+            }
+            param1 = (b * param0 + f) / e;
+            if (param1 < 0.0) {
+                param1 = 0.0;
+                param0 = min(max(-c / a, 0.0), 1.0);
+            } else if (param1 > 1.0) {
+                param1 = 1.0;
+                param0 = min(max((b - c) / a, 0.0), 1.0);
+            }
+        }
+    }
+    c0 = p0 + param0 * d0;
+    c1 = p1 + param1 * d1;
+    return (c0 - c1).squaredNorm();
+}
+
 }  // namespace distance_test
 
 }  // namespace geometry

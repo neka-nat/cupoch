@@ -207,6 +207,14 @@ public:
     static std::shared_ptr<TriangleMesh> CreateSphere(float radius = 1.0,
                                                       int resolution = 20);
 
+    /// Factory function to create a half sphere mesh (TriangleMeshFactory.cpp)
+    /// The sphere with \param radius will be centered at (0, 0, 0).
+    /// Its axis is aligned with z-axis.
+    /// The longitudes will be split into \param resolution segments.
+    /// The latitudes will be split into \param resolution * 2 segments.
+    static std::shared_ptr<TriangleMesh> CreateHalfSphere(float radius = 1.0,
+                                                          int resolution = 20);
+
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
     /// height/2). The circle with \param radius will be split into \param
@@ -216,6 +224,26 @@ public:
                                                         float height = 2.0,
                                                         int resolution = 20,
                                                         int split = 4);
+
+    /// Factory function to create a tube mesh (TriangleMeshFactory.cpp)
+    /// The axis of the tube will be from (0, 0, -height/2) to (0, 0,
+    /// height/2). The circle with \param radius will be split into \param
+    /// resolution segments. The \param height will be split into \param split
+    /// segments.
+    static std::shared_ptr<TriangleMesh> CreateTube(float radius = 1.0,
+                                                    float height = 2.0,
+                                                    int resolution = 20,
+                                                    int split = 4);
+
+    /// Factory function to create a capsule mesh (TriangleMeshFactory.cpp)
+    /// The axis of the capsule will be from (0, 0, -radius-height/2) to (0, 0,
+    /// radius+height/2). The half sphere with \param radius will be split into \param
+    /// resolution segments. The \param height will be split into \param split
+    /// segments.
+    static std::shared_ptr<TriangleMesh> CreateCapsule(float radius = 1.0,
+                                                       float height = 2.0,
+                                                       int resolution = 20,
+                                                       int split = 4);
 
     /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone will be from (0, 0, 0) to (0, 0, \param height).

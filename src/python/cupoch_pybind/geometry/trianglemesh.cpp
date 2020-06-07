@@ -188,6 +188,11 @@ void pybind_trianglemesh(py::module &m) {
                         "Factory function to create a cylinder mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
                         "split"_a = 4)
+            .def_static("create_capsule",
+                        &geometry::TriangleMesh::CreateCapsule,
+                        "Factory function to create a capsule mesh.",
+                        "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,
+                        "split"_a = 4)
             .def_static("create_cone", &geometry::TriangleMesh::CreateCone,
                         "Factory function to create a cone mesh.",
                         "radius"_a = 1.0, "height"_a = 2.0, "resolution"_a = 20,

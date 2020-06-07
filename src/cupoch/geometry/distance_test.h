@@ -23,6 +23,16 @@ __host__ __device__ inline float PointAABBSquared(
         const Eigen::Vector3f &min_bound,
         const Eigen::Vector3f &max_bound);
 
+__host__ __device__ inline float LineSegmentLineSegmentSquared(
+        const Eigen::Vector3f &p0,
+        const Eigen::Vector3f &q0,
+        const Eigen::Vector3f &p1,
+        const Eigen::Vector3f &q1,
+        float &param0,
+        float &param1,
+        Eigen::Vector3f &c0,
+        Eigen::Vector3f &c1);
+
 }  // namespace distance_test
 
 }  // namespace geometry

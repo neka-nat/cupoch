@@ -41,19 +41,34 @@ struct compute_sphere_triangles_functor1 {
 };
 
 struct compute_sphere_triangles_functor2 {
-    compute_sphere_triangles_functor2(Eigen::Vector3i *triangle, int resolution)
-        : triangles_(triangle), resolution_(resolution){};
+    compute_sphere_triangles_functor2(Eigen::Vector3i *triangle, int resolution,
+                                      int initial_base = 2)
+        : triangles_(triangle), resolution_(resolution),
+        initial_base_(initial_base) {};
     Eigen::Vector3i *triangles_;
     const int resolution_;
+    const int initial_base_;
     __device__ void operator()(size_t idx) {
         int i = idx / (2 * resolution_) + 1;
         int j = idx % (2 * resolution_);
-        int base1 = 2 + 2 * resolution_ * (i - 1);
+        int base1 = initial_base_ + 2 * resolution_ * (i - 1);
         int base2 = base1 + 2 * resolution_;
         int j1 = (j + 1) % (2 * resolution_);
         triangles_[2 * idx] = Eigen::Vector3i(base2 + j, base1 + j1, base1 + j);
         triangles_[2 * idx + 1] =
                 Eigen::Vector3i(base2 + j, base2 + j1, base1 + j1);
+    }
+};
+
+struct compute_half_sphere_triangles_functor1 {
+    compute_half_sphere_triangles_functor1(Eigen::Vector3i *triangle, int resolution)
+        : triangles_(triangle), resolution_(resolution){};
+    Eigen::Vector3i *triangles_;
+    const int resolution_;
+    __device__ void operator()(size_t idx) {
+        int j1 = (idx + 1) % (2 * resolution_);
+        int base = 1;
+        triangles_[idx] = Eigen::Vector3i(0, base + idx, base + j1);
     }
 };
 
@@ -101,14 +116,17 @@ struct compute_cylinder_triangles_functor1 {
 
 struct compute_cylinder_triangles_functor2 {
     compute_cylinder_triangles_functor2(Eigen::Vector3i *triangle,
-                                        int resolution)
-        : triangles_(triangle), resolution_(resolution){};
+                                        int resolution,
+                                        int initial_base = 2)
+        : triangles_(triangle), resolution_(resolution),
+        initial_base_(initial_base) {};
     Eigen::Vector3i *triangles_;
     const int resolution_;
+    const int initial_base_;
     __device__ void operator()(size_t idx) {
         int i = idx / resolution_;
         int j = idx % resolution_;
-        int base1 = 2 + resolution_ * i;
+        int base1 = initial_base_ + resolution_ * i;
         int base2 = base1 + resolution_;
         int j1 = (j + 1) % resolution_;
         triangles_[2 * idx] = Eigen::Vector3i(base2 + j, base1 + j1, base1 + j);
@@ -490,6 +508,40 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
     return mesh_ptr;
 }
 
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateHalfSphere(
+        float radius /* = 1.0*/, int resolution /* = 20*/) {
+    auto mesh_ptr = std::make_shared<TriangleMesh>();
+    if (radius <= 0) {
+        utility::LogError("[CreateHalfSphere] radius <= 0");
+    }
+    if (resolution <= 0) {
+        utility::LogError("[CreateHalfSphere] resolution <= 0");
+    }
+    size_t n_vertices = resolution * resolution + 1;
+    mesh_ptr->vertices_.resize(n_vertices);
+    mesh_ptr->vertices_[0] = Eigen::Vector3f(0.0, 0.0, radius);
+    compute_sphere_vertices_functor func_vt(resolution, radius);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_vertices - 1),
+                      mesh_ptr->vertices_.begin() + 1, func_vt);
+    mesh_ptr->triangles_.resize(2 * resolution +
+                                4 * (resolution / 2 - 1) * resolution);
+    compute_half_sphere_triangles_functor1 func_tr1(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(2 * resolution),
+                     func_tr1);
+    compute_sphere_triangles_functor2 func_tr2(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) +
+                    2 * resolution,
+            resolution, 1);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(
+                             2 * (resolution / 2 - 1) * resolution),
+                     func_tr2);
+    return mesh_ptr;
+}
+
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
         float radius /* = 1.0*/,
         float height /* = 2.0*/,
@@ -531,6 +583,74 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution * split),
              func_tr2);
+    return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateTube(
+        float radius /* = 1.0*/,
+        float height /* = 2.0*/,
+        int resolution /* = 20*/,
+        int split /* = 4*/) {
+    auto mesh_ptr = std::make_shared<TriangleMesh>();
+    if (radius <= 0) {
+        utility::LogError("[CreateTube] radius <= 0");
+    }
+    if (height <= 0) {
+        utility::LogError("[CreateTube] height <= 0");
+    }
+    if (resolution <= 0) {
+        utility::LogError("[CreateTube] resolution <= 0");
+    }
+    if (split <= 0) {
+        utility::LogError("[CreateTube] split <= 0");
+    }
+    size_t n_vertices = resolution * (split + 1);
+    mesh_ptr->vertices_.resize(n_vertices);
+    float step = M_PI * 2.0 / (float)resolution;
+    float h_step = height / (float)split;
+    compute_cylinder_vertices_functor func_vt(resolution, radius, height, step,
+                                              h_step);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator<size_t>(n_vertices),
+                      mesh_ptr->vertices_.begin(), func_vt);
+    mesh_ptr->triangles_.resize(2 * split * resolution);
+    compute_cylinder_triangles_functor2 func_tr2(
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()),
+            resolution, 0);
+    for_each(thrust::make_counting_iterator<size_t>(0),
+             thrust::make_counting_iterator<size_t>(resolution * split),
+             func_tr2);
+    return mesh_ptr;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateCapsule(
+        float radius /* = 1.0*/,
+        float height /* = 2.0*/,
+        int resolution /* = 20*/,
+        int split /* = 4*/) {
+    auto mesh_ptr = std::make_shared<TriangleMesh>();
+    if (radius <= 0) {
+        utility::LogError("[CreateCapsule] radius <= 0");
+    }
+    if (height <= 0) {
+        utility::LogError("[CreateCapsule] height <= 0");
+    }
+    if (resolution <= 0) {
+        utility::LogError("[CreateCapsule] resolution <= 0");
+    }
+    if (split <= 0) {
+        utility::LogError("[CreateCapsule] split <= 0");
+    }
+    Eigen::Matrix4f transform;
+    auto mesh_top = CreateHalfSphere(radius, resolution);
+    transform << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, height / 2.0, 0, 0, 0, 1;
+    mesh_top->Transform(transform);
+    auto mesh_bottom = CreateHalfSphere(radius, resolution);
+    transform << 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, -height / 2.0, 0, 0, 0, 1;
+    mesh_bottom->Transform(transform);
+    mesh_ptr = CreateTube(radius, height, resolution, split);
+    *mesh_ptr += *mesh_top;
+    *mesh_ptr += *mesh_bottom;
     return mesh_ptr;
 }
 
