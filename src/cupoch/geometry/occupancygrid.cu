@@ -349,8 +349,8 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i &voxel, bool occupi
         org_ov.prob_log_ = std::min(std::max(org_ov.prob_log_, clamping_thres_min_), clamping_thres_max_);
         org_ov.grid_index_ = voxel.cast<unsigned short>();
         voxels_[idx] = org_ov;
-        min_bound_ = (min_bound_.array() > org_ov.grid_index_.array()).select(org_ov.grid_index_, min_bound_);
-        max_bound_ = (max_bound_.array() < org_ov.grid_index_.array()).select(org_ov.grid_index_, max_bound_);
+        min_bound_ = min_bound_.array().min(org_ov.grid_index_.array());
+        max_bound_ = max_bound_.array().max(org_ov.grid_index_.array());
     }
     return *this;
 }

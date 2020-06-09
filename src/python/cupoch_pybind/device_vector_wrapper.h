@@ -6,6 +6,7 @@
 
 #include "cupoch/utility/device_vector.h"
 #include "cupoch/geometry/occupancygrid.h"
+#include "cupoch/collision/primitives.h"
 
 namespace cupoch {
 
@@ -28,6 +29,7 @@ public:
             const thrust::host_vector<Type>& other);
     size_t size() const;
     bool empty() const;
+    void push_back(const Type& x);
     thrust::host_vector<Type> cpu() const;
     utility::device_vector<Type> data_;
 };
@@ -40,6 +42,7 @@ using device_vector_int = device_vector_wrapper<int>;
 using device_vector_size_t = device_vector_wrapper<size_t>;
 using device_vector_float = device_vector_wrapper<float>;
 using device_vector_occupancyvoxel = device_vector_wrapper<geometry::OccupancyVoxel>;
+using device_vector_primitives = device_vector_wrapper<collision::PrimitivePack>;
 
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,

@@ -48,9 +48,7 @@ struct compute_key_functor {
     const float voxel_size_;
     __device__ Eigen::Vector3i operator()(const Eigen::Vector3f &pt) {
         auto ref_coord = (pt - voxel_min_bound_) / voxel_size_;
-        return Eigen::Vector3i(int(floor(ref_coord(0))),
-                               int(floor(ref_coord(1))),
-                               int(floor(ref_coord(2))));
+        return Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>();
     }
 };
 
@@ -200,7 +198,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                 [] __device__(Eigen::Vector3f & nl) { nl.normalize(); });
     } else if (!has_normals && has_colors) {
         utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
-        output->colors_.resize(n);
+        resize_all(n, output->colors_);
         typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator,
                               utility::device_vector<Eigen::Vector3f>::iterator>
                 IteratorTuple;
@@ -214,8 +212,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     } else {
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
-        output->normals_.resize(n);
-        output->colors_.resize(n);
+        resize_all(n, output->normals_, output->colors_);
         typedef thrust::tuple<utility::device_vector<Eigen::Vector3f>::iterator,
                               utility::device_vector<Eigen::Vector3f>::iterator,
                               utility::device_vector<Eigen::Vector3f>::iterator>

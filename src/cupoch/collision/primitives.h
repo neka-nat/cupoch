@@ -94,11 +94,38 @@ public:
 };
 
 union PrimitivePack {
+    __host__ __device__ PrimitivePack() : primitive_() {};
+    __host__ __device__ PrimitivePack(const PrimitivePack &other) {
+        *this = other;
+    };
+    __host__ __device__ PrimitivePack &operator=(const PrimitivePack &other) {
+        switch (other.primitive_.type_) {
+            case Primitive::PrimitiveType::Box:
+                box_ = other.box_;
+                break;
+            case Primitive::PrimitiveType::Sphere:
+                sphere_ = other.sphere_;
+                break;
+            case Primitive::PrimitiveType::Capsule:
+                capsule_ = other.capsule_;
+                break;
+            default:
+                primitive_ = other.primitive_;
+                break;
+        }
+        return *this;
+    };
+    __host__ __device__ ~PrimitivePack() {};
     Primitive primitive_;
     Box box_;
     Sphere sphere_;
     Capsule capsule_;
 };
+
+__host__ __device__
+inline PrimitivePack operator+(const PrimitivePack &lhs, const PrimitivePack& rhs) {
+    return lhs;
+}
 
 typedef utility::device_vector<PrimitivePack> PrimitiveArray;
 

@@ -291,5 +291,44 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
     return out;
 }
 
+std::shared_ptr<CollisionResult> ComputeIntersection(const PrimitiveArray& primitives,
+                                                     const geometry::OccupancyGrid& occgrid,
+                                                     float margin) {
+    auto out = std::make_shared<CollisionResult>();
+    size_t n_v1 = primitives.size();
+    auto occupied_voxels = occgrid.ExtractOccupiedVoxels();
+    utility::device_vector<Eigen::Vector3i> occupied_voxels_keys(occupied_voxels->size());
+    thrust::transform(occupied_voxels->begin(), occupied_voxels->end(), occupied_voxels_keys.begin(),
+                      [] __device__ (const geometry::OccupancyVoxel& voxel) {
+                          return voxel.grid_index_.cast<int>();
+                      });
+    size_t n_v2 = occupied_voxels->size();
+    size_t n_total = n_v1 * n_v2;
+    const Eigen::Vector3f occ_origin = occgrid.origin_ - 0.5 * occgrid.voxel_size_ * Eigen::Vector3f::Constant(occgrid.resolution_);
+    intersect_primitives_voxel_functor func(thrust::raw_pointer_cast(primitives.data()),
+                                            thrust::raw_pointer_cast(occupied_voxels_keys.data()),
+                                            occgrid.voxel_size_, occ_origin, n_v2, margin);
+    out->first_ = CollisionResult::CollisionType::Primitives;
+    out->second_ = CollisionResult::CollisionType::OccupancyGrid;
+    out->collision_index_pairs_.resize(n_total);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_total),
+                      out->collision_index_pairs_.begin(), func);
+    convert_index_functor func_c(thrust::raw_pointer_cast(occupied_voxels_keys.data()), occgrid.resolution_);
+    thrust::transform(out->collision_index_pairs_.begin(), out->collision_index_pairs_.end(),
+                      out->collision_index_pairs_.begin(), func_c);
+    return out;
+}
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::OccupancyGrid& occgrid,
+                                                     const PrimitiveArray& primitives,
+                                                     float margin) {
+    auto out = ComputeIntersection(primitives, occgrid, margin);
+    out->first_ = CollisionResult::CollisionType::OccupancyGrid;
+    out->second_ = CollisionResult::CollisionType::Primitives;
+    swap_index(out->collision_index_pairs_);
+    return out;
+}
+
 }
 }

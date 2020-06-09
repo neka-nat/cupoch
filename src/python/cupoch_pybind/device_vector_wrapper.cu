@@ -57,6 +57,11 @@ bool device_vector_wrapper<Type>::empty() const {
 }
 
 template <typename Type>
+void device_vector_wrapper<Type>::push_back(const Type& x) {
+    data_.push_back(x);
+}
+
+template <typename Type>
 thrust::host_vector<Type> device_vector_wrapper<Type>::cpu() const {
     thrust::host_vector<Type> ans = data_;
     return ans;
@@ -70,6 +75,7 @@ template class device_vector_wrapper<float>;
 template class device_vector_wrapper<int>;
 template class device_vector_wrapper<size_t>;
 template class device_vector_wrapper<geometry::OccupancyVoxel>;
+template class device_vector_wrapper<collision::PrimitivePack>;
 
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,
@@ -97,6 +103,8 @@ template void FromWrapper<size_t>(utility::device_vector<size_t>& dv,
                                   const device_vector_wrapper<size_t>& vec);
 template void FromWrapper<geometry::OccupancyVoxel>(utility::device_vector<geometry::OccupancyVoxel>& dv,
                                                     const device_vector_wrapper<geometry::OccupancyVoxel>& vec);
-
+template void FromWrapper<collision::PrimitivePack>(utility::device_vector<collision::PrimitivePack>& dv,
+                                                    const device_vector_wrapper<collision::PrimitivePack>& vec);
+                                                   
 }  // namespace wrapper
 }  // namespace cupoch

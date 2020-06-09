@@ -8,11 +8,8 @@ import matplotlib.animation as animation
 
 from datetime import datetime
 
-if len(sys.argv) == 2 and sys.argv[1] == "CPU":
-    import open3d as x3d
-else:
-    import cupoch as x3d
-    x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
+import cupoch as x3d
+x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
 
 
 class Preset(IntEnum):

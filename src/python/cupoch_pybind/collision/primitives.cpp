@@ -62,6 +62,22 @@ void pybind_primitives(py::module &m) {
             .def_readwrite("radius", &Capsule::radius_)
             .def_readwrite("height", &Capsule::height_);
 
+    py::class_<PrimitivePack, std::shared_ptr<PrimitivePack>>
+            pack(m, "PrimitivePack",
+                     "Packed primitive class.");
+    py::detail::bind_default_constructor<PrimitivePack>(pack);
+    py::detail::bind_copy_functions<PrimitivePack>(pack);
+    pack.def_readwrite("box", &PrimitivePack::box_)
+        .def_readwrite("sphere", &PrimitivePack::sphere_)
+        .def_readwrite("capsule", &PrimitivePack::capsule_);
+
+     py::class_<wrapper::device_vector_primitives, std::shared_ptr<wrapper::device_vector_primitives>>
+            primitive_array(m, "PrimitiveArray",
+                            "Packed primitive array class.");
+     py::detail::bind_default_constructor<PrimitivePack>(pack);
+     py::detail::bind_copy_functions<PrimitivePack>(pack);
+     primitive_array.def("append", &wrapper::device_vector_primitives::push_back);
+
      m.def("create_voxel_grid", &CreateVoxelGrid);
      m.def("create_voxel_grid_with_sweeping", &CreateVoxelGridWithSweeping);
      m.def("create_triangle_mesh", &CreateTriangleMesh);

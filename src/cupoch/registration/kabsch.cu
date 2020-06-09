@@ -49,12 +49,6 @@ struct outer_product_functor {
     }
 };
 
-struct set_correspondence_functor {
-    __device__ Eigen::Vector2i operator()(size_t idx) {
-        return Eigen::Vector2i(idx, idx);
-    }
-};
-
 }  // namespace
 
 Eigen::Matrix4f_u cupoch::registration::Kabsch(
@@ -117,9 +111,9 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
         const utility::device_vector<Eigen::Vector3f> &model,
         const utility::device_vector<Eigen::Vector3f> &target) {
     CorrespondenceSet corres(model.size());
-    set_correspondence_functor func;
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(model.size()),
-                      corres.begin(), func);
+    thrust::tabulate(corres.begin(), corres.end(),
+                     [] __device__ (size_t idx) {
+                         return Eigen::Vector2i(idx, idx);
+                     });
     return Kabsch(model, target, corres);
 }
