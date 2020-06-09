@@ -17,13 +17,13 @@ public:
     std::vector<std::shared_ptr<geometry::Geometry>> obstacles_;
 };
 
-class XyPlanner : public PlannerBase {
+class Pos3DPlanner : public PlannerBase {
 public:
-    XyPlanner(float object_radius = 0.1);
-    XyPlanner(const geometry::Graph& graph, float object_radius = 0.1);
-    ~XyPlanner();
+    Pos3DPlanner(float object_radius = 0.1);
+    Pos3DPlanner(const geometry::Graph& graph, float object_radius = 0.1);
+    ~Pos3DPlanner();
 
-    XyPlanner &UpdateGraph();
+    Pos3DPlanner &UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const;
 public:
     geometry::Graph graph_;

@@ -34,6 +34,14 @@ __host__ __device__ inline bool LineSegmentAABB(
         const Eigen::Vector3f &min_bound,
         const Eigen::Vector3f &max_bound);
 
+__host__ __device__ inline bool RayAABB(
+        const Eigen::Vector3f &p,
+        const Eigen::Vector3f &d,
+        const Eigen::Vector3f &min_bound,
+        const Eigen::Vector3f &max_bound,
+        float &tmin,
+        Eigen::Vector3f &q);
+
 __host__ __device__ inline bool SphereAABB(
         const Eigen::Vector3f& center,
         float radius,
@@ -47,6 +55,13 @@ __host__ __device__ inline bool BoxBox(
         const Eigen::Vector3f& extents2,
         const Eigen::Matrix3f& rot2,
         const Eigen::Vector3f& center2);
+
+__host__ __device__ inline bool CapsuleAABB(
+        float radius,
+        const Eigen::Vector3f &p,
+        const Eigen::Vector3f &d,
+        const Eigen::Vector3f &min_bound,
+        const Eigen::Vector3f &max_bound);
 
 }  // namespace intersection_test
 

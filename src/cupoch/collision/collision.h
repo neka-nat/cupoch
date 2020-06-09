@@ -16,13 +16,20 @@ class OccupancyGrid;
 namespace collision {
 
 struct CollisionResult {
-    geometry::Geometry::GeometryType first_;
-    geometry::Geometry::GeometryType second_;
+    enum class CollisionType {
+        Unspecified = 0,
+        Primitives = 1,
+        VoxelGrid = 2,
+        OccupancyGrid = 3,
+        LineSet = 4,
+    };
+    CollisionType first_;
+    CollisionType second_;
     utility::device_vector<Eigen::Vector2i> collision_index_pairs_;
 
     CollisionResult();
-    CollisionResult(geometry::Geometry::GeometryType first,
-                    geometry::Geometry::GeometryType second,
+    CollisionResult(CollisionResult::CollisionType first,
+                    CollisionResult::CollisionType second,
                     const utility::device_vector<Eigen::Vector2i>& collision_index_pairs);
     CollisionResult(const CollisionResult& other);
     ~CollisionResult();

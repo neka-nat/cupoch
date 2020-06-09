@@ -16,6 +16,14 @@ void pybind_primitives(py::module &m) {
     py::detail::bind_copy_functions<Primitive>(primitive);
     primitive.def("get_axis_aligned_bounding_box", &Primitive::GetAxisAlignedBoundingBox)
              .def_readwrite("transform", &Primitive::transform_);
+    py::enum_<Primitive::PrimitiveType> primitive_type(primitive, "Type",
+                                                       py::arithmetic());
+    primitive_type
+            .value("Unspecified", Primitive::PrimitiveType::Unspecified)
+            .value("Box", Primitive::PrimitiveType::Box)
+            .value("Sphere", Primitive::PrimitiveType::Sphere)
+            .value("Capsule", Primitive::PrimitiveType::Capsule)
+            .export_values();
 
     py::class_<Box, std::shared_ptr<Box>, Primitive>
             box(m, "Box",

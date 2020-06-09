@@ -17,6 +17,15 @@ void pybind_collision_methods(py::module &m) {
     col_res.def("is_collided", &collision::CollisionResult::IsCollided)
            .def_property("collision_index_pairs", [] (collision::CollisionResult &res) {return wrapper::device_vector_vector2i(res.collision_index_pairs_);},
                          [] (collision::CollisionResult &res, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(res.collision_index_pairs_, vec);});
+    py::enum_<collision::CollisionResult::CollisionType> collision_type(col_res, "Type",
+                                                                        py::arithmetic());
+    collision_type
+            .value("Unspecified", collision::CollisionResult::CollisionType::Unspecified)
+            .value("Primitives", collision::CollisionResult::CollisionType::Primitives)
+            .value("VoxelGrid", collision::CollisionResult::CollisionType::VoxelGrid)
+            .value("OccupancyGrid", collision::CollisionResult::CollisionType::OccupancyGrid)
+            .value("LineSet", collision::CollisionResult::CollisionType::LineSet)
+            .export_values();
 
     m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::VoxelGrid&, float>(&collision::ComputeIntersection));
     m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::LineSet&, float>(&collision::ComputeIntersection));

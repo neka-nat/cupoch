@@ -83,6 +83,60 @@ struct intersect_voxel_line_functor {
     }
 };
 
+struct intersect_primitives_voxel_functor {
+    intersect_primitives_voxel_functor(const PrimitivePack* primitives,
+                                       const Eigen::Vector3i* voxels_keys,
+                                       float voxel_size, const Eigen::Vector3f& origin,
+                                       int n_v2, float margin)
+                                       : primitives_(primitives), voxels_keys_(voxels_keys),
+                                       voxel_size_(voxel_size),
+                                       box_half_size_(Eigen::Vector3f(
+                                        voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+                                       origin_(origin),
+                                       n_v2_(n_v2), margin_(margin) {};
+    const PrimitivePack* primitives_;
+    const Eigen::Vector3i* voxels_keys_;
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;
+    const int n_v2_;
+    const float margin_;
+    __device__ Eigen::Vector2i operator() (size_t idx) const {
+        int i1 = idx / n_v2_;
+        int i2 = idx % n_v2_;
+        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+        const Eigen::Vector3f ms = Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f center = ((voxels_keys_[i2].cast<float>() + h3) * voxel_size_) + origin_;
+        switch (primitives_[i1].primitive_.type_) {
+            case Primitive::PrimitiveType::Box: {
+                const Box box = primitives_[i1].box_;
+                int coll = geometry::intersection_test::BoxBox(box.lengths_ * 0.5, box.transform_.block<3, 3>(0, 0),
+                                                               box.transform_.block<3, 1>(0, 3),
+                                                               box_half_size_, Eigen::Matrix3f::Identity(), center);
+                return (coll == 1) ? Eigen::Vector2i(i1, i2) : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Sphere: {
+                const Sphere sphere = primitives_[i1].sphere_;
+                int coll = geometry::intersection_test::SphereAABB(sphere.transform_.block<3, 1>(0, 3),
+                                                                   sphere.radius_,
+                                                                   center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(i1, i2) : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Capsule: {
+                const Capsule capsule = primitives_[i1].capsule_;
+                Eigen::Vector3f d = capsule.transform_.block<3, 1>(0, 3) - 0.5 * capsule.height_ * capsule.transform_.block<3, 1>(0, 2);
+                int coll = geometry::intersection_test::CapsuleAABB(capsule.radius_, d,
+                                                                    capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
+                                                                    center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(i1, i2) : Eigen::Vector2i(-1, -1);
+            }
+            default: {
+                return Eigen::Vector2i(-1, -1);
+            }
+        }
+    }
+};
+
 struct convert_index_functor {
     convert_index_functor(const Eigen::Vector3i* occupied_voxels_keys, int resolution)
     : occupied_voxels_keys_(occupied_voxels_keys), resolution_(resolution) {};
@@ -96,11 +150,11 @@ struct convert_index_functor {
 }  // namespace
 
 CollisionResult::CollisionResult()
-: first_(geometry::Geometry::GeometryType::Unspecified),
-second_(geometry::Geometry::GeometryType::Unspecified) {};
+: first_(CollisionResult::CollisionType::Unspecified),
+second_(CollisionResult::CollisionType::Unspecified) {};
 
-CollisionResult::CollisionResult(geometry::Geometry::GeometryType first,
-                                 geometry::Geometry::GeometryType second,
+CollisionResult::CollisionResult(CollisionResult::CollisionType first,
+                                 CollisionResult::CollisionType second,
                                  const utility::device_vector<Eigen::Vector2i>& collision_index_pairs)
                                  : first_(first), second_(second),
                                  collision_index_pairs_(collision_index_pairs) {};
@@ -126,8 +180,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
                                        thrust::raw_pointer_cast(voxelgrid2.voxels_keys_.data()),
                                        voxelgrid1.voxel_size_, voxelgrid2.voxel_size_,
                                        voxelgrid1.origin_, voxelgrid2.origin_, n_v2, margin);
-    out->first_ = geometry::Geometry::GeometryType::VoxelGrid;
-    out->second_ = geometry::Geometry::GeometryType::VoxelGrid;
+    out->first_ = CollisionResult::CollisionType::VoxelGrid;
+    out->second_ = CollisionResult::CollisionType::VoxelGrid;
     out->collision_index_pairs_.resize(n_total);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
@@ -147,8 +201,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
                                       thrust::raw_pointer_cast(lineset.points_.data()),
                                       thrust::raw_pointer_cast(lineset.lines_.data()),
                                       voxelgrid.voxel_size_, voxelgrid.origin_, n_v2, margin);
-    out->first_ = geometry::Geometry::GeometryType::VoxelGrid;
-    out->second_ = geometry::Geometry::GeometryType::LineSet;
+    out->first_ = CollisionResult::CollisionType::VoxelGrid;
+    out->second_ = CollisionResult::CollisionType::LineSet;
     out->collision_index_pairs_.resize(n_total);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
@@ -161,8 +215,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::LineSet& li
                                                      const geometry::VoxelGrid& voxelgrid,
                                                      float margin) {
     auto out = ComputeIntersection(voxelgrid, lineset);
-    out->first_ = geometry::Geometry::GeometryType::LineSet;
-    out->second_ = geometry::Geometry::GeometryType::VoxelGrid;
+    out->first_ = CollisionResult::CollisionType::LineSet;
+    out->second_ = CollisionResult::CollisionType::VoxelGrid;
     swap_index(out->collision_index_pairs_);
     return out;
 }
@@ -185,8 +239,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
                                        thrust::raw_pointer_cast(occupied_voxels_keys.data()),
                                        voxelgrid.voxel_size_, occgrid.voxel_size_,
                                        voxelgrid.origin_, occ_origin, n_v2, margin);
-    out->first_ = geometry::Geometry::GeometryType::VoxelGrid;
-    out->second_ = geometry::Geometry::GeometryType::OccupancyGrid;
+    out->first_ = CollisionResult::CollisionType::VoxelGrid;
+    out->second_ = CollisionResult::CollisionType::OccupancyGrid;
     out->collision_index_pairs_.resize(n_total);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
@@ -201,8 +255,38 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::OccupancyGr
                                                      const geometry::VoxelGrid& voxelgrid,
                                                      float margin) {
     auto out = ComputeIntersection(voxelgrid, occgrid, margin);
-    out->first_ = geometry::Geometry::GeometryType::OccupancyGrid;
-    out->second_ = geometry::Geometry::GeometryType::VoxelGrid;
+    out->first_ = CollisionResult::CollisionType::OccupancyGrid;
+    out->second_ = CollisionResult::CollisionType::VoxelGrid;
+    swap_index(out->collision_index_pairs_);
+    return out;
+}
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const PrimitiveArray& primitives,
+                                                     const geometry::VoxelGrid& voxelgrid,
+                                                     float margin) {
+    auto out = std::make_shared<CollisionResult>();
+    size_t n_v1 = primitives.size();
+    size_t n_v2 = voxelgrid.voxels_keys_.size();
+    size_t n_total = n_v1 * n_v2;
+    intersect_primitives_voxel_functor func(thrust::raw_pointer_cast(primitives.data()),
+                                            thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
+                                            voxelgrid.voxel_size_, voxelgrid.origin_, n_v2, margin);
+    out->first_ = CollisionResult::CollisionType::Primitives;
+    out->second_ = CollisionResult::CollisionType::VoxelGrid;
+    out->collision_index_pairs_.resize(n_total);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_total),
+                      out->collision_index_pairs_.begin(), func);
+    remove_negative(out->collision_index_pairs_);
+    return out;
+}
+
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
+                                                     const PrimitiveArray& primitives,
+                                                     float margin) {
+    auto out = ComputeIntersection(primitives, voxelgrid, margin);
+    out->first_ = CollisionResult::CollisionType::VoxelGrid;
+    out->second_ = CollisionResult::CollisionType::Primitives;
     swap_index(out->collision_index_pairs_);
     return out;
 }

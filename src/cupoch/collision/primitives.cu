@@ -69,6 +69,17 @@ struct create_from_sphere_functor : create_from_primitive_functor<Sphere> {
     }
 };
 
+struct create_from_capsule_functor : create_from_primitive_functor<Capsule> {
+    using create_from_primitive_functor<Capsule>::create_from_primitive_functor<Capsule>;
+    __device__ bool intersect(const Eigen::Vector3f& box_center) const {
+        return geometry::intersection_test::CapsuleAABB(primitive_.radius_,
+                                                        Eigen::Vector3f(0.0, 0.0, -primitive_.height_ / 2),
+                                                        Eigen::Vector3f(0.0, 0.0, primitive_.height_),
+                                                        box_center - box_half_size_,
+                                                        box_center + box_half_size_);
+    }
+};
+
 template<class T>
 struct create_from_swept_primitive_functor {
     create_from_swept_primitive_functor(const T& primitive,
@@ -149,6 +160,21 @@ struct create_from_swept_sphere_functor : create_from_swept_primitive_functor<Sp
         return geometry::intersection_test::SphereAABB(primitive_trans.block<3, 1>(0, 3), primitive_.radius_,
                                                        box_center - box_half_size_,
                                                        box_center + box_half_size_);
+    }
+};
+
+struct create_from_swept_capsule_functor : create_from_swept_primitive_functor<Capsule> {
+    using create_from_swept_primitive_functor<Capsule>::create_from_swept_primitive_functor<Capsule>;
+    __device__ bool intersect(const Eigen::Matrix4f& primitive_trans,
+                              const Eigen::Vector3f& box_center) const {
+        Eigen::Matrix4f rot_pmtv = primitive_.transform_;
+        rot_pmtv.block<3, 1>(0, 3) = Eigen::Vector3f::Zero();
+        const Eigen::Matrix4f t = primitive_trans * rot_pmtv;
+        return geometry::intersection_test::CapsuleAABB(primitive_.radius_,
+                                                        -0.5 * primitive_.height_ * t.block<3, 1>(0, 2),
+                                                        primitive_.height_ * t.block<3, 1>(0, 2),
+                                                        box_center - box_half_size_,
+                                                        box_center + box_half_size_);
     }
 };
 
@@ -235,6 +261,10 @@ std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(const Primitive& primitive,
             const Sphere& sphere = (const Sphere&)primitive;
             return CreateVoxelGridFromPrimitive<Sphere, create_from_sphere_functor>(sphere, voxel_size);
         }
+        case Primitive::PrimitiveType::Capsule: {
+            const Capsule& capsule = (const Capsule&)primitive;
+            return CreateVoxelGridFromPrimitive<Capsule, create_from_capsule_functor>(capsule, voxel_size);
+        }
         default: {
             utility::LogError("[CreateVoxelGrid] Unsupported primitive type.");
             return std::shared_ptr<geometry::VoxelGrid>();
@@ -252,6 +282,10 @@ std::shared_ptr<geometry::VoxelGrid> CreateVoxelGridWithSweeping(const Primitive
         case Primitive::PrimitiveType::Sphere: {
             const Sphere& sphere = (const Sphere&)primitive;
             return CreateVoxelGridWithSweepingFromPrimitive<Sphere, create_from_swept_sphere_functor>(sphere, voxel_size, dst, sampling);
+        }
+        case Primitive::PrimitiveType::Capsule: {
+            const Capsule& capsule = (const Capsule&)primitive;
+            return CreateVoxelGridWithSweepingFromPrimitive<Capsule, create_from_swept_capsule_functor>(capsule, voxel_size, dst, sampling);
         }
         default: {
             utility::LogError("[CreateVoxelGridWithSweeping] Unsupported primitive type.");

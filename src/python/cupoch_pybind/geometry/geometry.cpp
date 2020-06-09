@@ -53,10 +53,13 @@ void pybind_geometry_classes(py::module &m) {
     geometry_type
             .value("Unspecified", geometry::Geometry::GeometryType::Unspecified)
             .value("PointCloud", geometry::Geometry::GeometryType::PointCloud)
+            .value("VoxelGrid", geometry::Geometry::GeometryType::VoxelGrid)
+            .value("OccupancyGrid", geometry::Geometry::GeometryType::OccupancyGrid)
             .value("LineSet", geometry::Geometry::GeometryType::LineSet)
             .value("TriangleMesh",
                    geometry::Geometry::GeometryType::TriangleMesh)
             .value("Image", geometry::Geometry::GeometryType::Image)
+            .value("RGBDImage", geometry::Geometry::GeometryType::RGBDImage)
             .export_values();
 
     py::class_<geometry::Geometry3D, PyGeometry3D<geometry::Geometry3D>,

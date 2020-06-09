@@ -3,11 +3,27 @@
 
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/distance_test.h"
+#include <thrust/swap.h>
 
 namespace cupoch {
 namespace geometry {
 
 namespace intersection_test {
+
+namespace {
+
+__host__ __device__
+Eigen::Vector3f Corner(const Eigen::Vector3f &min_bound,
+                       const Eigen::Vector3f &max_bound,
+                       int n) {
+    Eigen::Vector3f p;
+    p[0] = (n & 1) ? max_bound[0] : min_bound[0];
+    p[1] = (n & 1) ? max_bound[1] : min_bound[1];
+    p[2] = (n & 1) ? max_bound[2] : min_bound[2];
+    return p;
+}
+
+}
 
 bool TriangleTriangle3d(const Eigen::Vector3f &p0,
                         const Eigen::Vector3f &p1,
@@ -76,6 +92,31 @@ bool LineSegmentAABB(const Eigen::Vector3f &p0,
     return true;
 }
 
+bool RayAABB(const Eigen::Vector3f &p,
+             const Eigen::Vector3f &d,
+             const Eigen::Vector3f &min_bound,
+             const Eigen::Vector3f &max_bound,
+             float &tmin,
+             Eigen::Vector3f &q) {
+    tmin = 0.0;
+    float tmax = std::numeric_limits<float>::max();
+    for (int i = 0; i < 3; ++i) {
+        if (abs(d[i]) < std::numeric_limits<float>::epsilon()) {
+            if (p[i] < min_bound[i] || p[i] > max_bound[i]) return false;
+        } else {
+            float ood = 1.0 / d[i];
+            float t1 = (min_bound[i] - p[i]) * ood;
+            float t2 = (max_bound[i] - p[i]) * ood;
+            if (t1 > t2) thrust::swap(t1, t2);
+            if (t1 > tmin) tmin = t1;
+            if (t2 < tmax) tmax = t2;
+            if (tmin > tmax) return false;
+        }
+    }
+    q = p + d * tmin;
+    return true;
+}
+
 bool SphereAABB(const Eigen::Vector3f& center,
                 float radius,
                 const Eigen::Vector3f& min_bound,
@@ -137,6 +178,59 @@ bool BoxBox(const Eigen::Vector3f& extents1,
     if (std::abs(t[1] * r(0, 2) - t[0] * r(1, 2)) > ra + rb) return false;
 
     return true;
+}
+
+bool CapsuleAABB(float radius,
+                 const Eigen::Vector3f &p,
+                 const Eigen::Vector3f &d,
+                 const Eigen::Vector3f &min_bound,
+                 const Eigen::Vector3f &max_bound) {
+    const Eigen::Vector3f ex_min_bound = min_bound.array() - radius;
+    const Eigen::Vector3f ex_max_bound = max_bound.array() + radius;
+    Eigen::Vector3f c0, c1;
+    float t, tmp;
+    Eigen::Vector3f q;
+    if (!RayAABB(p, d, ex_min_bound, ex_max_bound, t, q) || t > 1.0) {
+        return false;
+    }
+    int u = 0;
+    int v = 0;
+    if (q[0] < min_bound[0]) u |= 1;
+    if (q[0] > max_bound[0]) v |= 1;
+    if (q[1] < min_bound[1]) u |= 2;
+    if (q[1] > max_bound[1]) v |= 2;
+    if (q[2] < min_bound[2]) u |= 4;
+    if (q[2] > max_bound[2]) v |= 4;
+    int m = u + v;
+    if (m == 7) {
+        float tmin = std::numeric_limits<float>::max();
+        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
+                                                         Corner(min_bound, max_bound, v),
+                                                         Corner(min_bound, max_bound, v ^ 1),
+                                                         t, tmp, c0, c1) <= radius * radius) {
+            tmin = min(t, tmin);
+        }
+        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
+                                                         Corner(min_bound, max_bound, v),
+                                                         Corner(min_bound, max_bound, v ^ 2),
+                                                         t, tmp, c0, c1) <= radius * radius) {
+            tmin = min(t, tmin);
+        }
+        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
+                                                         Corner(min_bound, max_bound, v),
+                                                         Corner(min_bound, max_bound, v ^ 4),
+                                                         t, tmp, c0, c1) <= radius * radius) {
+            tmin = min(t, tmin);
+        }
+        return true;
+    }
+    if ((m & (m - 1)) == 0) {
+        return true;
+    }
+    return distance_test::LineSegmentLineSegmentSquared(p, p + d,
+                                                        Corner(min_bound, max_bound, u ^ 7),
+                                                        Corner(min_bound, max_bound, v),
+                                                        t, tmp, c0, c1) <= radius * radius;
 }
 
 }  // namespace intersection_test

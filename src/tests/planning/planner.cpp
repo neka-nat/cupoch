@@ -9,6 +9,6 @@ TEST(SimplePlanner, FindPath) {
     auto graph = geometry::Graph::CreateFromAxisAlignedBoundingBox(geometry::AxisAlignedBoundingBox(Eigen::Vector3f(-1.0, -1.0, -1.0),
                                                                                                     Eigen::Vector3f(1.0, 1.0, 1.0)),
                                                                    Eigen::Vector3i(10, 10, 10));
-    planning::XyPlanner planner(*graph);
+    planning::Pos3DPlanner planner(*graph);
     planner.FindPath(Eigen::Vector3f(-1.0, -0.5, -0.2), Eigen::Vector3f(0.8, 0.9, 0.7));
 }
