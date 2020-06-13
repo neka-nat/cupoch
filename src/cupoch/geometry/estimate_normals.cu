@@ -178,17 +178,18 @@ __device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
 }
 
 __device__ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f *points,
-                                         const KNNIndices &indices,
+                                         const int *indices,
                                          int knn) {
-    if (indices[0] < 0) return Eigen::Vector3f(0.0, 0.0, 1.0);
+    if (knn < 0) return Eigen::Vector3f(0.0, 0.0, 1.0);
 
     Eigen::Matrix3f covariance;
     Eigen::Matrix<float, 9, 1> cumulants;
     cumulants.setZero();
     int count = 0;
     for (size_t i = 0; i < knn; i++) {
-        if (indices[i] < 0) break;
-        const Eigen::Vector3f &point = points[indices[i]];
+        int ii = indices[i];
+        if (ii < 0) continue;
+        const Eigen::Vector3f &point = points[ii];
         cumulants(0) += point(0);
         cumulants(1) += point(1);
         cumulants(2) += point(2);
@@ -224,13 +225,8 @@ struct compute_normal_functor {
     const int *indices_;
     const int knn_;
     __device__ Eigen::Vector3f operator()(const int &idx) const {
-        KNNIndices idxs = KNNIndices::Constant(-1);
-        for (int k = 0; k < knn_; ++k) idxs[k] = indices_[idx * knn_ + k];
-        Eigen::Vector3f normal = ComputeNormal(points_, idxs, knn_);
-        if (normal.norm() == 0.0) {
-            normal = Eigen::Vector3f(0.0, 0.0, 1.0);
-        }
-        return normal;
+        Eigen::Vector3f normal = ComputeNormal(points_, &(indices_[idx * knn_]), knn_);
+        return (normal.norm() == 0.0) ? Eigen::Vector3f(0.0, 0.0, 1.0) : normal;
     }
 };
 

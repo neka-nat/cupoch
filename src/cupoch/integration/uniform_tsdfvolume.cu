@@ -47,6 +47,7 @@ __device__ Eigen::Vector3f GetNormalAt(const Eigen::Vector3f &p,
                                        int resolution) {
     Eigen::Vector3f n;
     const double half_gap = 0.99 * voxel_length;
+    #pragma unroll
     for (int i = 0; i < 3; i++) {
         Eigen::Vector3f p0 = p;
         p0(i) -= half_gap;
@@ -142,6 +143,7 @@ struct count_valid_voxels_functor {
             v.grid_index_[1] == resolution_ - 1 ||
             v.grid_index_[2] == resolution_ - 1)
             return false;
+        #pragma unroll
         for (int i = 0; i < 8; ++i) {
            Eigen::Vector3i idx = v.grid_index_ + Eigen::Vector3i(shift[i][0], shift[i][1], shift[i][2]);
            if (voxels_[IndexOf(idx, resolution_)].weight_ == 0.0f) return false;

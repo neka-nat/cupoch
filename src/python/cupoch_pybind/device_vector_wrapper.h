@@ -38,6 +38,7 @@ using device_vector_vector3f = device_vector_wrapper<Eigen::Vector3f>;
 using device_vector_vector2f = device_vector_wrapper<Eigen::Vector2f>;
 using device_vector_vector3i = device_vector_wrapper<Eigen::Vector3i>;
 using device_vector_vector2i = device_vector_wrapper<Eigen::Vector2i>;
+using device_vector_vector33f = device_vector_wrapper<Eigen::Matrix<float, 33, 1>>;
 using device_vector_int = device_vector_wrapper<int>;
 using device_vector_size_t = device_vector_wrapper<size_t>;
 using device_vector_float = device_vector_wrapper<float>;

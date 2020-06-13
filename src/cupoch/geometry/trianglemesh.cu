@@ -1,6 +1,5 @@
 #include <thrust/iterator/discard_iterator.h>
-#include <thrust/random/linear_congruential_engine.h>
-#include <thrust/random/uniform_real_distribution.h>
+#include <thrust/random.h>
 #include <thrust/gather.h>
 
 #include "cupoch/geometry/intersection_test.h"
@@ -166,13 +165,11 @@ struct sample_points_functor {
                           const Eigen::Vector3f* vertex_colors, const size_t* n_points_scan,
                           Eigen::Vector3f* points, Eigen::Vector3f* normals, Eigen::Vector3f* colors,
                           bool has_vert_normal, bool use_triangle_normal, bool has_vert_color)
-                          : dist_(0.0, 1.0), vertices_(vertices), vertex_normals_(vertex_normals),
+                          : vertices_(vertices), vertex_normals_(vertex_normals),
                           triangles_(triangles), triangle_normals_(triangle_normals), vertex_colors_(vertex_colors),
                           n_points_scan_(n_points_scan), points_(points), normals_(normals),
                           colors_(colors), has_vert_normal_(has_vert_normal),
                           use_triangle_normal_(use_triangle_normal), has_vert_color_(has_vert_color) {};
-    thrust::minstd_rand mt_;
-    thrust::uniform_real_distribution<float> dist_;
     const Eigen::Vector3f* vertices_;
     const Eigen::Vector3f* vertex_normals_;
     const Eigen::Vector3i* triangles_;
@@ -187,9 +184,12 @@ struct sample_points_functor {
     const bool has_vert_color_;
     __device__
     void operator() (size_t idx) {
+        thrust::default_random_engine rng;
+        thrust::uniform_real_distribution<float> dist(0, 1.0);
+        rng.discard(idx);
         for (int point_idx = n_points_scan_[idx]; point_idx < n_points_scan_[idx + 1]; ++point_idx) {
-            float r1 = dist_(mt_);
-            float r2 = dist_(mt_);
+            float r1 = dist(rng);
+            float r2 = dist(rng);
             float a = (1 - sqrt(r1));
             float b = sqrt(r1) * (1 - r2);
             float c = sqrt(r1) * r2;

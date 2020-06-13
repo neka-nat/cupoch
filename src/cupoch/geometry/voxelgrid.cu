@@ -93,6 +93,7 @@ struct compute_carve_functor {
                  origin_;
         Eigen::Vector3f pts[8];
         GetVoxelBoundingPoints(x, r, pts);
+        #pragma unroll
         for (int i = 0; i < 8; ++i) {
             auto x_trans = rot_ * pts[i] + trans_;
             auto uvz = intrinsic_ * x_trans;

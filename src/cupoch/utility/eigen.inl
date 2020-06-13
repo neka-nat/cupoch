@@ -39,6 +39,7 @@ struct multiple_jtj_jtr_functor {
         VecType J_r[NumJ];
         float r[NumJ];
         f_(idx, J_r, r);
+        #pragma unroll
         for (size_t j = 0; j < NumJ; ++j) {
             JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
             JTr_private.noalias() += J_r[j] * r[j];

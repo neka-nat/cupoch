@@ -1,5 +1,6 @@
 #include "cupoch_pybind/registration/registration.h"
 #include "cupoch/registration/registration.h"
+#include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/registration/colored_icp.h"
 #include "cupoch/utility/console.h"
@@ -133,6 +134,79 @@ void pybind_registration_classes(py::module &m) {
                 return std::string("TransformationEstimationPointToPlane");
             });
 
+    // cupoch.registration.FastGlobalRegistrationOption:
+    py::class_<registration::FastGlobalRegistrationOption> fgr_option(
+            m, "FastGlobalRegistrationOption",
+            "Options for FastGlobalRegistration.");
+    py::detail::bind_copy_functions<registration::FastGlobalRegistrationOption>(
+            fgr_option);
+    fgr_option
+            .def(py::init([](float division_factor, bool use_absolute_scale,
+                             bool decrease_mu,
+                             float maximum_correspondence_distance,
+                             int iteration_number, float tuple_scale,
+                             int maximum_tuple_count) {
+                     return new registration::FastGlobalRegistrationOption(
+                             division_factor, use_absolute_scale, decrease_mu,
+                             maximum_correspondence_distance, iteration_number,
+                             tuple_scale, maximum_tuple_count);
+                 }),
+                 "division_factor"_a = 1.4, "use_absolute_scale"_a = false,
+                 "decrease_mu"_a = false,
+                 "maximum_correspondence_distance"_a = 0.025,
+                 "iteration_number"_a = 64, "tuple_scale"_a = 0.95,
+                 "maximum_tuple_count"_a = 1000)
+            .def_readwrite(
+                    "division_factor",
+                    &registration::FastGlobalRegistrationOption::
+                            division_factor_,
+                    "float: Division factor used for graduated non-convexity.")
+            .def_readwrite(
+                    "use_absolute_scale",
+                    &registration::FastGlobalRegistrationOption::
+                            use_absolute_scale_,
+                    "bool: Measure distance in absolute scale (1) or in scale "
+                    "relative to the diameter of the model (0).")
+            .def_readwrite(
+                    "decrease_mu",
+                    &registration::FastGlobalRegistrationOption::decrease_mu_,
+                    "bool: Set to ``True`` to decrease scale mu by "
+                    "``division_factor`` for graduated non-convexity.")
+            .def_readwrite("maximum_correspondence_distance",
+                           &registration::FastGlobalRegistrationOption::
+                                   maximum_correspondence_distance_,
+                           "float: Maximum correspondence distance.")
+            .def_readwrite("iteration_number",
+                           &registration::FastGlobalRegistrationOption::
+                                   iteration_number_,
+                           "int: Maximum number of iterations.")
+            .def_readwrite(
+                    "tuple_scale",
+                    &registration::FastGlobalRegistrationOption::tuple_scale_,
+                    "float: Similarity measure used for tuples of feature "
+                    "points.")
+            .def_readwrite("maximum_tuple_count",
+                           &registration::FastGlobalRegistrationOption::
+                                   maximum_tuple_count_,
+                           "float: Maximum tuple numbers.")
+            .def("__repr__",
+                 [](const registration::FastGlobalRegistrationOption &c) {
+                     return fmt::format(
+                             "registration::"
+                             "FastGlobalRegistrationOption class "
+                             "with \ndivision_factor={}"
+                             "\nuse_absolute_scale={}"
+                             "\ndecrease_mu={}"
+                             "\nmaximum_correspondence_distance={}"
+                             "\niteration_number={}"
+                             "\ntuple_scale={}"
+                             "\nmaximum_tuple_count={}",
+                             c.division_factor_, c.use_absolute_scale_,
+                             c.decrease_mu_, c.maximum_correspondence_distance_,
+                             c.iteration_number_, c.tuple_scale_,
+                             c.maximum_tuple_count_);
+                 });
+
     // cupoch.registration.RegistrationResult
     py::class_<registration::RegistrationResult> registration_result(
             m, "RegistrationResult",
@@ -222,10 +296,21 @@ void pybind_registration_methods(py::module &m) {
           "lambda_geometric"_a = 0.968);
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
+
+    m.def("registration_fast_based_on_feature_matching",
+          &registration::FastGlobalRegistration<33>,
+          "Function for fast global registration based on feature matching",
+          "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
+          "option"_a = registration::FastGlobalRegistrationOption());
+    docstring::FunctionDocInject(m,
+                                 "registration_fast_based_on_feature_matching",
+                                 map_shared_argument_docstrings);
 }
 
 void pybind_registration(py::module &m) {
     py::module m_submodule = m.def_submodule("registration");
     pybind_registration_classes(m_submodule);
     pybind_registration_methods(m_submodule);
+    pybind_feature(m_submodule);
+    pybind_feature_methods(m_submodule);
 }

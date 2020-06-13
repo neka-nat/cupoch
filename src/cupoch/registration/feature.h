@@ -17,9 +17,14 @@ namespace registration {
 template <int Dim>
 class Feature {
 public:
-    void Resize(int n) { data_.resize(n); };
-    size_t Dimension() const { return Dim; }
-    size_t Num() const { return data_.size(); };
+    Feature();
+    Feature(const Feature<Dim>& other);
+    ~Feature();
+    void Resize(int n);
+    size_t Dimension() const;
+    size_t Num() const;
+    thrust::host_vector<Eigen::Matrix<float, Dim, 1>> GetData() const;
+    void SetData(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>>& data);
 
 public:
     typedef Eigen::Matrix<float, Dim, 1> FeatureType;

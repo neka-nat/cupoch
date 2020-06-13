@@ -3,7 +3,10 @@
 ## Core features
 
 * 3D data processing and robotics computation using CUDA
-    * Point cloud registration (ICP, ColoredICP)
+    * Point cloud registration
+        * ICP
+        * [Colored Point Cloud Registration](https://ieeexplore.ieee.org/document/8237287)
+        * [Fast Global Registration](http://vladlen.info/papers/fast-global-registration.pdf)
     * Point cloud clustering
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling

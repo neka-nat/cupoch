@@ -37,10 +37,11 @@ RGBDOdometryJacobianFromColorTerm::ComputeJacobianAndResidual(
     Eigen::Matrix3f R = extrinsic.block<3, 3>(0, 0);
     Eigen::Vector3f t = extrinsic.block<3, 1>(0, 3);
 
-    int u_s = corresps[row](0);
-    int v_s = corresps[row](1);
-    int u_t = corresps[row](2);
-    int v_t = corresps[row](3);
+    Eigen::Vector4i corresp = corresps[row];
+    int u_s = corresp(0);
+    int v_s = corresp(1);
+    int u_t = corresp(2);
+    int v_t = corresp(3);
     float diff = *geometry::PointerAt<float>(target_color, width, u_t, v_t) -
                  *geometry::PointerAt<float>(source_color, width, u_s, v_s);
     float dIdx = SOBEL_SCALE * (*geometry::PointerAt<float>(target_dx_color,
@@ -95,10 +96,11 @@ RGBDOdometryJacobianFromHybridTerm::ComputeJacobianAndResidual(
     Eigen::Matrix3f R = extrinsic.block<3, 3>(0, 0);
     Eigen::Vector3f t = extrinsic.block<3, 1>(0, 3);
 
-    int u_s = corresps[row](0);
-    int v_s = corresps[row](1);
-    int u_t = corresps[row](2);
-    int v_t = corresps[row](3);
+    Eigen::Vector4i corresp = corresps[row];
+    int u_s = corresp(0);
+    int v_s = corresp(1);
+    int u_t = corresp(2);
+    int v_t = corresp(3);
     float diff_photo =
             (*geometry::PointerAt<float>(target_color, width, u_t, v_t) -
              *geometry::PointerAt<float>(source_color, width, u_s, v_s));

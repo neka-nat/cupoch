@@ -185,21 +185,17 @@ struct compute_correspondence_map {
 
 struct compute_correspondence_functor {
     compute_correspondence_functor(const uint8_t *correspondence_map,
-                                   int width,
-                                   Eigen::Vector4i *correspondence)
+                                   int width)
         : correspondence_map_(correspondence_map),
-          width_(width),
-          correspondence_(correspondence){};
+          width_(width) {};
     const uint8_t *correspondence_map_;
     const int width_;
-    Eigen::Vector4i *correspondence_;
-    __device__ void operator()(size_t idx) {
+    __device__ Eigen::Vector4i operator()(size_t idx) const {
         int v_s = idx / width_;
         int u_s = idx % width_;
         int u_t = *(int *)(correspondence_map_ + idx * 2 * sizeof(int));
         int v_t = *(int *)(correspondence_map_ + (idx * 2 + 1) * sizeof(int));
-        Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-        correspondence_[idx] = pixel_correspondence;
+        return Eigen::Vector4i(u_s, v_s, u_t, v_t);
     }
 };
 
@@ -244,13 +240,12 @@ void ComputeCorrespondence(const Eigen::Matrix3f intrinsic_matrix,
                           correspondence_map->height_);
     compute_correspondence_functor func_cc(
             thrust::raw_pointer_cast(correspondence_map->data_.data()),
-            correspondence_map->width_,
-            thrust::raw_pointer_cast(correspondence.data()));
-    thrust::for_each(
+            correspondence_map->width_);
+    thrust::transform(
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator<size_t>(correspondence_map->width_ *
                                                    correspondence_map->height_),
-            func_cc);
+            correspondence.begin(), func_cc);
     auto end = thrust::remove_if(correspondence.begin(), correspondence.end(),
                                  [] __device__(const Eigen::Vector4i &pc) {
                                      return (pc[2] == -1 || pc[3] == -1);
@@ -335,16 +330,14 @@ std::vector<Eigen::Matrix3f> CreateCameraMatrixPyramid(
 }
 
 struct compute_gtg_functor {
-    compute_gtg_functor(const Eigen::Vector4i *correspondences,
-                        const uint8_t *xyz_t,
+    compute_gtg_functor(const uint8_t *xyz_t,
                         int width)
-        : correspondences_(correspondences), xyz_t_(xyz_t), width_(width){};
-    const Eigen::Vector4i *correspondences_;
+        : xyz_t_(xyz_t), width_(width){};
     const uint8_t *xyz_t_;
     const int width_;
-    __device__ Eigen::Matrix6f operator()(size_t idx) const {
-        int u_t = correspondences_[idx](2);
-        int v_t = correspondences_[idx](3);
+    __device__ Eigen::Matrix6f operator()(const Eigen::Vector4i &corres) const {
+        int u_t = corres(2);
+        int v_t = corres(3);
         float x = *geometry::PointerAt<float>(xyz_t_, width_, 3, u_t, v_t, 0);
         float y = *geometry::PointerAt<float>(xyz_t_, width_, 3, u_t, v_t, 1);
         float z = *geometry::PointerAt<float>(xyz_t_, width_, 3, u_t, v_t, 2);
@@ -375,47 +368,33 @@ Eigen::Matrix6f CreateInformationMatrix(
     // write q^*
     // see http://redwood-data.org/indoor/registration.html
     // note: I comes first and q_skew is scaled by factor 2.
-    compute_gtg_functor func(thrust::raw_pointer_cast(correspondence.data()),
-                             thrust::raw_pointer_cast(xyz_t->data_.data()),
+    compute_gtg_functor func(thrust::raw_pointer_cast(xyz_t->data_.data()),
                              xyz_t->width_);
     Eigen::Matrix6f init = Eigen::Matrix6f::Identity();
     Eigen::Matrix6f GTG = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(correspondence.size()), func, init,
+            correspondence.begin(), correspondence.end(), func, init,
             thrust::plus<Eigen::Matrix6f>());
     return GTG;
 }
 
-struct compute_mean_functor {
-    compute_mean_functor(const Eigen::Vector4i *corres,
-                         const uint8_t *image_s,
-                         const uint8_t *image_t,
-                         int width)
-        : corres_(corres),
-          image_s_(image_s),
+struct make_correspondence_pixel_pair {
+    make_correspondence_pixel_pair(const uint8_t *image_s,
+                                   const uint8_t *image_t,
+                                   int width)
+        : image_s_(image_s),
           image_t_(image_t),
           width_(width){};
-    const Eigen::Vector4i *corres_;
     const uint8_t *image_s_;
     const uint8_t *image_t_;
     int width_;
-    __device__ thrust::tuple<float, float> operator()(size_t idx) const {
-        int u_s = corres_[idx](0);
-        int v_s = corres_[idx](1);
-        int u_t = corres_[idx](2);
-        int v_t = corres_[idx](3);
+    __device__ thrust::tuple<float, float> operator()(const Eigen::Vector4i &corres) const {
+        int u_s = corres(0);
+        int v_s = corres(1);
+        int u_t = corres(2);
+        int v_t = corres(3);
         return thrust::make_tuple(
                 *geometry::PointerAt<float>(image_s_, width_, u_s, v_s),
                 *geometry::PointerAt<float>(image_t_, width_, u_t, v_t));
-    }
-};
-
-struct add_tuple2f_functor {
-    __device__ thrust::tuple<float, float> operator()(
-            const thrust::tuple<float, float> &lhs,
-            const thrust::tuple<float, float> &rhs) const {
-        return thrust::make_tuple(thrust::get<0>(lhs) + thrust::get<0>(rhs),
-                                  thrust::get<1>(lhs) + thrust::get<1>(rhs));
     }
 };
 
@@ -428,14 +407,12 @@ void NormalizeIntensity(geometry::Image &image_s,
                 "[NormalizeIntensity] Size of two input images should be "
                 "same");
     }
-    compute_mean_functor func_tf(
-            thrust::raw_pointer_cast(correspondence.data()),
+    make_correspondence_pixel_pair func_tf(
             thrust::raw_pointer_cast(image_s.data_.data()),
             thrust::raw_pointer_cast(image_t.data_.data()), image_s.width_);
     auto means = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(correspondence.size()), func_tf,
-            thrust::make_tuple(0.0f, 0.0f), add_tuple2f_functor());
+            correspondence.begin(), correspondence.end(), func_tf,
+            thrust::make_tuple(0.0f, 0.0f), add_tuple_functor<float, float>());
     float mean_s = thrust::get<0>(means) / (float)correspondence.size();
     float mean_t = thrust::get<1>(means) / (float)correspondence.size();
     image_s.LinearTransform(0.5 / mean_s, 0.0);

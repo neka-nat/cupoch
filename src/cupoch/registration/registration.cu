@@ -98,6 +98,21 @@ thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet()
     return corres;
 }
 
+RegistrationResult cupoch::registration::EvaluateRegistration(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        float max_correspondence_distance,
+        const Eigen::Matrix4f
+                &transformation /* = Eigen::Matrix4d::Identity()*/) {
+    geometry::KDTreeFlann kdtree(target);
+    geometry::PointCloud pcd = source;
+    if (!transformation.isIdentity()) {
+        pcd.Transform(transformation);
+    }
+    return GetRegistrationResultAndCorrespondences(
+            pcd, target, kdtree, max_correspondence_distance, transformation);
+}
+
 RegistrationResult cupoch::registration::RegistrationICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
