@@ -13,37 +13,32 @@ namespace {
 
 template <int Index>
 struct extract_correspondence_functor {
-    extract_correspondence_functor(const Eigen::Vector3f *points,
-                                   const Eigen::Vector2i *corres)
-        : points_(points), corres_(corres){};
+    extract_correspondence_functor(const Eigen::Vector3f *points)
+        : points_(points) {};
     const Eigen::Vector3f *points_;
-    const Eigen::Vector2i *corres_;
-    __device__ Eigen::Vector3f operator()(size_t idx) const {
-        return points_[corres_[idx][Index]];
+    __device__ Eigen::Vector3f operator()(const Eigen::Vector2i& corr) const {
+        return points_[corr[Index]];
     }
 };
 
 struct outer_product_functor {
     outer_product_functor(const Eigen::Vector3f *source,
                           const Eigen::Vector3f *target,
-                          const Eigen::Vector2i *corres,
                           const Eigen::Vector3f &x_offset,
                           const Eigen::Vector3f &y_offset)
         : source_(source),
           target_(target),
-          corres_(corres),
           x_offset_(x_offset),
           y_offset_(y_offset){};
     const Eigen::Vector3f *source_;
     const Eigen::Vector3f *target_;
-    const Eigen::Vector2i *corres_;
     const Eigen::Vector3f x_offset_;
     const Eigen::Vector3f y_offset_;
-    __device__ Eigen::Matrix3f operator()(size_t idx) const {
+    __device__ Eigen::Matrix3f operator()(const Eigen::Vector2i& corr) const {
         const Eigen::Vector3f centralized_x =
-                source_[corres_[idx][0]] - x_offset_;
+                source_[corr[0]] - x_offset_;
         const Eigen::Vector3f centralized_y =
-                target_[corres_[idx][1]] - y_offset_;
+                target_[corr[1]] - y_offset_;
         Eigen::Matrix3f ans = centralized_x * centralized_y.transpose();
         return ans;
     }
@@ -57,18 +52,14 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
         const CorrespondenceSet &corres) {
     // Compute the center
     extract_correspondence_functor<0> ex_func0(
-            thrust::raw_pointer_cast(model.data()),
-            thrust::raw_pointer_cast(corres.data()));
+            thrust::raw_pointer_cast(model.data()));
     extract_correspondence_functor<1> ex_func1(
-            thrust::raw_pointer_cast(target.data()),
-            thrust::raw_pointer_cast(corres.data()));
+            thrust::raw_pointer_cast(target.data()));
     Eigen::Vector3f model_center = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), ex_func0,
+            corres.begin(), corres.end(), ex_func0,
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     Eigen::Vector3f target_center = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), ex_func1,
+            corres.begin(), corres.end(), ex_func1,
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
@@ -78,12 +69,10 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     // Compute the H matrix
     outer_product_functor func(thrust::raw_pointer_cast(model.data()),
                                thrust::raw_pointer_cast(target.data()),
-                               thrust::raw_pointer_cast(corres.data()),
                                model_center, target_center);
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), func, init,
+            corres.begin(), corres.end(), func, init,
             thrust::plus<Eigen::Matrix3f>());
 
     // Do svd

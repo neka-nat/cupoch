@@ -77,8 +77,8 @@ struct compute_color_gradient_functor {
         Atb.setZero();
         int nn = 0;
         for (size_t i = 1; i < knn_; ++i) {
-            if (indices_[idx * knn_ + i] < 0) continue;
             int P_adj_idx = indices_[idx * knn_ + i];
+            if (P_adj_idx < 0) continue;
             const Eigen::Vector3f& vt_adj = points_[P_adj_idx];
             const Eigen::Vector3f vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
             float it_adj = (colors_[P_adj_idx](0) + colors_[P_adj_idx](1) +

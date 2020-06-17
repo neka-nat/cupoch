@@ -303,10 +303,13 @@ struct extract_mesh_phase3_functor {
     const int *key_index_;
     Eigen::Vector3i *triangles_;
     __device__ void operator()(size_t idx) {
-        for (int j = key_index_[idx]; j < key_index_[idx + 1]; ++j) {
-            for (int i = 0; tri_table[cube_index_[j]][i] != -1; ++i) {
-                int tri_idx = tri_table[cube_index_[j]][i];
-                for (int l = key_index_[idx]; l < key_index_[idx + 1]; ++l) {
+        const int kindx0 = key_index_[idx];
+        const int kindx1 = key_index_[idx + 1];
+        for (int j = kindx0; j < kindx1; ++j) {
+            const int cindx = cube_index_[j];
+            for (int i = 0; tri_table[cindx][i] != -1; ++i) {
+                const int tri_idx = tri_table[cindx][i];
+                for (int l = kindx0; l < kindx1; ++l) {
                     if (vert_no_[l] == tri_idx) {
                         triangles_[idx * 4 + i / 3][vert_table[i % 3]] = l;
                     }
@@ -474,24 +477,25 @@ struct integrate_functor {
         if (sdf > -sdf_trunc_) {
             // integrate
             float tsdf = min(1.0f, sdf * sdf_trunc_inv_);
+            const geometry::TSDFVoxel voxel = voxels_[idx];
             voxels_[idx].tsdf_ =
-                    (voxels_[idx].tsdf_ * voxels_[idx].weight_ + tsdf) /
-                    (voxels_[idx].weight_ + 1.0f);
+                    (voxel.tsdf_ * voxel.weight_ + tsdf) /
+                    (voxel.weight_ + 1.0f);
             if (color_type_ == TSDFVolumeColorType::RGB8) {
                 const uint8_t *rgb = geometry::PointerAt<uint8_t>(
                         color_, width_, num_of_channels_, u, v, 0);
                 Eigen::Vector3f rgb_f(rgb[0], rgb[1], rgb[2]);
                 voxels_[idx].color_ =
-                        (voxels_[idx].color_ * voxels_[idx].weight_ +
+                        (voxel.color_ * voxel.weight_ +
                          rgb_f) /
-                        (voxels_[idx].weight_ + 1.0f);
+                        (voxel.weight_ + 1.0f);
             } else if (color_type_ == TSDFVolumeColorType::Gray32) {
-                const float *intensity = geometry::PointerAt<float>(
+                const float intensity = *geometry::PointerAt<float>(
                         color_, width_, num_of_channels_, u, v, 0);
-                voxels_[idx].color_ = (voxels_[idx].color_.array() *
-                                                voxels_[idx].weight_ +
-                                         (*intensity)) /
-                                        (voxels_[idx].weight_ + 1.0f);
+                voxels_[idx].color_ = (voxel.color_.array() *
+                                                voxel.weight_ +
+                                         intensity) /
+                                        (voxel.weight_ + 1.0f);
             }
             voxels_[idx].weight_ += 1.0f;
         }

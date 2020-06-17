@@ -49,7 +49,7 @@ public:
 
 public:
     /// Division factor used for graduated non-convexity.
-    double division_factor_;
+    float division_factor_;
     /// Measure distance in absolute scale (1) or in scale relative to the
     /// diameter of the model (0).
     bool use_absolute_scale_;
