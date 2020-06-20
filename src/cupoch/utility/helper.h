@@ -246,6 +246,11 @@ struct extract_element_functor {
     __device__ T operator() (const Eigen::Matrix<T, Size, 1>& x) { return x[Index]; };
 };
 
+template<int Index, typename T, class... Args>
+struct tuple_get_functor {
+    __device__ T operator() (const thrust::tuple<Args...>& x) { return thrust::get<Index>(x); };
+};
+
 __host__ __device__ inline int IndexOf(int x, int y, int z, int resolution) {
     return x * resolution * resolution + y * resolution + z;
 }

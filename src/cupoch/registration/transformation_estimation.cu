@@ -1,4 +1,4 @@
-#include <thrust/transform_reduce.h>
+#include <thrust/inner_product.h>
 
 #include <Eigen/Geometry>
 
@@ -10,40 +10,6 @@ using namespace cupoch;
 using namespace cupoch::registration;
 
 namespace {
-
-struct diff_square_pt2pt_functor {
-    diff_square_pt2pt_functor(const Eigen::Vector3f *source,
-                              const Eigen::Vector3f *target,
-                              const Eigen::Vector2i *corres)
-        : source_(source), target_(target), corres_(corres){};
-    const Eigen::Vector3f *source_;
-    const Eigen::Vector3f *target_;
-    const Eigen::Vector2i *corres_;
-    __device__ float operator()(size_t idx) const {
-        return (source_[corres_[idx][0]] - target_[corres_[idx][1]])
-                .squaredNorm();
-    }
-};
-
-struct diff_square_pt2pl_functor {
-    diff_square_pt2pl_functor(const Eigen::Vector3f *source,
-                              const Eigen::Vector3f *target_points,
-                              const Eigen::Vector3f *target_normals,
-                              const Eigen::Vector2i *corres)
-        : source_(source),
-          target_points_(target_points),
-          target_normals_(target_normals),
-          corres_(corres){};
-    const Eigen::Vector3f *source_;
-    const Eigen::Vector3f *target_points_;
-    const Eigen::Vector3f *target_normals_;
-    const Eigen::Vector2i *corres_;
-    __device__ float operator()(size_t idx) const {
-        float r = (source_[corres_[idx][0]] - target_points_[corres_[idx][1]])
-                          .dot(target_normals_[corres_[idx][1]]);
-        return r * r;
-    }
-};
 
 struct pt2pl_jacobian_residual_functor
     : public utility::jacobian_residual_functor<Eigen::Vector6f> {
@@ -75,14 +41,17 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    diff_square_pt2pt_functor func(
-            thrust::raw_pointer_cast(source.points_.data()),
-            thrust::raw_pointer_cast(target.points_.data()),
-            thrust::raw_pointer_cast(corres.data()));
-    const float err = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), func, 0.0f,
-            thrust::plus<float>());
+    const float err = thrust::inner_product(
+            thrust::make_permutation_iterator(source.points_.begin(),
+                    thrust::make_transform_iterator(corres.begin(), extract_element_functor<int, 2, 0>())),
+            thrust::make_permutation_iterator(source.points_.begin(),
+                    thrust::make_transform_iterator(corres.end(), extract_element_functor<int, 2, 0>())),
+            thrust::make_permutation_iterator(target.points_.begin(),
+                    thrust::make_transform_iterator(corres.begin(), extract_element_functor<int, 2, 1>())),
+            0.0f, thrust::plus<float>(),
+            [] __device__ (const Eigen::Vector3f& lhs, const Eigen::Vector3f& rhs) {
+                return (lhs - rhs).squaredNorm();
+            });
     return std::sqrt(err / (float)corres.size());
 }
 
@@ -98,14 +67,25 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasNormals()) return 0.0;
-    diff_square_pt2pl_functor func(
-            thrust::raw_pointer_cast(source.points_.data()),
-            thrust::raw_pointer_cast(target.points_.data()),
-            thrust::raw_pointer_cast(target.normals_.data()),
-            thrust::raw_pointer_cast(corres.data()));
     const float err = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), func, 0.0f,
+            make_tuple_iterator(
+                thrust::make_permutation_iterator(source.points_.begin(),
+                        thrust::make_transform_iterator(corres.begin(), extract_element_functor<int, 2, 0>())),
+                thrust::make_permutation_iterator(target.points_.begin(),
+                        thrust::make_transform_iterator(corres.begin(), extract_element_functor<int, 2, 1>())),
+                thrust::make_permutation_iterator(target.normals_.begin(),
+                        thrust::make_transform_iterator(corres.begin(), extract_element_functor<int, 2, 1>()))),
+            make_tuple_iterator(
+                thrust::make_permutation_iterator(source.points_.begin(),
+                        thrust::make_transform_iterator(corres.end(), extract_element_functor<int, 2, 0>())),
+                thrust::make_permutation_iterator(target.points_.begin(),
+                        thrust::make_transform_iterator(corres.end(), extract_element_functor<int, 2, 1>())),
+                thrust::make_permutation_iterator(target.normals_.begin(),
+                        thrust::make_transform_iterator(corres.end(), extract_element_functor<int, 2, 1>()))),
+            [] __device__ (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>& x) {
+                float r = (thrust::get<0>(x) - thrust::get<1>(x)).dot(thrust::get<2>(x));
+                return r * r;
+            }, 0.0f,
             thrust::plus<float>());
     return std::sqrt(err / (float)corres.size());
 }

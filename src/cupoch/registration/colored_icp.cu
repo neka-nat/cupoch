@@ -68,8 +68,8 @@ struct compute_color_gradient_functor {
     const float *distances2_;
     const int knn_;
     __device__ Eigen::Vector3f operator()(size_t idx) const {
-        const Eigen::Vector3f &vt = points_[idx];
-        const Eigen::Vector3f &nt = normals_[idx];
+        const Eigen::Vector3f vt = points_[idx];
+        const Eigen::Vector3f nt = normals_[idx];
         float it = (colors_[idx](0) + colors_[idx](1) + colors_[idx](2)) / 3.0;
         Eigen::Matrix3f AtA;
         Eigen::Vector3f Atb;
@@ -164,9 +164,9 @@ struct compute_jacobian_and_residual_functor
                                float r[2]) const {
         size_t cs = corres_[i][0];
         size_t ct = corres_[i][1];
-        const Eigen::Vector3f &vs = source_points_[cs];
-        const Eigen::Vector3f &vt = target_points_[ct];
-        const Eigen::Vector3f &nt = target_normals_[ct];
+        const Eigen::Vector3f vs = source_points_[cs];
+        const Eigen::Vector3f vt = target_points_[ct];
+        const Eigen::Vector3f nt = target_normals_[ct];
 
         J_r[0].block<3, 1>(0, 0) = sqrt_lambda_geometric_ * vs.cross(nt);
         J_r[0].block<3, 1>(3, 0) = sqrt_lambda_geometric_ * nt;
@@ -243,7 +243,6 @@ struct diff_square_colored_functor {
                                 const Eigen::Vector3f *target_normals,
                                 const Eigen::Vector3f *target_colors,
                                 const Eigen::Vector3f *target_color_gradient,
-                                const Eigen::Vector2i *corres,
                                 float sqrt_lambda_geometric,
                                 float sqrt_lambda_photometric)
         : source_points_(source_points),
@@ -252,7 +251,6 @@ struct diff_square_colored_functor {
           target_normals_(target_normals),
           target_colors_(target_colors),
           target_color_gradient_(target_color_gradient),
-          corres_(corres),
           sqrt_lambda_geometric_(sqrt_lambda_geometric),
           sqrt_lambda_photometric_(sqrt_lambda_photometric){};
     const Eigen::Vector3f *source_points_;
@@ -261,15 +259,14 @@ struct diff_square_colored_functor {
     const Eigen::Vector3f *target_normals_;
     const Eigen::Vector3f *target_colors_;
     const Eigen::Vector3f *target_color_gradient_;
-    const Eigen::Vector2i *corres_;
     const float sqrt_lambda_geometric_;
     const float sqrt_lambda_photometric_;
-    __device__ float operator()(size_t idx) const {
-        size_t cs = corres_[idx][0];
-        size_t ct = corres_[idx][1];
-        const Eigen::Vector3f &vs = source_points_[cs];
-        const Eigen::Vector3f &vt = target_points_[ct];
-        const Eigen::Vector3f &nt = target_normals_[ct];
+    __device__ float operator()(const Eigen::Vector2i& corr) const {
+        size_t cs = corr[0];
+        size_t ct = corr[1];
+        const Eigen::Vector3f vs = source_points_[cs];
+        const Eigen::Vector3f vt = target_points_[ct];
+        const Eigen::Vector3f nt = target_normals_[ct];
         Eigen::Vector3f vs_proj = vs - (vs - vt).dot(nt) * nt;
         float is = (source_colors_[cs](0) + source_colors_[cs](1) +
                     source_colors_[cs](2)) /
@@ -302,11 +299,10 @@ float TransformationEstimationForColoredICP::ComputeRMSE(
             thrust::raw_pointer_cast(target.normals_.data()),
             thrust::raw_pointer_cast(target.colors_.data()),
             thrust::raw_pointer_cast(target_c.color_gradient_.data()),
-            thrust::raw_pointer_cast(corres.data()), sqrt_lambda_geometric,
+            sqrt_lambda_geometric,
             sqrt_lambda_photometric);
     const auto err = thrust::transform_reduce(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator(corres.size()), func, 0.0f,
+            corres.begin(), corres.end(), func, 0.0f,
             thrust::plus<float>());
     return err;
 };

@@ -195,20 +195,13 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
 }
 
 struct compute_jacobian_functor {
-    compute_jacobian_functor(const Eigen::Vector3f* point_cloud_vec_i_points,
-                             const Eigen::Vector3f* point_cloud_vec_j_points,
-                             float par)
-                             : point_cloud_vec_i_points_(point_cloud_vec_i_points),
-                            point_cloud_vec_j_points_(point_cloud_vec_j_points), par_(par) {};
-    const Eigen::Vector3f* point_cloud_vec_i_points_;
-    const Eigen::Vector3f* point_cloud_vec_j_points_;
+    compute_jacobian_functor(float par)
+                             : par_(par) {};
     const float par_;
-    __device__ thrust::tuple<Eigen::Matrix6f, Eigen::Vector6f> operator() (const thrust::tuple<int, int>& corr) const {
-        int ii = thrust::get<0>(corr);
-        int jj = thrust::get<1>(corr);
+    __device__ thrust::tuple<Eigen::Matrix6f, Eigen::Vector6f> operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& x) const {
         Eigen::Vector3f p, q;
-        p = point_cloud_vec_i_points_[ii];
-        q = point_cloud_vec_j_points_[jj];
+        p = thrust::get<0>(x);
+        q = thrust::get<1>(x);
         Eigen::Vector3f rpq = p - q;
         float temp = par_ / (rpq.dot(rpq) + par_);
         float s = temp * temp;
@@ -261,12 +254,21 @@ Eigen::Matrix4f OptimizePairwiseRegistration(
     for (int itr = 0; itr < numIter; itr++) {
         Eigen::Matrix6f JTJ = Eigen::Matrix6f::Zero();
         Eigen::Vector6f JTr = Eigen::Vector6f::Zero();
-        compute_jacobian_functor func(thrust::raw_pointer_cast(point_cloud_vec[i].points_.data()),
-                                      thrust::raw_pointer_cast(point_cloud_copy_j.points_.data()),
-                                      par);
-        thrust::tie(JTJ, JTr) = thrust::transform_reduce(corres.begin(), corres.end(), func,
-                                                         thrust::make_tuple(JTJ, JTr),
-                                                         add_tuple_functor<Eigen::Matrix6f, Eigen::Vector6f>());
+        compute_jacobian_functor func(par);
+        thrust::tie(JTJ, JTr) = thrust::transform_reduce(
+                make_tuple_iterator(
+                    thrust::make_permutation_iterator(point_cloud_vec[i].points_.begin(),
+                            thrust::make_transform_iterator(corres.begin(), tuple_get_functor<0, int, int, int>())),
+                    thrust::make_permutation_iterator(point_cloud_copy_j.points_.begin(),
+                            thrust::make_transform_iterator(corres.begin(), tuple_get_functor<1, int, int, int>()))),
+                make_tuple_iterator(
+                    thrust::make_permutation_iterator(point_cloud_vec[i].points_.begin(),
+                            thrust::make_transform_iterator(corres.end(), tuple_get_functor<0, int, int, int>())),
+                    thrust::make_permutation_iterator(point_cloud_copy_j.points_.begin(),
+                            thrust::make_transform_iterator(corres.end(), tuple_get_functor<1, int, int, int>()))),            
+                func,
+                thrust::make_tuple(JTJ, JTr),
+                add_tuple_functor<Eigen::Matrix6f, Eigen::Vector6f>());
         bool success;
         Eigen::Vector6f result;
         thrust::tie(success, result) = utility::SolveLinearSystemPSD<6>(-JTJ, JTr);

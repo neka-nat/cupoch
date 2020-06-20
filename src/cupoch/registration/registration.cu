@@ -9,24 +9,6 @@ using namespace cupoch::registration;
 
 namespace {
 
-struct extact_knn_distance_functor {
-    extact_knn_distance_functor(const float *distances)
-        : distances_(distances){};
-    const float *distances_;
-    __device__ float operator()(int idx) const {
-        return (std::isinf(distances_[idx])) ? 0.0 : distances_[idx];
-    }
-};
-
-struct make_correspondence_pair_functor {
-    make_correspondence_pair_functor(const int *indices) : indices_(indices){};
-    const int *indices_;
-    __device__ Eigen::Vector2i operator()(int i) const {
-        return (indices_[i] < 0) ? Eigen::Vector2i(-1, -1)
-                                 : Eigen::Vector2i(i, indices_[i]);
-    }
-};
-
 RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -43,17 +25,18 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     utility::device_vector<float> dists(n_pt);
     target_kdtree.SearchHybrid(source.points_, max_correspondence_distance, 1,
                                indices, dists);
-    extact_knn_distance_functor func(thrust::raw_pointer_cast(dists.data()));
     result.correspondence_set_.resize(n_pt);
     const float error2 =
-            thrust::transform_reduce(thrust::make_counting_iterator(0),
-                                     thrust::make_counting_iterator(n_pt), func,
+            thrust::transform_reduce(dists.begin(), dists.end(),
+                                     [] __device__ (float d) { return (std::isinf(d)) ? 0.0 : d; },
                                      0.0f, thrust::plus<float>());
-    thrust::transform(thrust::make_counting_iterator(0),
-                      thrust::make_counting_iterator(n_pt),
+    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator(0), indices.begin()),
+                      make_tuple_iterator(thrust::make_counting_iterator(n_pt), indices.end()),
                       result.correspondence_set_.begin(),
-                      make_correspondence_pair_functor(
-                              thrust::raw_pointer_cast(indices.data())));
+                      [] __device__ (const thrust::tuple<int, int>& idxs) {
+                          int j = thrust::get<1>(idxs);
+                          return (j < 0) ? Eigen::Vector2i(-1, -1) : Eigen::Vector2i(thrust::get<0>(idxs), j);
+                      });
     auto end =
             thrust::remove_if(result.correspondence_set_.begin(),
                               result.correspondence_set_.end(),
