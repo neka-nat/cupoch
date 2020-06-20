@@ -3,7 +3,14 @@
 #include <thrust/host_vector.h>
 #include <thrust/remove.h>
 #include <thrust/iterator/zip_iterator.h>
+#if THRUST_VERSION >= 100905
 #include <thrust/type_traits/integer_sequence.h>
+#else
+namespace thrust{
+template <std::size_t N>
+using make_index_sequence = std::make_index_sequence<N>;
+}
+#endif
 
 #include <Eigen/Core>
 #include <string>
