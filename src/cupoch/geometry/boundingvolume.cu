@@ -7,6 +7,8 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
 
+#include <thrust/iterator/discard_iterator.h>
+
 using namespace cupoch;
 using namespace cupoch::geometry;
 
@@ -14,10 +16,8 @@ namespace {
 
 struct check_within_oriented_bounding_box_functor {
     check_within_oriented_bounding_box_functor(
-            const Eigen::Vector3f *points,
             const std::array<Eigen::Vector3f, 8> &box_points)
-        : points_(points), box_points_(box_points){};
-    const Eigen::Vector3f *points_;
+        : box_points_(box_points) {};
     const std::array<Eigen::Vector3f, 8> box_points_;
     __device__ float test_plane(const Eigen::Vector3f &a,
                                 const Eigen::Vector3f &b,
@@ -27,8 +27,8 @@ struct check_within_oriented_bounding_box_functor {
         design << (b - a), (c - a), (x - a);
         return design.determinant();
     };
-    __device__ bool operator()(size_t idx) const {
-        const Eigen::Vector3f &point = points_[idx];
+    __device__ bool operator()(const thrust::tuple<int, Eigen::Vector3f>& x) const {
+        const Eigen::Vector3f& point = thrust::get<1>(x);
         return (test_plane(box_points_[0], box_points_[1], box_points_[3],
                            point) <= 0 &&
                 test_plane(box_points_[0], box_points_[5], box_points_[3],
@@ -157,13 +157,13 @@ utility::device_vector<size_t>
 OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
         const utility::device_vector<Eigen::Vector3f> &points) const {
     auto box_points = GetBoxPoints();
-    check_within_oriented_bounding_box_functor func(
-            thrust::raw_pointer_cast(points.data()), box_points);
+    check_within_oriented_bounding_box_functor func(box_points);
     utility::device_vector<size_t> indices(points.size());
-    auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
-                               thrust::make_counting_iterator(points.size()),
-                               indices.begin(), func);
-    indices.resize(thrust::distance(indices.begin(), end));
+    auto begin = make_tuple_iterator(indices.begin(), thrust::make_discard_iterator());
+    auto end = thrust::copy_if(make_tuple_iterator(thrust::make_counting_iterator(0), points.begin()),
+                               make_tuple_iterator(thrust::make_counting_iterator<int>(points.size()), points.end()),
+                               begin, func);
+    indices.resize(thrust::distance(begin, end));
     return indices;
 }
 

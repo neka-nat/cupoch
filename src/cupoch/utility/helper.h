@@ -92,7 +92,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator==(const Eigen::Matrix<T, Dim, 1> &lhs,
                                            const Eigen::Matrix<T, Dim, 1> &rhs) {
     for (int i = 0; i < Dim; ++i) {
-        if (lhs[0] != rhs[0]) return false;
+        if (lhs[i] != rhs[i]) return false;
     }
     return true;
 }
@@ -101,7 +101,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator!=(const Eigen::Matrix<T, Dim, 1> &lhs,
                                            const Eigen::Matrix<T, Dim, 1> &rhs) {
     for (int i = 0; i < Dim; ++i) {
-        if (lhs[0] != rhs[0]) return true;
+        if (lhs[i] != rhs[i]) return true;
     }
     return false;
 }

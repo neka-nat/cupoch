@@ -10,39 +10,6 @@ namespace geometry {
 
 namespace {
 
-struct replace_color_functor {
-    replace_color_functor(const Eigen::Vector2i* lines,
-                          Eigen::Vector3f* colors,
-                          const Eigen::Vector2i& edge,
-                          const Eigen::Vector3f& color,
-                          bool is_directed)
-                          : lines_(lines), colors_(colors),
-                          edge_(edge), color_(color),
-                          is_directed_(is_directed) {};
-    const Eigen::Vector2i* lines_;
-    Eigen::Vector3f* colors_;
-    const Eigen::Vector2i edge_;
-    const Eigen::Vector3f color_;
-    const bool is_directed_;
-    __device__ void operator() (size_t idx) const {
-        if (lines_[idx] == edge_ || (!is_directed_ && lines_[idx] == Eigen::Vector2i(edge_[1], edge_[0]))) {
-            colors_[idx] = color_;
-        }
-    }
-};
-
-struct replace_colors_functor {
-    replace_colors_functor(Eigen::Vector3f* colors,
-                           const Eigen::Vector3f& color)
-                           : colors_(colors),
-                           color_(color) {};
-    Eigen::Vector3f* colors_;
-    const Eigen::Vector3f color_;
-    __device__ void operator() (size_t idx) const {
-        colors_[idx] = color_;
-    }
-};
-
 struct extract_near_edges_functor {
     extract_near_edges_functor(const Eigen::Vector3f &point,
                                int point_no,
@@ -413,10 +380,11 @@ Graph &Graph::PaintEdgeColor(const Eigen::Vector2i &edge, const Eigen::Vector3f 
     if (!HasColors()) {
         colors_.resize(lines_.size(), Eigen::Vector3f::Ones());
     }
-    replace_color_functor func(thrust::raw_pointer_cast(lines_.data()),
-                               thrust::raw_pointer_cast(colors_.data()),
-                               edge, color, is_directed_);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(lines_.size()), func);
+    thrust::transform_if(colors_.begin(), colors_.end(), lines_.begin(), colors_.begin(),
+                         [color] __device__ (const Eigen::Vector3f& c) { return color; },
+                         [edge, is_directed = is_directed_] __device__ (const Eigen::Vector2i& line) {
+                            return line == edge || (!is_directed && line == Eigen::Vector2i(edge[1], edge[0]));
+                         });
     return *this;
 }
 
@@ -430,8 +398,9 @@ Graph &Graph::PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edg
             make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator(sorted_edges.size())),
             make_tuple_iterator(thrust::make_discard_iterator(), indices.begin()),
             tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, size_t>, 0, thrust::greater<Eigen::Vector2i>>());
-    replace_colors_functor func(thrust::raw_pointer_cast(colors_.data()), color);
-    thrust::for_each(indices.begin(), indices.end(), func);
+    thrust::for_each(thrust::make_permutation_iterator(colors_.begin(), indices.begin()),
+                     thrust::make_permutation_iterator(colors_.begin(), indices.end()),
+                     [color] __device__ (Eigen::Vector3f& c) { c = color; });
     if (!is_directed_) {
         swap_index(sorted_edges);
         thrust::sort(sorted_edges.begin(), sorted_edges.end());
@@ -441,7 +410,9 @@ Graph &Graph::PaintEdgesColor(const utility::device_vector<Eigen::Vector2i> &edg
                 make_tuple_iterator(sorted_edges.end(), thrust::make_constant_iterator(sorted_edges.size())),
                 make_tuple_iterator(thrust::make_discard_iterator(), indices.begin()),
                 tuple_element_compare_functor<thrust::tuple<Eigen::Vector2i, size_t>, 0, thrust::greater<Eigen::Vector2i>>());
-        thrust::for_each(indices.begin(), indices.end(), func);
+        thrust::for_each(thrust::make_permutation_iterator(colors_.begin(), indices.begin()),
+                         thrust::make_permutation_iterator(colors_.begin(), indices.end()),
+                         [color] __device__ (Eigen::Vector3f& c) { c = color; });
     }
     return *this;
 }
@@ -463,10 +434,8 @@ Graph &Graph::PaintNodesColor(const utility::device_vector<int> &nodes, const Ei
     if (!HasNodeColors()) {
         node_colors_.resize(points_.size(), Eigen::Vector3f::Ones());
     }
-    replace_colors_functor func(thrust::raw_pointer_cast(node_colors_.data()), color);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator(nodes.size()),
-                     func);
+    thrust::for_each(node_colors_.begin(), node_colors_.end(),
+                     [color] __device__ (Eigen::Vector3f& c) { c = color; });
     return *this;
 }
 
