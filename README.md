@@ -90,7 +90,11 @@ python benchmarks.py
 
 ![og](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/og_gpu.gif)
 
-## Path finding
+### Fast Global Registration
+
+![fgr](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/fgr.png)
+
+### Path finding
 
 ![pf](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/path_finding.png)
 
