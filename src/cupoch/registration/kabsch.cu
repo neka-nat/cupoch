@@ -3,9 +3,9 @@
 #include <thrust/iterator/permutation_iterator.h>
 
 #include <Eigen/Geometry>
+#include <Eigen/SVD>
 
 #include "cupoch/registration/kabsch.h"
-#include "cupoch/utility/svd3_cuda.h"
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -48,17 +48,11 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
 
     // Do svd
     hh /= model.size();
-    Eigen::Matrix3f uu, ss, vv;
-    svd(hh(0, 0), hh(0, 1), hh(0, 2), hh(1, 0), hh(1, 1), hh(1, 2), hh(2, 0),
-        hh(2, 1), hh(2, 2), uu(0, 0), uu(0, 1), uu(0, 2), uu(1, 0), uu(1, 1),
-        uu(1, 2), uu(2, 0), uu(2, 1), uu(2, 2), ss(0, 0), ss(0, 1), ss(0, 2),
-        ss(1, 0), ss(1, 1), ss(1, 2), ss(2, 0), ss(2, 1), ss(2, 2), vv(0, 0),
-        vv(0, 1), vv(0, 2), vv(1, 0), vv(1, 1), vv(1, 2), vv(2, 0), vv(2, 1),
-        vv(2, 2));
-    ss = Eigen::Matrix3f::Identity();
-    ss(2, 2) = (uu * vv).determinant();
-    Eigen::Matrix4f_u tr = Eigen::Matrix4f_u::Identity();
-    tr.block<3, 3>(0, 0) = vv * ss * uu.transpose();
+    Eigen::JacobiSVD<Eigen::Matrix3f> svd(hh, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3f ss = Eigen::Matrix3f::Identity();
+    ss(2, 2) = (svd.matrixU() * svd.matrixV()).determinant();
+    Eigen::Matrix4f tr = Eigen::Matrix4f::Identity();
+    tr.block<3, 3>(0, 0) = svd.matrixV() * ss * svd.matrixU().transpose();
 
     // The translation
     tr.block<3, 1>(0, 3) = target_center;
