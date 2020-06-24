@@ -14,5 +14,9 @@ Eigen::Matrix4f_u Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
 Eigen::Matrix4f_u Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
                          const utility::device_vector<Eigen::Vector3f> &target);
 
+Eigen::Matrix4f_u KabschWeighted(const utility::device_vector<Eigen::Vector3f> &model,
+                                 const utility::device_vector<Eigen::Vector3f> &target,
+                                 const utility::device_vector<float> &weight);
+
 }  // namespace registration
 }  // namespace cupoch

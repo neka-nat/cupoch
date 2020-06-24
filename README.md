@@ -21,6 +21,7 @@ This library is based on the functionality of Open3D, with additional features f
         * ICP
         * [Colored Point Cloud Registration](https://ieeexplore.ieee.org/document/8237287)
         * [Fast Global Registration](http://vladlen.info/papers/fast-global-registration.pdf)
+        * [FilterReg](https://arxiv.org/abs/1811.10136)
     * Point cloud clustering
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling

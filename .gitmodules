@@ -16,6 +16,9 @@
 [submodule "imgui"]
     path = third_party/imgui
     url = https://github.com/ocornut/imgui.git
+[submodule "stdgpu"]
+    path = third_party/stdgpu
+    url = https://github.com/stotko/stdgpu.git
 [submodule "tinyobjloader"]
     path = third_party/tinyobjloader
     url = https://github.com/syoyo/tinyobjloader.git

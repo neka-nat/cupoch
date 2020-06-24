@@ -106,6 +106,8 @@ public:
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
 
+    std::shared_ptr<PointCloud> GaussianFilter(float search_radius, float sigma2, int num_max_search_points = 50);
+
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.

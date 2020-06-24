@@ -139,7 +139,6 @@ elseif (UNIX)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
     endif (NOT BUILD_SHARED_LIBS)
     add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake
     # We still enable -O3 at debug build to optimize performance
     if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")

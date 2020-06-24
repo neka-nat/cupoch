@@ -199,6 +199,15 @@ if (BUILD_JPEG)
     set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/libjpeg-turbo)
 endif()
 
+# stdgpu
+set(STDGPU_BUILD_EXAMPLES OFF CACHE INTERNAL "")
+set(STDGPU_BUILD_TESTS OFF CACHE INTERNAL "")
+set(STDGPU_SETUP_COMPILER_FLAGS OFF CACHE INTERNAL "")
+add_subdirectory(stdgpu)
+target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
+target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--compiler-options -fPIC>)
+set(stdgpu_INCLUDE_DIRS stdgpu/src)
+set(stdgpu_LIBRARIES stdgpu)
 
 # tinyobjloader
 message(STATUS "Building tinyobjloader from source")
@@ -262,6 +271,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${cnmem_INCLUDE_DIRS}
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
+     ${stdgpu_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
 )
@@ -276,6 +286,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${liblzf_LIBRARIES}
      ${rply_LIBRARIES}
      ${JSONCPP_LIBRARIES}
+     ${stdgpu_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}

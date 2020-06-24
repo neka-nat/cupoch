@@ -3,6 +3,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
@@ -28,6 +29,40 @@ struct check_nan_functor {
                 remove_infinite_ &&
                 (isinf(point(0)) || isinf(point(1)) || isinf(point(2)));
         return is_nan || is_infinite;
+    }
+};
+
+struct gaussian_filter_functor {
+    gaussian_filter_functor(const Eigen::Vector3f* points,
+                            const int* indices,
+                            const float* dists,
+                            float sigma2,
+                            int num_max_search_points)
+        : points_(points), indices_(indices), dists_(dists), sigma2_(sigma2),
+        num_max_search_points_(num_max_search_points) {};
+    const Eigen::Vector3f* points_;
+    const int* indices_;
+    const float* dists_;
+    const float sigma2_;
+    const int num_max_search_points_;
+    __device__ Eigen::Vector3f operator() (size_t idx) {
+        float total_weight = 0.0;
+        Eigen::Vector3f res = Eigen::Vector3f::Zero();
+        for (int i = 0; i < num_max_search_points_; ++i) {
+            if (indices_[idx * num_max_search_points_ + i] >= 0) {
+                float weight = exp(-0.5 * dists_[idx * num_max_search_points_ + i] / sigma2_);
+                res += weight * points_[indices_[idx * num_max_search_points_ + i]];
+                total_weight += weight;
+            }
+        }
+        if (total_weight != 0) {
+            res /= total_weight;
+            return res;
+        } else {
+            return Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
+                                   std::numeric_limits<float>::quiet_NaN(),
+                                   std::numeric_limits<float>::quiet_NaN());
+        }
     }
 };
 
@@ -215,4 +250,32 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
             "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
     return *this;
+}
+
+std::shared_ptr<PointCloud> PointCloud::GaussianFilter(float search_radius,
+                                                       float sigma2,
+                                                       int num_max_search_points) {
+    auto out = std::make_shared<PointCloud>();
+    if (search_radius <= 0 || sigma2 <= 0 || num_max_search_points <= 0) {
+        utility::LogError("[GaussianFilter] Illegal input parameters, radius and sigma2 must be positive.");
+        return out;
+    }
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(*this);
+    utility::device_vector<int> indices;
+    utility::device_vector<float> dist;
+    kdtree.SearchHybrid(points_, search_radius, num_max_search_points, indices, dist);
+    out->points_.resize(points_.size());
+    gaussian_filter_functor func(thrust::raw_pointer_cast(points_.data()),
+                                 thrust::raw_pointer_cast(indices.data()),
+                                 thrust::raw_pointer_cast(dist.data()),
+                                 sigma2, num_max_search_points);
+    auto end = thrust::copy_if(thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func),
+                               thrust::make_transform_iterator(thrust::make_counting_iterator(points_.size()), func),
+                               out->points_.begin(),
+                               [] __device__ (const Eigen::Vector3f& p) {
+                                   return !isnan(p[0]) && !isnan(p[1]) && !isnan(p[2]);
+                               });
+    out->points_.resize(thrust::distance(out->points_.begin(), end));
+    return out;
 }

@@ -77,6 +77,10 @@ void pybind_pointcloud(py::module &m) {
                  "points with "
                  "the 0-th point always chosen, not at random.",
                  "every_k_points"_a)
+            .def("gaussian_filter",
+                 &geometry::PointCloud::GaussianFilter,
+                 "Function to apply Gaussian Filter to input pointcloud",
+                 "search_radius"_a, "sigma2"_a, "num_max_search_points"_a = 50)
             .def("crop",
                  (std::shared_ptr<geometry::PointCloud>(
                          geometry::PointCloud::*)(
