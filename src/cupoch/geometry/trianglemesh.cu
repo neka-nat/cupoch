@@ -164,12 +164,14 @@ struct sample_points_functor {
                           const Eigen::Vector3i* triangles, const Eigen::Vector3f* triangle_normals,
                           const Eigen::Vector3f* vertex_colors, const size_t* n_points_scan,
                           Eigen::Vector3f* points, Eigen::Vector3f* normals, Eigen::Vector3f* colors,
-                          bool has_vert_normal, bool use_triangle_normal, bool has_vert_color)
+                          bool has_vert_normal, bool use_triangle_normal, bool has_vert_color,
+                          int n_pallarel)
                           : vertices_(vertices), vertex_normals_(vertex_normals),
                           triangles_(triangles), triangle_normals_(triangle_normals), vertex_colors_(vertex_colors),
                           n_points_scan_(n_points_scan), points_(points), normals_(normals),
                           colors_(colors), has_vert_normal_(has_vert_normal),
-                          use_triangle_normal_(use_triangle_normal), has_vert_color_(has_vert_color) {};
+                          use_triangle_normal_(use_triangle_normal), has_vert_color_(has_vert_color),
+                          n_pallarel_(n_pallarel) {};
     const Eigen::Vector3f* vertices_;
     const Eigen::Vector3f* vertex_normals_;
     const Eigen::Vector3i* triangles_;
@@ -182,29 +184,33 @@ struct sample_points_functor {
     const bool has_vert_normal_;
     const bool use_triangle_normal_;
     const bool has_vert_color_;
+    const int n_pallarel_;
     __device__
     void operator() (size_t idx) {
+        int i = idx / n_pallarel_;
+        int j = idx % n_pallarel_;
         thrust::default_random_engine rng;
         thrust::uniform_real_distribution<float> dist(0, 1.0);
         rng.discard(idx);
-        for (int point_idx = n_points_scan_[idx]; point_idx < n_points_scan_[idx + 1]; ++point_idx) {
+        const Eigen::Vector3i triangle = triangles_[i];
+        const Eigen::Vector3f v1 = vertices_[triangle(0)];
+        const Eigen::Vector3f v2 = vertices_[triangle(1)];
+        const Eigen::Vector3f v3 = vertices_[triangle(2)];
+        for (int point_idx = n_points_scan_[i] + j; point_idx < n_points_scan_[i + 1]; point_idx += j + 1) {
             float r1 = dist(rng);
             float r2 = dist(rng);
             float a = (1 - sqrt(r1));
             float b = sqrt(r1) * (1 - r2);
             float c = sqrt(r1) * r2;
 
-            const Eigen::Vector3i &triangle = triangles_[idx];
-            points_[point_idx] = a * vertices_[triangle(0)] +
-                                 b * vertices_[triangle(1)] +
-                                 c * vertices_[triangle(2)];
+            points_[point_idx] = a * v1 + b * v2 + c * v3;
             if (has_vert_normal_ && !use_triangle_normal_) {
                 normals_[point_idx] = a * vertex_normals_[triangle(0)] +
                                       b * vertex_normals_[triangle(1)] +
                                       c * vertex_normals_[triangle(2)];
             }
-            if (use_triangle_normal_) {
-                normals_[point_idx] = triangle_normals_[idx];
+            else if (use_triangle_normal_) {
+                normals_[point_idx] = triangle_normals_[i];
             }
             if (has_vert_color_) {
                 colors_[point_idx] = a * vertex_colors_[triangle(0)] +
@@ -760,13 +766,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         float surface_area,
         bool use_triangle_normal) {
     // triangle areas to cdf
-    triangle_areas[0] /= surface_area;
-    float* triangle_areas_ptr = thrust::raw_pointer_cast(triangle_areas.data());
-    thrust::for_each(thrust::make_counting_iterator<size_t>(1),
-                     thrust::make_counting_iterator(triangles_.size()),
-                     [triangle_areas_ptr, surface_area] __device__ (size_t idx) {
-                         triangle_areas_ptr[idx] = triangle_areas_ptr[idx] / surface_area;
-                        });
+    thrust::for_each(triangle_areas.begin(), triangle_areas.end(),
+                     [surface_area] __device__ (float& triangle_area) {
+                        triangle_area /= surface_area;
+                     });
     thrust::inclusive_scan(triangle_areas.begin(), triangle_areas.end(),
                            triangle_areas.begin());
 
@@ -785,12 +788,12 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         pcd->colors_.resize(number_of_points);
     }
     utility::device_vector<size_t> n_points_of_triangle(triangles_.size() + 1, 0);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(triangles_.size()),
+    thrust::transform(triangle_areas.begin(), triangle_areas.end(),
                       n_points_of_triangle.begin() + 1,
-                      [triangle_areas_ptr, number_of_points] __device__ (size_t idx) {
-                          return round(triangle_areas_ptr[idx] * number_of_points);
+                      [number_of_points] __device__ (float triangle_area) {
+                          return (size_t)round(triangle_area * number_of_points);
                       });
+    int n_pallarel = number_of_points / triangles_.size();
     sample_points_functor func(thrust::raw_pointer_cast(vertices_.data()),
                                thrust::raw_pointer_cast(vertex_normals_.data()),
                                thrust::raw_pointer_cast(triangles_.data()),
@@ -800,8 +803,10 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
                                thrust::raw_pointer_cast(pcd->points_.data()),
                                thrust::raw_pointer_cast(pcd->normals_.data()),
                                thrust::raw_pointer_cast(pcd->colors_.data()),
-                               has_vert_normal, use_triangle_normal, has_vert_color);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(triangles_.size()),
+                               has_vert_normal, use_triangle_normal, has_vert_color,
+                               n_pallarel);
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator(triangles_.size() * n_pallarel),
                      func);
     return pcd;
 }
