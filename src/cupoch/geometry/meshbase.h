@@ -5,6 +5,7 @@
 #include <Eigen/Core>
 
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry3d_utils.h"
 #include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/helper.h"
 

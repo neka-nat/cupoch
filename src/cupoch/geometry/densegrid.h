@@ -1,5 +1,7 @@
 #pragma once
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/utility/device_vector.h"
+#include <thrust/tuple.h>
 
 namespace cupoch {
 namespace geometry {

@@ -38,18 +38,6 @@ struct equal_to<Eigen::Matrix<int, Dim, 1>> {
     // clang-format on
 };
 
-template <typename MatType, typename VecType>
-struct plus<thrust::tuple<MatType, VecType, float>> {
-    __host__ __device__ thrust::tuple<MatType, VecType, float> operator()(
-            const thrust::tuple<MatType, VecType, float> &x,
-            const thrust::tuple<MatType, VecType, float> &y) const {
-        MatType mat = thrust::get<0>(x) + thrust::get<0>(y);
-        VecType vec = thrust::get<1>(x) + thrust::get<1>(y);
-        float r = thrust::get<2>(x) + thrust::get<2>(y);
-        return thrust::make_tuple(mat, vec, r);
-    }
-};
-
 template<typename VectorType>
 struct elementwise_minimum {
     __device__ VectorType operator()(const VectorType &a,

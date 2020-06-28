@@ -75,7 +75,7 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
             thrust::make_counting_iterator(0),
             thrust::make_counting_iterator(iteration_num), func,
             thrust::make_tuple(JTJ, JTr, r2_sum),
-            thrust::plus<thrust::tuple<MatType, VecType, float>>());
+            add_tuple_functor<MatType, VecType, float>());
     r2_sum = thrust::get<2>(jtj_jtr_r2);
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
@@ -97,7 +97,7 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
             thrust::make_counting_iterator(0),
             thrust::make_counting_iterator(iteration_num), func,
             thrust::make_tuple(JTJ, JTr, r2_sum),
-            thrust::plus<thrust::tuple<MatType, VecType, float>>());
+            add_tuple_functor<MatType, VecType, float>());
     r2_sum = thrust::get<2>(jtj_jtr_r2);
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
@@ -139,7 +139,7 @@ thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
                                                           thrust::get<2>(x) * w);
                             },
                             thrust::make_tuple(JTJ, JTr, r2_sum),
-                            thrust::plus<thrust::tuple<MatType, VecType, float>>());
+                            add_tuple_functor<MatType, VecType, float>());
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (float)iteration_num, iteration_num);

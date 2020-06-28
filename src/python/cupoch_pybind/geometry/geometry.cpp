@@ -7,21 +7,21 @@ using namespace cupoch;
 void pybind_geometry_classes(py::module &m) {
     // cupoch.geometry functions
     m.def("get_rotation_matrix_from_xyz",
-          &geometry::Geometry3D::GetRotationMatrixFromXYZ, "rotation"_a);
+          &geometry::GetRotationMatrixFromXYZ, "rotation"_a);
     m.def("get_rotation_matrix_from_yzx",
-          &geometry::Geometry3D::GetRotationMatrixFromYZX, "rotation"_a);
+          &geometry::GetRotationMatrixFromYZX, "rotation"_a);
     m.def("get_rotation_matrix_from_zxy",
-          &geometry::Geometry3D::GetRotationMatrixFromZXY, "rotation"_a);
+          &geometry::GetRotationMatrixFromZXY, "rotation"_a);
     m.def("get_rotation_matrix_from_xzy",
-          &geometry::Geometry3D::GetRotationMatrixFromXZY, "rotation"_a);
+          &geometry::GetRotationMatrixFromXZY, "rotation"_a);
     m.def("get_rotation_matrix_from_zyx",
-          &geometry::Geometry3D::GetRotationMatrixFromZYX, "rotation"_a);
+          &geometry::GetRotationMatrixFromZYX, "rotation"_a);
     m.def("get_rotation_matrix_from_yxz",
-          &geometry::Geometry3D::GetRotationMatrixFromYXZ, "rotation"_a);
+          &geometry::GetRotationMatrixFromYXZ, "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
-          &geometry::Geometry3D::GetRotationMatrixFromAxisAngle, "rotation"_a);
+          &geometry::GetRotationMatrixFromAxisAngle, "rotation"_a);
     m.def("get_rotation_matrix_from_quaternion",
-          &geometry::Geometry3D::GetRotationMatrixFromQuaternion, "rotation"_a);
+          &geometry::GetRotationMatrixFromQuaternion, "rotation"_a);
 
     // cupoch.geometry.Geometry
     py::class_<geometry::Geometry, PyGeometry<geometry::Geometry>,
@@ -87,31 +87,7 @@ void pybind_geometry_classes(py::module &m) {
                  "center"_a = true)
             .def("rotate", &geometry::Geometry3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
-                 "R"_a, "center"_a = true)
-            .def_static("get_rotation_matrix_from_xyz",
-                        &geometry::Geometry3D::GetRotationMatrixFromXYZ,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_yzx",
-                        &geometry::Geometry3D::GetRotationMatrixFromYZX,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_zxy",
-                        &geometry::Geometry3D::GetRotationMatrixFromZXY,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_xzy",
-                        &geometry::Geometry3D::GetRotationMatrixFromXZY,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_zyx",
-                        &geometry::Geometry3D::GetRotationMatrixFromZYX,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_yxz",
-                        &geometry::Geometry3D::GetRotationMatrixFromYXZ,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_axis_angle",
-                        &geometry::Geometry3D::GetRotationMatrixFromAxisAngle,
-                        "rotation"_a)
-            .def_static("get_rotation_matrix_from_quaternion",
-                        &geometry::Geometry3D::GetRotationMatrixFromQuaternion,
-                        "rotation"_a);
+                 "R"_a, "center"_a = true);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_center");

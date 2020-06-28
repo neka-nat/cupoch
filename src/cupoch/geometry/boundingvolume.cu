@@ -271,8 +271,8 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
     } else {
-        box.min_bound_ = box.ComputeMinBound(utility::GetStream(0), points);
-        box.max_bound_ = box.ComputeMaxBound(utility::GetStream(1), points);
+        box.min_bound_ = ComputeMinBound(utility::GetStream(0), points);
+        box.max_bound_ = ComputeMaxBound(utility::GetStream(1), points);
     }
     return box;
 }

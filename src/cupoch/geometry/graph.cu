@@ -1,6 +1,7 @@
 #include "cupoch/geometry/graph.h"
 #include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/utility/console.h"
 
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>

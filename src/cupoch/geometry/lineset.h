@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry3d_utils.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {

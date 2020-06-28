@@ -1,10 +1,10 @@
 #include <Eigen/Dense>
 
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry3d_utils.h"
 #include "cupoch/utility/console.h"
 
-using namespace cupoch;
-using namespace cupoch::geometry;
+namespace cupoch {
+namespace geometry {
 
 namespace {
 
@@ -31,14 +31,14 @@ struct transform_normals_functor {
 };
 }  // namespace
 
-Eigen::Vector3f Geometry3D::ComputeMinBound(
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+Eigen::Vector3f ComputeMinBound(
+        const utility::device_vector<Eigen::Vector3f> &points) {
     return ComputeMinBound(0, points);
 }
 
-Eigen::Vector3f Geometry3D::ComputeMinBound(
+Eigen::Vector3f ComputeMinBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+        const utility::device_vector<Eigen::Vector3f> &points) {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
@@ -46,14 +46,14 @@ Eigen::Vector3f Geometry3D::ComputeMinBound(
                           thrust::elementwise_minimum<Eigen::Vector3f>());
 }
 
-Eigen::Vector3f Geometry3D::ComputeMaxBound(
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+Eigen::Vector3f ComputeMaxBound(
+        const utility::device_vector<Eigen::Vector3f> &points) {
     return ComputeMaxBound(0, points);
 }
 
-Eigen::Vector3f Geometry3D::ComputeMaxBound(
+Eigen::Vector3f ComputeMaxBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+        const utility::device_vector<Eigen::Vector3f> &points) {
     if (points.empty()) return Eigen::Vector3f::Zero();
     Eigen::Vector3f init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
@@ -61,8 +61,8 @@ Eigen::Vector3f Geometry3D::ComputeMaxBound(
                           thrust::elementwise_maximum<Eigen::Vector3f>());
 }
 
-Eigen::Vector3f Geometry3D::ComputeCenter(
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+Eigen::Vector3f ComputeCenter(
+        const utility::device_vector<Eigen::Vector3f> &points) {
     Eigen::Vector3f init = Eigen::Vector3f::Zero();
     if (points.empty()) return init;
     Eigen::Vector3f sum = thrust::reduce(points.begin(), points.end(), init,
@@ -70,7 +70,7 @@ Eigen::Vector3f Geometry3D::ComputeCenter(
     return sum / points.size();
 }
 
-void Geometry3D::ResizeAndPaintUniformColor(
+void ResizeAndPaintUniformColor(
         utility::device_vector<Eigen::Vector3f> &colors,
         const size_t size,
         const Eigen::Vector3f &color) {
@@ -89,13 +89,13 @@ void Geometry3D::ResizeAndPaintUniformColor(
     thrust::fill(colors.begin(), colors.end(), clipped_color);
 }
 
-void Geometry3D::TransformPoints(
+void TransformPoints(
         const Eigen::Matrix4f &transformation,
         utility::device_vector<Eigen::Vector3f> &points) {
     TransformPoints(0, transformation, points);
 }
 
-void Geometry3D::TransformPoints(
+void TransformPoints(
         cudaStream_t stream,
         const Eigen::Matrix4f &transformation,
         utility::device_vector<Eigen::Vector3f> &points) {
@@ -104,13 +104,13 @@ void Geometry3D::TransformPoints(
                      points.end(), func);
 }
 
-void Geometry3D::TransformNormals(
+void TransformNormals(
         const Eigen::Matrix4f &transformation,
         utility::device_vector<Eigen::Vector3f> &normals) {
     TransformNormals(0, transformation, normals);
 }
 
-void Geometry3D::TransformNormals(
+void TransformNormals(
         cudaStream_t stream,
         const Eigen::Matrix4f &transformation,
         utility::device_vector<Eigen::Vector3f> &normals) {
@@ -119,10 +119,10 @@ void Geometry3D::TransformNormals(
                      normals.end(), func);
 }
 
-void Geometry3D::TranslatePoints(
+void TranslatePoints(
         const Eigen::Vector3f &translation,
         utility::device_vector<Eigen::Vector3f> &points,
-        bool relative) const {
+        bool relative) {
     Eigen::Vector3f transform = translation;
     if (!relative) {
         transform -= ComputeCenter(points);
@@ -131,9 +131,9 @@ void Geometry3D::TranslatePoints(
                      [=] __device__(Eigen::Vector3f & pt) { pt += transform; });
 }
 
-void Geometry3D::ScalePoints(const float scale,
-                             utility::device_vector<Eigen::Vector3f> &points,
-                             bool center) const {
+void ScalePoints(const float scale,
+                 utility::device_vector<Eigen::Vector3f> &points,
+                 bool center) {
     Eigen::Vector3f points_center(0, 0, 0);
     if (center && !points.empty()) {
         points_center = ComputeCenter(points);
@@ -144,16 +144,16 @@ void Geometry3D::ScalePoints(const float scale,
                      });
 }
 
-void Geometry3D::RotatePoints(const Eigen::Matrix3f &R,
-                              utility::device_vector<Eigen::Vector3f> &points,
-                              bool center) const {
+void RotatePoints(const Eigen::Matrix3f &R,
+                  utility::device_vector<Eigen::Vector3f> &points,
+                  bool center) {
     RotatePoints(0, R, points, center);
 }
 
-void Geometry3D::RotatePoints(cudaStream_t stream,
-                              const Eigen::Matrix3f &R,
-                              utility::device_vector<Eigen::Vector3f> &points,
-                              bool center) const {
+void RotatePoints(cudaStream_t stream,
+                  const Eigen::Matrix3f &R,
+                  utility::device_vector<Eigen::Vector3f> &points,
+                  bool center) {
     Eigen::Vector3f points_center(0, 0, 0);
     if (center && !points.empty()) {
         points_center = ComputeCenter(points);
@@ -164,74 +164,77 @@ void Geometry3D::RotatePoints(cudaStream_t stream,
                      });
 }
 
-void Geometry3D::RotateNormals(
+void RotateNormals(
         const Eigen::Matrix3f &R,
-        utility::device_vector<Eigen::Vector3f> &normals) const {
+        utility::device_vector<Eigen::Vector3f> &normals) {
     RotateNormals(0, R, normals);
 }
 
-void Geometry3D::RotateNormals(
+void RotateNormals(
         cudaStream_t stream,
         const Eigen::Matrix3f &R,
-        utility::device_vector<Eigen::Vector3f> &normals) const {
+        utility::device_vector<Eigen::Vector3f> &normals) {
     thrust::for_each(utility::exec_policy(stream)->on(stream), normals.begin(),
                      normals.end(), [=] __device__(Eigen::Vector3f & normal) {
                          normal = R * normal;
                      });
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromXYZ(
+Eigen::Matrix3f GetRotationMatrixFromXYZ(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixX(rotation(0)) *
            cupoch::utility::RotationMatrixY(rotation(1)) *
            cupoch::utility::RotationMatrixZ(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromYZX(
+Eigen::Matrix3f GetRotationMatrixFromYZX(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixY(rotation(0)) *
            cupoch::utility::RotationMatrixZ(rotation(1)) *
            cupoch::utility::RotationMatrixX(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromZXY(
+Eigen::Matrix3f GetRotationMatrixFromZXY(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixZ(rotation(0)) *
            cupoch::utility::RotationMatrixX(rotation(1)) *
            cupoch::utility::RotationMatrixY(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromXZY(
+Eigen::Matrix3f GetRotationMatrixFromXZY(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixX(rotation(0)) *
            cupoch::utility::RotationMatrixZ(rotation(1)) *
            cupoch::utility::RotationMatrixY(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromZYX(
+Eigen::Matrix3f GetRotationMatrixFromZYX(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixZ(rotation(0)) *
            cupoch::utility::RotationMatrixY(rotation(1)) *
            cupoch::utility::RotationMatrixX(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromYXZ(
+Eigen::Matrix3f GetRotationMatrixFromYXZ(
         const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixY(rotation(0)) *
            cupoch::utility::RotationMatrixX(rotation(1)) *
            cupoch::utility::RotationMatrixZ(rotation(2));
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromAxisAngle(
+Eigen::Matrix3f GetRotationMatrixFromAxisAngle(
         const Eigen::Vector3f &rotation) {
     const float phi = rotation.norm();
     return Eigen::AngleAxisf(phi, rotation / phi).toRotationMatrix();
 }
 
-Eigen::Matrix3f Geometry3D::GetRotationMatrixFromQuaternion(
+Eigen::Matrix3f GetRotationMatrixFromQuaternion(
         const Eigen::Vector4f &rotation) {
     return Eigen::Quaternionf(rotation(0), rotation(1), rotation(2),
                               rotation(3))
             .normalized()
             .toRotationMatrix();
+}
+
+}
 }

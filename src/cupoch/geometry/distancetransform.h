@@ -1,5 +1,6 @@
 #pragma once
 #include "cupoch/geometry/densegrid.h"
+#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 namespace geometry {
