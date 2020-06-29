@@ -1,7 +1,7 @@
 #pragma once
 #include <thrust/host_vector.h>
 
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/eigen.h"
@@ -16,8 +16,9 @@ namespace geometry {
 
 class Image;
 class RGBDImage;
+class OrientedBoundingBox;
 
-class PointCloud : public Geometry3D {
+class PointCloud : public GeometryBase<3> {
 public:
     PointCloud();
     PointCloud(const thrust::host_vector<Eigen::Vector3f> &points);

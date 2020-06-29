@@ -117,11 +117,11 @@ struct compute_carve_functor {
 
 }  // namespace
 
-VoxelGrid::VoxelGrid() : Geometry3D(Geometry::GeometryType::VoxelGrid) {}
+VoxelGrid::VoxelGrid() : GeometryBase<3>(Geometry::GeometryType::VoxelGrid) {}
 VoxelGrid::~VoxelGrid() {}
 
 VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
-: Geometry3D(Geometry::GeometryType::VoxelGrid), voxel_size_(src_voxel_grid.voxel_size_),
+: GeometryBase<3>(Geometry::GeometryType::VoxelGrid), voxel_size_(src_voxel_grid.voxel_size_),
 origin_(src_voxel_grid.origin_),
 voxels_keys_(src_voxel_grid.voxels_keys_),
 voxels_values_(src_voxel_grid.voxels_values_) {}

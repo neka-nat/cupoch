@@ -51,7 +51,7 @@ void pybind_occupanygrid(py::module &m) {
                     "Float32 numpy array of shape (3,): Color of the voxel.");
 
     py::class_<geometry::OccupancyGrid, PyGeometry3D<geometry::OccupancyGrid>,
-               std::shared_ptr<geometry::OccupancyGrid>, geometry::Geometry3D>
+               std::shared_ptr<geometry::OccupancyGrid>, geometry::GeometryBase<3>>
             occupancygrid(m, "OccupancyGrid",
                           "Occupancy is a collection of voxels which is a special voxel grid "
                           "with a parameter of occupancy probability.");

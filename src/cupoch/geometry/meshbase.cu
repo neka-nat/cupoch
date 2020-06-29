@@ -5,10 +5,10 @@
 using namespace cupoch;
 using namespace cupoch::geometry;
 
-MeshBase::MeshBase() : Geometry3D(Geometry::GeometryType::MeshBase) {}
+MeshBase::MeshBase() : GeometryBase<3>(Geometry::GeometryType::MeshBase) {}
 MeshBase::~MeshBase() {}
 MeshBase::MeshBase(const MeshBase &other)
-    : Geometry3D(Geometry::GeometryType::MeshBase),
+    : GeometryBase<3>(Geometry::GeometryType::MeshBase),
       vertices_(other.vertices_),
       vertex_normals_(other.vertex_normals_),
       vertex_colors_(other.vertex_colors_) {}
@@ -138,22 +138,22 @@ MeshBase &MeshBase::NormalizeNormals() {
     return *this;
 }
 
-MeshBase::MeshBase(Geometry::GeometryType type) : Geometry3D(type) {}
+MeshBase::MeshBase(Geometry::GeometryType type) : GeometryBase<3>(type) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
                    const utility::device_vector<Eigen::Vector3f> &vertices)
-    : Geometry3D(type), vertices_(vertices) {}
+    : GeometryBase<3>(type), vertices_(vertices) {}
 
 MeshBase::MeshBase(
         Geometry::GeometryType type,
         const utility::device_vector<Eigen::Vector3f> &vertices,
         const utility::device_vector<Eigen::Vector3f> &vertex_normals,
         const utility::device_vector<Eigen::Vector3f> &vertex_colors)
-    : Geometry3D(type),
+    : GeometryBase<3>(type),
       vertices_(vertices),
       vertex_normals_(vertex_normals),
       vertex_colors_(vertex_colors) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
                    const thrust::host_vector<Eigen::Vector3f> &vertices)
-    : Geometry3D(type), vertices_(vertices) {}
+    : GeometryBase<3>(type), vertices_(vertices) {}

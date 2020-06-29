@@ -1,4 +1,5 @@
 #include "cupoch/geometry/image.h"
+#include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -241,7 +242,7 @@ struct depth_to_float_functor {
 
 }  // namespace
 
-Image::Image() : Geometry2D(Geometry::GeometryType::Image) {}
+Image::Image() : GeometryBase<2>(Geometry::GeometryType::Image) {}
 Image::~Image() {}
 
 Image &Image::Clear() {
@@ -259,6 +260,35 @@ Eigen::Vector2f Image::GetMinBound() const { return Eigen::Vector2f(0.0, 0.0); }
 
 Eigen::Vector2f Image::GetMaxBound() const {
     return Eigen::Vector2f(width_, height_);
+}
+
+Eigen::Vector2f Image::GetCenter() const {
+    return Eigen::Vector2f(width_ / 2, height_ / 2);
+}
+
+AxisAlignedBoundingBox Image::GetAxisAlignedBoundingBox() const {
+    utility::LogError("Image::GetAxisAlignedBoundingBox is not supported");
+    return AxisAlignedBoundingBox();
+}
+
+Image &Image::Transform(const Eigen::Matrix3f &transformation) {
+    utility::LogError("Image::Transform is not supported");
+    return *this;
+}
+
+Image &Image::Translate(const Eigen::Vector2f &translation, bool relative) {
+    utility::LogError("Image::Translate is not supported");
+    return *this;
+}
+
+Image &Image::Scale(const float scale, bool center) {
+    utility::LogError("Image::Scale is not supported");
+    return *this;
+}
+
+Image &Image::Rotate(const Eigen::Matrix2f &R, bool center) {
+    utility::LogError("Image::Rotate is not supported");
+    return *this;
 }
 
 thrust::host_vector<uint8_t> Image::GetData() const {

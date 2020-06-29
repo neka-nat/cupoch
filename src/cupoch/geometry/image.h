@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#include "cupoch/geometry/geometry2d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
@@ -21,7 +21,7 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 ///
 /// \brief The Image class stores image with customizable width, height, num of
 /// channels and bytes per channel.
-class Image : public Geometry2D {
+class Image : public GeometryBase<2> {
 public:
     /// \enum ColorToIntensityConversionType
     ///
@@ -55,12 +55,18 @@ public:
 
 public:
     Image();
-    ~Image() override;
+    ~Image();
 
     Image &Clear() override;
     bool IsEmpty() const override;
     Eigen::Vector2f GetMinBound() const override;
     Eigen::Vector2f GetMaxBound() const override;
+    Eigen::Vector2f GetCenter() const override;
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    Image &Transform(const Eigen::Matrix3f &transformation) override;
+    Image &Translate(const Eigen::Vector2f &translation, bool relative = true) override;
+    Image &Scale(const float scale, bool center = true) override;
+    Image &Rotate(const Eigen::Matrix2f &R, bool center = true) override;
 
     thrust::host_vector<uint8_t> GetData() const;
     void SetData(const thrust::host_vector<uint8_t> &data);

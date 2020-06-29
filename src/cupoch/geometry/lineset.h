@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/geometry3d_utils.h"
 #include "cupoch/utility/device_vector.h"
 
@@ -17,7 +17,7 @@ class OrientedBoundingBox;
 class AxisAlignedBoundingBox;
 class TriangleMesh;
 
-class LineSet : public Geometry3D {
+class LineSet : public GeometryBase<3> {
 public:
     LineSet();
     LineSet(Geometry::GeometryType type);

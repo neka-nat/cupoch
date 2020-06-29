@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
 
@@ -19,6 +19,7 @@ namespace geometry {
 
 class PointCloud;
 class TriangleMesh;
+class OrientedBoundingBox;
 class Image;
 
 __device__ const int INVALID_VOXEL_INDEX = std::numeric_limits<int>::min();
@@ -40,7 +41,7 @@ public:
     Eigen::Vector3f color_ = Eigen::Vector3f(1.0, 1.0, 1.0);
 };
 
-class VoxelGrid : public Geometry3D {
+class VoxelGrid : public GeometryBase<3> {
 public:
     VoxelGrid();
     VoxelGrid(const VoxelGrid &src_voxel_grid);

@@ -6,31 +6,31 @@
 using namespace cupoch;
 using namespace cupoch::geometry;
 
-LineSet::LineSet() : Geometry3D(Geometry::GeometryType::LineSet) {}
+LineSet::LineSet() : GeometryBase<3>(Geometry::GeometryType::LineSet) {}
 
-LineSet::LineSet(Geometry::GeometryType type) : Geometry3D(type) {}
+LineSet::LineSet(Geometry::GeometryType type) : GeometryBase<3>(type) {}
 
 LineSet::LineSet(Geometry::GeometryType type,
                  const utility::device_vector<Eigen::Vector3f> &points,
                  const utility::device_vector<Eigen::Vector2i> &lines)
-    : Geometry3D(type),
+    : GeometryBase<3>(type),
       points_(points),
       lines_(lines) {}
 
 LineSet::LineSet(const utility::device_vector<Eigen::Vector3f> &points,
                  const utility::device_vector<Eigen::Vector2i> &lines)
-    : Geometry3D(Geometry::GeometryType::LineSet),
+    : GeometryBase<3>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
 LineSet::LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
                  const thrust::host_vector<Eigen::Vector2i> &lines)
-    : Geometry3D(Geometry::GeometryType::LineSet),
+    : GeometryBase<3>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
 LineSet::LineSet(const LineSet &other)
-    : Geometry3D(Geometry::GeometryType::LineSet),
+    : GeometryBase<3>(Geometry::GeometryType::LineSet),
       points_(other.points_),
       lines_(other.lines_),
       colors_(other.colors_) {}

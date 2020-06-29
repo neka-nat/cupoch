@@ -2,8 +2,7 @@
 
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/geometry.h"
-#include "cupoch/geometry/geometry2d.h"
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/trianglemesh.h"
 
 #include "cupoch_pybind/geometry/geometry.h"
@@ -11,19 +10,19 @@
 
 using namespace cupoch;
 
-template <class GeometryBase = geometry::Geometry>
-class PyGeometry : public GeometryBase {
+template <class GeometryT = geometry::Geometry>
+class PyGeometry : public GeometryT {
 public:
-    using GeometryBase::GeometryBase;
-    GeometryBase& Clear() override {
-        PYBIND11_OVERLOAD_PURE(GeometryBase&, GeometryBase, );
+    using GeometryT::GeometryT;
+    GeometryT& Clear() override {
+        PYBIND11_OVERLOAD_PURE(GeometryT&, GeometryT, );
     }
     bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+        PYBIND11_OVERLOAD_PURE(bool, GeometryT, );
     }
 };
 
-template <class Geometry3DBase = geometry::Geometry3D>
+template <class Geometry3DBase = geometry::GeometryBase<3>>
 class PyGeometry3D : public PyGeometry<Geometry3DBase> {
 public:
     using PyGeometry<Geometry3DBase>::PyGeometry;
@@ -46,7 +45,7 @@ public:
     }
 };
 
-template <class Geometry2DBase = geometry::Geometry2D>
+template <class Geometry2DBase = geometry::GeometryBase<2>>
 class PyGeometry2D : public PyGeometry<Geometry2DBase> {
 public:
     using PyGeometry<Geometry2DBase>::PyGeometry;

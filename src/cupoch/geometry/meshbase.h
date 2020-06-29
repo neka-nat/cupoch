@@ -4,7 +4,7 @@
 
 #include <Eigen/Core>
 
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/geometry3d_utils.h"
 #include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/helper.h"
@@ -15,7 +15,7 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 
-class MeshBase : public Geometry3D {
+class MeshBase : public GeometryBase<3> {
 public:
     /// Indicates the method that is used for mesh simplification if multiple
     /// vertices are combined to a single one.

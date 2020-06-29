@@ -5,15 +5,15 @@ namespace cupoch {
 namespace geometry {
 
 template<class VoxelType>
-DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type) : Geometry3D(type) {}
+DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type) : GeometryBase<3>(type) {}
 template<class VoxelType>
 DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type, float voxel_size, int resolution, const Eigen::Vector3f& origin)
-: Geometry3D(type), voxel_size_(voxel_size), resolution_(resolution), origin_(origin) {
+: GeometryBase<3>(type), voxel_size_(voxel_size), resolution_(resolution), origin_(origin) {
     voxels_.resize(resolution_ * resolution_ * resolution_);
 }
 template<class VoxelType>
 DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type, const DenseGrid &src_grid)
-: Geometry3D(type), voxel_size_(src_grid.voxel_size_),
+: GeometryBase<3>(type), voxel_size_(src_grid.voxel_size_),
  resolution_(src_grid.resolution_),
  origin_(src_grid.origin_),
  voxels_(src_grid.voxels_) {}

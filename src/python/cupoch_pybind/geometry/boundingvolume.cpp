@@ -10,7 +10,7 @@ void pybind_boundingvolume(py::module &m) {
     py::class_<geometry::OrientedBoundingBox,
                PyGeometry3D<geometry::OrientedBoundingBox>,
                std::shared_ptr<geometry::OrientedBoundingBox>,
-               geometry::Geometry3D>
+               geometry::GeometryBase<3>>
             oriented_bounding_box(m, "OrientedBoundingBox",
                                   "Class that defines an oriented box that can "
                                   "be computed from 3D geometries.");
@@ -66,7 +66,7 @@ void pybind_boundingvolume(py::module &m) {
     py::class_<geometry::AxisAlignedBoundingBox,
                PyGeometry3D<geometry::AxisAlignedBoundingBox>,
                std::shared_ptr<geometry::AxisAlignedBoundingBox>,
-               geometry::Geometry3D>
+               geometry::GeometryBase<3>>
             axis_aligned_bounding_box(m, "AxisAlignedBoundingBox",
                                       "Class that defines an axis_aligned box "
                                       "that can be computed from 3D "

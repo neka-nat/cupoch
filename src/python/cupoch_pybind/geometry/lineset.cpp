@@ -9,7 +9,7 @@ using namespace cupoch;
 
 void pybind_lineset(py::module &m) {
     py::class_<geometry::LineSet, PyGeometry3D<geometry::LineSet>,
-               std::shared_ptr<geometry::LineSet>, geometry::Geometry3D>
+               std::shared_ptr<geometry::LineSet>, geometry::GeometryBase<3>>
             lineset(m, "LineSet",
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "

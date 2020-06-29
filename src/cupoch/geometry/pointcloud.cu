@@ -69,13 +69,13 @@ struct gaussian_filter_functor {
 
 }  // namespace
 
-PointCloud::PointCloud() : Geometry3D(Geometry::GeometryType::PointCloud) {}
+PointCloud::PointCloud() : GeometryBase<3>(Geometry::GeometryType::PointCloud) {}
 PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
-    : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+    : GeometryBase<3>(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const utility::device_vector<Eigen::Vector3f> &points)
-    : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+    : GeometryBase<3>(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const PointCloud &other)
-    : Geometry3D(Geometry::GeometryType::PointCloud),
+    : GeometryBase<3>(Geometry::GeometryType::PointCloud),
       points_(other.points_),
       normals_(other.normals_),
       colors_(other.colors_) {}

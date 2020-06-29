@@ -1,13 +1,15 @@
 #pragma once
-#include "cupoch/geometry/geometry3d.h"
+#include "cupoch/geometry/geometry_base.h"
 #include "cupoch/utility/device_vector.h"
 #include <thrust/tuple.h>
 
 namespace cupoch {
 namespace geometry {
 
+class OrientedBoundingBox;
+
 template <class VoxelType>
-class DenseGrid : public Geometry3D {
+class DenseGrid : public GeometryBase<3> {
 public:
     DenseGrid(Geometry::GeometryType type);
     DenseGrid(Geometry::GeometryType type, float voxel_size, int resolution, const Eigen::Vector3f& origin);
