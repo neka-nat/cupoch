@@ -265,6 +265,20 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
+        const utility::device_vector<Eigen::Vector2f> &points) {
+    AxisAlignedBoundingBox box;
+    if (points.empty()) {
+        box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
+        box.max_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
+    } else {
+        box.min_bound_ = (Eigen::Vector3f() << ComputeMinBound<2>(utility::GetStream(0), points), 0.0).finished();
+        box.max_bound_ = (Eigen::Vector3f() << ComputeMaxBound<2>(utility::GetStream(1), points), 0.0).finished();
+    }
+    return box;
+}
+
+
+AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const utility::device_vector<Eigen::Vector3f> &points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {

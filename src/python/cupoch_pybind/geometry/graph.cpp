@@ -8,7 +8,7 @@ using namespace cupoch;
 
 void pybind_graph(py::module &m) {
     py::class_<geometry::Graph, PyGeometry3D<geometry::Graph>,
-               std::shared_ptr<geometry::Graph>, geometry::LineSet>
+               std::shared_ptr<geometry::Graph>, geometry::LineSet<3>>
             graph(m, "Graph",
                   "Graph define a sets of nodes and edges in 3D.");
     py::detail::bind_default_constructor<geometry::Graph>(graph);

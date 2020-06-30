@@ -59,11 +59,13 @@ void ResizeAndPaintUniformColor(
 ///
 /// \param transformation 4x4 matrix for transformation.
 /// \param points A list of points to be transformed.
-void TransformPoints(const Eigen::Matrix4f &transformation,
-                     utility::device_vector<Eigen::Vector3f> &points);
+template <int Dim>
+void TransformPoints(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
+                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+template <int Dim>
 void TransformPoints(cudaStream_t stream,
-                     const Eigen::Matrix4f &transformation,
-                     utility::device_vector<Eigen::Vector3f> &points);
+                     const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
+                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
 /// \brief Transforms the normals with the transformation matrix.
 ///
 /// \param transformation 4x4 matrix for transformation.
@@ -80,8 +82,9 @@ void TransformNormals(cudaStream_t stream,
 /// \param relative If `true`, the \p translation is directly applied to the
 /// \points. Otherwise, the center of the \points is moved to the \p
 /// translation.
-void TranslatePoints(const Eigen::Vector3f &translation,
-                     utility::device_vector<Eigen::Vector3f> &points,
+template <int Dim>
+void TranslatePoints(const Eigen::Matrix<float, Dim, 1> &translation,
+                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                      bool relative);
 /// \brief Scale the coordinates of all points by the scaling factor \p
 /// scale.
@@ -91,8 +94,9 @@ void TranslatePoints(const Eigen::Vector3f &translation,
 /// i.e. relative to the origin. \param points A list of points to be
 /// transformed. \param center If `true`, then the scale is applied to the
 /// centered geometry.
+template <int Dim>
 void ScalePoints(const float scale,
-                 utility::device_vector<Eigen::Vector3f> &points,
+                 utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                  bool center);
 /// \brief Rotate all points with the rotation matrix \p R.
 ///
@@ -103,12 +107,14 @@ void ScalePoints(const float scale,
 /// \param center If `true`, the rotation is applied relative to the center
 /// of the geometry. Otherwise, the rotation is directly applied to the
 /// geometry, i.e. relative to the origin.
-void RotatePoints(const Eigen::Matrix3f &R,
-                  utility::device_vector<Eigen::Vector3f> &points,
+template <int Dim>
+void RotatePoints(const Eigen::Matrix<float, Dim, Dim> &R,
+                  utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                   bool center);
+template <int Dim>
 void RotatePoints(cudaStream_t stream,
-                  const Eigen::Matrix3f &R,
-                  utility::device_vector<Eigen::Vector3f> &points,
+                  const Eigen::Matrix<float, Dim, Dim> &R,
+                  utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                   bool center);
 /// \brief Rotate all normals with the rotation matrix \p R.
 ///

@@ -10,7 +10,7 @@ using namespace std;
 using namespace unit_test;
 
 TEST(LineSet, Constructor) {
-    geometry::LineSet ls;
+    geometry::LineSet<3> ls;
 
     // inherited from Geometry2D
     EXPECT_EQ(geometry::Geometry::GeometryType::LineSet, ls.GetGeometryType());
@@ -41,7 +41,7 @@ TEST(LineSet, Clear) {
     Vector2i imin(0, 0);
     Vector2i imax(1000, 1000);
 
-    geometry::LineSet ls;
+    geometry::LineSet<3> ls;
 
     thrust::host_vector<Eigen::Vector3f> points(size);
     thrust::host_vector<Eigen::Vector2i> lines(size);

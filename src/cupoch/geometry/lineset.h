@@ -17,22 +17,23 @@ class OrientedBoundingBox;
 class AxisAlignedBoundingBox;
 class TriangleMesh;
 
-class LineSet : public GeometryBase<3> {
+template <int Dim>
+class LineSet : public GeometryBase<Dim> {
 public:
     LineSet();
     LineSet(Geometry::GeometryType type);
     LineSet(Geometry::GeometryType type,
-            const utility::device_vector<Eigen::Vector3f> &points,
+            const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const utility::device_vector<Eigen::Vector2i> &lines);
-    LineSet(const utility::device_vector<Eigen::Vector3f> &points,
+    LineSet(const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const utility::device_vector<Eigen::Vector2i> &lines);
-    LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
+    LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const thrust::host_vector<Eigen::Vector2i> &lines);
     LineSet(const LineSet &other);
     ~LineSet();
 
-    void SetPoints(const thrust::host_vector<Eigen::Vector3f> &points);
-    thrust::host_vector<Eigen::Vector3f> GetPoints() const;
+    void SetPoints(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points);
+    thrust::host_vector<Eigen::Matrix<float, Dim, 1>> GetPoints() const;
 
     void SetLines(const thrust::host_vector<Eigen::Vector2i> &lines);
     thrust::host_vector<Eigen::Vector2i> GetLines() const;
@@ -43,15 +44,15 @@ public:
 public:
     LineSet &Clear() override;
     bool IsEmpty() const override;
-    Eigen::Vector3f GetMinBound() const override;
-    Eigen::Vector3f GetMaxBound() const override;
-    Eigen::Vector3f GetCenter() const override;
+    Eigen::Matrix<float, Dim, 1> GetMinBound() const override;
+    Eigen::Matrix<float, Dim, 1> GetMaxBound() const override;
+    Eigen::Matrix<float, Dim, 1> GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    LineSet &Transform(const Eigen::Matrix4f &transformation) override;
-    LineSet &Translate(const Eigen::Vector3f &translation,
-                       bool relative = true) override;
-    LineSet &Scale(const float scale, bool center = true) override;
-    LineSet &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
+    LineSet<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) override;
+    LineSet<Dim> &Translate(const Eigen::Matrix<float, Dim, 1> &translation,
+                            bool relative = true) override;
+    LineSet<Dim> &Scale(const float scale, bool center = true) override;
+    LineSet<Dim> &Rotate(const Eigen::Matrix<float, Dim, Dim> &R, bool center = true) override;
 
     bool HasPoints() const { return points_.size() > 0; }
 
@@ -61,7 +62,7 @@ public:
         return HasLines() && colors_.size() == lines_.size();
     }
 
-    thrust::pair<Eigen::Vector3f, Eigen::Vector3f> GetLineCoordinate(
+    thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>> GetLineCoordinate(
             size_t line_index) const;
 
     /// Assigns each line in the LineSet the same color \param color.
@@ -73,7 +74,7 @@ public:
     /// Factory function to create a LineSet from two PointClouds
     /// (\param cloud0, \param cloud1) and a correspondence set
     /// \param correspondences.
-    static std::shared_ptr<LineSet> CreateFromPointCloudCorrespondences(
+    static std::shared_ptr<LineSet<Dim>> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
             const utility::device_vector<thrust::pair<int, int>>
@@ -86,11 +87,11 @@ public:
 
     /// Factory function to create a LineSet from edges of a triangle mesh
     /// \param mesh.
-    static std::shared_ptr<LineSet> CreateFromTriangleMesh(
+    static std::shared_ptr<LineSet<Dim>> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 
 public:
-    utility::device_vector<Eigen::Vector3f> points_;
+    utility::device_vector<Eigen::Matrix<float, Dim, 1>> points_;
     utility::device_vector<Eigen::Vector2i> lines_;
     utility::device_vector<Eigen::Vector3f> colors_;
 };

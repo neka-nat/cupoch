@@ -5,6 +5,7 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/console.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -32,11 +33,12 @@ struct convert_trianglemesh_line_functor {
 
 }  // namespace
 
-std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
+template <>
+std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
         const utility::device_vector<thrust::pair<int, int>> &correspondences) {
-    auto lineset_ptr = std::make_shared<LineSet>();
+    auto lineset_ptr = std::make_shared<LineSet<3>>();
     const size_t point0_size = cloud0.points_.size();
     const size_t point1_size = cloud1.points_.size();
     const size_t corr_size = correspondences.size();
@@ -62,9 +64,19 @@ std::shared_ptr<LineSet> LineSet::CreateFromPointCloudCorrespondences(
     return lineset_ptr;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
+template <>
+std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromPointCloudCorrespondences(
+        const PointCloud &cloud0,
+        const PointCloud &cloud1,
+        const utility::device_vector<thrust::pair<int, int>> &correspondences) {
+    utility::LogError("LineSet<2>::CreateFromPointCloudCorrespondences is not supported");
+    return std::make_shared<LineSet<2>>();
+}
+
+template <>
+std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromTriangleMesh(
         const TriangleMesh &mesh) {
-    auto lineset_ptr = std::make_shared<LineSet>();
+    auto lineset_ptr = std::make_shared<LineSet<3>>();
     lineset_ptr->points_.resize(mesh.vertices_.size());
     lineset_ptr->lines_.resize(mesh.triangles_.size() * 3);
     convert_trianglemesh_line_functor func(
@@ -89,9 +101,17 @@ std::shared_ptr<LineSet> LineSet::CreateFromTriangleMesh(
     return lineset_ptr;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
+template <>
+std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromTriangleMesh(
+        const TriangleMesh &mesh) {
+    utility::LogError("LineSet<2>::CreateFromTriangleMesh is not supported");
+    return std::make_shared<LineSet<2>>();
+}
+
+template <>
+std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromOrientedBoundingBox(
         const OrientedBoundingBox &box) {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = std::make_shared<LineSet<3>>();
     const auto points = box.GetBoxPoints();
     for (const auto &pt : points) line_set->points_.push_back(pt);
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
@@ -110,9 +130,17 @@ std::shared_ptr<LineSet> LineSet::CreateFromOrientedBoundingBox(
     return line_set;
 }
 
-std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
+template <>
+std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromOrientedBoundingBox(
+        const OrientedBoundingBox &box) {
+    utility::LogError("LineSet<2>::CreateFromOrientedBoundingBox is not supported");
+    return std::make_shared<LineSet<2>>();
+}
+
+template <>
+std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromAxisAlignedBoundingBox(
         const AxisAlignedBoundingBox &box) {
-    auto line_set = std::make_shared<LineSet>();
+    auto line_set = std::make_shared<LineSet<3>>();
     const auto points = box.GetBoxPoints();
     for (const auto &pt : points) line_set->points_.push_back(pt);
     line_set->lines_.push_back(Eigen::Vector2i(0, 1));
@@ -129,4 +157,11 @@ std::shared_ptr<LineSet> LineSet::CreateFromAxisAlignedBoundingBox(
     line_set->lines_.push_back(Eigen::Vector2i(2, 5));
     line_set->PaintUniformColor(box.color_);
     return line_set;
+}
+
+template <>
+std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromAxisAlignedBoundingBox(
+        const AxisAlignedBoundingBox &box) {
+    utility::LogError("LineSet<2>::CreateFromAxisAlignedBoundingBox is not supported");
+    return std::make_shared<LineSet<2>>();
 }

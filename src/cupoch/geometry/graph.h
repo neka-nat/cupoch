@@ -5,7 +5,7 @@
 namespace cupoch {
 namespace geometry {
 
-class Graph : public LineSet {
+class Graph : public LineSet<3> {
 public:
     struct SSSPResult {
         __host__ __device__ SSSPResult(float shortest_distance = std::numeric_limits<float>::infinity(),

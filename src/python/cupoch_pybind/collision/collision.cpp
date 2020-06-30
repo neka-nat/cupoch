@@ -28,8 +28,8 @@ void pybind_collision_methods(py::module &m) {
             .export_values();
 
     m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::VoxelGrid&, float>(&collision::ComputeIntersection));
-    m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::LineSet&, float>(&collision::ComputeIntersection));
-    m.def("compute_intersection", py::overload_cast<const geometry::LineSet&, const geometry::VoxelGrid&, float>(&collision::ComputeIntersection));
+    m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::LineSet<3>&, float>(&collision::ComputeIntersection));
+    m.def("compute_intersection", py::overload_cast<const geometry::LineSet<3>&, const geometry::VoxelGrid&, float>(&collision::ComputeIntersection));
     m.def("compute_intersection", py::overload_cast<const geometry::VoxelGrid&, const geometry::OccupancyGrid&, float>(&collision::ComputeIntersection));
     m.def("compute_intersection", py::overload_cast<const geometry::OccupancyGrid&, const geometry::VoxelGrid&, float>(&collision::ComputeIntersection));
     m.def("compute_intersection", [] (const wrapper::device_vector_primitives& primitives, const geometry::VoxelGrid& voxel, float margin) {

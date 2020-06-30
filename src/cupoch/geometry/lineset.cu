@@ -6,109 +6,136 @@
 using namespace cupoch;
 using namespace cupoch::geometry;
 
-LineSet::LineSet() : GeometryBase<3>(Geometry::GeometryType::LineSet) {}
+template <int Dim>
+LineSet<Dim>::LineSet() : GeometryBase<Dim>(Geometry::GeometryType::LineSet) {}
 
-LineSet::LineSet(Geometry::GeometryType type) : GeometryBase<3>(type) {}
+template <int Dim>
+LineSet<Dim>::LineSet(Geometry::GeometryType type) : GeometryBase<Dim>(type) {}
 
-LineSet::LineSet(Geometry::GeometryType type,
-                 const utility::device_vector<Eigen::Vector3f> &points,
+template <int Dim>
+LineSet<Dim>::LineSet(Geometry::GeometryType type,
+                      const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
+                      const utility::device_vector<Eigen::Vector2i> &lines)
+    : GeometryBase<Dim>(type),
+      points_(points),
+      lines_(lines) {}
+
+template <int Dim>
+LineSet<Dim>::LineSet(const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                  const utility::device_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<3>(type),
+    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
-LineSet::LineSet(const utility::device_vector<Eigen::Vector3f> &points,
-                 const utility::device_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<3>(Geometry::GeometryType::LineSet),
+template <int Dim>
+LineSet<Dim>::LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
+                      const thrust::host_vector<Eigen::Vector2i> &lines)
+    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
-LineSet::LineSet(const thrust::host_vector<Eigen::Vector3f> &points,
-                 const thrust::host_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<3>(Geometry::GeometryType::LineSet),
-      points_(points),
-      lines_(lines) {}
-
-LineSet::LineSet(const LineSet &other)
-    : GeometryBase<3>(Geometry::GeometryType::LineSet),
+template <int Dim>
+LineSet<Dim>::LineSet(const LineSet &other)
+    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
       points_(other.points_),
       lines_(other.lines_),
       colors_(other.colors_) {}
 
-LineSet::~LineSet() {}
+template <int Dim>
+LineSet<Dim>::~LineSet() {}
 
-void LineSet::SetPoints(const thrust::host_vector<Eigen::Vector3f> &points) {
+template <int Dim>
+void LineSet<Dim>::SetPoints(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     points_ = points;
 }
 
-thrust::host_vector<Eigen::Vector3f> LineSet::GetPoints() const {
-    thrust::host_vector<Eigen::Vector3f> points = points_;
+template <int Dim>
+thrust::host_vector<Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetPoints() const {
+    thrust::host_vector<Eigen::Matrix<float, Dim, 1>> points = points_;
     return points;
 }
 
-void LineSet::SetLines(const thrust::host_vector<Eigen::Vector2i> &lines) {
+template <int Dim>
+void LineSet<Dim>::SetLines(const thrust::host_vector<Eigen::Vector2i> &lines) {
     lines_ = lines;
 }
 
-thrust::host_vector<Eigen::Vector2i> LineSet::GetLines() const {
+template <int Dim>
+thrust::host_vector<Eigen::Vector2i> LineSet<Dim>::GetLines() const {
     thrust::host_vector<Eigen::Vector2i> lines = lines_;
     return lines;
 }
 
-void LineSet::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
+template <int Dim>
+void LineSet<Dim>::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
 }
 
-thrust::host_vector<Eigen::Vector3f> LineSet::GetColors() const {
+template <int Dim>
+thrust::host_vector<Eigen::Vector3f> LineSet<Dim>::GetColors() const {
     thrust::host_vector<Eigen::Vector3f> colors = colors_;
     return colors;
 }
 
-LineSet &LineSet::Clear() {
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::Clear() {
     points_.clear();
     lines_.clear();
     colors_.clear();
     return *this;
 }
 
-bool LineSet::IsEmpty() const { return !HasPoints(); }
+template <int Dim>
+bool LineSet<Dim>::IsEmpty() const { return !HasPoints(); }
 
-Eigen::Vector3f LineSet::GetMinBound() const {
-    return ComputeMinBound(points_);
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMinBound() const {
+    return ComputeMinBound<Dim>(points_);
 }
 
-Eigen::Vector3f LineSet::GetMaxBound() const {
-    return ComputeMaxBound(points_);
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMaxBound() const {
+    return ComputeMaxBound<Dim>(points_);
 }
 
-Eigen::Vector3f LineSet::GetCenter() const { return ComputeCenter(points_); }
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetCenter() const { return ComputeCenter<Dim>(points_); }
 
-AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+template <int Dim>
+AxisAlignedBoundingBox LineSet<Dim>::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-LineSet &LineSet::Transform(const Eigen::Matrix4f &transformation) {
-    TransformPoints(transformation, points_);
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) {
+    TransformPoints<Dim>(transformation, points_);
     return *this;
 }
 
-LineSet &LineSet::Translate(const Eigen::Vector3f &translation, bool relative) {
-    TranslatePoints(translation, points_, relative);
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::Translate(const Eigen::Matrix<float, Dim, 1> &translation, bool relative) {
+    TranslatePoints<Dim>(translation, points_, relative);
     return *this;
 }
 
-LineSet &LineSet::Scale(const float scale, bool center) {
-    ScalePoints(scale, points_, center);
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::Scale(const float scale, bool center) {
+    ScalePoints<Dim>(scale, points_, center);
     return *this;
 }
 
-LineSet &LineSet::Rotate(const Eigen::Matrix3f &R, bool center) {
-    RotatePoints(R, points_, center);
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::Rotate(const Eigen::Matrix<float, Dim, Dim> &R, bool center) {
+    RotatePoints<Dim>(R, points_, center);
     return *this;
 }
 
-thrust::pair<Eigen::Vector3f, Eigen::Vector3f> LineSet::GetLineCoordinate(
+template <int Dim>
+thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetLineCoordinate(
         size_t line_index) const {
     const Eigen::Vector2i idxs = lines_[line_index];
     return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
 }
+
+template class LineSet<2>;
+template class LineSet<3>;

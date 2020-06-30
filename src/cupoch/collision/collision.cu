@@ -191,7 +191,7 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
-                                                     const geometry::LineSet& lineset,
+                                                     const geometry::LineSet<3>& lineset,
                                                      float margin) {
     auto out = std::make_shared<CollisionResult>();
     size_t n_v1 = voxelgrid.voxels_keys_.size();
@@ -211,7 +211,7 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
     return out;
 }
 
-std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::LineSet& lineset,
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::LineSet<3>& lineset,
                                                      const geometry::VoxelGrid& voxelgrid,
                                                      float margin) {
     auto out = ComputeIntersection(voxelgrid, lineset);

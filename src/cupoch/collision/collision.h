@@ -9,6 +9,7 @@ namespace cupoch {
 
 namespace geometry {
 class VoxelGrid;
+template <int Dim>
 class LineSet;
 class OccupancyGrid;
 }
@@ -43,10 +44,10 @@ std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& 
                                                      float margin = 0.0f);
 
 std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::VoxelGrid& voxelgrid,
-                                                     const geometry::LineSet& lineset,
+                                                     const geometry::LineSet<3>& lineset,
                                                      float margin = 0.0f);
 
-std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::LineSet& lineset,
+std::shared_ptr<CollisionResult> ComputeIntersection(const geometry::LineSet<3>& lineset,
                                                      const geometry::VoxelGrid& voxelgrid,
                                                      float margin = 0.0f);
 

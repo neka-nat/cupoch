@@ -390,7 +390,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::LineSet.");
         return false;
     }
-    const geometry::LineSet &lineset = (const geometry::LineSet &)geometry;
+    const geometry::LineSet<3> &lineset = (const geometry::LineSet<3> &)geometry;
     if (lineset.HasLines() == false) {
         PrintShaderWarning("Binding failed with empty geometry::LineSet.");
         return false;
@@ -409,7 +409,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
 }
 
 size_t SimpleShaderForLineSet::GetDataSize(const geometry::Geometry &geometry) const {
-    return ((const geometry::LineSet &)geometry).lines_.size() * 2;
+    return ((const geometry::LineSet<3> &)geometry).lines_.size() * 2;
 }
 
 bool SimpleShaderForGraphNode::PrepareRendering(
@@ -541,7 +541,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
                 "Rendering type is not geometry::AxisAlignedBoundingBox.");
         return false;
     }
-    auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
+    auto lineset = geometry::LineSet<3>::CreateFromAxisAlignedBoundingBox(
             (const geometry::AxisAlignedBoundingBox &)geometry);
     utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>> line_coords(lineset->lines_.size());
     line_coordinates_functor func_line(thrust::raw_pointer_cast(lineset->points_.data()));
@@ -557,7 +557,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
 }
 
 size_t SimpleShaderForAxisAlignedBoundingBox::GetDataSize(const geometry::Geometry &geometry) const {
-    auto lineset = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
+    auto lineset = geometry::LineSet<3>::CreateFromAxisAlignedBoundingBox(
         (const geometry::AxisAlignedBoundingBox &)geometry);
     return lineset->lines_.size() * 2;
 }

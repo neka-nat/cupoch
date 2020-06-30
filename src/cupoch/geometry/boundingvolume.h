@@ -180,6 +180,8 @@ public:
     ///
     /// \param points A list of points.
     static AxisAlignedBoundingBox CreateFromPoints(
+            const utility::device_vector<Eigen::Vector2f> &points);
+    static AxisAlignedBoundingBox CreateFromPoints(
             const utility::device_vector<Eigen::Vector3f> &points);
 
 public:
