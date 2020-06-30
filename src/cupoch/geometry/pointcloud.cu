@@ -3,7 +3,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/image.h"
-#include "cupoch/geometry/geometry3d_utils.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"

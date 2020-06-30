@@ -1,6 +1,6 @@
 #include <Eigen/Dense>
 
-#include "cupoch/geometry/geometry3d_utils.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -31,44 +31,65 @@ struct transform_normals_functor {
 };
 }  // namespace
 
-Eigen::Vector3f ComputeMinBound(
-        const utility::device_vector<Eigen::Vector3f> &points) {
+template<int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeMinBound(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     return ComputeMinBound(0, points);
 }
 
-Eigen::Vector3f ComputeMinBound(
+template<int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeMinBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Vector3f> &points) {
-    if (points.empty()) return Eigen::Vector3f::Zero();
-    Eigen::Vector3f init = points[0];
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
+    if (points.empty()) return Eigen::Matrix<float, Dim, 1>::Zero();
+    Eigen::Matrix<float, Dim, 1> init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
                           points.begin(), points.end(), init,
-                          thrust::elementwise_minimum<Eigen::Vector3f>());
+                          thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>());
 }
 
-Eigen::Vector3f ComputeMaxBound(
-        const utility::device_vector<Eigen::Vector3f> &points) {
+template<int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     return ComputeMaxBound(0, points);
 }
 
-Eigen::Vector3f ComputeMaxBound(
+template<int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Vector3f> &points) {
-    if (points.empty()) return Eigen::Vector3f::Zero();
-    Eigen::Vector3f init = points[0];
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
+    if (points.empty()) return Eigen::Matrix<float, Dim, 1>::Zero();
+    Eigen::Matrix<float, Dim, 1> init = points[0];
     return thrust::reduce(utility::exec_policy(stream)->on(stream),
                           points.begin(), points.end(), init,
-                          thrust::elementwise_maximum<Eigen::Vector3f>());
+                          thrust::elementwise_maximum<Eigen::Matrix<float, Dim, 1>>());
 }
 
-Eigen::Vector3f ComputeCenter(
-        const utility::device_vector<Eigen::Vector3f> &points) {
-    Eigen::Vector3f init = Eigen::Vector3f::Zero();
+template<int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeCenter(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
+    Eigen::Matrix<float, Dim, 1> init = Eigen::Matrix<float, Dim, 1>::Zero();
     if (points.empty()) return init;
-    Eigen::Vector3f sum = thrust::reduce(points.begin(), points.end(), init,
-                                         thrust::plus<Eigen::Vector3f>());
+    Eigen::Matrix<float, Dim, 1> sum = thrust::reduce(points.begin(), points.end(), init,
+                                           thrust::plus<Eigen::Matrix<float, Dim, 1>>());
     return sum / points.size();
 }
+
+template Eigen::Matrix<float, 3, 1> ComputeMinBound(
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+template Eigen::Matrix<float, 3, 1> ComputeMinBound(
+        cudaStream_t stream,
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+    
+template Eigen::Matrix<float, 3, 1> ComputeMaxBound(
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+template Eigen::Matrix<float, 3, 1> ComputeMaxBound(
+        cudaStream_t stream,
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+
+template Eigen::Matrix<float, 3, 1> ComputeCenter(
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
+
 
 void ResizeAndPaintUniformColor(
         utility::device_vector<Eigen::Vector3f> &colors,
