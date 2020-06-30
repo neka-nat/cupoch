@@ -1,0 +1,47 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+    - name: Install CUDA
+      env:
+        cuda: 10.2
+      run: |
+        source ./scripts/actions/install_cuda_ubuntu.sh
+        if [[ $? -eq 0 ]]; then
+          # Set paths for subsequent steps, using ${CUDA_PATH}
+          echo "Adding CUDA to CUDA_PATH, PATH and LD_LIBRARY_PATH"
+          echo "::set-env name=CUDA_PATH::${CUDA_PATH}"
+          echo "::add-path::${CUDA_PATH}/bin"
+          echo "::set-env name=LD_LIBRARY_PATH::${CUDA_PATH}/lib:${LD_LIBRARY_PATH}"
+        fi
+      shell: bash
+    - name: Install dependencies
+      run: |
+        ./scripts/actions/install_deps_ubuntu.sh
+    - name: CMake
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+    - name: make
+      run: |
+        cd build
+        make
