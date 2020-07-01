@@ -14,11 +14,20 @@ using namespace cupoch::geometry;
 
 namespace {
 
+template <int Dim>
 struct convert_float4_functor {
-    __device__ float4 operator()(const Eigen::Vector3f &x) const {
-        return make_float4(x[0], x[1], x[2], 0.0f);
-    }
+    __device__ float4 operator()(const Eigen::Matrix<float, Dim, 1> &x) const;
 };
+
+template <>
+__device__ float4 convert_float4_functor<3>::operator()(const Eigen::Vector3f &x) const {
+    return make_float4(x[0], x[1], x[2], 0.0f);
+}
+
+template <>
+__device__ float4 convert_float4_functor<2>::operator()(const Eigen::Vector2f &x) const {
+    return make_float4(x[0], x[1], 0.0f, 0.0f);
+}
 
 }  // namespace
 
@@ -80,7 +89,7 @@ int KDTreeFlann::SearchKNN(const utility::device_vector<T> &query,
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    convert_float4_functor func;
+    convert_float4_functor<T::RowsAtCompileTime> func;
     utility::device_vector<float4> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
@@ -112,7 +121,7 @@ int KDTreeFlann::SearchRadius(const utility::device_vector<T> &query,
     if (data_.empty() || query.empty() || dataset_size_ <= 0) return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    convert_float4_functor func;
+    convert_float4_functor<T::RowsAtCompileTime> func;
     utility::device_vector<float4> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
@@ -146,7 +155,7 @@ int KDTreeFlann::SearchHybrid(const utility::device_vector<T> &query,
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    convert_float4_functor func;
+    convert_float4_functor<T::RowsAtCompileTime> func;
     utility::device_vector<float4> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
@@ -176,7 +185,7 @@ bool KDTreeFlann::SetRawData(const utility::device_vector<T> &data) {
         return false;
     }
     data_.resize(dataset_size_);
-    convert_float4_functor func;
+    convert_float4_functor<T::RowsAtCompileTime> func;
     thrust::transform(data.begin(), data.end(), data_.begin(), func);
     flann_dataset_.reset(new flann::Matrix<float>(
             (float *)thrust::raw_pointer_cast(data_.data()), dataset_size_,
@@ -290,3 +299,48 @@ template int KDTreeFlann::SearchHybrid<Eigen::Vector3f>(
         thrust::host_vector<float> &distance2) const;
 template bool KDTreeFlann::SetRawData<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &data);
+
+template int KDTreeFlann::Search<Eigen::Vector2f>(
+        const utility::device_vector<Eigen::Vector2f> &query,
+        const KDTreeSearchParam &param,
+        utility::device_vector<int> &indices,
+        utility::device_vector<float> &distance2) const;
+template int KDTreeFlann::SearchKNN<Eigen::Vector2f>(
+        const utility::device_vector<Eigen::Vector2f> &query,
+        int knn,
+        utility::device_vector<int> &indices,
+        utility::device_vector<float> &distance2) const;
+template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
+        const utility::device_vector<Eigen::Vector2f> &query,
+        float radius,
+        utility::device_vector<int> &indices,
+        utility::device_vector<float> &distance2) const;
+template int KDTreeFlann::SearchHybrid<Eigen::Vector2f>(
+        const utility::device_vector<Eigen::Vector2f> &query,
+        float radius,
+        int max_nn,
+        utility::device_vector<int> &indices,
+        utility::device_vector<float> &distance2) const;
+template int KDTreeFlann::Search<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        const KDTreeSearchParam &param,
+        thrust::host_vector<int> &indices,
+        thrust::host_vector<float> &distance2) const;
+template int KDTreeFlann::SearchKNN<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        int knn,
+        thrust::host_vector<int> &indices,
+        thrust::host_vector<float> &distance2) const;
+template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        float radius,
+        thrust::host_vector<int> &indices,
+        thrust::host_vector<float> &distance2) const;
+template int KDTreeFlann::SearchHybrid<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        float radius,
+        int max_nn,
+        thrust::host_vector<int> &indices,
+        thrust::host_vector<float> &distance2) const;
+template bool KDTreeFlann::SetRawData<Eigen::Vector2f>(
+        const utility::device_vector<Eigen::Vector2f> &data);

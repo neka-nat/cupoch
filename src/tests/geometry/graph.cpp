@@ -9,7 +9,7 @@ using namespace std;
 using namespace unit_test;
 
 TEST(Graph, Constructor) {
-    geometry::Graph gp;
+    geometry::Graph<3> gp;
 
     // inherited from Geometry2D
     EXPECT_EQ(geometry::Geometry::GeometryType::Graph, gp.GetGeometryType());
@@ -36,7 +36,7 @@ TEST(Graph, Constructor) {
 }
 
 TEST(Graph, AddEdge) {
-    geometry::Graph gp;
+    geometry::Graph<3> gp;
     thrust::host_vector<Eigen::Vector3f> points;
     points.push_back({0.0, 0.0, 0.0});
     points.push_back({1.0, 0.0, 0.0});
@@ -62,7 +62,7 @@ TEST(Graph, AddEdge) {
 }
 
 TEST(Graph, DijkstraPath) {
-    geometry::Graph gp;
+    geometry::Graph<3> gp;
     thrust::host_vector<Eigen::Vector3f> points;
     points.push_back({0.0, 0.0, 0.0});
     points.push_back({1.0, 0.0, 0.0});

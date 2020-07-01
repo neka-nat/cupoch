@@ -15,23 +15,34 @@ __constant__ int voxel_offset[26][3] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1
                                         {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1},
                                         {-1, -1, 1}, {1, 1, -1}};
 
+template <int Dim>
 struct create_dense_grid_points_functor {
-    create_dense_grid_points_functor(const Eigen::Vector3i& resolutions,
-                                     const Eigen::Vector3f& min_bound,
-                                     const Eigen::Vector3f& steps)
+    create_dense_grid_points_functor(const Eigen::Matrix<int, Dim, 1>& resolutions,
+                                     const Eigen::Matrix<float, Dim, 1>& min_bound,
+                                     const Eigen::Matrix<float, Dim, 1>& steps)
                                      : resolutions_(resolutions), min_bound_(min_bound),
                                      steps_(steps) {};
-    const Eigen::Vector3i resolutions_;
-    const Eigen::Vector3f min_bound_;
-    const Eigen::Vector3f steps_;
-    __device__ Eigen::Vector3f operator() (size_t idx) {
-        int x = idx / (resolutions_[1] * resolutions_[2]);
-        int yz = idx % (resolutions_[1] * resolutions_[2]);
-        int y = yz / resolutions_[2];
-        int z = yz % resolutions_[2];
-        return min_bound_ + (Eigen::Vector3i(x, y, z).cast<float>().array() * steps_.array()).matrix();
-    }
+    const Eigen::Matrix<int, Dim, 1> resolutions_;
+    const Eigen::Matrix<float, Dim, 1> min_bound_;
+    const Eigen::Matrix<float, Dim, 1> steps_;
+    __device__ Eigen::Matrix<float, Dim, 1> operator() (size_t idx) const;
 };
+
+template <>
+__device__ Eigen::Vector3f create_dense_grid_points_functor<3>::operator() (size_t idx) const {
+    int x = idx / (resolutions_[1] * resolutions_[2]);
+    int yz = idx % (resolutions_[1] * resolutions_[2]);
+    int y = yz / resolutions_[2];
+    int z = yz % resolutions_[2];
+    return min_bound_ + (Eigen::Vector3i(x, y, z).cast<float>().array() * steps_.array()).matrix();
+}
+
+template <>
+__device__ Eigen::Vector2f create_dense_grid_points_functor<2>::operator() (size_t idx) const {
+    int x = idx / resolutions_[1];
+    int y = idx % resolutions_[1];
+    return min_bound_ + (Eigen::Vector2i(x, y).cast<float>().array() * steps_.array()).matrix();
+}
 
 struct create_dense_grid_lines_functor {
     create_dense_grid_lines_functor(const Eigen::Vector3i& resolutions) : resolutions_(resolutions) {};
@@ -58,8 +69,9 @@ struct create_dense_grid_lines_functor {
 
 }
 
-std::shared_ptr<Graph> Graph::CreateFromTriangleMesh(const TriangleMesh &input) {
-    auto out = std::make_shared<Graph>();
+template<>
+std::shared_ptr<Graph<3>> Graph<3>::CreateFromTriangleMesh(const TriangleMesh &input) {
+    auto out = std::make_shared<Graph<3>>();
     out->points_ = input.vertices_;
     if (input.HasEdgeList()) {
         out->lines_ = input.edge_list_;
@@ -73,13 +85,34 @@ std::shared_ptr<Graph> Graph::CreateFromTriangleMesh(const TriangleMesh &input) 
     return out;
 }
 
-std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const geometry::AxisAlignedBoundingBox& bbox,
-                                                               const Eigen::Vector3i& resolutions) {
-    auto out = std::make_shared<Graph>();
-    Eigen::Vector3f steps = (bbox.max_bound_ - bbox.min_bound_).array() / resolutions.cast<float>().array();
+template<>
+std::shared_ptr<Graph<2>> Graph<2>::CreateFromTriangleMesh(const TriangleMesh &input) {
+    utility::LogError("Graph<2>::CreateFromTriangleMesh is not supported");
+    return std::make_shared<Graph<2>>();
+}
+
+template <>
+std::shared_ptr<Graph<3>> Graph<3>::CreateFromAxisAlignedBoundingBox(const geometry::AxisAlignedBoundingBox& bbox,
+                                                                     const Eigen::Vector3i& resolutions) {
+    return Graph<3>::CreateFromAxisAlignedBoundingBox(bbox.min_bound_, bbox.max_bound_, resolutions);
+}
+
+template <>
+std::shared_ptr<Graph<2>> Graph<2>::CreateFromAxisAlignedBoundingBox(const geometry::AxisAlignedBoundingBox& bbox,
+                                                                     const Eigen::Vector3i& resolutions) {
+    utility::LogError("Graph<2>::CreateFromAxisAlignedBoundingBox is not supported");
+    return std::make_shared<Graph<2>>();
+}
+
+template <int Dim>
+std::shared_ptr<Graph<Dim>> Graph<Dim>::CreateFromAxisAlignedBoundingBox(const Eigen::Matrix<float, Dim, 1>& min_bound,
+                                                                         const Eigen::Matrix<float, Dim, 1>& max_bound,
+                                                                         const Eigen::Matrix<int, Dim, 1>& resolutions) {
+    auto out = std::make_shared<Graph<Dim>>();
+    Eigen::Matrix<float, Dim, 1> steps = (max_bound - min_bound).array() / resolutions.template cast<float>().array();
     size_t n_points = resolutions.prod();
     out->points_.resize(n_points);
-    create_dense_grid_points_functor pfunc(resolutions, bbox.min_bound_, steps);
+    create_dense_grid_points_functor<Dim> pfunc(resolutions, min_bound, steps);
     thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(n_points),
                       out->points_.begin(), pfunc);
     out->lines_.resize(n_points * 26);
@@ -93,12 +126,6 @@ std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const geometry::A
     out->lines_.resize(thrust::distance(out->lines_.begin(), end));
     out->ConstructGraph();
     return out;
-}
-
-std::shared_ptr<Graph> Graph::CreateFromAxisAlignedBoundingBox(const Eigen::Vector3f& min_bound,
-                                                               const Eigen::Vector3f& max_bound,
-                                                               const Eigen::Vector3i& resolutions) {
-    return Graph::CreateFromAxisAlignedBoundingBox(geometry::AxisAlignedBoundingBox(min_bound, max_bound), resolutions);
 }
 
 }

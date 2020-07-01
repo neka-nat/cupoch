@@ -20,13 +20,13 @@ public:
 class Pos3DPlanner : public PlannerBase {
 public:
     Pos3DPlanner(float object_radius = 0.1);
-    Pos3DPlanner(const geometry::Graph& graph, float object_radius = 0.1);
+    Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius = 0.1);
     ~Pos3DPlanner();
 
     Pos3DPlanner &UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const;
 public:
-    geometry::Graph graph_;
+    geometry::Graph<3> graph_;
 
     float object_radius_;
     float max_edge_distance_ = 1.0;

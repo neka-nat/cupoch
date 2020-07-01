@@ -7,52 +7,52 @@
 using namespace cupoch;
 
 void pybind_graph(py::module &m) {
-    py::class_<geometry::Graph, PyGeometry3D<geometry::Graph>,
-               std::shared_ptr<geometry::Graph>, geometry::LineSet<3>>
+    py::class_<geometry::Graph<3>, PyGeometry3D<geometry::Graph<3>>,
+               std::shared_ptr<geometry::Graph<3>>, geometry::LineSet<3>>
             graph(m, "Graph",
                   "Graph define a sets of nodes and edges in 3D.");
-    py::detail::bind_default_constructor<geometry::Graph>(graph);
-    py::detail::bind_copy_functions<geometry::Graph>(graph);
+    py::detail::bind_default_constructor<geometry::Graph<3>>(graph);
+    py::detail::bind_copy_functions<geometry::Graph<3>>(graph);
     graph.def(py::init<const thrust::host_vector<Eigen::Vector3f> &>(),
               "Create a Graph from given nodes and edges",
               "points"_a)
-         .def("construct_graph", &geometry::Graph::ConstructGraph,
+         .def("construct_graph", &geometry::Graph<3>::ConstructGraph,
               "Construct graph structure, when given nodes and edges.", "set_edge_weights_from_distance"_a = true)
-         .def("add_edge", &geometry::Graph::AddEdge,
+         .def("add_edge", &geometry::Graph<3>::AddEdge,
               "Add an edge to the graph", "edge"_a, "weight"_a = 1.0, "lazy_add"_a = false)
-         .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&, bool>(&geometry::Graph::AddEdges),
+         .def("add_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const thrust::host_vector<float>&, bool>(&geometry::Graph<3>::AddEdges),
               "Add edges to the graph", "edges"_a, "weights"_a = thrust::host_vector<float>(), "lazy_add"_a = false)
-         .def("remove_edge", &geometry::Graph::RemoveEdge,
+         .def("remove_edge", &geometry::Graph<3>::RemoveEdge,
               "Remove an edge from the graph", "edge"_a)
-         .def("remove_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&>(&geometry::Graph::RemoveEdges),
+         .def("remove_edges", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&>(&geometry::Graph<3>::RemoveEdges),
               "Remove edges from the graph", "edges"_a)
-         .def("paint_edge_color", &geometry::Graph::PaintEdgeColor,
+         .def("paint_edge_color", &geometry::Graph<3>::PaintEdgeColor,
               "Paint an edge with the color", "edge"_a, "color"_a)
-         .def("paint_edges_color", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const Eigen::Vector3f&>(&geometry::Graph::PaintEdgesColor),
+         .def("paint_edges_color", py::overload_cast<const thrust::host_vector<Eigen::Vector2i>&, const Eigen::Vector3f&>(&geometry::Graph<3>::PaintEdgesColor),
               "Paint edges with the color", "edges"_a, "color"_a)
-         .def("paint_node_color", &geometry::Graph::PaintNodeColor,
+         .def("paint_node_color", &geometry::Graph<3>::PaintNodeColor,
               "Paint a node with the color", "node"_a, "color"_a)
-         .def("paint_nodes_color", py::overload_cast<const thrust::host_vector<int>&, const Eigen::Vector3f&>(&geometry::Graph::PaintNodesColor),
+         .def("paint_nodes_color", py::overload_cast<const thrust::host_vector<int>&, const Eigen::Vector3f&>(&geometry::Graph<3>::PaintNodesColor),
               "Paint nodes with the color", "nodes"_a, "color"_a)
-         .def("set_edge_weights_from_distance", &geometry::Graph::SetEdgeWeightsFromDistance)
-         .def("dijkstra_path", [] (const geometry::Graph &graph, int start_node, int end_node) {
+         .def("set_edge_weights_from_distance", &geometry::Graph<3>::SetEdgeWeightsFromDistance)
+         .def("dijkstra_path", [] (const geometry::Graph<3> &graph, int start_node, int end_node) {
                   auto res = graph.DijkstraPath(start_node, end_node);
                   return *res;
               })
          .def_static("create_from_triangle_mesh",
-                     &geometry::Graph::CreateFromTriangleMesh,
+                     &geometry::Graph<3>::CreateFromTriangleMesh,
                      "Function to make graph from a TriangleMesh",
                      "input"_a)
          .def_static("create_from_axis_aligned_bounding_box",
-                     py::overload_cast<const geometry::AxisAlignedBoundingBox&, const Eigen::Vector3i&>(&geometry::Graph::CreateFromAxisAlignedBoundingBox),
+                     py::overload_cast<const geometry::AxisAlignedBoundingBox&, const Eigen::Vector3i&>(&geometry::Graph<3>::CreateFromAxisAlignedBoundingBox),
                      "Function to make graph from a AlignedBoundingBox",
                      "input"_a, "resolutions"_a)
          .def_static("create_from_axis_aligned_bounding_box",
-                     py::overload_cast<const Eigen::Vector3f&, const Eigen::Vector3f&, const Eigen::Vector3i&>(&geometry::Graph::CreateFromAxisAlignedBoundingBox),
+                     py::overload_cast<const Eigen::Vector3f&, const Eigen::Vector3f&, const Eigen::Vector3i&>(&geometry::Graph<3>::CreateFromAxisAlignedBoundingBox),
                      "Function to make graph from a AlignedBoundingBox",
                      "min_bound"_a, "max_bound"_a, "resolutions"_a)
-         .def_property("edges", [] (geometry::Graph &graph) {return wrapper::device_vector_vector2i(graph.lines_);},
-                       [] (geometry::Graph &graph, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(graph.lines_, vec);})
-         .def_property("edge_weights", [] (geometry::Graph &graph) {return wrapper::device_vector_float(graph.edge_weights_);},
-                       [] (geometry::Graph &graph, const wrapper::device_vector_float& vec) {wrapper::FromWrapper(graph.edge_weights_, vec);});
+         .def_property("edges", [] (geometry::Graph<3> &graph) {return wrapper::device_vector_vector2i(graph.lines_);},
+                       [] (geometry::Graph<3> &graph, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(graph.lines_, vec);})
+         .def_property("edge_weights", [] (geometry::Graph<3> &graph) {return wrapper::device_vector_float(graph.edge_weights_);},
+                       [] (geometry::Graph<3> &graph, const wrapper::device_vector_float& vec) {wrapper::FromWrapper(graph.edge_weights_, vec);});
 }

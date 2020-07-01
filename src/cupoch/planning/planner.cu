@@ -14,7 +14,7 @@ PlannerBase &PlannerBase::AddObstacle(const std::shared_ptr<geometry::Geometry>&
 }
 
 Pos3DPlanner::Pos3DPlanner(float object_radius) : object_radius_(object_radius) {}
-Pos3DPlanner::Pos3DPlanner(const geometry::Graph& graph, float object_radius)
+Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius)
 : graph_(graph), object_radius_(object_radius) {}
 
 Pos3DPlanner::~Pos3DPlanner() {}

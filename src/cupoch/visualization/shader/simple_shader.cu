@@ -438,8 +438,8 @@ bool SimpleShaderForGraphNode::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
     }
-    const geometry::Graph &graph =
-            (const geometry::Graph &)geometry;
+    const geometry::Graph<3> &graph =
+            (const geometry::Graph<3> &)geometry;
     if (graph.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty graph.");
         return false;
@@ -462,7 +462,7 @@ bool SimpleShaderForGraphNode::PrepareBinding(
 }
 
 size_t SimpleShaderForGraphNode::GetDataSize(const geometry::Geometry &geometry) const {
-    return ((const geometry::Graph &)geometry).points_.size();
+    return ((const geometry::Graph<3> &)geometry).points_.size();
 }
 
 bool SimpleShaderForGraphEdge::PrepareRendering(
@@ -491,7 +491,7 @@ bool SimpleShaderForGraphEdge::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
     }
-    const geometry::Graph &graph = (const geometry::Graph &)geometry;
+    const geometry::Graph<3> &graph = (const geometry::Graph<3> &)geometry;
     if (graph.HasLines() == false) {
         PrintShaderWarning("Binding failed with empty geometry::Graph.");
         return false;
@@ -510,7 +510,7 @@ bool SimpleShaderForGraphEdge::PrepareBinding(
 }
 
 size_t SimpleShaderForGraphEdge::GetDataSize(const geometry::Geometry &geometry) const {
-    return ((const geometry::Graph &)geometry).lines_.size() * 2;
+    return ((const geometry::Graph<3> &)geometry).lines_.size() * 2;
 }
 
 bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
