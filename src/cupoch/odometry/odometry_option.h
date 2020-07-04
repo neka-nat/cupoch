@@ -1,7 +1,8 @@
 #pragma once
 
-#include "cupoch/utility/eigen.h"
 #include <vector>
+
+#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 namespace odometry {

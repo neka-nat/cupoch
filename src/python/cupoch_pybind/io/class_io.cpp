@@ -1,18 +1,18 @@
-#include "cupoch_pybind/io/io.h"
-#include "cupoch_pybind/docstring.h"
+#include <string>
+
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/camera/pinhole_camera_parameters.h"
-#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/io/class_io/ijson_convertible_io.h"
-#include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/io/class_io/image_io.h"
+#include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/io/class_io/trianglemesh_io.h"
 #include "cupoch/io/class_io/voxelgrid_io.h"
-
-#include <string>
+#include "cupoch_pybind/docstring.h"
+#include "cupoch_pybind/io/io.h"
 
 using namespace cupoch;
 
@@ -62,149 +62,160 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_class_io(py::module &m_io) {
     // cupoch::geometry::Image
-    m_io.def("read_image",
-             [](const std::string &filename) {
-                 geometry::Image image;
-                 io::ReadImage(filename, image);
-                 return image;
-             },
-             "Function to read Image from file", "filename"_a);
+    m_io.def(
+            "read_image",
+            [](const std::string &filename) {
+                geometry::Image image;
+                io::ReadImage(filename, image);
+                return image;
+            },
+            "Function to read Image from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_image",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_image",
-             [](const std::string &filename, const geometry::Image &image,
-                int quality) {
-                 return io::WriteImage(filename, image, quality);
-             },
-             "Function to write Image to file", "filename"_a, "image"_a,
-             "quality"_a = 90);
+    m_io.def(
+            "write_image",
+            [](const std::string &filename, const geometry::Image &image,
+               int quality) {
+                return io::WriteImage(filename, image, quality);
+            },
+            "Function to write Image to file", "filename"_a, "image"_a,
+            "quality"_a = 90);
     docstring::FunctionDocInject(m_io, "write_image",
                                  map_shared_argument_docstrings);
 
     // cupoch::geometry::PointCloud
-    m_io.def("read_point_cloud",
-             [](const std::string &filename, const std::string &format,
-                bool remove_nan_points, bool remove_infinite_points,
-                bool print_progress) {
-                 geometry::PointCloud pcd;
-                 io::ReadPointCloud(filename, pcd, format, remove_nan_points,
-                                    remove_infinite_points, print_progress);
-                 return pcd;
-             },
-             "Function to read PointCloud from file", "filename"_a,
-             "format"_a = "auto", "remove_nan_points"_a = true,
-             "remove_infinite_points"_a = true, "print_progress"_a = false);
+    m_io.def(
+            "read_point_cloud",
+            [](const std::string &filename, const std::string &format,
+               bool remove_nan_points, bool remove_infinite_points,
+               bool print_progress) {
+                geometry::PointCloud pcd;
+                io::ReadPointCloud(filename, pcd, format, remove_nan_points,
+                                   remove_infinite_points, print_progress);
+                return pcd;
+            },
+            "Function to read PointCloud from file", "filename"_a,
+            "format"_a = "auto", "remove_nan_points"_a = true,
+            "remove_infinite_points"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_point_cloud",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_point_cloud",
-             [](const std::string &filename,
-                const geometry::PointCloud &pointcloud, bool write_ascii,
-                bool compressed, bool print_progress) {
-                 return io::WritePointCloud(filename, pointcloud, write_ascii,
-                                            compressed, print_progress);
-             },
-             "Function to write PointCloud to file", "filename"_a,
-             "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
-             "print_progress"_a = false);
+    m_io.def(
+            "write_point_cloud",
+            [](const std::string &filename,
+               const geometry::PointCloud &pointcloud, bool write_ascii,
+               bool compressed, bool print_progress) {
+                return io::WritePointCloud(filename, pointcloud, write_ascii,
+                                           compressed, print_progress);
+            },
+            "Function to write PointCloud to file", "filename"_a,
+            "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
+            "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
     // cupoch::geometry::TriangleMesh
-    m_io.def("read_triangle_mesh",
-             [](const std::string &filename, bool print_progress) {
-                 geometry::TriangleMesh mesh;
-                 io::ReadTriangleMesh(filename, mesh, print_progress);
-                 return mesh;
-             },
-             "Function to read TriangleMesh from file", "filename"_a,
-             "print_progress"_a = false);
+    m_io.def(
+            "read_triangle_mesh",
+            [](const std::string &filename, bool print_progress) {
+                geometry::TriangleMesh mesh;
+                io::ReadTriangleMesh(filename, mesh, print_progress);
+                return mesh;
+            },
+            "Function to read TriangleMesh from file", "filename"_a,
+            "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_triangle_mesh",
-             [](const std::string &filename, const geometry::TriangleMesh &mesh,
-                bool write_ascii, bool compressed, bool write_vertex_normals,
-                bool write_vertex_colors, bool write_triangle_uvs,
-                bool print_progress) {
-                 return io::WriteTriangleMesh(
-                         filename, mesh, write_ascii, compressed,
-                         write_vertex_normals, write_vertex_colors,
-                         write_triangle_uvs, print_progress);
-             },
-             "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
-             "write_ascii"_a = false, "compressed"_a = false,
-             "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
-             "write_triangle_uvs"_a = true, "print_progress"_a = false);
+    m_io.def(
+            "write_triangle_mesh",
+            [](const std::string &filename, const geometry::TriangleMesh &mesh,
+               bool write_ascii, bool compressed, bool write_vertex_normals,
+               bool write_vertex_colors, bool write_triangle_uvs,
+               bool print_progress) {
+                return io::WriteTriangleMesh(
+                        filename, mesh, write_ascii, compressed,
+                        write_vertex_normals, write_vertex_colors,
+                        write_triangle_uvs, print_progress);
+            },
+            "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+            "write_ascii"_a = false, "compressed"_a = false,
+            "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+            "write_triangle_uvs"_a = true, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 
     // cupoch::geometry::VoxelGrid
-    m_io.def("read_voxel_grid",
-             [](const std::string &filename, const std::string &format,
-                bool print_progress) {
-                 geometry::VoxelGrid voxel_grid;
-                 io::ReadVoxelGrid(filename, voxel_grid, format);
-                 return voxel_grid;
-             },
-             "Function to read VoxelGrid from file", "filename"_a,
-             "format"_a = "auto", "print_progress"_a = false);
+    m_io.def(
+            "read_voxel_grid",
+            [](const std::string &filename, const std::string &format,
+               bool print_progress) {
+                geometry::VoxelGrid voxel_grid;
+                io::ReadVoxelGrid(filename, voxel_grid, format);
+                return voxel_grid;
+            },
+            "Function to read VoxelGrid from file", "filename"_a,
+            "format"_a = "auto", "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "read_voxel_grid",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_voxel_grid",
-             [](const std::string &filename,
-                const geometry::VoxelGrid &voxel_grid, bool write_ascii,
-                bool compressed, bool print_progress) {
-                 return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
-                                           compressed, print_progress);
-             },
-             "Function to write VoxelGrid to file", "filename"_a,
-             "voxel_grid"_a, "write_ascii"_a = false, "compressed"_a = false,
-             "print_progress"_a = false);
+    m_io.def(
+            "write_voxel_grid",
+            [](const std::string &filename,
+               const geometry::VoxelGrid &voxel_grid, bool write_ascii,
+               bool compressed, bool print_progress) {
+                return io::WriteVoxelGrid(filename, voxel_grid, write_ascii,
+                                          compressed, print_progress);
+            },
+            "Function to write VoxelGrid to file", "filename"_a, "voxel_grid"_a,
+            "write_ascii"_a = false, "compressed"_a = false,
+            "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_voxel_grid",
                                  map_shared_argument_docstrings);
 
     // cupoch::camera
-    m_io.def("read_pinhole_camera_intrinsic",
-             [](const std::string &filename) {
-                 camera::PinholeCameraIntrinsic intrinsic;
-                 io::ReadIJsonConvertible(filename, intrinsic);
-                 return intrinsic;
-             },
-             "Function to read PinholeCameraIntrinsic from file", "filename"_a);
+    m_io.def(
+            "read_pinhole_camera_intrinsic",
+            [](const std::string &filename) {
+                camera::PinholeCameraIntrinsic intrinsic;
+                io::ReadIJsonConvertible(filename, intrinsic);
+                return intrinsic;
+            },
+            "Function to read PinholeCameraIntrinsic from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pinhole_camera_intrinsic",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_pinhole_camera_intrinsic",
-             [](const std::string &filename,
-                const camera::PinholeCameraIntrinsic &intrinsic) {
-                 return io::WriteIJsonConvertible(filename, intrinsic);
-             },
-             "Function to write PinholeCameraIntrinsic to file", "filename"_a,
-             "intrinsic"_a);
+    m_io.def(
+            "write_pinhole_camera_intrinsic",
+            [](const std::string &filename,
+               const camera::PinholeCameraIntrinsic &intrinsic) {
+                return io::WriteIJsonConvertible(filename, intrinsic);
+            },
+            "Function to write PinholeCameraIntrinsic to file", "filename"_a,
+            "intrinsic"_a);
     docstring::FunctionDocInject(m_io, "write_pinhole_camera_intrinsic",
                                  map_shared_argument_docstrings);
 
-    m_io.def("read_pinhole_camera_parameters",
-             [](const std::string &filename) {
-                 camera::PinholeCameraParameters parameters;
-                 io::ReadIJsonConvertible(filename, parameters);
-                 return parameters;
-             },
-             "Function to read PinholeCameraParameters from file",
-             "filename"_a);
+    m_io.def(
+            "read_pinhole_camera_parameters",
+            [](const std::string &filename) {
+                camera::PinholeCameraParameters parameters;
+                io::ReadIJsonConvertible(filename, parameters);
+                return parameters;
+            },
+            "Function to read PinholeCameraParameters from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_pinhole_camera_parameters",
                                  map_shared_argument_docstrings);
 
-    m_io.def("write_pinhole_camera_parameters",
-             [](const std::string &filename,
-                const camera::PinholeCameraParameters &parameters) {
-                 return io::WriteIJsonConvertible(filename, parameters);
-             },
-             "Function to write PinholeCameraParameters to file", "filename"_a,
-             "parameters"_a);
+    m_io.def(
+            "write_pinhole_camera_parameters",
+            [](const std::string &filename,
+               const camera::PinholeCameraParameters &parameters) {
+                return io::WriteIJsonConvertible(filename, parameters);
+            },
+            "Function to write PinholeCameraParameters to file", "filename"_a,
+            "parameters"_a);
     docstring::FunctionDocInject(m_io, "write_pinhole_camera_parameters",
                                  map_shared_argument_docstrings);
 }

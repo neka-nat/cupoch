@@ -1,9 +1,10 @@
 #include "cupoch/geometry/image.h"
+
 #include "cupoch/geometry/rgbdimage.h"
+#include "cupoch/utility/platform.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
-#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 
@@ -52,39 +53,40 @@ void pybind_image(py::module &m) {
     py::detail::bind_default_constructor<geometry::Image>(image);
     py::detail::bind_copy_functions<geometry::Image>(image);
     image.def(py::init([](py::buffer b) {
-            py::buffer_info info = b.request();
-            int width, height, num_of_channels = 0, bytes_per_channel;
-            if (info.format == py::format_descriptor<uint8_t>::format() ||
-                info.format == py::format_descriptor<int8_t>::format()) {
-                bytes_per_channel = 1;
-            } else if (info.format ==
-                               py::format_descriptor<uint16_t>::format() ||
-                       info.format ==
-                               py::format_descriptor<int16_t>::format()) {
-                bytes_per_channel = 2;
-            } else if (info.format == py::format_descriptor<float>::format()) {
-                bytes_per_channel = 4;
-            } else {
-                throw std::runtime_error(
-                        "Image can only be initialized from buffer of uint8, "
-                        "uint16, or float!");
-            }
-            if (info.strides[info.ndim - 1] != bytes_per_channel) {
-                throw std::runtime_error(
-                        "Image can only be initialized from c-style buffer.");
-            }
-            if (info.ndim == 2) {
-                num_of_channels = 1;
-            } else if (info.ndim == 3) {
-                num_of_channels = (int)info.shape[2];
-            }
-            height = (int)info.shape[0];
-            width = (int)info.shape[1];
-            auto img = std::unique_ptr<geometry::Image>(new geometry::Image());
-            img->Prepare(width, height, num_of_channels, bytes_per_channel);
-            cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(img->data_.data()), info.ptr,
-                                    img->data_.size(), cudaMemcpyHostToDevice));
-            return img;
+             py::buffer_info info = b.request();
+             int width, height, num_of_channels = 0, bytes_per_channel;
+             if (info.format == py::format_descriptor<uint8_t>::format() ||
+                 info.format == py::format_descriptor<int8_t>::format()) {
+                 bytes_per_channel = 1;
+             } else if (info.format ==
+                                py::format_descriptor<uint16_t>::format() ||
+                        info.format ==
+                                py::format_descriptor<int16_t>::format()) {
+                 bytes_per_channel = 2;
+             } else if (info.format == py::format_descriptor<float>::format()) {
+                 bytes_per_channel = 4;
+             } else {
+                 throw std::runtime_error(
+                         "Image can only be initialized from buffer of uint8, "
+                         "uint16, or float!");
+             }
+             if (info.strides[info.ndim - 1] != bytes_per_channel) {
+                 throw std::runtime_error(
+                         "Image can only be initialized from c-style buffer.");
+             }
+             if (info.ndim == 2) {
+                 num_of_channels = 1;
+             } else if (info.ndim == 3) {
+                 num_of_channels = (int)info.shape[2];
+             }
+             height = (int)info.shape[0];
+             width = (int)info.shape[1];
+             auto img = std::unique_ptr<geometry::Image>(new geometry::Image());
+             img->Prepare(width, height, num_of_channels, bytes_per_channel);
+             cudaSafeCall(cudaMemcpy(
+                     thrust::raw_pointer_cast(img->data_.data()), info.ptr,
+                     img->data_.size(), cudaMemcpyHostToDevice));
+             return img;
          }))
             .def("__repr__",
                  [](const geometry::Image &img) {
@@ -92,53 +94,55 @@ void pybind_image(py::module &m) {
                             std::to_string(img.width_) + std::string("x") +
                             std::to_string(img.height_) + ", with " +
                             std::to_string(img.num_of_channels_) +
-                            std::string(
-                                    " channels.");
+                            std::string(" channels.");
                  })
-            .def("filter",
-                 [](const geometry::Image &input,
-                    geometry::Image::FilterType filter_type) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->Filter(filter_type);
-                         return *output;
-                     } else {
-                         auto output = input.Filter(filter_type);
-                         return *output;
-                     }
-                 },
-                 "Function to filter Image", "filter_type"_a)
+            .def(
+                    "filter",
+                    [](const geometry::Image &input,
+                       geometry::Image::FilterType filter_type) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->Filter(filter_type);
+                            return *output;
+                        } else {
+                            auto output = input.Filter(filter_type);
+                            return *output;
+                        }
+                    },
+                    "Function to filter Image", "filter_type"_a)
             .def("flip_vertical", &geometry::Image::FlipVertical,
                  "Function to flip image vertically (upside down)")
             .def("flip_horizontal", &geometry::Image::FlipHorizontal,
                  "Function to flip image horizontally (from left to right)")
-            .def("create_pyramid",
-                 [](const geometry::Image &input, size_t num_of_levels,
-                    bool with_gaussian_filter) {
-                     if (input.num_of_channels_ != 1 ||
-                         input.bytes_per_channel_ != 4) {
-                         auto input_f = input.CreateFloatImage();
-                         auto output = input_f->CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     } else {
-                         auto output = input.CreatePyramid(
-                                 num_of_levels, with_gaussian_filter);
-                         return output;
-                     }
-                 },
-                 "Function to create ImagePyramid", "num_of_levels"_a,
-                 "with_gaussian_filter"_a)
-            .def_static("filter_pyramid",
-                        [](const geometry::ImagePyramid &input,
-                           geometry::Image::FilterType filter_type) {
-                            auto output = geometry::Image::FilterPyramid(
-                                    input, filter_type);
+            .def(
+                    "create_pyramid",
+                    [](const geometry::Image &input, size_t num_of_levels,
+                       bool with_gaussian_filter) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
                             return output;
-                        },
-                        "Function to filter ImagePyramid", "image_pyramid"_a,
-                        "filter_type"_a)
+                        } else {
+                            auto output = input.CreatePyramid(
+                                    num_of_levels, with_gaussian_filter);
+                            return output;
+                        }
+                    },
+                    "Function to create ImagePyramid", "num_of_levels"_a,
+                    "with_gaussian_filter"_a)
+            .def_static(
+                    "filter_pyramid",
+                    [](const geometry::ImagePyramid &input,
+                       geometry::Image::FilterType filter_type) {
+                        auto output = geometry::Image::FilterPyramid(
+                                input, filter_type);
+                        return output;
+                    },
+                    "Function to filter ImagePyramid", "image_pyramid"_a,
+                    "filter_type"_a)
             .def_readonly("width", &geometry::Image::width_)
             .def_readonly("height", &geometry::Image::height_);
 

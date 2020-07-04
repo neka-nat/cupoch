@@ -20,12 +20,14 @@ struct convert_float4_functor {
 };
 
 template <>
-__device__ float4 convert_float4_functor<3>::operator()(const Eigen::Vector3f &x) const {
+__device__ float4
+convert_float4_functor<3>::operator()(const Eigen::Vector3f &x) const {
     return make_float4(x[0], x[1], x[2], 0.0f);
 }
 
 template <>
-__device__ float4 convert_float4_functor<2>::operator()(const Eigen::Vector2f &x) const {
+__device__ float4
+convert_float4_functor<2>::operator()(const Eigen::Vector2f &x) const {
     return make_float4(x[0], x[1], 0.0f, 0.0f);
 }
 

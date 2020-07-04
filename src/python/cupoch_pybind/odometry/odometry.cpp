@@ -1,9 +1,9 @@
 #include "cupoch/odometry/odometry.h"
+
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/odometry/odometry_option.h"
 #include "cupoch/odometry/rgbdodometry_jacobian.h"
-
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/odometry/odometry.h"
 
@@ -54,12 +54,16 @@ void pybind_odometry_classes(py::module &m) {
             .def_readwrite("max_depth", &odometry::OdometryOption::max_depth_,
                            "Pixels that has larger than specified depth values "
                            "are ignored.")
-            .def_readwrite("nu", &odometry::OdometryOption::nu_,
-                           "Degree of freedom for computing weighted RGBD odometry.")
-            .def_readwrite("sigma2_init", &odometry::OdometryOption::sigma2_init_,
-                           "Initial variance for computing weighted RGBD odometry.")
-            .def_readwrite("inv_sigma_mat_diag", &odometry::OdometryOption::inv_sigma_mat_diag_,
-                           "Covariance matrix for the influence of the motion prior.")
+            .def_readwrite(
+                    "nu", &odometry::OdometryOption::nu_,
+                    "Degree of freedom for computing weighted RGBD odometry.")
+            .def_readwrite(
+                    "sigma2_init", &odometry::OdometryOption::sigma2_init_,
+                    "Initial variance for computing weighted RGBD odometry.")
+            .def_readwrite(
+                    "inv_sigma_mat_diag",
+                    &odometry::OdometryOption::inv_sigma_mat_diag_,
+                    "Covariance matrix for the influence of the motion prior.")
             .def("__repr__", [](const odometry::OdometryOption &c) {
                 int num_pyramid_level =
                         (int)c.iteration_number_per_pyramid_level_.size();
@@ -73,9 +77,7 @@ void pybind_odometry_classes(py::module &m) {
                 std::string str_inv_sigma_mat_diag_ = "[ ";
                 for (int i = 0; i < 6; i++)
                     str_inv_sigma_mat_diag_ +=
-                            std::to_string(
-                                    c.inv_sigma_mat_diag_[i]) +
-                            ", ";
+                            std::to_string(c.inv_sigma_mat_diag_[i]) + ", ";
                 str_inv_sigma_mat_diag_ += "] ";
                 return std::string("odometry::OdometryOption class.") +
                        /*std::string("\nodo_init = ") +
@@ -87,10 +89,8 @@ void pybind_odometry_classes(py::module &m) {
                        std::string("\nmin_depth = ") +
                        std::to_string(c.min_depth_) +
                        std::string("\nmax_depth = ") +
-                       std::to_string(c.max_depth_) +
-                       std::string("\nnu = ") +
-                       std::to_string(c.nu_) +
-                       std::string("\nsigma2_init = ") +
+                       std::to_string(c.max_depth_) + std::string("\nnu = ") +
+                       std::to_string(c.nu_) + std::string("\nsigma2_init = ") +
                        std::to_string(c.sigma2_init_) +
                        std::string("\ninv_sigma_mat_diag") +
                        str_inv_sigma_mat_diag_;
@@ -156,7 +156,8 @@ void pybind_odometry_methods(py::module &m) {
           "odo_init"_a = Eigen::Matrix4f::Identity(),
           "jacobian"_a = odometry::RGBDOdometryJacobianFromHybridTerm(),
           "option"_a = odometry::OdometryOption());
-    m.def("compute_weighted_rgbd_odometry", &odometry::ComputeWeightedRGBDOdometry,
+    m.def("compute_weighted_rgbd_odometry",
+          &odometry::ComputeWeightedRGBDOdometry,
           "Function to estimate 6D rigid motion from two RGBD image pairs. "
           "Output: (is_success, 4x4 motion matrix, 6x6 information matrix).",
           "rgbd_source"_a, "rgbd_target"_a,
@@ -174,7 +175,8 @@ void pybind_odometry_methods(py::module &m) {
                     {"odo_init", "Initial 4x4 motion matrix estimation."},
                     {"jacobian",
                      "The odometry Jacobian method to use. Can be "
-                     "``odometry::RGBDOdometryJacobianFrComputeRGBDOdometryes."},
+                     "``odometry::"
+                     "RGBDOdometryJacobianFrComputeRGBDOdometryes."},
             });
 }
 

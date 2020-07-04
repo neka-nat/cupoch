@@ -1,9 +1,10 @@
 #include "cupoch_pybind/registration/registration.h"
-#include "cupoch/registration/registration.h"
-#include "cupoch/registration/fast_global_registration.h"
+
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/registration/colored_icp.h"
+#include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/registration/filterreg.h"
+#include "cupoch/registration/registration.h"
 #include "cupoch/utility/console.h"
 #include "cupoch_pybind/docstring.h"
 
@@ -105,15 +106,14 @@ void pybind_registration_classes(py::module &m) {
     py::detail::bind_copy_functions<
             registration::TransformationEstimationPointToPoint>(te_p2p);
     te_p2p.def(py::init([]() {
-                   return new registration::
-                           TransformationEstimationPointToPoint();
-               }))
+              return new registration::TransformationEstimationPointToPoint();
+          }))
             .def("__repr__",
                  [](const registration::TransformationEstimationPointToPoint
                             &te) {
                      return std::string(
-                                    "registration::"
-                                    "TransformationEstimationPointToPoint ");
+                             "registration::"
+                             "TransformationEstimationPointToPoint ");
                  });
 
     // cupoch.registration.TransformationEstimationPointToPlane:
@@ -210,43 +210,38 @@ void pybind_registration_classes(py::module &m) {
 
     // cupoch.registration.FilterRegOption:
     py::class_<registration::FilterRegOption> filterreg_option(
-            m, "FilterRegOption",
-            "Options for FilterReg.");
+            m, "FilterRegOption", "Options for FilterReg.");
     py::detail::bind_copy_functions<registration::FilterRegOption>(
             filterreg_option);
     filterreg_option
-            .def(py::init([](float sigma_initial,
-                             float sigma_min,
-                             float relative_likelihood,
-                             int max_iteration) {
-                     return new registration::FilterRegOption(sigma_initial, sigma_min,
-                                                              relative_likelihood, max_iteration);
+            .def(py::init([](float sigma_initial, float sigma_min,
+                             float relative_likelihood, int max_iteration) {
+                     return new registration::FilterRegOption(
+                             sigma_initial, sigma_min, relative_likelihood,
+                             max_iteration);
                  }),
                  "sigma_initial"_a = 0.1, "sigma_min"_a = 1e-4,
                  "relative_likelihood"_a = 1.0e-6, "max_iteration"_a = 20)
-            .def_readwrite(
-                    "sigma_initial",
-                    &registration::FilterRegOption::sigma_initial_,
-                    "float: Initial value of the variance of the Gaussian distribution.")
-            .def_readwrite(
-                    "sigma_min",
-                    &registration::FilterRegOption::sigma_min_,
-                    "float: Minimum value of the variance of the Gaussian distribution.")
-            .def_readwrite(
-                    "max_iteration",
-                    &registration::FilterRegOption::max_iteration_,
-                    "int: Maximum number of iterations.")
-            .def("__repr__",
-                 [](const registration::FilterRegOption &c) {
-                     return fmt::format(
-                             "registration::"
-                             "FilterRegOption class "
-                             "with \nsigma_initial={}"
-                             "\nsigma_min={}"
-                             "\nmax_iteration={}",
-                             c.sigma_initial_, c.sigma_min_,
-                             c.max_iteration_);
-                 });
+            .def_readwrite("sigma_initial",
+                           &registration::FilterRegOption::sigma_initial_,
+                           "float: Initial value of the variance of the "
+                           "Gaussian distribution.")
+            .def_readwrite("sigma_min",
+                           &registration::FilterRegOption::sigma_min_,
+                           "float: Minimum value of the variance of the "
+                           "Gaussian distribution.")
+            .def_readwrite("max_iteration",
+                           &registration::FilterRegOption::max_iteration_,
+                           "int: Maximum number of iterations.")
+            .def("__repr__", [](const registration::FilterRegOption &c) {
+                return fmt::format(
+                        "registration::"
+                        "FilterRegOption class "
+                        "with \nsigma_initial={}"
+                        "\nsigma_min={}"
+                        "\nmax_iteration={}",
+                        c.sigma_initial_, c.sigma_min_, c.max_iteration_);
+            });
 
     // cupoch.registration.RegistrationResult
     py::class_<registration::RegistrationResult> registration_result(
@@ -300,10 +295,10 @@ void pybind_registration_classes(py::module &m) {
                            &registration::FilterRegResult::transformation_,
                            "``4 x 4`` float32 numpy array: The estimated "
                            "transformation matrix.")
-            .def_readwrite(
-                    "likelihood", &registration::FilterRegResult::likelihood_,
-                    "float: The likelihood (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
+            .def_readwrite("likelihood",
+                           &registration::FilterRegResult::likelihood_,
+                           "float: The likelihood (# of inlier correspondences "
+                           "/ # of points in target). Higher is better.")
             .def("__repr__", [](const registration::FilterRegResult &rr) {
                 return std::string(
                                "registration::FilterRegResult with likelihood "
@@ -372,13 +367,11 @@ void pybind_registration_methods(py::module &m) {
                                  "registration_fast_based_on_feature_matching",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_filterreg",
-          &registration::RegistrationFilterReg,
-          "Function for FilterReg",
-          "source"_a, "target"_a, "init"_a = Eigen::Matrix4f::Identity(),
+    m.def("registration_filterreg", &registration::RegistrationFilterReg,
+          "Function for FilterReg", "source"_a, "target"_a,
+          "init"_a = Eigen::Matrix4f::Identity(),
           "criteria"_a = registration::FilterRegOption());
-    docstring::FunctionDocInject(m,
-                                 "registration_filterreg",
+    docstring::FunctionDocInject(m, "registration_filterreg",
                                  map_shared_argument_docstrings);
 }
 

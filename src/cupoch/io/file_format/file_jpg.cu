@@ -1,10 +1,10 @@
+#include <jpeglib.h>  // Include after cstddef to define size_t
+
 #include <cstddef>
 #include <cstdio>
 
-#include <jpeglib.h>  // Include after cstddef to define size_t
-
-#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 

@@ -1,6 +1,6 @@
 #include "cupoch/geometry/meshbase.h"
-#include "cupoch/geometry/pointcloud.h"
 
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
@@ -54,12 +54,35 @@ void pybind_meshbase(py::module &m) {
                  "Normalize vertex normals to legnth 1.")
             .def("paint_uniform_color", &geometry::MeshBase::PaintUniformColor,
                  "Assigns each vertex in the MeshBase the same color.")
-            .def_property("vertices", [] (geometry::MeshBase &mesh) {return wrapper::device_vector_vector3f(mesh.vertices_);},
-                                      [] (geometry::MeshBase &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertices_, vec);})
-            .def_property("vertex_normals", [] (geometry::MeshBase &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_normals_);},
-                                            [] (geometry::MeshBase &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_normals_, vec);})
-            .def_property("vertex_colors", [] (geometry::MeshBase &mesh) {return wrapper::device_vector_vector3f(mesh.vertex_colors_);},
-                                           [] (geometry::MeshBase &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.vertex_colors_, vec);});
+            .def_property(
+                    "vertices",
+                    [](geometry::MeshBase &mesh) {
+                        return wrapper::device_vector_vector3f(mesh.vertices_);
+                    },
+                    [](geometry::MeshBase &mesh,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(mesh.vertices_, vec);
+                    })
+            .def_property(
+                    "vertex_normals",
+                    [](geometry::MeshBase &mesh) {
+                        return wrapper::device_vector_vector3f(
+                                mesh.vertex_normals_);
+                    },
+                    [](geometry::MeshBase &mesh,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(mesh.vertex_normals_, vec);
+                    })
+            .def_property(
+                    "vertex_colors",
+                    [](geometry::MeshBase &mesh) {
+                        return wrapper::device_vector_vector3f(
+                                mesh.vertex_colors_);
+                    },
+                    [](geometry::MeshBase &mesh,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(mesh.vertex_colors_, vec);
+                    });
     docstring::ClassMethodDocInject(
             m, "MeshBase", "has_vertex_normals",
             {{"normalized",

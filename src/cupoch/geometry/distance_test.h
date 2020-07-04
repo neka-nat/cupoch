@@ -12,11 +12,10 @@ __host__ __device__ inline float PointLine(const Eigen::Vector3f &p,
                                            const Eigen::Vector3f &q1,
                                            const Eigen::Vector3f &q2);
 
-__host__ __device__ inline float PointPlane(
-        const Eigen::Vector3f &p,
-        const Eigen::Vector3f &vert0,
-        const Eigen::Vector3f &vert1,
-        const Eigen::Vector3f &vert2);
+__host__ __device__ inline float PointPlane(const Eigen::Vector3f &p,
+                                            const Eigen::Vector3f &vert0,
+                                            const Eigen::Vector3f &vert1,
+                                            const Eigen::Vector3f &vert2);
 
 __host__ __device__ inline float PointAABBSquared(
         const Eigen::Vector3f &p,

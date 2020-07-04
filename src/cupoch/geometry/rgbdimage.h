@@ -38,7 +38,8 @@ public:
     Eigen::Vector2f GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     RGBDImage &Transform(const Eigen::Matrix3f &transformation) override;
-    RGBDImage &Translate(const Eigen::Vector2f &translation, bool relative = true) override;
+    RGBDImage &Translate(const Eigen::Vector2f &translation,
+                         bool relative = true) override;
     RGBDImage &Scale(const float scale, bool center = true) override;
     RGBDImage &Rotate(const Eigen::Matrix2f &R, bool center = true) override;
 

@@ -10,8 +10,8 @@ namespace io {
 struct HostVoxelGrid {
     HostVoxelGrid() = default;
     ~HostVoxelGrid() = default;
-    void FromDevice(const geometry::VoxelGrid& voxelgrid);
-    void ToDevice(geometry::VoxelGrid& voxelgrid) const;
+    void FromDevice(const geometry::VoxelGrid &voxelgrid);
+    void ToDevice(geometry::VoxelGrid &voxelgrid) const;
     void Clear();
     utility::pinned_host_vector<Eigen::Vector3i> voxels_keys_;
     utility::pinned_host_vector<geometry::Voxel> voxels_values_;

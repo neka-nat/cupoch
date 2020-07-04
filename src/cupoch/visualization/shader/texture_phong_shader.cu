@@ -1,14 +1,13 @@
-#include "cupoch/visualization/shader/texture_phong_shader.h"
+#include <cuda_runtime.h>
 
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/visualization/shader/shader.h"
-#include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
+#include "cupoch/visualization/shader/shader.h"
+#include "cupoch/visualization/shader/texture_phong_shader.h"
+#include "cupoch/visualization/utility/color_map.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -18,7 +17,8 @@ namespace {
 
 GLenum GetFormat(const geometry::Geometry &geometry) {
     auto it = gl_helper::texture_format_map_.find(
-        ((const geometry::TriangleMesh &)geometry).texture_.num_of_channels_);
+            ((const geometry::TriangleMesh &)geometry)
+                    .texture_.num_of_channels_);
     if (it == gl_helper::texture_format_map_.end()) {
         utility::LogWarning("Unknown texture format, abort!");
         return false;
@@ -28,7 +28,8 @@ GLenum GetFormat(const geometry::Geometry &geometry) {
 
 GLenum GetType(const geometry::Geometry &geometry) {
     auto it = gl_helper::texture_type_map_.find(
-        ((const geometry::TriangleMesh &)geometry).texture_.bytes_per_channel_);
+            ((const geometry::TriangleMesh &)geometry)
+                    .texture_.bytes_per_channel_);
     if (it == gl_helper::texture_type_map_.end()) {
         utility::LogWarning("Unknown texture type, abort!");
         return false;
@@ -37,33 +38,39 @@ GLenum GetType(const geometry::Geometry &geometry) {
 }
 
 struct copy_trianglemesh_functor {
-    copy_trianglemesh_functor(const Eigen::Vector3f* vertices, const Eigen::Vector3f* vertex_normals,
-                              const int* triangles, const Eigen::Vector3f* triangle_normals,
-                              const Eigen::Vector2f* triangle_uvs,
+    copy_trianglemesh_functor(const Eigen::Vector3f *vertices,
+                              const Eigen::Vector3f *vertex_normals,
+                              const int *triangles,
+                              const Eigen::Vector3f *triangle_normals,
+                              const Eigen::Vector2f *triangle_uvs,
                               RenderOption::MeshShadeOption shade_option)
-                              : vertices_(vertices), vertex_normals_(vertex_normals),
-                                triangles_(triangles), triangle_normals_(triangle_normals),
-                                triangle_uvs_(triangle_uvs), shade_option_(shade_option) {};
-    const Eigen::Vector3f* vertices_;
-    const Eigen::Vector3f* vertex_normals_;
-    const int* triangles_;
-    const Eigen::Vector3f* triangle_normals_;
-    const Eigen::Vector2f* triangle_uvs_;
+        : vertices_(vertices),
+          vertex_normals_(vertex_normals),
+          triangles_(triangles),
+          triangle_normals_(triangle_normals),
+          triangle_uvs_(triangle_uvs),
+          shade_option_(shade_option){};
+    const Eigen::Vector3f *vertices_;
+    const Eigen::Vector3f *vertex_normals_;
+    const int *triangles_;
+    const Eigen::Vector3f *triangle_normals_;
+    const Eigen::Vector2f *triangle_uvs_;
     const RenderOption::MeshShadeOption shade_option_;
-    __device__
-    thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector2f> operator() (size_t k) const {
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector2f>
+    operator()(size_t k) const {
         int i = k / 3;
         int vi = triangles_[k];
-        if (shade_option_ ==
-            RenderOption::MeshShadeOption::FlatShade) {
-            return thrust::make_tuple(vertices_[vi], triangle_normals_[i], triangle_uvs_[k]);
+        if (shade_option_ == RenderOption::MeshShadeOption::FlatShade) {
+            return thrust::make_tuple(vertices_[vi], triangle_normals_[i],
+                                      triangle_uvs_[k]);
         } else {
-            return thrust::make_tuple(vertices_[vi], vertex_normals_[vi], triangle_uvs_[k]);
+            return thrust::make_tuple(vertices_[vi], vertex_normals_[vi],
+                                      triangle_uvs_[k]);
         }
     }
 };
 
-}
+}  // namespace
 
 bool TexturePhongShader::Compile() {
     if (CompileShaders(texture_phong_vertex_shader, NULL,
@@ -129,42 +136,63 @@ bool TexturePhongShader::BindGeometry(const geometry::Geometry &geometry,
     // Create buffers and bind the geometry
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0,
+                 GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0],
+                                              vertex_position_buffer_,
+                                              cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &vertex_normal_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_normal_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0,
+                 GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1], vertex_normal_buffer_, cudaGraphicsMapFlagsNone));
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1],
+                                              vertex_normal_buffer_,
+                                              cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &vertex_uv_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_uv_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector2f), 0, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector2f), 0,
+                 GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[2], vertex_uv_buffer_, cudaGraphicsMapFlagsNone));
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[2],
+                                              vertex_uv_buffer_,
+                                              cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &diffuse_texture_pixel_buffer_);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, diffuse_texture_pixel_buffer_);
     size_t texture_size = GetTextureSize(geometry);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, texture_size, 0, GL_STATIC_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[3], diffuse_texture_pixel_buffer_, cudaGraphicsMapFlagsNone));
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[3],
+                                              diffuse_texture_pixel_buffer_,
+                                              cudaGraphicsMapFlagsNone));
 
-    Eigen::Vector3f* raw_points_ptr;
-    Eigen::Vector3f* raw_normals_ptr;
-    Eigen::Vector2f* raw_uvs_ptr;
-    uint8_t* raw_render_texture_ptr;
+    Eigen::Vector3f *raw_points_ptr;
+    Eigen::Vector3f *raw_normals_ptr;
+    Eigen::Vector2f *raw_uvs_ptr;
+    uint8_t *raw_render_texture_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(4, cuda_graphics_resources_));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_normals_ptr, &n_bytes, cuda_graphics_resources_[1]));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_uvs_ptr, &n_bytes, cuda_graphics_resources_[2]));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_render_texture_ptr, &n_bytes, cuda_graphics_resources_[3]));
-    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
-    thrust::device_ptr<Eigen::Vector3f> dev_normals_ptr = thrust::device_pointer_cast(raw_normals_ptr);
-    thrust::device_ptr<Eigen::Vector2f> dev_uvs_ptr = thrust::device_pointer_cast(raw_uvs_ptr);
-    thrust::device_ptr<uint8_t> dev_texture_ptr = thrust::device_pointer_cast(raw_render_texture_ptr);
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_normals_ptr, &n_bytes, cuda_graphics_resources_[1]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_uvs_ptr, &n_bytes, cuda_graphics_resources_[2]));
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_render_texture_ptr, &n_bytes,
+            cuda_graphics_resources_[3]));
+    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr =
+            thrust::device_pointer_cast(raw_points_ptr);
+    thrust::device_ptr<Eigen::Vector3f> dev_normals_ptr =
+            thrust::device_pointer_cast(raw_normals_ptr);
+    thrust::device_ptr<Eigen::Vector2f> dev_uvs_ptr =
+            thrust::device_pointer_cast(raw_uvs_ptr);
+    thrust::device_ptr<uint8_t> dev_texture_ptr =
+            thrust::device_pointer_cast(raw_render_texture_ptr);
 
-    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_normals_ptr, dev_uvs_ptr, dev_texture_ptr) == false) {
+    if (PrepareBinding(geometry, option, view, dev_points_ptr, dev_normals_ptr,
+                       dev_uvs_ptr, dev_texture_ptr) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
     }
@@ -203,7 +231,7 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
     glBindTexture(GL_TEXTURE_2D, diffuse_texture_buffer_);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, diffuse_texture_pixel_buffer_);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, num_data_width, num_data_height,
-        format, type, 0);
+                    format, type, 0);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glUniform1i(diffuse_texture_, 0);
 
@@ -230,10 +258,14 @@ bool TexturePhongShader::RenderGeometry(const geometry::Geometry &geometry,
 void TexturePhongShader::UnbindGeometry(bool finalize) {
     if (bound_) {
         if (!finalize) {
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[1]));
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[2]));
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[3]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[0]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[1]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[2]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[3]));
         }
         glDeleteBuffers(1, &diffuse_texture_buffer_);
         glDeleteBuffers(1, &vertex_position_buffer_);
@@ -286,7 +318,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -317,7 +349,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         thrust::device_ptr<Eigen::Vector2f> &uvs,
         thrust::device_ptr<uint8_t> &texture_image) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -333,34 +365,41 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         PrintShaderWarning("Call ComputeVertexNormals() before binding.");
         return false;
     }
-    copy_trianglemesh_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                   thrust::raw_pointer_cast(mesh.vertex_normals_.data()),
-                                   (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())),
-                                   thrust::raw_pointer_cast(mesh.triangle_normals_.data()),
-                                   thrust::raw_pointer_cast(mesh.triangle_uvs_.data()),
-                                   option.mesh_shade_option_);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
-                      make_tuple_iterator(points, normals, uvs), func);
-    thrust::copy(mesh.texture_.data_.begin(), mesh.texture_.data_.end(), texture_image);
+    copy_trianglemesh_functor func(
+            thrust::raw_pointer_cast(mesh.vertices_.data()),
+            thrust::raw_pointer_cast(mesh.vertex_normals_.data()),
+            (int *)(thrust::raw_pointer_cast(mesh.triangles_.data())),
+            thrust::raw_pointer_cast(mesh.triangle_normals_.data()),
+            thrust::raw_pointer_cast(mesh.triangle_uvs_.data()),
+            option.mesh_shade_option_);
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
+            make_tuple_iterator(points, normals, uvs), func);
+    thrust::copy(mesh.texture_.data_.begin(), mesh.texture_.data_.end(),
+                 texture_image);
 
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
     return true;
 }
 
-size_t TexturePhongShaderForTriangleMesh::GetDataSize(const geometry::Geometry &geometry) const {
+size_t TexturePhongShaderForTriangleMesh::GetDataSize(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }
 
-size_t TexturePhongShaderForTriangleMesh::GetTextureSize(const geometry::Geometry &geometry) const {
+size_t TexturePhongShaderForTriangleMesh::GetTextureSize(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).texture_.data_.size();
 }
 
-size_t TexturePhongShaderForTriangleMesh::GetTextureHeight(const geometry::Geometry &geometry) const {
+size_t TexturePhongShaderForTriangleMesh::GetTextureHeight(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).texture_.height_;
 }
 
-size_t TexturePhongShaderForTriangleMesh::GetTextureWidth(const geometry::Geometry &geometry) const {
+size_t TexturePhongShaderForTriangleMesh::GetTextureWidth(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).texture_.width_;
 }

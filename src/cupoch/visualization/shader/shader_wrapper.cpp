@@ -1,10 +1,11 @@
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
+#include <cuda_gl_interop.h>
+#include <cuda_runtime.h>
+
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
 
 namespace cupoch {
 namespace visualization {
@@ -28,7 +29,8 @@ bool ShaderWrapper::Render(const geometry::Geometry &geometry,
 }
 
 void ShaderWrapper::Unmap(size_t n_resource) {
-    cudaSafeCall(cudaGraphicsUnmapResources(n_resource, cuda_graphics_resources_));
+    cudaSafeCall(
+            cudaGraphicsUnmapResources(n_resource, cuda_graphics_resources_));
 }
 
 void ShaderWrapper::InvalidateGeometry() {

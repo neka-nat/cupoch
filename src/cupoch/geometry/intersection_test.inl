@@ -1,9 +1,9 @@
+#include <thrust/swap.h>
 #include <tomasakeninemoeller/opttritri.h>
 #include <tomasakeninemoeller/tribox3.h>
 
-#include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/distance_test.h"
-#include <thrust/swap.h>
+#include "cupoch/geometry/intersection_test.h"
 
 namespace cupoch {
 namespace geometry {
@@ -12,10 +12,9 @@ namespace intersection_test {
 
 namespace {
 
-__host__ __device__
-Eigen::Vector3f Corner(const Eigen::Vector3f &min_bound,
-                       const Eigen::Vector3f &max_bound,
-                       int n) {
+__host__ __device__ Eigen::Vector3f Corner(const Eigen::Vector3f &min_bound,
+                                           const Eigen::Vector3f &max_bound,
+                                           int n) {
     Eigen::Vector3f p;
     p[0] = (n & 1) ? max_bound[0] : min_bound[0];
     p[1] = (n & 1) ? max_bound[1] : min_bound[1];
@@ -23,7 +22,7 @@ Eigen::Vector3f Corner(const Eigen::Vector3f &min_bound,
     return p;
 }
 
-}
+}  // namespace
 
 bool TriangleTriangle3d(const Eigen::Vector3f &p0,
                         const Eigen::Vector3f &p1,
@@ -86,9 +85,15 @@ bool LineSegmentAABB(const Eigen::Vector3f &p0,
         if (abs(mid[i]) > ext[i] + absdst[i]) return false;
     }
     absdst.array() += std::numeric_limits<float>::epsilon();
-    if (abs(mid[1] * dst[2] - mid[2] * dst[1]) > ext[1] * absdst[2] + ext[2] * absdst[1]) return false;
-    if (abs(mid[2] * dst[0] - mid[0] * dst[2]) > ext[2] * absdst[0] + ext[0] * absdst[2]) return false;
-    if (abs(mid[0] * dst[1] - mid[1] * dst[0]) > ext[0] * absdst[1] + ext[1] * absdst[0]) return false;
+    if (abs(mid[1] * dst[2] - mid[2] * dst[1]) >
+        ext[1] * absdst[2] + ext[2] * absdst[1])
+        return false;
+    if (abs(mid[2] * dst[0] - mid[0] * dst[2]) >
+        ext[2] * absdst[0] + ext[0] * absdst[2])
+        return false;
+    if (abs(mid[0] * dst[1] - mid[1] * dst[0]) >
+        ext[0] * absdst[1] + ext[1] * absdst[0])
+        return false;
     return true;
 }
 
@@ -117,28 +122,31 @@ bool RayAABB(const Eigen::Vector3f &p,
     return true;
 }
 
-bool SphereAABB(const Eigen::Vector3f& center,
+bool SphereAABB(const Eigen::Vector3f &center,
                 float radius,
-                const Eigen::Vector3f& min_bound,
-                const Eigen::Vector3f& max_bound) {
+                const Eigen::Vector3f &min_bound,
+                const Eigen::Vector3f &max_bound) {
     float dist2 = distance_test::PointAABBSquared(center, min_bound, max_bound);
     return dist2 <= radius * radius;
 }
 
-bool BoxBox(const Eigen::Vector3f& extents1,
-            const Eigen::Matrix3f& rot1,
-            const Eigen::Vector3f& center1,
-            const Eigen::Vector3f& extents2,
-            const Eigen::Matrix3f& rot2,
-            const Eigen::Vector3f& center2) {
+bool BoxBox(const Eigen::Vector3f &extents1,
+            const Eigen::Matrix3f &rot1,
+            const Eigen::Vector3f &center1,
+            const Eigen::Vector3f &extents2,
+            const Eigen::Matrix3f &rot2,
+            const Eigen::Vector3f &center2) {
     const Eigen::Matrix3f r = rot1 * rot2;
     const Eigen::Vector3f t = rot1 * (center2 - center1);
-    const Eigen::Matrix3f absr = r.array().abs() + std::numeric_limits<float>::epsilon();
+    const Eigen::Matrix3f absr =
+            r.array().abs() + std::numeric_limits<float>::epsilon();
     for (int i = 0; i < 3; ++i) {
-        if (std::abs(t[i]) > extents1[i] + absr.row(i).dot(extents2)) return false;
+        if (std::abs(t[i]) > extents1[i] + absr.row(i).dot(extents2))
+            return false;
     }
     for (int i = 0; i < 3; ++i) {
-        if (std::abs(t.dot(r.col(i))) > absr.col(i).dot(extents1) + extents2[i]) return false;
+        if (std::abs(t.dot(r.col(i))) > absr.col(i).dot(extents1) + extents2[i])
+            return false;
     }
     float ra, rb;
     ra = extents1[1] * absr(2, 0) + extents1[2] * absr(1, 0);
@@ -204,22 +212,22 @@ bool CapsuleAABB(float radius,
     int m = u + v;
     if (m == 7) {
         float tmin = std::numeric_limits<float>::max();
-        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
-                                                         Corner(min_bound, max_bound, v),
-                                                         Corner(min_bound, max_bound, v ^ 1),
-                                                         t, tmp, c0, c1) <= radius * radius) {
+        if (distance_test::LineSegmentLineSegmentSquared(
+                    p, p + d, Corner(min_bound, max_bound, v),
+                    Corner(min_bound, max_bound, v ^ 1), t, tmp, c0,
+                    c1) <= radius * radius) {
             tmin = min(t, tmin);
         }
-        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
-                                                         Corner(min_bound, max_bound, v),
-                                                         Corner(min_bound, max_bound, v ^ 2),
-                                                         t, tmp, c0, c1) <= radius * radius) {
+        if (distance_test::LineSegmentLineSegmentSquared(
+                    p, p + d, Corner(min_bound, max_bound, v),
+                    Corner(min_bound, max_bound, v ^ 2), t, tmp, c0,
+                    c1) <= radius * radius) {
             tmin = min(t, tmin);
         }
-        if (distance_test::LineSegmentLineSegmentSquared(p, p + d,
-                                                         Corner(min_bound, max_bound, v),
-                                                         Corner(min_bound, max_bound, v ^ 4),
-                                                         t, tmp, c0, c1) <= radius * radius) {
+        if (distance_test::LineSegmentLineSegmentSquared(
+                    p, p + d, Corner(min_bound, max_bound, v),
+                    Corner(min_bound, max_bound, v ^ 4), t, tmp, c0,
+                    c1) <= radius * radius) {
             tmin = min(t, tmin);
         }
         return true;
@@ -227,10 +235,10 @@ bool CapsuleAABB(float radius,
     if ((m & (m - 1)) == 0) {
         return true;
     }
-    return distance_test::LineSegmentLineSegmentSquared(p, p + d,
-                                                        Corner(min_bound, max_bound, u ^ 7),
-                                                        Corner(min_bound, max_bound, v),
-                                                        t, tmp, c0, c1) <= radius * radius;
+    return distance_test::LineSegmentLineSegmentSquared(
+                   p, p + d, Corner(min_bound, max_bound, u ^ 7),
+                   Corner(min_bound, max_bound, v), t, tmp, c0,
+                   c1) <= radius * radius;
 }
 
 }  // namespace intersection_test

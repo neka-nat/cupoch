@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <thrust/device_ptr.h>
+
+#include <Eigen/Core>
 
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
@@ -32,13 +33,15 @@ protected:
     virtual bool PrepareRendering(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) = 0;
-    virtual bool PrepareBinding(const geometry::Geometry &geometry,
-                                const RenderOption &option,
-                                const ViewControl &view,
-                                thrust::device_ptr<Eigen::Vector3f> &points,
-                                thrust::device_ptr<Eigen::Vector3f> &normals,
-                                thrust::device_ptr<Eigen::Vector4f> &colors) = 0;
+    virtual bool PrepareBinding(
+            const geometry::Geometry &geometry,
+            const RenderOption &option,
+            const ViewControl &view,
+            thrust::device_ptr<Eigen::Vector3f> &points,
+            thrust::device_ptr<Eigen::Vector3f> &normals,
+            thrust::device_ptr<Eigen::Vector4f> &colors) = 0;
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
+
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 
@@ -104,7 +107,8 @@ protected:
 
 class PhongShaderForVoxelGridFace : public PhongShader {
 public:
-    PhongShaderForVoxelGridFace() : PhongShader("PhongShaderForVoxelGridFace") {}
+    PhongShaderForVoxelGridFace()
+        : PhongShader("PhongShaderForVoxelGridFace") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,
@@ -121,7 +125,8 @@ protected:
 
 class PhongShaderForOccupancyGrid : public PhongShader {
 public:
-    PhongShaderForOccupancyGrid() : PhongShader("PhongShaderForOccupancyGrid") {}
+    PhongShaderForOccupancyGrid()
+        : PhongShader("PhongShaderForOccupancyGrid") {}
 
 protected:
     bool PrepareRendering(const geometry::Geometry &geometry,

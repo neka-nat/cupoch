@@ -2,7 +2,6 @@
 
 #include "cupoch/visualization/visualizer/view_control.h"
 #include "cupoch/visualization/visualizer/visualizer.h"
-
 #include "cupoch_pybind/cupoch_pybind.h"
 
 using namespace cupoch;

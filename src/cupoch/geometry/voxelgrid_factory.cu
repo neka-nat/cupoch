@@ -60,9 +60,12 @@ struct create_from_pointcloud_functor {
     __device__ thrust::tuple<Eigen::Vector3i, geometry::Voxel> operator()(
             const Eigen::Vector3f &point, const Eigen::Vector3f &color) const {
         Eigen::Vector3f ref_coord = (point - min_bound_) / voxel_size_;
-        Eigen::Vector3i voxel_index = Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>();
-        return thrust::make_tuple(voxel_index,
-            (has_colors_) ? geometry::Voxel(voxel_index, color) : geometry::Voxel(voxel_index));
+        Eigen::Vector3i voxel_index =
+                Eigen::device_vectorize<float, 3, ::floor>(ref_coord)
+                        .cast<int>();
+        return thrust::make_tuple(
+                voxel_index, (has_colors_) ? geometry::Voxel(voxel_index, color)
+                                           : geometry::Voxel(voxel_index));
     }
 };
 
@@ -112,10 +115,10 @@ struct create_from_trianglemesh_functor {
                                           geometry::Voxel(grid_index));
             }
         }
-        return thrust::make_tuple(Eigen::Vector3i(INVALID_VOXEL_INDEX,
-                                                  INVALID_VOXEL_INDEX,
-                                                  INVALID_VOXEL_INDEX),
-                                  geometry::Voxel());
+        return thrust::make_tuple(
+                Eigen::Vector3i(INVALID_VOXEL_INDEX, INVALID_VOXEL_INDEX,
+                                INVALID_VOXEL_INDEX),
+                geometry::Voxel());
     }
 };
 
@@ -135,10 +138,11 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
     int n_total = num_w * num_h * num_d;
     resize_all(n_total, output->voxels_keys_, output->voxels_values_);
     create_dense_functor func(num_h, num_d);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(n_total),
-                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
-                      func);
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(n_total),
+            make_tuple_begin(output->voxels_keys_, output->voxels_values_),
+            func);
     thrust::sort_by_key(output->voxels_keys_.begin(),
                         output->voxels_keys_.end(),
                         output->voxels_values_.begin());
@@ -174,14 +178,11 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         thrust::transform(
                 input.points_.begin(), input.points_.end(),
                 thrust::make_constant_iterator(Eigen::Vector3f(0.0, 0.0, 0.0)),
-                make_tuple_begin(voxels_keys, voxels_values),
-                func);
+                make_tuple_begin(voxels_keys, voxels_values), func);
     } else {
-        thrust::transform(
-                input.points_.begin(), input.points_.end(),
-                input.colors_.begin(),
-                make_tuple_begin(voxels_keys, voxels_values),
-                func);
+        thrust::transform(input.points_.begin(), input.points_.end(),
+                          input.colors_.begin(),
+                          make_tuple_begin(voxels_keys, voxels_values), func);
     }
     thrust::sort_by_key(voxels_keys.begin(), voxels_keys.end(),
                         voxels_values.begin());
@@ -243,14 +244,17 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
             thrust::raw_pointer_cast(input.triangles_.data()),
             input.triangles_.size(), min_bound, voxel_size, num_h, num_d);
     resize_all(n_total, output->voxels_keys_, output->voxels_values_);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
-                      func);
-    auto check_fn = [] __device__(const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x) -> bool {
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator(n_total),
+            make_tuple_begin(output->voxels_keys_, output->voxels_values_),
+            func);
+    auto check_fn =
+            [] __device__(
+                    const thrust::tuple<Eigen::Vector3i, geometry::Voxel> &x)
+            -> bool {
         Eigen::Vector3i idxs = thrust::get<0>(x);
-        return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX,
-                                       INVALID_VOXEL_INDEX,
+        return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX, INVALID_VOXEL_INDEX,
                                        INVALID_VOXEL_INDEX);
     };
     remove_if_vectors(check_fn, output->voxels_keys_, output->voxels_values_);

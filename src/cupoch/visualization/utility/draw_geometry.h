@@ -38,5 +38,5 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
                     bool mesh_show_wireframe = false,
                     bool mesh_show_back_face = false);
 
-}
-}
+}  // namespace visualization
+}  // namespace cupoch

@@ -1,4 +1,5 @@
 #include "cupoch/visualization/visualizer/view_control.h"
+
 #include "cupoch/utility/console.h"
 
 // Avoid warning caused by redefinition of APIENTRY macro
@@ -8,6 +9,7 @@
 #endif
 
 #include <GLFW/glfw3.h>
+
 #include <Eigen/Dense>
 #include <cmath>  // jspark
 
@@ -47,8 +49,8 @@ void ViewControl::SetViewMatrices(
         z_far_ = constant_z_far_ > 0
                          ? constant_z_far_
                          : distance_ + 3.0 * bounding_box_.GetMaxExtent();
-        projection_matrix_ =
-                gl_helper::Perspective(field_of_view_, aspect_, z_near_, z_far_);
+        projection_matrix_ = gl_helper::Perspective(field_of_view_, aspect_,
+                                                    z_near_, z_far_);
     } else {
         // Orthogonal projection
         // We use some black magic to support distance_ in orthogonal view
@@ -60,7 +62,7 @@ void ViewControl::SetViewMatrices(
                          : distance_ + 3.0 * bounding_box_.GetMaxExtent();
         projection_matrix_ =
                 gl_helper::Ortho(-aspect_ * view_ratio_, aspect_ * view_ratio_,
-                                -view_ratio_, view_ratio_, z_near_, z_far_);
+                                 -view_ratio_, view_ratio_, z_near_, z_far_);
     }
     view_matrix_ = gl_helper::LookAt(eye_, lookat_, up_);
     model_matrix_ = model_matrix.cast<GLfloat>();
@@ -147,8 +149,7 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
     if (window_height_ <= 0 || window_width_ <= 0 ||
         window_height_ != intrinsic.height_ ||
         window_width_ != intrinsic.width_ ||
-        intrinsic.intrinsic_matrix_(0, 2) !=
-                (float)window_width_ / 2.0 - 0.5 ||
+        intrinsic.intrinsic_matrix_(0, 2) != (float)window_width_ / 2.0 - 0.5 ||
         intrinsic.intrinsic_matrix_(1, 2) !=
                 (float)window_height_ / 2.0 - 0.5) {
         utility::LogWarning(
@@ -160,9 +161,9 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
             (float)window_height_ / (intrinsic.intrinsic_matrix_(1, 1) * 2.0);
     float fov_rad = std::atan(tan_half_fov) * 2.0;
     float old_fov = field_of_view_;
-    field_of_view_ =
-            std::max(std::min((float)(fov_rad * 180.0 / M_PI), FIELD_OF_VIEW_MAX),
-                     FIELD_OF_VIEW_MIN);
+    field_of_view_ = std::max(
+            std::min((float)(fov_rad * 180.0 / M_PI), FIELD_OF_VIEW_MAX),
+            FIELD_OF_VIEW_MIN);
     if (GetProjectionType() == ProjectionType::Orthogonal) {
         field_of_view_ = old_fov;
         utility::LogWarning(
@@ -177,8 +178,8 @@ bool ViewControl::ConvertFromPinholeCameraParameters(
            (extrinsic.block<3, 1>(0, 3) * -1.0);
     float ideal_distance = (eye_ - bounding_box_.GetCenter()).dot(front_);
     float ideal_zoom = ideal_distance *
-                        std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
-                        bounding_box_.GetMaxExtent();
+                       std::tan(field_of_view_ * 0.5 / 180.0 * M_PI) /
+                       bounding_box_.GetMaxExtent();
     zoom_ = std::max(std::min(ideal_zoom, ZOOM_MAX), ZOOM_MIN);
     view_ratio_ = zoom_ * bounding_box_.GetMaxExtent();
     distance_ = view_ratio_ / std::tan(field_of_view_ * 0.5 / 180.0 * M_PI);

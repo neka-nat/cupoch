@@ -112,7 +112,10 @@ void pybind_boundingvolume(py::module &m) {
                  "format.")
             .def_static(
                     "create_from_points",
-                    py::overload_cast<const utility::device_vector<Eigen::Vector3f>&>(&geometry::AxisAlignedBoundingBox::CreateFromPoints),
+                    py::overload_cast<
+                            const utility::device_vector<Eigen::Vector3f> &>(
+                            &geometry::AxisAlignedBoundingBox::
+                                    CreateFromPoints),
                     "Creates the bounding box that encloses the set of points.",
                     "points"_a)
             .def_readwrite("min_bound",

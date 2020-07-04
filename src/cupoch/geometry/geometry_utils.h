@@ -7,26 +7,19 @@ namespace cupoch {
 namespace geometry {
 
 /// Get Rotation Matrix from XYZ RotationType.
-Eigen::Matrix3f GetRotationMatrixFromXYZ(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromXYZ(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from YZX RotationType.
-Eigen::Matrix3f GetRotationMatrixFromYZX(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromYZX(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from ZXY RotationType.
-Eigen::Matrix3f GetRotationMatrixFromZXY(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromZXY(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from XZY RotationType.
-Eigen::Matrix3f GetRotationMatrixFromXZY(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromXZY(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from ZYX RotationType.
-Eigen::Matrix3f GetRotationMatrixFromZYX(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromZYX(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from YXZ RotationType.
-Eigen::Matrix3f GetRotationMatrixFromYXZ(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromYXZ(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from AxisAngle RotationType.
-Eigen::Matrix3f GetRotationMatrixFromAxisAngle(
-        const Eigen::Vector3f &rotation);
+Eigen::Matrix3f GetRotationMatrixFromAxisAngle(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from Quaternion.
 Eigen::Matrix3f GetRotationMatrixFromQuaternion(
         const Eigen::Vector4f &rotation);
@@ -50,22 +43,23 @@ template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeCenter(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
 
-void ResizeAndPaintUniformColor(
-        utility::device_vector<Eigen::Vector3f> &colors,
-        const size_t size,
-        const Eigen::Vector3f &color);
+void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f> &colors,
+                                const size_t size,
+                                const Eigen::Vector3f &color);
 
 /// \brief Transforms all points with the transformation matrix.
 ///
 /// \param transformation 4x4 matrix for transformation.
 /// \param points A list of points to be transformed.
 template <int Dim>
-void TransformPoints(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
-                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+void TransformPoints(
+        const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
+        utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
 template <int Dim>
-void TransformPoints(cudaStream_t stream,
-                     const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
-                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+void TransformPoints(
+        cudaStream_t stream,
+        const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
+        utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
 /// \brief Transforms the normals with the transformation matrix.
 ///
 /// \param transformation 4x4 matrix for transformation.
@@ -83,9 +77,10 @@ void TransformNormals(cudaStream_t stream,
 /// \points. Otherwise, the center of the \points is moved to the \p
 /// translation.
 template <int Dim>
-void TranslatePoints(const Eigen::Matrix<float, Dim, 1> &translation,
-                     utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
-                     bool relative);
+void TranslatePoints(
+        const Eigen::Matrix<float, Dim, 1> &translation,
+        utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
+        bool relative);
 /// \brief Scale the coordinates of all points by the scaling factor \p
 /// scale.
 ///
@@ -128,5 +123,5 @@ void RotateNormals(cudaStream_t stream,
                    const Eigen::Matrix3f &R,
                    utility::device_vector<Eigen::Vector3f> &normals);
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

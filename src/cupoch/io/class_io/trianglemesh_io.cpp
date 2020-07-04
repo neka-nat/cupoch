@@ -1,9 +1,11 @@
 #include "cupoch/io/class_io/trianglemesh_io.h"
-#include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/utility/filesystem.h"
-#include "cupoch/utility/console.h"
+
 #include <Eigen/Geometry>
 #include <unordered_map>
+
+#include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/console.h"
+#include "cupoch/utility/filesystem.h"
 
 namespace cupoch {
 

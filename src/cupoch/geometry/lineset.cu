@@ -13,23 +13,24 @@ template <int Dim>
 LineSet<Dim>::LineSet(Geometry::GeometryType type) : GeometryBase<Dim>(type) {}
 
 template <int Dim>
-LineSet<Dim>::LineSet(Geometry::GeometryType type,
-                      const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
-                      const utility::device_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<Dim>(type),
-      points_(points),
-      lines_(lines) {}
+LineSet<Dim>::LineSet(
+        Geometry::GeometryType type,
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
+        const utility::device_vector<Eigen::Vector2i> &lines)
+    : GeometryBase<Dim>(type), points_(points), lines_(lines) {}
 
 template <int Dim>
-LineSet<Dim>::LineSet(const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
-                 const utility::device_vector<Eigen::Vector2i> &lines)
+LineSet<Dim>::LineSet(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
+        const utility::device_vector<Eigen::Vector2i> &lines)
     : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
 template <int Dim>
-LineSet<Dim>::LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
-                      const thrust::host_vector<Eigen::Vector2i> &lines)
+LineSet<Dim>::LineSet(
+        const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
+        const thrust::host_vector<Eigen::Vector2i> &lines)
     : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
@@ -45,12 +46,14 @@ template <int Dim>
 LineSet<Dim>::~LineSet() {}
 
 template <int Dim>
-void LineSet<Dim>::SetPoints(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points) {
+void LineSet<Dim>::SetPoints(
+        const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     points_ = points;
 }
 
 template <int Dim>
-thrust::host_vector<Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetPoints() const {
+thrust::host_vector<Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetPoints()
+        const {
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> points = points_;
     return points;
 }
@@ -67,7 +70,8 @@ thrust::host_vector<Eigen::Vector2i> LineSet<Dim>::GetLines() const {
 }
 
 template <int Dim>
-void LineSet<Dim>::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
+void LineSet<Dim>::SetColors(
+        const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
 }
 
@@ -86,7 +90,9 @@ LineSet<Dim> &LineSet<Dim>::Clear() {
 }
 
 template <int Dim>
-bool LineSet<Dim>::IsEmpty() const { return !HasPoints(); }
+bool LineSet<Dim>::IsEmpty() const {
+    return !HasPoints();
+}
 
 template <int Dim>
 Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMinBound() const {
@@ -99,7 +105,9 @@ Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMaxBound() const {
 }
 
 template <int Dim>
-Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetCenter() const { return ComputeCenter<Dim>(points_); }
+Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetCenter() const {
+    return ComputeCenter<Dim>(points_);
+}
 
 template <int Dim>
 AxisAlignedBoundingBox LineSet<Dim>::GetAxisAlignedBoundingBox() const {
@@ -107,13 +115,15 @@ AxisAlignedBoundingBox LineSet<Dim>::GetAxisAlignedBoundingBox() const {
 }
 
 template <int Dim>
-LineSet<Dim> &LineSet<Dim>::Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) {
+LineSet<Dim> &LineSet<Dim>::Transform(
+        const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) {
     TransformPoints<Dim>(transformation, points_);
     return *this;
 }
 
 template <int Dim>
-LineSet<Dim> &LineSet<Dim>::Translate(const Eigen::Matrix<float, Dim, 1> &translation, bool relative) {
+LineSet<Dim> &LineSet<Dim>::Translate(
+        const Eigen::Matrix<float, Dim, 1> &translation, bool relative) {
     TranslatePoints<Dim>(translation, points_, relative);
     return *this;
 }
@@ -125,14 +135,15 @@ LineSet<Dim> &LineSet<Dim>::Scale(const float scale, bool center) {
 }
 
 template <int Dim>
-LineSet<Dim> &LineSet<Dim>::Rotate(const Eigen::Matrix<float, Dim, Dim> &R, bool center) {
+LineSet<Dim> &LineSet<Dim>::Rotate(const Eigen::Matrix<float, Dim, Dim> &R,
+                                   bool center) {
     RotatePoints<Dim>(R, points_, center);
     return *this;
 }
 
 template <int Dim>
-thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetLineCoordinate(
-        size_t line_index) const {
+thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>>
+LineSet<Dim>::GetLineCoordinate(size_t line_index) const {
     const Eigen::Vector2i idxs = lines_[line_index];
     return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
 }

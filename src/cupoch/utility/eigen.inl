@@ -39,7 +39,7 @@ struct multiple_jtj_jtr_functor {
         VecType J_r[NumJ];
         float r[NumJ];
         f_(idx, J_r, r);
-        #pragma unroll
+#pragma unroll
         for (size_t j = 0; j < NumJ; ++j) {
             JTJ_private.noalias() += J_r[j] * J_r[j].transpose();
             JTr_private.noalias() += J_r[j] * r[j];
@@ -51,12 +51,11 @@ struct multiple_jtj_jtr_functor {
 
 template <typename FuncType>
 struct wrapped_calc_weights_functor {
-    wrapped_calc_weights_functor(const FuncType &f, float r2_sum) : f_(f), r2_sum_(r2_sum) {};
+    wrapped_calc_weights_functor(const FuncType &f, float r2_sum)
+        : f_(f), r2_sum_(r2_sum){};
     const FuncType f_;
     const float r2_sum_;
-    __device__ float operator() (float r2) const {
-        return f_(r2, r2_sum_);
-    };
+    __device__ float operator()(float r2) const { return f_(r2, r2_sum_); };
 };
 
 }  // namespace
@@ -106,12 +105,17 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
     return jtj_jtr_r2;
 }
 
-template <typename MatType, typename VecType,
-          int NumJ, typename FuncJType,
-          typename FuncW1Type, typename FuncW2Type>
+template <typename MatType,
+          typename VecType,
+          int NumJ,
+          typename FuncJType,
+          typename FuncW1Type,
+          typename FuncW2Type>
 thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
-        const FuncJType &fj, const FuncW1Type &fw_reduce,
-        const FuncW2Type &fw_trans, const int iteration_num,
+        const FuncJType &fj,
+        const FuncW1Type &fw_reduce,
+        const FuncW2Type &fw_trans,
+        const int iteration_num,
         bool verbose /*=true*/) {
     MatType JTJ;
     VecType JTr;
@@ -123,31 +127,32 @@ thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
     utility::device_vector<float> r2s(iteration_num);
     utility::device_vector<float> ws(iteration_num);
     multiple_jtj_jtr_functor<MatType, VecType, NumJ, FuncJType> funcj(fj);
-    thrust::transform(
-            thrust::make_counting_iterator(0),
-            thrust::make_counting_iterator(iteration_num),
-            make_tuple_begin(JTJs, JTrs, r2s), funcj);
-    float w_sum = thrust::transform_reduce(r2s.begin(), r2s.end(), fw_reduce, 0.0, thrust::plus<float>());
+    thrust::transform(thrust::make_counting_iterator(0),
+                      thrust::make_counting_iterator(iteration_num),
+                      make_tuple_begin(JTJs, JTrs, r2s), funcj);
+    float w_sum = thrust::transform_reduce(r2s.begin(), r2s.end(), fw_reduce,
+                                           0.0, thrust::plus<float>());
     wrapped_calc_weights_functor<FuncW2Type> funcw(fw_trans, w_sum);
     thrust::transform(r2s.begin(), r2s.end(), ws.begin(), funcw);
-    auto jtj_jtr_r2 = thrust::transform_reduce(make_tuple_begin(JTJs, JTrs, r2s, ws),
-                            make_tuple_end(JTJs, JTrs, r2s, ws),
-                            [] __device__ (const thrust::tuple<MatType, VecType, float, float>& x) {
-                                float w = thrust::get<3>(x);
-                                return thrust::make_tuple(thrust::get<0>(x) * w,
-                                                          thrust::get<1>(x) * w,
-                                                          thrust::get<2>(x) * w);
-                            },
-                            thrust::make_tuple(JTJ, JTr, r2_sum),
-                            add_tuple_functor<MatType, VecType, float>());
+    auto jtj_jtr_r2 = thrust::transform_reduce(
+            make_tuple_begin(JTJs, JTrs, r2s, ws),
+            make_tuple_end(JTJs, JTrs, r2s, ws),
+            [] __device__(
+                    const thrust::tuple<MatType, VecType, float, float> &x) {
+                float w = thrust::get<3>(x);
+                return thrust::make_tuple(thrust::get<0>(x) * w,
+                                          thrust::get<1>(x) * w,
+                                          thrust::get<2>(x) * w);
+            },
+            thrust::make_tuple(JTJ, JTr, r2_sum),
+            add_tuple_functor<MatType, VecType, float>());
     if (verbose) {
         LogDebug("Residual : {:.2e} (# of elements : {:d})",
                  r2_sum / (float)iteration_num, iteration_num);
     }
     return thrust::make_tuple(thrust::get<0>(jtj_jtr_r2),
                               thrust::get<1>(jtj_jtr_r2),
-                              thrust::get<2>(jtj_jtr_r2),
-                              w_sum);
+                              thrust::get<2>(jtj_jtr_r2), w_sum);
 }
 
 }  // namespace utility

@@ -5,21 +5,19 @@
 namespace pybind11 {
 namespace detail {
 
-template <> struct type_caster<Eigen::Vector3i> {
+template <>
+struct type_caster<Eigen::Vector3i> {
     using value_conv = make_caster<int>;
 
 public:
     bool load(handle src, bool convert) {
-        if (!isinstance<sequence>(src))
-            return false;
+        if (!isinstance<sequence>(src)) return false;
         auto l = reinterpret_borrow<sequence>(src);
-        if (l.size() != 3)
-            return false;
+        if (l.size() != 3) return false;
         size_t ctr = 0;
         for (auto it : l) {
             value_conv conv;
-            if (!conv.load(it, convert))
-                return false;
+            if (!conv.load(it, convert)) return false;
             value[ctr++] = cast_op<int &&>(std::move(conv));
         }
         return true;
@@ -30,10 +28,11 @@ public:
         tuple t(src.size());
         size_t index = 0;
         for (auto &&value : src) {
-            auto value_ = reinterpret_steal<object>(value_conv::cast(forward_like<T>(value), policy, parent));
-            if (!value_)
-                return handle();
-            PyTuple_SET_ITEM(t.ptr(), (ssize_t) index++, value_.release().ptr()); // steals a reference
+            auto value_ = reinterpret_steal<object>(
+                    value_conv::cast(forward_like<T>(value), policy, parent));
+            if (!value_) return handle();
+            PyTuple_SET_ITEM(t.ptr(), (ssize_t)index++,
+                             value_.release().ptr());  // steals a reference
         }
         return t.release();
     }
@@ -41,5 +40,5 @@ public:
     PYBIND11_TYPE_CASTER(Eigen::Vector3i, _("Eigen::Vector3i"));
 };
 
-}
-}
+}  // namespace detail
+}  // namespace pybind11

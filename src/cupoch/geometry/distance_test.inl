@@ -30,8 +30,8 @@ float PointAABBSquared(const Eigen::Vector3f &p,
     float dist2 = 0.0f;
     for (int i = 0; i < 3; i++) {
         float v = p[i];
-        if(v < min_bound[i]) dist2 += (min_bound[i] - v) * (min_bound[i] - v);
-        if(v > max_bound[i]) dist2 += (v - max_bound[i]) * (v - max_bound[i]);
+        if (v < min_bound[i]) dist2 += (min_bound[i] - v) * (min_bound[i] - v);
+        if (v > max_bound[i]) dist2 += (v - max_bound[i]) * (v - max_bound[i]);
     }
     return dist2;
 }
@@ -50,7 +50,8 @@ float LineSegmentLineSegmentSquared(const Eigen::Vector3f &p0,
     const float a = d0.squaredNorm();
     const float e = d1.squaredNorm();
     const float f = d1.dot(r);
-    if (a <= std::numeric_limits<float>::epsilon() && e <= std::numeric_limits<float>::epsilon()) {
+    if (a <= std::numeric_limits<float>::epsilon() &&
+        e <= std::numeric_limits<float>::epsilon()) {
         param0 = 0.0;
         param1 = 0.0;
         c0 = p0;

@@ -1,3 +1,5 @@
+#include <thrust/iterator/discard_iterator.h>
+
 #include <Eigen/Eigenvalues>
 #include <numeric>
 
@@ -7,8 +9,6 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
 
-#include <thrust/iterator/discard_iterator.h>
-
 using namespace cupoch;
 using namespace cupoch::geometry;
 
@@ -17,7 +17,7 @@ namespace {
 struct check_within_oriented_bounding_box_functor {
     check_within_oriented_bounding_box_functor(
             const std::array<Eigen::Vector3f, 8> &box_points)
-        : box_points_(box_points) {};
+        : box_points_(box_points){};
     const std::array<Eigen::Vector3f, 8> box_points_;
     __device__ float test_plane(const Eigen::Vector3f &a,
                                 const Eigen::Vector3f &b,
@@ -27,8 +27,9 @@ struct check_within_oriented_bounding_box_functor {
         design << (b - a), (c - a), (x - a);
         return design.determinant();
     };
-    __device__ bool operator()(const thrust::tuple<int, Eigen::Vector3f>& x) const {
-        const Eigen::Vector3f& point = thrust::get<1>(x);
+    __device__ bool operator()(
+            const thrust::tuple<int, Eigen::Vector3f> &x) const {
+        const Eigen::Vector3f &point = thrust::get<1>(x);
         return (test_plane(box_points_[0], box_points_[1], box_points_[3],
                            point) <= 0 &&
                 test_plane(box_points_[0], box_points_[5], box_points_[3],
@@ -159,10 +160,15 @@ OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
     auto box_points = GetBoxPoints();
     check_within_oriented_bounding_box_functor func(box_points);
     utility::device_vector<size_t> indices(points.size());
-    auto begin = make_tuple_iterator(indices.begin(), thrust::make_discard_iterator());
-    auto end = thrust::copy_if(make_tuple_iterator(thrust::make_counting_iterator(0), points.begin()),
-                               make_tuple_iterator(thrust::make_counting_iterator<int>(points.size()), points.end()),
-                               begin, func);
+    auto begin = make_tuple_iterator(indices.begin(),
+                                     thrust::make_discard_iterator());
+    auto end = thrust::copy_if(
+            make_tuple_iterator(thrust::make_counting_iterator(0),
+                                points.begin()),
+            make_tuple_iterator(
+                    thrust::make_counting_iterator<int>(points.size()),
+                    points.end()),
+            begin, func);
     indices.resize(thrust::distance(begin, end));
     return indices;
 }
@@ -271,12 +277,17 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
         box.max_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
     } else {
-        box.min_bound_ = (Eigen::Vector3f() << ComputeMinBound<2>(utility::GetStream(0), points), 0.0).finished();
-        box.max_bound_ = (Eigen::Vector3f() << ComputeMaxBound<2>(utility::GetStream(1), points), 0.0).finished();
+        box.min_bound_ = (Eigen::Vector3f() << ComputeMinBound<2>(
+                                  utility::GetStream(0), points),
+                          0.0)
+                                 .finished();
+        box.max_bound_ = (Eigen::Vector3f() << ComputeMaxBound<2>(
+                                  utility::GetStream(1), points),
+                          0.0)
+                                 .finished();
     }
     return box;
 }
-
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const utility::device_vector<Eigen::Vector3f> &points) {

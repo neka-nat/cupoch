@@ -26,16 +26,20 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     target_kdtree.SearchHybrid(source.points_, max_correspondence_distance, 1,
                                indices, dists);
     result.correspondence_set_.resize(n_pt);
-    const float error2 =
-            thrust::transform_reduce(dists.begin(), dists.end(),
-                                     [] __device__ (float d) { return (std::isinf(d)) ? 0.0 : d; },
-                                     0.0f, thrust::plus<float>());
-    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator(0), indices.begin()),
-                      make_tuple_iterator(thrust::make_counting_iterator(n_pt), indices.end()),
+    const float error2 = thrust::transform_reduce(
+            dists.begin(), dists.end(),
+            [] __device__(float d) { return (std::isinf(d)) ? 0.0 : d; }, 0.0f,
+            thrust::plus<float>());
+    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator(0),
+                                          indices.begin()),
+                      make_tuple_iterator(thrust::make_counting_iterator(n_pt),
+                                          indices.end()),
                       result.correspondence_set_.begin(),
-                      [] __device__ (const thrust::tuple<int, int>& idxs) {
+                      [] __device__(const thrust::tuple<int, int> &idxs) {
                           int j = thrust::get<1>(idxs);
-                          return (j < 0) ? Eigen::Vector2i(-1, -1) : Eigen::Vector2i(thrust::get<0>(idxs), j);
+                          return (j < 0) ? Eigen::Vector2i(-1, -1)
+                                         : Eigen::Vector2i(thrust::get<0>(idxs),
+                                                           j);
                       });
     auto end =
             thrust::remove_if(result.correspondence_set_.begin(),

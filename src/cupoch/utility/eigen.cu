@@ -16,10 +16,17 @@ Eigen::Matrix4f cupoch::utility::TransformVector6fToMatrix4f(
     const Eigen::Vector3f w = input.head<3>() / th;
     const float cth = std::cos(th);
     const float sth = std::sin(th);
-    output.topLeftCorner<3, 3>() = (Eigen::Matrix3f() <<
-            cth + w[0] * w[0] * (1 - cth), w[0] * w[1] * (1 - cth) - w[2] * sth, w[1] * sth + w[0] * w[2] * (1 - cth),
-            w[2] * sth + w[0] * w[1] * (1 - cth), cth + w[1] * w[1] * (1 - cth), -w[0] * sth + w[1] * w[2] * (1 - cth),
-            -w[1] * sth + w[0] * w[2] * (1 - cth), w[0] * sth + w[1] * w[2] * (1 - cth), cth + w[2] * w[2] * (1 - cth)).finished();
+    output.topLeftCorner<3, 3>() =
+            (Eigen::Matrix3f() << cth + w[0] * w[0] * (1 - cth),
+             w[0] * w[1] * (1 - cth) - w[2] * sth,
+             w[1] * sth + w[0] * w[2] * (1 - cth),
+             w[2] * sth + w[0] * w[1] * (1 - cth),
+             cth + w[1] * w[1] * (1 - cth),
+             -w[0] * sth + w[1] * w[2] * (1 - cth),
+             -w[1] * sth + w[0] * w[2] * (1 - cth),
+             w[0] * sth + w[1] * w[2] * (1 - cth),
+             cth + w[2] * w[2] * (1 - cth))
+                    .finished();
     return output;
 }
 

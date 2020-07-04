@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef USE_RMM
-#include <rmm/thrust_rmm_allocator.h>
 #include <rmm/rmm_api.h>
+#include <rmm/thrust_rmm_allocator.h>
 #else
 #include <thrust/device_vector.h>
 #endif
@@ -12,8 +12,9 @@
 namespace cupoch {
 namespace utility {
 
-template<typename T>
-using pinned_host_vector = thrust::host_vector<T, thrust::cuda::experimental::pinned_allocator<T>>;
+template <typename T>
+using pinned_host_vector =
+        thrust::host_vector<T, thrust::cuda::experimental::pinned_allocator<T>>;
 
 #ifdef USE_RMM
 template <typename T>

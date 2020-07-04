@@ -50,10 +50,7 @@ struct compute_spfh_functor {
                          const Eigen::Vector3f *normals,
                          const int *indices,
                          int knn)
-        : points_(points),
-          normals_(normals),
-          indices_(indices),
-          knn_(knn) {};
+        : points_(points), normals_(normals), indices_(indices), knn_(knn){};
     const Eigen::Vector3f *points_;
     const Eigen::Vector3f *normals_;
     const int *indices_;
@@ -106,7 +103,8 @@ std::shared_ptr<Feature<33>> ComputeSPFHFeature(
             knn = geometry::NUM_MAX_NN;
             break;
         case geometry::KDTreeSearchParam::SearchType::Hybrid:
-            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param).max_nn_;
+            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param)
+                          .max_nn_;
             break;
         default:
             utility::LogError("Unsupport search param type.");
@@ -144,17 +142,17 @@ struct compute_fpfh_functor {
             if (idx_knn < 0 || idx == idx_knn) continue;
             float dist = distance2_[idx * knn_ + k];
             if (dist == 0.0) continue;
-            #pragma unroll
+#pragma unroll
             for (int j = 0; j < 33; j++) {
                 float val = spfh_data_[idx_knn][j] / dist;
                 sum[j / 11] += val;
                 ft[j] += val;
             }
         }
-        #pragma unroll
+#pragma unroll
         for (int j = 0; j < 3; j++)
             if (sum[j] != 0.0) sum[j] = 100.0 / sum[j];
-        #pragma unroll
+#pragma unroll
         for (int j = 0; j < 33; j++) {
             ft[j] *= sum[j / 11];
             // The commented line is the fpfh function in the paper.
@@ -171,31 +169,39 @@ struct compute_fpfh_functor {
 }  // namespace
 
 template <int Dim>
-Feature<Dim>::Feature() {};
+Feature<Dim>::Feature(){};
 
 template <int Dim>
-Feature<Dim>::Feature(const Feature<Dim>& other) : data_(other.data_) {}
+Feature<Dim>::Feature(const Feature<Dim> &other) : data_(other.data_) {}
 
 template <int Dim>
 Feature<Dim>::~Feature() {}
 
 template <int Dim>
-void Feature<Dim>::Resize(int n) { data_.resize(n); }
+void Feature<Dim>::Resize(int n) {
+    data_.resize(n);
+}
 
 template <int Dim>
-size_t Feature<Dim>::Dimension() const { return Dim; }
+size_t Feature<Dim>::Dimension() const {
+    return Dim;
+}
 
 template <int Dim>
-size_t Feature<Dim>::Num() const { return data_.size(); }
+size_t Feature<Dim>::Num() const {
+    return data_.size();
+}
 
 template <int Dim>
-thrust::host_vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData() const {
+thrust::host_vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData()
+        const {
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> h_data = data_;
     return h_data;
 }
 
 template <int Dim>
-void Feature<Dim>::SetData(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>>& data) {
+void Feature<Dim>::SetData(
+        const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &data) {
     data_ = data;
 }
 
@@ -227,25 +233,22 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
             knn = geometry::NUM_MAX_NN;
             break;
         case geometry::KDTreeSearchParam::SearchType::Hybrid:
-            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param).max_nn_;
+            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param)
+                          .max_nn_;
             break;
         default:
             utility::LogError("Unsupport search param type.");
             return feature;
     }
-    kdtree.Search(input.points_,
-                  search_param,
-                  indices, distance2);
-    compute_fpfh_functor func(
-            thrust::raw_pointer_cast(spfh->data_.data()),
-            thrust::raw_pointer_cast(indices.data()),
-            thrust::raw_pointer_cast(distance2.data()),
-            knn);
+    kdtree.Search(input.points_, search_param, indices, distance2);
+    compute_fpfh_functor func(thrust::raw_pointer_cast(spfh->data_.data()),
+                              thrust::raw_pointer_cast(indices.data()),
+                              thrust::raw_pointer_cast(distance2.data()), knn);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(input.points_.size()),
                       feature->data_.begin(), func);
     return feature;
 }
 
-}
-}
+}  // namespace registration
+}  // namespace cupoch

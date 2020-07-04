@@ -2,6 +2,7 @@
 
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/camera/pinhole_camera_parameters.h"
+#include "cupoch/cupoch_config.h"
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/geometry/image.h"
@@ -17,7 +18,6 @@
 #include "cupoch/io/class_io/trianglemesh_io.h"
 #include "cupoch/io/class_io/voxelgrid_io.h"
 #include "cupoch/odometry/odometry.h"
-#include "cupoch/cupoch_config.h"
 #include "cupoch/registration/feature.h"
 #include "cupoch/registration/registration.h"
 #include "cupoch/registration/transformation_estimation.h"

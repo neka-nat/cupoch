@@ -4,9 +4,8 @@
 #include "cupoch/geometry/geometry.h"
 #include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/trianglemesh.h"
-
-#include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/cupoch_pybind.h"
+#include "cupoch_pybind/geometry/geometry.h"
 
 using namespace cupoch;
 
@@ -17,9 +16,7 @@ public:
     GeometryT& Clear() override {
         PYBIND11_OVERLOAD_PURE(GeometryT&, GeometryT, );
     }
-    bool IsEmpty() const override {
-        PYBIND11_OVERLOAD_PURE(bool, GeometryT, );
-    }
+    bool IsEmpty() const override { PYBIND11_OVERLOAD_PURE(bool, GeometryT, ); }
 };
 
 template <class Geometry3DBase = geometry::GeometryBase<3>>

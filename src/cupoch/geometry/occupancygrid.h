@@ -10,14 +10,17 @@ class PointCloud;
 class OccupancyVoxel {
 public:
     __host__ __device__ OccupancyVoxel() {}
-    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index)
+    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i& grid_index)
         : grid_index_(grid_index.cast<unsigned short>()) {}
-    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index, float prob_log)
+    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i& grid_index,
+                                       float prob_log)
         : grid_index_(grid_index.cast<unsigned short>()), prob_log_(prob_log) {}
-    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i &grid_index,
+    __host__ __device__ OccupancyVoxel(const Eigen::Vector3i& grid_index,
                                        float prob_log,
-                                       const Eigen::Vector3f &color)
-        : grid_index_(grid_index.cast<unsigned short>()), color_(color), prob_log_(prob_log) {}
+                                       const Eigen::Vector3f& color)
+        : grid_index_(grid_index.cast<unsigned short>()),
+          color_(color),
+          prob_log_(prob_log) {}
     __host__ __device__ ~OccupancyVoxel() {}
 
 public:
@@ -26,7 +29,8 @@ public:
     float prob_log_ = std::numeric_limits<float>::quiet_NaN();
 };
 
-inline OccupancyVoxel operator+(const OccupancyVoxel &lhs, const OccupancyVoxel& rhs) {
+inline OccupancyVoxel operator+(const OccupancyVoxel& lhs,
+                                const OccupancyVoxel& rhs) {
     OccupancyVoxel out = lhs;
     out.prob_log_ += rhs.prob_log_;
     out.color_ += rhs.color_;
@@ -37,11 +41,13 @@ inline OccupancyVoxel operator+(const OccupancyVoxel &lhs, const OccupancyVoxel&
 class OccupancyGrid : public DenseGrid<OccupancyVoxel> {
 public:
     OccupancyGrid();
-    OccupancyGrid(float voxel_size, int resolution = 512, const Eigen::Vector3f& origin = Eigen::Vector3f::Zero());
+    OccupancyGrid(float voxel_size,
+                  int resolution = 512,
+                  const Eigen::Vector3f& origin = Eigen::Vector3f::Zero());
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);
 
-    OccupancyGrid &Clear() override;
+    OccupancyGrid& Clear() override;
 
     Eigen::Vector3f GetMinBound() const override;
     Eigen::Vector3f GetMaxBound() const override;
@@ -50,25 +56,37 @@ public:
     bool HasColors() const {
         return true;  // By default, the colors are (1.0, 1.0, 1.0)
     }
-    bool IsOccupied(const Eigen::Vector3f &point) const;
-    bool IsUnknown(const Eigen::Vector3f &point) const;
-    thrust::tuple<bool, OccupancyVoxel> GetVoxel(const Eigen::Vector3f &point) const;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels() const;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractKnownVoxels() const;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractFreeVoxels() const;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractOccupiedVoxels() const;
+    bool IsOccupied(const Eigen::Vector3f& point) const;
+    bool IsUnknown(const Eigen::Vector3f& point) const;
+    thrust::tuple<bool, OccupancyVoxel> GetVoxel(
+            const Eigen::Vector3f& point) const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels()
+            const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractKnownVoxels()
+            const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractFreeVoxels()
+            const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>>
+    ExtractOccupiedVoxels() const;
 
     OccupancyGrid& Reconstruct(float voxel_size, int resolution);
 
     OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points,
-                          const Eigen::Vector3f& viewpoint, float max_range = -1.0);
+                          const Eigen::Vector3f& viewpoint,
+                          float max_range = -1.0);
     OccupancyGrid& Insert(const thrust::host_vector<Eigen::Vector3f>& points,
-                          const Eigen::Vector3f& viewpoint, float max_range = -1.0);
-    OccupancyGrid& Insert(const PointCloud& pointcloud, const Eigen::Vector3f& viewpoint,
+                          const Eigen::Vector3f& viewpoint,
+                          float max_range = -1.0);
+    OccupancyGrid& Insert(const PointCloud& pointcloud,
+                          const Eigen::Vector3f& viewpoint,
                           float max_range = -1.0);
 
-    OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels, bool occupied = false);
-    OccupancyGrid& AddVoxels(const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied = false);
+    OccupancyGrid& AddVoxel(const Eigen::Vector3i& voxels,
+                            bool occupied = false);
+    OccupancyGrid& AddVoxels(
+            const utility::device_vector<Eigen::Vector3i>& voxels,
+            bool occupied = false);
+
 public:
     Eigen::Vector3ui16 min_bound_ = Eigen::Vector3ui16::Zero();
     Eigen::Vector3ui16 max_bound_ = Eigen::Vector3ui16::Zero();
@@ -80,6 +98,6 @@ public:
     bool visualize_free_area_ = true;
 };
 
-}
+}  // namespace geometry
 
-}
+}  // namespace cupoch

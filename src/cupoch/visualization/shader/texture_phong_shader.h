@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <thrust/device_ptr.h>
+
+#include <Eigen/Core>
 
 #include "cupoch/visualization/shader/shader_wrapper.h"
 
@@ -43,8 +44,11 @@ protected:
                                 thrust::device_ptr<uint8_t> &texture_image) = 0;
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
     virtual size_t GetTextureSize(const geometry::Geometry &geometry) const = 0;
-    virtual size_t GetTextureHeight(const geometry::Geometry &geometry) const = 0;
-    virtual size_t GetTextureWidth(const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetTextureHeight(
+            const geometry::Geometry &geometry) const = 0;
+    virtual size_t GetTextureWidth(
+            const geometry::Geometry &geometry) const = 0;
+
 protected:
     void SetLighting(const ViewControl &view, const RenderOption &option);
 

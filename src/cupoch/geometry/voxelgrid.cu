@@ -2,9 +2,9 @@
 
 #include "cupoch/camera/pinhole_camera_parameters.h"
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/voxelgrid.h"
-#include "cupoch/geometry/geometry_functor.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -86,14 +86,14 @@ struct compute_carve_functor {
             const thrust::tuple<Eigen::Vector3i, Voxel> &voxel) const {
         bool carve = true;
         float r = voxel_size_ / 2.0;
-        const Voxel& vxl = thrust::get<1>(voxel);
+        const Voxel &vxl = thrust::get<1>(voxel);
         auto x = ((vxl.grid_index_.cast<float>() +
                    Eigen::Vector3f(0.5, 0.5, 0.5)) *
                   voxel_size_) +
                  origin_;
         Eigen::Vector3f pts[8];
         GetVoxelBoundingPoints(x, r, pts);
-        #pragma unroll
+#pragma unroll
         for (int i = 0; i < 8; ++i) {
             auto x_trans = rot_ * pts[i] + trans_;
             auto uvz = intrinsic_ * x_trans;
@@ -121,19 +121,22 @@ VoxelGrid::VoxelGrid() : GeometryBase<3>(Geometry::GeometryType::VoxelGrid) {}
 VoxelGrid::~VoxelGrid() {}
 
 VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
-: GeometryBase<3>(Geometry::GeometryType::VoxelGrid), voxel_size_(src_voxel_grid.voxel_size_),
-origin_(src_voxel_grid.origin_),
-voxels_keys_(src_voxel_grid.voxels_keys_),
-voxels_values_(src_voxel_grid.voxels_values_) {}
+    : GeometryBase<3>(Geometry::GeometryType::VoxelGrid),
+      voxel_size_(src_voxel_grid.voxel_size_),
+      origin_(src_voxel_grid.origin_),
+      voxels_keys_(src_voxel_grid.voxels_keys_),
+      voxels_values_(src_voxel_grid.voxels_values_) {}
 
-thrust::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>> VoxelGrid::GetVoxels() const {
+thrust::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>>
+VoxelGrid::GetVoxels() const {
     thrust::host_vector<Eigen::Vector3i> h_keys = voxels_keys_;
     thrust::host_vector<Voxel> h_values = voxels_values_;
     return thrust::make_pair(h_keys, h_values);
 }
 
-void VoxelGrid::SetVoxels(const thrust::host_vector<Eigen::Vector3i>& voxels_keys,
-                          const thrust::host_vector<Voxel>& voxels_values) {
+void VoxelGrid::SetVoxels(
+        const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
+        const thrust::host_vector<Voxel> &voxels_values) {
     voxels_keys_ = voxels_keys;
     voxels_values_ = voxels_values;
 }
@@ -153,8 +156,9 @@ Eigen::Vector3f VoxelGrid::GetMinBound() const {
         return origin_;
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
-        Eigen::Vector3i min_grid_index = thrust::reduce(voxels_keys_.begin(),
-                voxels_keys_.end(), init, thrust::elementwise_minimum<Eigen::Vector3i>());
+        Eigen::Vector3i min_grid_index =
+                thrust::reduce(voxels_keys_.begin(), voxels_keys_.end(), init,
+                               thrust::elementwise_minimum<Eigen::Vector3i>());
         return min_grid_index.cast<float>() * voxel_size_ + origin_;
     }
 }
@@ -164,8 +168,9 @@ Eigen::Vector3f VoxelGrid::GetMaxBound() const {
         return origin_;
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
-        Eigen::Vector3i max_grid_index = thrust::reduce(voxels_keys_.begin(),
-                voxels_keys_.end(), init, thrust::elementwise_maximum<Eigen::Vector3i>());
+        Eigen::Vector3i max_grid_index =
+                thrust::reduce(voxels_keys_.begin(), voxels_keys_.end(), init,
+                               thrust::elementwise_maximum<Eigen::Vector3i>());
         return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
                        voxel_size_ +
                origin_;
@@ -178,8 +183,9 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
         return init;
     }
     compute_grid_center_functor func(voxel_size_, origin_);
-    Eigen::Vector3f center = thrust::transform_reduce(voxels_keys_.begin(),
-            voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
+    Eigen::Vector3f center = thrust::transform_reduce(
+            voxels_keys_.begin(), voxels_keys_.end(), func, init,
+            thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
     return center;
 }
@@ -202,7 +208,7 @@ VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4f &transformation) {
 }
 
 VoxelGrid &VoxelGrid::Translate(const Eigen::Vector3f &translation,
-                                               bool relative) {
+                                bool relative) {
     origin_ += translation;
     return *this;
 }
@@ -279,7 +285,8 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
-    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_, voxels_values_);
+    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
+               voxels_values_);
 }
 
 void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
@@ -293,7 +300,8 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
-    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_, voxels_values_);
+    resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
+               voxels_values_);
 }
 
 void VoxelGrid::AddVoxels(const thrust::host_vector<Voxel> &voxels) {

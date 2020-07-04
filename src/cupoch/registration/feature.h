@@ -33,8 +33,8 @@ public:
 
 /// Function to compute FPFH feature for a point cloud
 std::shared_ptr<Feature<33>> ComputeFPFHFeature(
-        const geometry::PointCloud &input,
-        const geometry::KDTreeSearchParam &search_param =
+        const geometry::PointCloud& input,
+        const geometry::KDTreeSearchParam& search_param =
                 geometry::KDTreeSearchParamKNN());
 
 }  // namespace registration

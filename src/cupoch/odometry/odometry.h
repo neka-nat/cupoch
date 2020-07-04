@@ -26,7 +26,8 @@ std::tuple<bool, Eigen::Matrix4f, Eigen::Matrix6f> ComputeRGBDOdometry(
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
-std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f> ComputeWeightedRGBDOdometry(
+std::tuple<bool, Eigen::Matrix4f, Eigen::Vector6f, Eigen::Matrix6f>
+ComputeWeightedRGBDOdometry(
         const geometry::RGBDImage &source,
         const geometry::RGBDImage &target,
         const camera::PinholeCameraIntrinsic &pinhole_camera_intrinsic =

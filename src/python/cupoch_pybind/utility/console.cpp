@@ -1,7 +1,7 @@
 #include "cupoch/utility/console.h"
 
-#include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/cupoch_pybind.h"
+#include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
 
@@ -32,4 +32,3 @@ void pybind_console(py::module &m) {
           "Get global verbosity level of Cupoch");
     docstring::FunctionDocInject(m, "get_verbosity_level");
 }
-

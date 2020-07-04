@@ -34,7 +34,8 @@ device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator=(
 template <typename Type>
 device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
         const utility::device_vector<Type>& other) {
-    thrust::transform(data_.begin(), data_.end(), other.begin(), data_.begin(), thrust::plus<Type>());
+    thrust::transform(data_.begin(), data_.end(), other.begin(), data_.begin(),
+                      thrust::plus<Type>());
     return *this;
 }
 
@@ -42,7 +43,8 @@ template <typename Type>
 device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
         const thrust::host_vector<Type>& other) {
     utility::device_vector<Type> dvo = other;
-    thrust::transform(data_.begin(), data_.end(), dvo.begin(), data_.begin(), thrust::plus<Type>());
+    thrust::transform(data_.begin(), data_.end(), dvo.begin(), data_.begin(),
+                      thrust::plus<Type>());
     return *this;
 }
 
@@ -105,10 +107,12 @@ template void FromWrapper<int>(utility::device_vector<int>& dv,
                                const device_vector_wrapper<int>& vec);
 template void FromWrapper<size_t>(utility::device_vector<size_t>& dv,
                                   const device_vector_wrapper<size_t>& vec);
-template void FromWrapper<geometry::OccupancyVoxel>(utility::device_vector<geometry::OccupancyVoxel>& dv,
-                                                    const device_vector_wrapper<geometry::OccupancyVoxel>& vec);
-template void FromWrapper<collision::PrimitivePack>(utility::device_vector<collision::PrimitivePack>& dv,
-                                                    const device_vector_wrapper<collision::PrimitivePack>& vec);
-                                                   
+template void FromWrapper<geometry::OccupancyVoxel>(
+        utility::device_vector<geometry::OccupancyVoxel>& dv,
+        const device_vector_wrapper<geometry::OccupancyVoxel>& vec);
+template void FromWrapper<collision::PrimitivePack>(
+        utility::device_vector<collision::PrimitivePack>& dv,
+        const device_vector_wrapper<collision::PrimitivePack>& vec);
+
 }  // namespace wrapper
 }  // namespace cupoch

@@ -1,5 +1,5 @@
-#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/helper.h"
 
 using namespace cupoch;
@@ -7,7 +7,8 @@ using namespace cupoch::io;
 
 void HostImage::FromDevice(const geometry::Image& image) {
     data_.resize(image.data_.size());
-    Prepare(image.width_, image.height_, image.num_of_channels_, image.bytes_per_channel_);
+    Prepare(image.width_, image.height_, image.num_of_channels_,
+            image.bytes_per_channel_);
     thrust::copy(image.data_.begin(), image.data_.end(), data_.begin());
 }
 
@@ -26,9 +27,9 @@ void HostImage::Clear() {
 }
 
 HostImage& HostImage::Prepare(int width,
-    int height,
-    int num_of_channels,
-    int bytes_per_channel) {
+                              int height,
+                              int num_of_channels,
+                              int bytes_per_channel) {
     width_ = width;
     height_ = height;
     num_of_channels_ = num_of_channels;

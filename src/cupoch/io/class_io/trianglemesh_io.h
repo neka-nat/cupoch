@@ -1,8 +1,10 @@
 #pragma once
 
+#include <thrust/host_vector.h>
+
 #include <Eigen/Core>
 #include <string>
-#include <thrust/host_vector.h>
+
 #include "cupoch/io/class_io/image_io.h"
 
 namespace cupoch {
@@ -16,8 +18,8 @@ namespace io {
 struct HostTriangleMesh {
     HostTriangleMesh() = default;
     ~HostTriangleMesh() = default;
-    void FromDevice(const geometry::TriangleMesh& mesh);
-    void ToDevice(geometry::TriangleMesh& mesh) const;
+    void FromDevice(const geometry::TriangleMesh &mesh);
+    void ToDevice(geometry::TriangleMesh &mesh) const;
     void Clear();
     utility::pinned_host_vector<Eigen::Vector3f> vertices_;
     utility::pinned_host_vector<Eigen::Vector3f> vertex_normals_;
@@ -68,7 +70,6 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
                             bool write_vertex_colors,
                             bool write_triangle_uvs,
                             bool print_progress);
-
 
 bool ReadTriangleMeshFromOBJ(const std::string &filename,
                              geometry::TriangleMesh &mesh,

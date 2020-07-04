@@ -10,12 +10,14 @@ namespace registration {
 
 class FilterRegResult {
 public:
-    FilterRegResult(const Eigen::Matrix4f &transformation =
-                        Eigen::Matrix4f::Identity())
-                    : transformation_(transformation) {};
+    FilterRegResult(
+            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity())
+        : transformation_(transformation){};
     FilterRegResult(const FilterRegResult &other)
-    : transformation_(other.transformation_), likelihood_(other.likelihood_) {};
-    ~FilterRegResult() {};
+        : transformation_(other.transformation_),
+          likelihood_(other.likelihood_){};
+    ~FilterRegResult(){};
+
 public:
     Eigen::Matrix4f_u transformation_;
     float likelihood_;
@@ -30,8 +32,9 @@ public:
         : sigma_initial_(sigma_initial),
           sigma_min_(sigma_min),
           relative_likelihood_(relative_likelihood),
-          max_iteration_(max_iteration) {};
-    ~FilterRegOption() {};
+          max_iteration_(max_iteration){};
+    ~FilterRegOption(){};
+
 public:
     float sigma_initial_;
     float sigma_min_;
@@ -46,5 +49,5 @@ FilterRegResult RegistrationFilterReg(
         const Eigen::Matrix4f &init = Eigen::Matrix4f::Identity(),
         const FilterRegOption &option = FilterRegOption());
 
-}
-}
+}  // namespace registration
+}  // namespace cupoch

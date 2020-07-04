@@ -71,13 +71,18 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
                                                         int iteration_num,
                                                         bool verbose = true);
 
-template <typename MatType, typename VecType, int NumJ, typename FuncJType,
-          typename FuncW1Type, typename FuncW2Type>
-thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(const FuncJType &fj,
-                                                                       const FuncW1Type &fw_reduce,
-                                                                       const FuncW2Type &fw_trans,
-                                                                       const int iteration_num,
-                                                                       bool verbose = true);
+template <typename MatType,
+          typename VecType,
+          int NumJ,
+          typename FuncJType,
+          typename FuncW1Type,
+          typename FuncW2Type>
+thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
+        const FuncJType &fj,
+        const FuncW1Type &fw_reduce,
+        const FuncW2Type &fw_trans,
+        const int iteration_num,
+        bool verbose = true);
 
 Eigen::Matrix3f RotationMatrixX(float radians);
 Eigen::Matrix3f RotationMatrixY(float radians);

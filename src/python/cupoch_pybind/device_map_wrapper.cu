@@ -1,7 +1,7 @@
-#include "cupoch_pybind/device_map_wrapper.h"
 #include <thrust/host_vector.h>
 
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch_pybind/device_map_wrapper.h"
 
 namespace cupoch {
 namespace wrapper {
@@ -18,7 +18,7 @@ device_map_wrapper<KeyType, ValueType, Hash>::device_map_wrapper(
     thrust::host_vector<KeyType> keys(other.size());
     thrust::host_vector<ValueType> values(other.size());
     size_t cnt = 0;
-    for(const auto& it : other) {
+    for (const auto& it : other) {
         keys[cnt] = it.first;
         values[cnt] = it.second;
     }
@@ -36,7 +36,8 @@ template <typename KeyType, typename ValueType, typename Hash>
 device_map_wrapper<KeyType, ValueType, Hash>::~device_map_wrapper(){};
 
 template <typename KeyType, typename ValueType, typename Hash>
-device_map_wrapper<KeyType, ValueType, Hash>& device_map_wrapper<KeyType, ValueType, Hash>::operator=(
+device_map_wrapper<KeyType, ValueType, Hash>&
+device_map_wrapper<KeyType, ValueType, Hash>::operator=(
         const device_map_wrapper<KeyType, ValueType, Hash>& other) {
     keys_ = other.keys_;
     values_ = other.values_;
@@ -54,7 +55,8 @@ bool device_map_wrapper<KeyType, ValueType, Hash>::empty() const {
 }
 
 template <typename KeyType, typename ValueType, typename Hash>
-std::unordered_map<KeyType, ValueType, Hash> device_map_wrapper<KeyType, ValueType, Hash>::cpu() const {
+std::unordered_map<KeyType, ValueType, Hash>
+device_map_wrapper<KeyType, ValueType, Hash>::cpu() const {
     thrust::host_vector<KeyType> keys = keys_;
     thrust::host_vector<ValueType> values = values_;
     std::unordered_map<KeyType, ValueType, Hash> ans;
@@ -65,16 +67,23 @@ std::unordered_map<KeyType, ValueType, Hash> device_map_wrapper<KeyType, ValueTy
 }
 
 template <typename KeyType, typename ValueType, typename Hash>
-void FromWrapper(utility::device_vector<KeyType>& dk, utility::device_vector<ValueType>& dv,
+void FromWrapper(utility::device_vector<KeyType>& dk,
+                 utility::device_vector<ValueType>& dv,
                  const device_map_wrapper<KeyType, ValueType, Hash>& map) {
     dk = map.keys_;
     dv = map.values_;
 }
 
-template class device_map_wrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>;
-template void FromWrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>(
-    utility::device_vector<Eigen::Vector3i>& dk, utility::device_vector<geometry::Voxel>& dv,
-    const device_map_wrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>& vec);
+template class device_map_wrapper<Eigen::Vector3i,
+                                  geometry::Voxel,
+                                  hash<Eigen::Vector3i>>;
+template void
+FromWrapper<Eigen::Vector3i, geometry::Voxel, hash<Eigen::Vector3i>>(
+        utility::device_vector<Eigen::Vector3i>& dk,
+        utility::device_vector<geometry::Voxel>& dv,
+        const device_map_wrapper<Eigen::Vector3i,
+                                 geometry::Voxel,
+                                 hash<Eigen::Vector3i>>& vec);
 
-}
-}
+}  // namespace wrapper
+}  // namespace cupoch

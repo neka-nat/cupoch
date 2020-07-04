@@ -1,7 +1,7 @@
 #include <png.h>
 
-#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -54,8 +54,8 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
                      (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
                      (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
     SetPNGImageFromImage(host_img, pngimage);
-    if (png_image_finish_read(&pngimage, NULL, host_img.data_.data(), 0, NULL) ==
-        0) {
+    if (png_image_finish_read(&pngimage, NULL, host_img.data_.data(), 0,
+                              NULL) == 0) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
         return false;

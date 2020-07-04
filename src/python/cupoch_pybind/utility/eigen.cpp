@@ -1,5 +1,6 @@
-#include "cupoch_pybind/cupoch_pybind.h"
 #include <thrust/host_vector.h>
+
+#include "cupoch_pybind/cupoch_pybind.h"
 
 namespace pybind11 {
 
@@ -13,8 +14,9 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
     using Class_ = py::class_<Vector, holder_type>;
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
     cl.def(py::init<>());
-    cl.def("__bool__", [](const Vector &v) -> bool { return !v.empty(); },
-           "Check whether the list is nonempty");
+    cl.def(
+            "__bool__", [](const Vector &v) -> bool { return !v.empty(); },
+            "Check whether the list is nonempty");
     cl.def("__len__", &Vector::size);
     return cl;
 }
@@ -61,7 +63,8 @@ py_array_to_vectors_int_eigen_allocator(
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
-    thrust::host_vector<EigenVector, EigenAllocator> eigen_vectors(array.shape(0));
+    thrust::host_vector<EigenVector, EigenAllocator> eigen_vectors(
+            array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
         eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
@@ -69,7 +72,7 @@ py_array_to_vectors_int_eigen_allocator(
     return cupoch::wrapper::device_vector_wrapper<EigenVector>(eigen_vectors);
 }
 
-}
+}  // namespace pybind11
 
 namespace {
 
@@ -78,18 +81,28 @@ template <typename Scalar,
           typename holder_type = std::unique_ptr<Vector>>
 py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
         py::module &m, const std::string &bind_name) {
-    auto vec = py::bind_vector_without_repr<cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name, py::module_local());
+    auto vec = py::bind_vector_without_repr<
+            cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name,
+                                                            py::module_local());
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
-    vec.def("__iadd__", [] (cupoch::wrapper::device_vector_wrapper<Scalar>& self, const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& other) {
-            thrust::host_vector<Scalar> hso(other.data(), other.data() + other.rows());
-            self += hso;
-            return self;
-        }, py::is_operator());
-    vec.def("__copy__",
-            [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) { return cupoch::wrapper::device_vector_wrapper<Scalar>(v); });
-    vec.def("__deepcopy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v, py::dict &memo) {
+    vec.def(
+            "__iadd__",
+            [](cupoch::wrapper::device_vector_wrapper<Scalar> &self,
+               const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &other) {
+                thrust::host_vector<Scalar> hso(other.data(),
+                                                other.data() + other.rows());
+                self += hso;
+                return self;
+            },
+            py::is_operator());
+    vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) {
         return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
     });
+    vec.def("__deepcopy__",
+            [](cupoch::wrapper::device_vector_wrapper<Scalar> &v,
+               py::dict &memo) {
+                return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
+            });
     return vec;
 }
 
@@ -103,28 +116,41 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
         const std::string &repr_name,
         InitFunc init_func) {
     typedef typename EigenVector::Scalar Scalar;
-    auto vec = py::bind_vector_without_repr<cupoch::wrapper::device_vector_wrapper<EigenVector>>(
+    auto vec = py::bind_vector_without_repr<
+            cupoch::wrapper::device_vector_wrapper<EigenVector>>(
             m, bind_name, py::module_local());
     vec.def(py::init(init_func));
-    vec.def("__repr__", [repr_name](const cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
-        return repr_name + std::string(" with ") + std::to_string(v.size()) +
-               std::string(" elements.\n") +
-               std::string("Use numpy.asarray() to copy data to host.");
-    });
+    vec.def("__repr__",
+            [repr_name](
+                    const cupoch::wrapper::device_vector_wrapper<EigenVector>
+                            &v) {
+                return repr_name + std::string(" with ") +
+                       std::to_string(v.size()) + std::string(" elements.\n") +
+                       std::string("Use numpy.asarray() to copy data to host.");
+            });
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<EigenVector>::cpu);
-    vec.def("__iadd__", [] (cupoch::wrapper::device_vector_wrapper<EigenVector>& self,
-                            const Eigen::Matrix<Scalar, Eigen::Dynamic, EigenVector::RowsAtCompileTime>& other) {
-            thrust::host_vector<EigenVector> hso(other.rows());
-            for (int i = 0; i < other.rows(); ++i) { hso[i] = other.row(i); }
-            self += hso;
-            return self;
-        }, py::is_operator());
-    vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
-        return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
-    });
-    vec.def("__deepcopy__", [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v, py::dict &memo) {
-        return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
-    });
+    vec.def(
+            "__iadd__",
+            [](cupoch::wrapper::device_vector_wrapper<EigenVector> &self,
+               const Eigen::Matrix<Scalar, Eigen::Dynamic,
+                                   EigenVector::RowsAtCompileTime> &other) {
+                thrust::host_vector<EigenVector> hso(other.rows());
+                for (int i = 0; i < other.rows(); ++i) {
+                    hso[i] = other.row(i);
+                }
+                self += hso;
+                return self;
+            },
+            py::is_operator());
+    vec.def("__copy__",
+            [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v) {
+                return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
+            });
+    vec.def("__deepcopy__",
+            [](cupoch::wrapper::device_vector_wrapper<EigenVector> &v,
+               py::dict &memo) {
+                return cupoch::wrapper::device_vector_wrapper<EigenVector>(v);
+            });
 
     return vec;
 }
@@ -132,8 +158,8 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
 }  // unnamed namespace
 
 void pybind_eigen(py::module &m) {
-    py::handle static_property =
-            py::handle((PyObject*)py::detail::get_internals().static_property_type);
+    py::handle static_property = py::handle(
+            (PyObject *)py::detail::get_internals().static_property_type);
 
     auto intvector = pybind_eigen_vector_of_scalar<int>(m, "IntVector");
     intvector.attr("__doc__") = static_property(
@@ -142,15 +168,15 @@ void pybind_eigen(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    auto ulongvector = pybind_eigen_vector_of_scalar<unsigned long>(m, "ULongVector");
+    auto ulongvector =
+            pybind_eigen_vector_of_scalar<unsigned long>(m, "ULongVector");
     ulongvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return R"(Convert ulong numpy array of shape ``(n,)`` to Cupoch format.)";
             }),
             py::none(), py::none(), "");
 
-    auto floatvector =
-            pybind_eigen_vector_of_scalar<float>(m, "FloatVector");
+    auto floatvector = pybind_eigen_vector_of_scalar<float>(m, "FloatVector");
     floatvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return R"(Convert float32 numpy array of shape ``(n,)`` to Cupoch format.)";

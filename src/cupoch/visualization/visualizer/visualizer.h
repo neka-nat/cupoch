@@ -2,10 +2,10 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <string>
 
-#include <unordered_set>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "cupoch/visualization/shader/geometry_renderer.h"
 #include "cupoch/visualization/visualizer/render_option.h"
@@ -236,5 +236,5 @@ protected:
             coordinate_frame_mesh_renderer_ptr_;
 };
 
-}
-}
+}  // namespace visualization
+}  // namespace cupoch

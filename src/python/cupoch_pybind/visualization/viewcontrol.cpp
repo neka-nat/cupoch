@@ -1,6 +1,5 @@
-#include "cupoch/visualization/visualizer/view_control.h"
 #include "cupoch/io/class_io/ijson_convertible_io.h"
-
+#include "cupoch/visualization/visualizer/view_control.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/visualization/visualization.h"
 #include "cupoch_pybind/visualization/visualization_trampoline.h"
@@ -32,14 +31,15 @@ void pybind_viewcontrol(py::module &m) {
                  [](const visualization::ViewControl &vc) {
                      return std::string("ViewControl");
                  })
-            .def("convert_to_pinhole_camera_parameters",
-                 [](visualization::ViewControl &vc) {
-                     camera::PinholeCameraParameters parameter;
-                     vc.ConvertToPinholeCameraParameters(parameter);
-                     return parameter;
-                 },
-                 "Function to convert visualization::ViewControl to "
-                 "camera::PinholeCameraParameters")
+            .def(
+                    "convert_to_pinhole_camera_parameters",
+                    [](visualization::ViewControl &vc) {
+                        camera::PinholeCameraParameters parameter;
+                        vc.ConvertToPinholeCameraParameters(parameter);
+                        return parameter;
+                    },
+                    "Function to convert visualization::ViewControl to "
+                    "camera::PinholeCameraParameters")
             .def("convert_from_pinhole_camera_parameters",
                  &visualization::ViewControl::
                          ConvertFromPinholeCameraParameters,

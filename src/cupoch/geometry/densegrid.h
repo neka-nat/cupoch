@@ -1,7 +1,8 @@
 #pragma once
+#include <thrust/tuple.h>
+
 #include "cupoch/geometry/geometry_base.h"
 #include "cupoch/utility/device_vector.h"
-#include <thrust/tuple.h>
 
 namespace cupoch {
 namespace geometry {
@@ -12,7 +13,10 @@ template <class VoxelType>
 class DenseGrid : public GeometryBase<3> {
 public:
     DenseGrid(Geometry::GeometryType type);
-    DenseGrid(Geometry::GeometryType type, float voxel_size, int resolution, const Eigen::Vector3f& origin);
+    DenseGrid(Geometry::GeometryType type,
+              float voxel_size,
+              int resolution,
+              const Eigen::Vector3f &origin);
     DenseGrid(Geometry::GeometryType type, const DenseGrid &src_grid);
     virtual ~DenseGrid();
 
@@ -25,13 +29,13 @@ public:
     virtual OrientedBoundingBox GetOrientedBoundingBox() const;
     virtual DenseGrid &Transform(const Eigen::Matrix4f &transformation);
     virtual DenseGrid &Translate(const Eigen::Vector3f &translation,
-                                     bool relative = true);
+                                 bool relative = true);
     virtual DenseGrid &Scale(const float scale, bool center = true);
     virtual DenseGrid &Rotate(const Eigen::Matrix3f &R, bool center = true);
 
-    virtual DenseGrid& Reconstruct(float voxel_size, int resolution);
+    virtual DenseGrid &Reconstruct(float voxel_size, int resolution);
 
-    int GetVoxelIndex(const Eigen::Vector3f& point) const;
+    int GetVoxelIndex(const Eigen::Vector3f &point) const;
     thrust::tuple<bool, VoxelType> GetVoxel(const Eigen::Vector3f &point) const;
 
 public:

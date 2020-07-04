@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Core>
+
 #include "cupoch/registration/feature.h"
 
 namespace cupoch {

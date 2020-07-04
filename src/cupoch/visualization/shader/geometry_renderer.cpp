@@ -1,4 +1,5 @@
 #include "cupoch/visualization/shader/geometry_renderer.h"
+
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 
@@ -68,10 +69,10 @@ bool LineSetRenderer::UpdateGeometry() {
 }
 
 bool GraphRenderer::Render(const RenderOption &option,
-                             const ViewControl &view) {
+                           const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     return simple_graph_node_shader_.Render(*geometry_ptr_, option, view) &&
-        simple_graph_edge_shader_.Render(*geometry_ptr_, option, view);
+           simple_graph_edge_shader_.Render(*geometry_ptr_, option, view);
 }
 
 bool GraphRenderer::AddGeometry(
@@ -123,7 +124,7 @@ bool TriangleMeshRenderer::Render(const RenderOption &option,
 bool TriangleMeshRenderer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;
@@ -222,7 +223,7 @@ bool CoordinateFrameRenderer::Render(const RenderOption &option,
 bool CoordinateFrameRenderer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         return false;
     }
     geometry_ptr_ = geometry_ptr;

@@ -2,22 +2,23 @@
 
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/visualization/visualizer/visualizer.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/visualization/visualizer/visualizer.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
 
-bool cupoch::visualization::DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
-                                                   &geometry_ptrs,
-                                           const std::string &window_name /* = "Cupoch"*/,
-                                           int width /* = 640*/,
-                                           int height /* = 480*/,
-                                           int left /* = 50*/,
-                                           int top /* = 50*/,
-                                           bool point_show_normal /* = false */,
-                                           bool mesh_show_wireframe /* = false */,
-                                           bool mesh_show_back_face /* = false */) {
+bool cupoch::visualization::DrawGeometries(
+        const std::vector<std::shared_ptr<const geometry::Geometry>>
+                &geometry_ptrs,
+        const std::string &window_name /* = "Cupoch"*/,
+        int width /* = 640*/,
+        int height /* = 480*/,
+        int left /* = 50*/,
+        int top /* = 50*/,
+        bool point_show_normal /* = false */,
+        bool mesh_show_wireframe /* = false */,
+        bool mesh_show_back_face /* = false */) {
     Visualizer visualizer;
     if (visualizer.CreateVisualizerWindow(window_name, width, height, left,
                                           top) == false) {

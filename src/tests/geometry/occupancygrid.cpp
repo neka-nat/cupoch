@@ -29,15 +29,19 @@ TEST(OccupancyGrid, GetVoxel) {
     occupancy_grid->AddVoxel(Eigen::Vector3i(h_res + 1, h_res, h_res), true);
     auto res1 = occupancy_grid->GetVoxel(Eigen::Vector3f(1.5, 0.0, 0.0));
     EXPECT_TRUE(thrust::get<0>(res1));
-    EXPECT_FLOAT_EQ(thrust::get<1>(res1).prob_log_, occupancy_grid->prob_hit_log_);
+    EXPECT_FLOAT_EQ(thrust::get<1>(res1).prob_log_,
+                    occupancy_grid->prob_hit_log_);
     occupancy_grid->AddVoxel(Eigen::Vector3i(h_res + 1, h_res, h_res), true);
     auto res2 = occupancy_grid->GetVoxel(Eigen::Vector3f(1.5, 0.0, 0.0));
     EXPECT_TRUE(thrust::get<0>(res2));
-    EXPECT_FLOAT_EQ(thrust::get<1>(res2).prob_log_, 2.0 * occupancy_grid->prob_hit_log_);
+    EXPECT_FLOAT_EQ(thrust::get<1>(res2).prob_log_,
+                    2.0 * occupancy_grid->prob_hit_log_);
     occupancy_grid->AddVoxel(Eigen::Vector3i(h_res + 1, h_res, h_res), false);
     auto res3 = occupancy_grid->GetVoxel(Eigen::Vector3f(1.5, 0.0, 0.0));
     EXPECT_TRUE(thrust::get<0>(res3));
-    EXPECT_FLOAT_EQ(thrust::get<1>(res3).prob_log_, 2.0 * occupancy_grid->prob_hit_log_ + occupancy_grid->prob_miss_log_);
+    EXPECT_FLOAT_EQ(thrust::get<1>(res3).prob_log_,
+                    2.0 * occupancy_grid->prob_hit_log_ +
+                            occupancy_grid->prob_miss_log_);
 }
 
 TEST(OccupancyGrid, Insert) {

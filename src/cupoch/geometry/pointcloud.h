@@ -107,7 +107,9 @@ public:
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
 
-    std::shared_ptr<PointCloud> GaussianFilter(float search_radius, float sigma2, int num_max_search_points = 50);
+    std::shared_ptr<PointCloud> GaussianFilter(float search_radius,
+                                               float sigma2,
+                                               int num_max_search_points = 50);
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
@@ -143,7 +145,10 @@ public:
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
     utility::device_vector<int> ClusterDBSCAN(
-            float eps, size_t min_points, bool print_progress = false, size_t max_edges = NUM_MAX_NN) const;
+            float eps,
+            size_t min_points,
+            bool print_progress = false,
+            size_t max_edges = NUM_MAX_NN) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

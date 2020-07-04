@@ -13,12 +13,13 @@ public:
         NotSite = 1 << 1,
     };
     __host__ __device__ DistanceVoxel() {}
-    __host__ __device__ DistanceVoxel(const Eigen::Vector3ui16& nearest_index, unsigned char state)
-    : nearest_index_(nearest_index), state_(state) {}
+    __host__ __device__ DistanceVoxel(const Eigen::Vector3ui16 &nearest_index,
+                                      unsigned char state)
+        : nearest_index_(nearest_index), state_(state) {}
     __host__ __device__ ~DistanceVoxel() {}
 
-    __host__ __device__ bool IsNotSite() const { return state_ & NotSite ; };
-    __host__ __device__ bool CheckHasNext() const { return state_ & HasNext ; };
+    __host__ __device__ bool IsNotSite() const { return state_ & NotSite; };
+    __host__ __device__ bool CheckHasNext() const { return state_ & HasNext; };
 
 public:
     Eigen::Vector3ui16 nearest_index_ = Eigen::Vector3ui16::Zero();
@@ -29,20 +30,23 @@ public:
 class DistanceTransform : public DenseGrid<DistanceVoxel> {
 public:
     DistanceTransform();
-    DistanceTransform(float voxel_size, int resolution,
+    DistanceTransform(float voxel_size,
+                      int resolution,
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
     ~DistanceTransform();
 
     DistanceTransform &Reconstruct(float voxel_size, int resolution);
 
-    DistanceTransform &ComputeEDT(const utility::device_vector<Eigen::Vector3i>& points);
-    DistanceTransform &ComputeEDT(const VoxelGrid& voxelgrid);
-    DistanceTransform &ComputeVoronoiDiagram(const utility::device_vector<Eigen::Vector3i>& points);
-    DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid& voxelgrid);
+    DistanceTransform &ComputeEDT(
+            const utility::device_vector<Eigen::Vector3i> &points);
+    DistanceTransform &ComputeEDT(const VoxelGrid &voxelgrid);
+    DistanceTransform &ComputeVoronoiDiagram(
+            const utility::device_vector<Eigen::Vector3i> &points);
+    DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid &voxelgrid);
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;
 };
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

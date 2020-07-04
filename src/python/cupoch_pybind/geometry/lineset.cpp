@@ -1,6 +1,6 @@
 #include "cupoch/geometry/lineset.h"
-#include "cupoch/geometry/pointcloud.h"
 
+#include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
@@ -20,11 +20,14 @@ void pybind_lineset(py::module &m) {
                          const thrust::host_vector<Eigen::Vector2i> &>(),
                 "Create a LineSet from given points and line indices",
                 "points"_a, "lines"_a)
-            .def(py::init([](const wrapper::device_vector_vector3f& points,
-                             const wrapper::device_vector_vector2i& lines) {
-                    return std::unique_ptr<geometry::LineSet<3>>(new geometry::LineSet<3>(points.data_, lines.data_));
-               }), "Create a LineSet from given points and line indices",
-               "points"_a, "lines"_a)
+            .def(py::init([](const wrapper::device_vector_vector3f &points,
+                             const wrapper::device_vector_vector2i &lines) {
+                     return std::unique_ptr<geometry::LineSet<3>>(
+                             new geometry::LineSet<3>(points.data_,
+                                                      lines.data_));
+                 }),
+                 "Create a LineSet from given points and line indices",
+                 "points"_a, "lines"_a)
             .def("__repr__",
                  [](const geometry::LineSet<3> &lineset) {
                      return std::string("geometry::LineSet with ") +
@@ -37,15 +40,17 @@ void pybind_lineset(py::module &m) {
             .def("has_colors", &geometry::LineSet<3>::HasColors,
                  "Returns ``True`` if the object's lines contain contain "
                  "colors.")
-            .def("get_line_coordinate", &geometry::LineSet<3>::GetLineCoordinate,
-                 "line_index"_a)
-            .def("paint_uniform_color", &geometry::LineSet<3>::PaintUniformColor,
+            .def("get_line_coordinate",
+                 &geometry::LineSet<3>::GetLineCoordinate, "line_index"_a)
+            .def("paint_uniform_color",
+                 &geometry::LineSet<3>::PaintUniformColor,
                  "Assigns each line in the line set the same color.")
-            .def_static("create_from_point_cloud_correspondences",
-                        &geometry::LineSet<3>::CreateFromPointCloudCorrespondences,
-                        "Factory function to create a LineSet from two "
-                        "pointclouds and a correspondence set.",
-                        "cloud0"_a, "cloud1"_a, "correspondences"_a)
+            .def_static(
+                    "create_from_point_cloud_correspondences",
+                    &geometry::LineSet<3>::CreateFromPointCloudCorrespondences,
+                    "Factory function to create a LineSet from two "
+                    "pointclouds and a correspondence set.",
+                    "cloud0"_a, "cloud1"_a, "correspondences"_a)
             .def_static("create_from_oriented_bounding_box",
                         &geometry::LineSet<3>::CreateFromOrientedBoundingBox,
                         "Factory function to create a LineSet from an "
@@ -61,12 +66,33 @@ void pybind_lineset(py::module &m) {
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)
-            .def_property("points", [] (geometry::LineSet<3> &line) {return wrapper::device_vector_vector3f(line.points_);},
-                                    [] (geometry::LineSet<3> &line, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(line.points_, vec);})
-            .def_property("lines", [] (geometry::LineSet<3> &line) {return wrapper::device_vector_vector2i(line.lines_);},
-                                   [] (geometry::LineSet<3> &line, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(line.lines_, vec);})
-            .def_property("colors", [] (geometry::LineSet<3> &line) {return wrapper::device_vector_vector3f(line.colors_);},
-                                    [] (geometry::LineSet<3> &line, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(line.colors_, vec);});
+            .def_property(
+                    "points",
+                    [](geometry::LineSet<3> &line) {
+                        return wrapper::device_vector_vector3f(line.points_);
+                    },
+                    [](geometry::LineSet<3> &line,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(line.points_, vec);
+                    })
+            .def_property(
+                    "lines",
+                    [](geometry::LineSet<3> &line) {
+                        return wrapper::device_vector_vector2i(line.lines_);
+                    },
+                    [](geometry::LineSet<3> &line,
+                       const wrapper::device_vector_vector2i &vec) {
+                        wrapper::FromWrapper(line.lines_, vec);
+                    })
+            .def_property(
+                    "colors",
+                    [](geometry::LineSet<3> &line) {
+                        return wrapper::device_vector_vector3f(line.colors_);
+                    },
+                    [](geometry::LineSet<3> &line,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(line.colors_, vec);
+                    });
     docstring::ClassMethodDocInject(m, "LineSet", "has_colors");
     docstring::ClassMethodDocInject(m, "LineSet", "has_lines");
     docstring::ClassMethodDocInject(m, "LineSet", "has_points");

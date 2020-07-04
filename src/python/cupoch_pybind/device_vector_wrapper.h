@@ -4,9 +4,9 @@
 
 #include <Eigen/Core>
 
-#include "cupoch/utility/device_vector.h"
-#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/collision/primitives.h"
+#include "cupoch/geometry/occupancygrid.h"
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 
@@ -38,12 +38,15 @@ using device_vector_vector3f = device_vector_wrapper<Eigen::Vector3f>;
 using device_vector_vector2f = device_vector_wrapper<Eigen::Vector2f>;
 using device_vector_vector3i = device_vector_wrapper<Eigen::Vector3i>;
 using device_vector_vector2i = device_vector_wrapper<Eigen::Vector2i>;
-using device_vector_vector33f = device_vector_wrapper<Eigen::Matrix<float, 33, 1>>;
+using device_vector_vector33f =
+        device_vector_wrapper<Eigen::Matrix<float, 33, 1>>;
 using device_vector_int = device_vector_wrapper<int>;
 using device_vector_size_t = device_vector_wrapper<size_t>;
 using device_vector_float = device_vector_wrapper<float>;
-using device_vector_occupancyvoxel = device_vector_wrapper<geometry::OccupancyVoxel>;
-using device_vector_primitives = device_vector_wrapper<collision::PrimitivePack>;
+using device_vector_occupancyvoxel =
+        device_vector_wrapper<geometry::OccupancyVoxel>;
+using device_vector_primitives =
+        device_vector_wrapper<collision::PrimitivePack>;
 
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,

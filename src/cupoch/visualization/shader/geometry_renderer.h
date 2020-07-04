@@ -1,13 +1,13 @@
 #pragma once
 
 #include "cupoch/geometry/geometry.h"
-#include "cupoch/visualization/shader/simple_shader.h"
-#include "cupoch/visualization/shader/phong_shader.h"
-#include "cupoch/visualization/shader/normal_shader.h"
-#include "cupoch/visualization/shader/simple_white_shader.h"
 #include "cupoch/visualization/shader/image_shader.h"
-#include "cupoch/visualization/shader/texture_simple_shader.h"
+#include "cupoch/visualization/shader/normal_shader.h"
+#include "cupoch/visualization/shader/phong_shader.h"
+#include "cupoch/visualization/shader/simple_shader.h"
+#include "cupoch/visualization/shader/simple_white_shader.h"
 #include "cupoch/visualization/shader/texture_phong_shader.h"
+#include "cupoch/visualization/shader/texture_simple_shader.h"
 
 namespace cupoch {
 namespace visualization {

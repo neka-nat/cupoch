@@ -1,7 +1,7 @@
+#include "cupoch_pybind/camera/camera.h"
+
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/camera/pinhole_camera_parameters.h"
-
-#include "cupoch_pybind/camera/camera.h"
 #include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;

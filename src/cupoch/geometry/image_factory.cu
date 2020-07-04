@@ -1,7 +1,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -48,23 +48,39 @@ struct make_float_image_functor {
     __device__ void operator()(size_t idx) {
         typedef float (*grayfn)(const uint8_t *);
         typedef float (*colorfn)(const uint8_t *, const float *);
-        grayfn gf[4] = {[] __device__ (const uint8_t *pi) { return (float)(*pi) / 255.0f; },
-                        [] __device__ (const uint8_t *pi) { const uint16_t *pi16 = (const uint16_t *)pi; return (float)(*pi16); },
-                        [] __device__ (const uint8_t *pi) { return 0.0f; },
-                        [] __device__ (const uint8_t *pi) { const float *pf = (const float *)pi; return *pf; }};
+        grayfn gf[4] = {[] __device__(const uint8_t *pi) {
+                            return (float)(*pi) / 255.0f;
+                        },
+                        [] __device__(const uint8_t *pi) {
+                            const uint16_t *pi16 = (const uint16_t *)pi;
+                            return (float)(*pi16);
+                        },
+                        [] __device__(const uint8_t *pi) { return 0.0f; },
+                        [] __device__(const uint8_t *pi) {
+                            const float *pf = (const float *)pi;
+                            return *pf;
+                        }};
         colorfn cf[4] = {
-            [] __device__ (const uint8_t *pi, const float *weights) {
-                return (weights[0] * (float)(pi[0]) + weights[1] * (float)(pi[1]) + weights[2] * (float)(pi[2])) / 255.0f;
-            },
-            [] __device__ (const uint8_t *pi, const float *weights) {
-                const uint16_t *pi16 = (const uint16_t *)pi;
-                return weights[0] * (float)(pi16[0]) + weights[1] * (float)(pi16[1]) + weights[2] * (float)(pi16[2]);
-            },
-            [] __device__ (const uint8_t *pi, const float *weights) { return 0.0f; },
-            [] __device__ (const uint8_t *pi, const float *weights) {
-                const float *pf = (const float *)pi;
-                return weights[0] * pf[0] + weights[1] * pf[1] + weights[2] * pf[2];
-            }};
+                [] __device__(const uint8_t *pi, const float *weights) {
+                    return (weights[0] * (float)(pi[0]) +
+                            weights[1] * (float)(pi[1]) +
+                            weights[2] * (float)(pi[2])) /
+                           255.0f;
+                },
+                [] __device__(const uint8_t *pi, const float *weights) {
+                    const uint16_t *pi16 = (const uint16_t *)pi;
+                    return weights[0] * (float)(pi16[0]) +
+                           weights[1] * (float)(pi16[1]) +
+                           weights[2] * (float)(pi16[2]);
+                },
+                [] __device__(const uint8_t *pi, const float *weights) {
+                    return 0.0f;
+                },
+                [] __device__(const uint8_t *pi, const float *weights) {
+                    const float *pf = (const float *)pi;
+                    return weights[0] * pf[0] + weights[1] * pf[1] +
+                           weights[2] * pf[2];
+                }};
         float *p = (float *)(fimage_ + idx * 4);
         const uint8_t *pi =
                 image_ + idx * num_of_channels_ * bytes_per_channel_;

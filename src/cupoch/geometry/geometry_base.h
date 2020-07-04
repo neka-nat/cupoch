@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Core>
+
 #include "cupoch/geometry/geometry.h"
 
 namespace cupoch {
@@ -16,7 +17,7 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    __host__ __device__ GeometryBase(GeometryType type) : Geometry(type, Dim) {};
+    __host__ __device__ GeometryBase(GeometryType type) : Geometry(type, Dim){};
 
 public:
     GeometryBase<Dim> &Clear() override = 0;
@@ -30,14 +31,16 @@ public:
     /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
-    virtual GeometryBase<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) = 0;
+    virtual GeometryBase<Dim> &Transform(
+            const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) = 0;
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D/2D vector to transform the geometry.
     /// \param relative If `true`, the \p translation is directly applied to the
     /// geometry. Otherwise, the geometry center is moved to the \p translation.
-    virtual GeometryBase<Dim> &Translate(const Eigen::Matrix<float, Dim, 1> &translation,
-                                         bool relative = true) = 0;
+    virtual GeometryBase<Dim> &Translate(
+            const Eigen::Matrix<float, Dim, 1> &translation,
+            bool relative = true) = 0;
     /// \brief Apply scaling to the geometry coordinates.
     ///
     /// \param scale The scale parameter that is multiplied to the

@@ -1,12 +1,13 @@
-#include "cupoch/visualization/visualizer/visualizer.h"
-#include "cupoch/visualization/visualizer/view_trajectory.h"
+#include <imgui/imgui.h>
+#include <imgui/examples/imgui_impl_glfw.h>
+#include <imgui/examples/imgui_impl_opengl3.h>
+
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/io/class_io/ijson_convertible_io.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/console.h"
-#include <imgui/imgui.h>
-#include <imgui/examples/imgui_impl_glfw.h>
-#include <imgui/examples/imgui_impl_opengl3.h>
+#include "cupoch/visualization/visualizer/view_trajectory.h"
+#include "cupoch/visualization/visualizer/visualizer.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -143,7 +144,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
     // glReadPixels get the screen in a vertically flipped manner
     // Thus we should flip it back.
     io::HostImage png_image;
-    png_image.Prepare(view_control_ptr_->GetWindowWidth(), view_control_ptr_->GetWindowHeight(), 3, 1);
+    png_image.Prepare(view_control_ptr_->GetWindowWidth(),
+                      view_control_ptr_->GetWindowHeight(), 3, 1);
     int bytes_per_line = screen_image.BytesPerLine();
     for (int i = 0; i < screen_image.height_; i++) {
         memcpy(png_image.data_.data() + bytes_per_line * i,

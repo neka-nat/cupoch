@@ -1,8 +1,8 @@
 #include "cupoch/io/class_io/image_io.h"
-#include "cupoch/geometry/image.h"
 
 #include <unordered_map>
 
+#include "cupoch/geometry/image.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 
@@ -93,7 +93,8 @@ bool WriteImage(const std::string &filename,
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
-    auto map_itr = file_extension_to_host_image_write_function.find(filename_ext);
+    auto map_itr =
+            file_extension_to_host_image_write_function.find(filename_ext);
     if (map_itr == file_extension_to_host_image_write_function.end()) {
         utility::LogWarning(
                 "Write geometry::Image failed: unknown file extension.");

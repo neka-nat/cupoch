@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cupoch/utility/device_vector.h>
+
 #include <Eigen/Core>
 #include <string>
-#include <cupoch/utility/device_vector.h>
 
 namespace cupoch {
 
@@ -15,8 +16,8 @@ namespace io {
 struct HostPointCloud {
     HostPointCloud() = default;
     ~HostPointCloud() = default;
-    void FromDevice(const geometry::PointCloud& pointcloud);
-    void ToDevice(geometry::PointCloud& pointcloud) const;
+    void FromDevice(const geometry::PointCloud &pointcloud);
+    void ToDevice(geometry::PointCloud &pointcloud) const;
     void Clear();
     utility::pinned_host_vector<Eigen::Vector3f> points_;
     utility::pinned_host_vector<Eigen::Vector3f> normals_;

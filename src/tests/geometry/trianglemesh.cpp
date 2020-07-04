@@ -1,4 +1,5 @@
 #include "cupoch/geometry/trianglemesh.h"
+
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
@@ -220,10 +221,10 @@ TEST(TriangleMesh, OperatorAppend) {
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(triangles0[i], triangles[i + 0]);
-        ExpectEQ(Vector3i(triangles1[i](0, 0) + size,
-                          triangles1[i](1, 0) + size,
-                          triangles1[i](2, 0) + size),
-                 triangles[i + size]);
+        ExpectEQ(
+                Vector3i(triangles1[i](0, 0) + size, triangles1[i](1, 0) + size,
+                         triangles1[i](2, 0) + size),
+                triangles[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
@@ -307,10 +308,10 @@ TEST(TriangleMesh, OperatorADD) {
     EXPECT_EQ(2 * size, tm.triangles_.size());
     for (size_t i = 0; i < size; i++) {
         ExpectEQ(triangles0[i], triangles[i + 0]);
-        ExpectEQ(Vector3i(triangles1[i](0, 0) + size,
-                          triangles1[i](1, 0) + size,
-                          triangles1[i](2, 0) + size),
-                 triangles[i + size]);
+        ExpectEQ(
+                Vector3i(triangles1[i](0, 0) + size, triangles1[i](1, 0) + size,
+                         triangles1[i](2, 0) + size),
+                triangles[i + size]);
     }
 
     EXPECT_EQ(2 * size, tm.triangle_normals_.size());
@@ -518,7 +519,8 @@ TEST(TriangleMesh, Purge) {
                                          {372.549020, 756.862745, 509.803922},
                                          {666.666667, 529.411765, 39.215686}};
     thrust::host_vector<Vector3f> ref_vertex_normals(24);
-    for (int i = 0; i < 24; ++i) ref_vertex_normals[i] = ref_vertex_normals_raw[i];
+    for (int i = 0; i < 24; ++i)
+        ref_vertex_normals[i] = ref_vertex_normals_raw[i];
 
     Vector3f ref_vertex_colors_raw[] = {{839.215686, 392.156863, 780.392157},
                                         {796.078431, 909.803922, 196.078431},
@@ -545,7 +547,8 @@ TEST(TriangleMesh, Purge) {
                                         {372.549020, 756.862745, 509.803922},
                                         {666.666667, 529.411765, 39.215686}};
     thrust::host_vector<Vector3f> ref_vertex_colors(24);
-    for (int i = 0; i < 24; ++i) ref_vertex_colors[i] = ref_vertex_colors_raw[i];
+    for (int i = 0; i < 24; ++i)
+        ref_vertex_colors[i] = ref_vertex_colors_raw[i];
 
     Vector3i ref_triangles_raw[] = {
             {20, 9, 18},  {19, 21, 4}, {8, 18, 6}, {13, 11, 15}, {8, 12, 22},
@@ -556,31 +559,31 @@ TEST(TriangleMesh, Purge) {
     thrust::host_vector<Vector3i> ref_triangles(22);
     for (int i = 0; i < 22; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
-    Vector3f ref_triangle_normals_raw[] = {
-            {839.215686, 392.156863, 780.392157},
-            {796.078431, 909.803922, 196.078431},
-            {333.333333, 764.705882, 274.509804},
-            {552.941176, 474.509804, 627.450980},
-            {364.705882, 509.803922, 949.019608},
-            {913.725490, 635.294118, 713.725490},
-            {141.176471, 603.921569, 15.686275},
-            {239.215686, 133.333333, 803.921569},
-            {105.882353, 996.078431, 215.686275},
-            {509.803922, 835.294118, 611.764706},
-            {294.117647, 635.294118, 521.568627},
-            {490.196078, 972.549020, 290.196078},
-            {400.000000, 890.196078, 282.352941},
-            {349.019608, 803.921569, 917.647059},
-            {66.666667, 949.019608, 525.490196},
-            {82.352941, 192.156863, 662.745098},
-            {890.196078, 345.098039, 62.745098},
-            {19.607843, 454.901961, 62.745098},
-            {235.294118, 968.627451, 901.960784},
-            {847.058824, 262.745098, 537.254902},
-            {372.549020, 756.862745, 509.803922},
-            {666.666667, 529.411765, 39.215686}};
+    Vector3f ref_triangle_normals_raw[] = {{839.215686, 392.156863, 780.392157},
+                                           {796.078431, 909.803922, 196.078431},
+                                           {333.333333, 764.705882, 274.509804},
+                                           {552.941176, 474.509804, 627.450980},
+                                           {364.705882, 509.803922, 949.019608},
+                                           {913.725490, 635.294118, 713.725490},
+                                           {141.176471, 603.921569, 15.686275},
+                                           {239.215686, 133.333333, 803.921569},
+                                           {105.882353, 996.078431, 215.686275},
+                                           {509.803922, 835.294118, 611.764706},
+                                           {294.117647, 635.294118, 521.568627},
+                                           {490.196078, 972.549020, 290.196078},
+                                           {400.000000, 890.196078, 282.352941},
+                                           {349.019608, 803.921569, 917.647059},
+                                           {66.666667, 949.019608, 525.490196},
+                                           {82.352941, 192.156863, 662.745098},
+                                           {890.196078, 345.098039, 62.745098},
+                                           {19.607843, 454.901961, 62.745098},
+                                           {235.294118, 968.627451, 901.960784},
+                                           {847.058824, 262.745098, 537.254902},
+                                           {372.549020, 756.862745, 509.803922},
+                                           {666.666667, 529.411765, 39.215686}};
     thrust::host_vector<Vector3f> ref_triangle_normals(22);
-    for (int i = 0; i < 22; ++i) ref_triangle_normals[i] = ref_triangle_normals_raw[i];
+    for (int i = 0; i < 22; ++i)
+        ref_triangle_normals[i] = ref_triangle_normals_raw[i];
 
     int size = 25;
 
@@ -963,7 +966,8 @@ TEST(TriangleMesh, NormalizeNormals) {
             {0.377967, 0.767871, 0.517219}, {0.782281, 0.621223, 0.046017},
             {0.314385, 0.671253, 0.671253}};
     thrust::host_vector<Vector3f> ref_vertex_normals(25);
-    for (int i = 0; i < 25; ++i) ref_vertex_normals[i] = ref_vertex_normals_raw[i];
+    for (int i = 0; i < 25; ++i)
+        ref_vertex_normals[i] = ref_vertex_normals_raw[i];
 
     Vector3f ref_triangle_normals_raw[] = {
             {0.331843, 0.660368, 0.673642}, {0.920309, 0.198342, 0.337182},
@@ -980,7 +984,8 @@ TEST(TriangleMesh, NormalizeNormals) {
             {0.669715, 0.451103, 0.589905}, {0.771164, 0.057123, 0.634068},
             {0.620625, 0.620625, 0.479217}};
     thrust::host_vector<Vector3f> ref_triangle_normals(25);
-    for (int i = 0; i < 25; ++i) ref_triangle_normals[i] = ref_triangle_normals_raw[i];
+    for (int i = 0; i < 25; ++i)
+        ref_triangle_normals[i] = ref_triangle_normals_raw[i];
 
     int size = 25;
 
@@ -1162,9 +1167,9 @@ TEST(TriangleMesh, CreateMeshCone) {
     thrust::host_vector<Vector3f> ref_vertices(7);
     for (int i = 0; i < 7; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
-    Vector3i ref_triangles_raw[] = {
-            {0, 3, 2}, {1, 2, 3}, {0, 4, 3}, {1, 3, 4}, {0, 5, 4},
-            {1, 4, 5}, {0, 6, 5}, {1, 5, 6}, {0, 2, 6}, {1, 6, 2}};
+    Vector3i ref_triangles_raw[] = {{0, 3, 2}, {1, 2, 3}, {0, 4, 3}, {1, 3, 4},
+                                    {0, 5, 4}, {1, 4, 5}, {0, 6, 5}, {1, 5, 6},
+                                    {0, 2, 6}, {1, 6, 2}};
     thrust::host_vector<Vector3i> ref_triangles(10);
     for (int i = 0; i < 10; ++i) ref_triangles[i] = ref_triangles_raw[i];
 

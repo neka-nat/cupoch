@@ -1,6 +1,7 @@
 #pragma once
-#include "cupoch/geometry/graph.h"
 #include <vector>
+
+#include "cupoch/geometry/graph.h"
 
 namespace cupoch {
 namespace planning {
@@ -9,10 +10,14 @@ typedef std::vector<Eigen::Vector3f> Path;
 
 class PlannerBase {
 public:
-    PlannerBase() {};
-    virtual ~PlannerBase() {};
-    virtual PlannerBase &AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle);
-    virtual std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const = 0;
+    PlannerBase(){};
+    virtual ~PlannerBase(){};
+    virtual PlannerBase& AddObstacle(
+            const std::shared_ptr<geometry::Geometry>& obstacle);
+    virtual std::shared_ptr<Path> FindPath(
+            const Eigen::Vector3f& start,
+            const Eigen::Vector3f& goal) const = 0;
+
 public:
     std::vector<std::shared_ptr<geometry::Geometry>> obstacles_;
 };
@@ -23,8 +28,10 @@ public:
     Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius = 0.1);
     ~Pos3DPlanner();
 
-    Pos3DPlanner &UpdateGraph();
-    std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const;
+    Pos3DPlanner& UpdateGraph();
+    std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start,
+                                   const Eigen::Vector3f& goal) const;
+
 public:
     geometry::Graph<3> graph_;
 
@@ -32,5 +39,5 @@ public:
     float max_edge_distance_ = 1.0;
 };
 
-}
-}
+}  // namespace planning
+}  // namespace cupoch

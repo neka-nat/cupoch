@@ -1,7 +1,6 @@
-#include "cupoch/visualization/visualizer/visualizer.h"
-#include "cupoch/visualization/utility/color_map.h"
-
 #include "cupoch/utility/console.h"
+#include "cupoch/visualization/utility/color_map.h"
+#include "cupoch/visualization/visualizer/visualizer.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;

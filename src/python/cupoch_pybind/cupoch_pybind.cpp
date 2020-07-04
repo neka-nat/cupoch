@@ -1,10 +1,10 @@
 #include "cupoch_pybind/cupoch_pybind.h"
 
 #include "cupoch_pybind/camera/camera.h"
+#include "cupoch_pybind/collision/collision.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/integration/integration.h"
-#include "cupoch_pybind/collision/collision.h"
 #include "cupoch_pybind/io/io.h"
 #include "cupoch_pybind/odometry/odometry.h"
 #include "cupoch_pybind/registration/registration.h"

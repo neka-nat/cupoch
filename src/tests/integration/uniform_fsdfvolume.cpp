@@ -27,8 +27,8 @@ bool ReadPoses(const std::string& trajectory_path,
             if (!fgets(line_buffer, DEFAULT_IO_BUFFER_SIZE, f)) {
                 return false;
             }
-            if (sscanf(line_buffer, "%f %f %f %f", &pose(row, 0),
-                       &pose(row, 1), &pose(row, 2), &pose(row, 3)) != 4) {
+            if (sscanf(line_buffer, "%f %f %f %f", &pose(row, 0), &pose(row, 1),
+                       &pose(row, 2), &pose(row, 3)) != 4) {
                 return false;
             }
         }
@@ -129,7 +129,8 @@ TEST(UniformTSDFVolume, RealData) {
     // for (const Eigen::Vector3f& color : mesh->GetVertexColors()) {
     //     color_sum += color;
     // }
-    // ExpectEQ(color_sum, Eigen::Vector3f(2703.841944, 2561.480949, 2481.503805),
+    // ExpectEQ(color_sum, Eigen::Vector3f(2703.841944, 2561.480949,
+    // 2481.503805),
     //          /*threshold*/ 0.1);
 
     // Extract point cloud

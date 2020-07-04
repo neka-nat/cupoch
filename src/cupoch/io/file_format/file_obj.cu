@@ -2,8 +2,8 @@
 #include <numeric>
 #include <vector>
 
-#include "cupoch/io/class_io/trianglemesh_io.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/io/class_io/trianglemesh_io.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
 
@@ -127,7 +127,7 @@ bool ReadTriangleMeshFromOBJ(const std::string& filename,
         if (!material.diffuse_texname.empty()) {
             mesh.texture_ = *(io::CreateImageFromFile(mtl_base_path +
                                                       material.diffuse_texname)
-                                 ->FlipVertical());
+                                      ->FlipVertical());
             break;
         }
     }
@@ -161,7 +161,8 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     file << "# Created by Open3D " << std::endl;
     file << "# object name: " << object_name << std::endl;
     file << "# number of vertices: " << host_mesh.vertices_.size() << std::endl;
-    file << "# number of triangles: " << host_mesh.triangles_.size() << std::endl;
+    file << "# number of triangles: " << host_mesh.triangles_.size()
+         << std::endl;
 
     // always write material name in obj file, regardless of uvs or textures
     file << "mtllib " << object_name << ".mtl" << std::endl;

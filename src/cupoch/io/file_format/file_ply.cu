@@ -1,4 +1,5 @@
 #include <rply.h>
+
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
@@ -256,7 +257,7 @@ int ReadColorCallback(p_ply_argument argument) {
 
 }  // namespace ply_voxelgrid_reader
 
-}
+}  // namespace
 
 namespace io {
 
@@ -728,5 +729,5 @@ bool WriteVoxelGridToPLY(const std::string &filename,
     return true;
 }
 
-}
-}
+}  // namespace io
+}  // namespace cupoch

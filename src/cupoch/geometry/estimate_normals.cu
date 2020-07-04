@@ -225,7 +225,8 @@ struct compute_normal_functor {
     const int *indices_;
     const int knn_;
     __device__ Eigen::Vector3f operator()(const int &idx) const {
-        Eigen::Vector3f normal = ComputeNormal(points_, &(indices_[idx * knn_]), knn_);
+        Eigen::Vector3f normal =
+                ComputeNormal(points_, &(indices_[idx * knn_]), knn_);
         return (normal.norm() == 0.0) ? Eigen::Vector3f(0.0, 0.0, 1.0) : normal;
     }
 };

@@ -29,8 +29,7 @@ public:
     __host__ __device__ Voxel() {}
     __host__ __device__ Voxel(const Eigen::Vector3i &grid_index)
         : grid_index_(grid_index) {}
-    __host__ __device__ Voxel(const Eigen::Vector3f &color)
-        : color_(color) {}
+    __host__ __device__ Voxel(const Eigen::Vector3f &color) : color_(color) {}
     __host__ __device__ Voxel(const Eigen::Vector3i &grid_index,
                               const Eigen::Vector3f &color)
         : grid_index_(grid_index), color_(color) {}
@@ -47,8 +46,11 @@ public:
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid();
 
-    thrust::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>> GetVoxels() const;
-    void SetVoxels(const thrust::host_vector<Eigen::Vector3i>& voxels_keys, const thrust::host_vector<Voxel>& voxels_values);
+    thrust::pair<thrust::host_vector<Eigen::Vector3i>,
+                 thrust::host_vector<Voxel>>
+    GetVoxels() const;
+    void SetVoxels(const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
+                   const thrust::host_vector<Voxel> &voxels_values);
 
     VoxelGrid &Clear() override;
     bool IsEmpty() const override;
@@ -59,7 +61,7 @@ public:
     OrientedBoundingBox GetOrientedBoundingBox() const;
     VoxelGrid &Transform(const Eigen::Matrix4f &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3f &translation,
-                             bool relative = true) override;
+                         bool relative = true) override;
     VoxelGrid &Scale(const float scale, bool center = true) override;
     VoxelGrid &Rotate(const Eigen::Matrix3f &R, bool center = true) override;
 

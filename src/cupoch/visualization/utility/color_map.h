@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <thrust/device_ptr.h>
+
+#include <Eigen/Core>
 
 namespace cupoch {
 namespace visualization {
@@ -17,30 +18,25 @@ public:
     };
 
 public:
-    __host__ __device__
-    ColorMap() {}
-    __host__ __device__
-    virtual ~ColorMap() {}
+    __host__ __device__ ColorMap() {}
+    __host__ __device__ virtual ~ColorMap() {}
 
 public:
     /// Function to get a color from a value in [0..1]
-    __host__ __device__
-    virtual Eigen::Vector3f GetColor(float value) const = 0;
+    __host__ __device__ virtual Eigen::Vector3f GetColor(float value) const = 0;
 
 protected:
-    __host__ __device__
-    float Interpolate(
+    __host__ __device__ float Interpolate(
             float value, float y0, float x0, float y1, float x1) const {
         if (value < x0) return y0;
         if (value > x1) return y1;
         return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
     }
-    __host__ __device__
-    Eigen::Vector3f Interpolate(float value,
-                                const Eigen::Vector3f &y0,
-                                float x0,
-                                const Eigen::Vector3f &y1,
-                                float x1) const {
+    __host__ __device__ Eigen::Vector3f Interpolate(float value,
+                                                    const Eigen::Vector3f &y0,
+                                                    float x0,
+                                                    const Eigen::Vector3f &y1,
+                                                    float x1) const {
         if (value < x0) return y0;
         if (value > x1) return y1;
         return (value - x0) * (y1 - y0) / (x1 - x0) + y0;
@@ -49,8 +45,7 @@ protected:
 
 class ColorMapGray final : public ColorMap {
 public:
-    __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final {
+    __host__ __device__ Eigen::Vector3f GetColor(float value) const final {
         return Eigen::Vector3f(value, value, value);
     }
 };
@@ -58,16 +53,14 @@ public:
 /// See Matlab's Jet colormap
 class ColorMapJet final : public ColorMap {
 public:
-    __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final {
+    __host__ __device__ Eigen::Vector3f GetColor(float value) const final {
         return Eigen::Vector3f(JetBase(value * 2.0 - 1.5),   // red
                                JetBase(value * 2.0 - 1.0),   // green
                                JetBase(value * 2.0 - 0.5));  // blue
     }
 
 protected:
-    __host__ __device__
-    float JetBase(float value) const {
+    __host__ __device__ float JetBase(float value) const {
         if (value <= -0.75) {
             return 0.0;
         } else if (value <= -0.25) {
@@ -85,18 +78,16 @@ protected:
 /// See Matlab's Summer colormap
 class ColorMapSummer final : public ColorMap {
 public:
-    __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final {
+    __host__ __device__ Eigen::Vector3f GetColor(float value) const final {
         return Eigen::Vector3f(Interpolate(value, 0.0, 0.0, 1.0, 1.0),
-                           Interpolate(value, 0.5, 0.0, 1.0, 1.0), 0.4);
+                               Interpolate(value, 0.5, 0.0, 1.0, 1.0), 0.4);
     }
 };
 
 /// See Matlab's Winter colormap
 class ColorMapWinter final : public ColorMap {
 public:
-    __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final {
+    __host__ __device__ Eigen::Vector3f GetColor(float value) const final {
         return Eigen::Vector3f(0.0, Interpolate(value, 0.0, 0.0, 1.0, 1.0),
                                Interpolate(value, 1.0, 0.0, 0.5, 1.0));
     }
@@ -104,8 +95,7 @@ public:
 
 class ColorMapHot final : public ColorMap {
 public:
-    __host__ __device__
-    Eigen::Vector3f GetColor(float value) const final {
+    __host__ __device__ Eigen::Vector3f GetColor(float value) const final {
         Eigen::Vector3f edges[4] = {
                 Eigen::Vector3f(1.0, 1.0, 1.0),
                 Eigen::Vector3f(1.0, 1.0, 0.0),
@@ -127,8 +117,8 @@ public:
 };
 
 /// Interface functions
-__host__ __device__
-inline Eigen::Vector3f GetColorMapColor(float value, ColorMap::ColorMapOption option) {
+__host__ __device__ inline Eigen::Vector3f GetColorMapColor(
+        float value, ColorMap::ColorMapOption option) {
     switch (option) {
         case ColorMap::ColorMapOption::Gray:
             return ColorMapGray().GetColor(value);

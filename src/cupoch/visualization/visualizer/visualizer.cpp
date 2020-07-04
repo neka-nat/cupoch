@@ -1,11 +1,12 @@
 #include "cupoch/visualization/visualizer/visualizer.h"
-#include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/utility/platform.h"
-#include "cupoch/utility/console.h"
 
 #include <imgui/imgui.h>
 #include <imgui/examples/imgui_impl_glfw.h>
 #include <imgui/examples/imgui_impl_opengl3.h>
+
+#include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -161,9 +162,9 @@ bool Visualizer::CreateVisualizerWindow(
 
     UpdateWindowTitle();
 
-    const char* glsl_version = "#version 130";
+    const char *glsl_version = "#version 130";
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     ImGui::StyleColorsDark();
     // Setup ImGui binding
     ImGui_ImplGlfw_InitForOpenGL(window_, true);
@@ -247,11 +248,14 @@ void Visualizer::RenderImGui() {
         ImGui::SetNextWindowPos(ImVec2(10, 10));
         ImGui::Begin("Infomation");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                    1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                    1000.0f / ImGui::GetIO().Framerate,
+                    ImGui::GetIO().Framerate);
         ImGui::Text("Visible");
         int count = 0;
         for (auto &geometry_ptr : geometry_ptrs_) {
-            status_changed |= ImGui::Checkbox(("Geometry " + std::to_string(count)).c_str(), &geometry_ptr.second);
+            status_changed |= ImGui::Checkbox(
+                    ("Geometry " + std::to_string(count)).c_str(),
+                    &geometry_ptr.second);
             ++count;
         }
         ImGui::End();
@@ -335,7 +339,7 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-                       geometry::Geometry::GeometryType::TriangleMesh) {
+               geometry::Geometry::GeometryType::TriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
         if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
             return false;
@@ -409,9 +413,9 @@ bool Visualizer::UpdateGeometry(
     return success;
 }
 
-void Visualizer::UpdateRender() {is_redraw_required_ = true;}
+void Visualizer::UpdateRender() { is_redraw_required_ = true; }
 
-bool Visualizer::HasGeometry() const {return !geometry_ptrs_.empty();}
+bool Visualizer::HasGeometry() const { return !geometry_ptrs_.empty(); }
 
 void Visualizer::PrintVisualizerHelp() {
     // clang-format off

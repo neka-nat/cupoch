@@ -48,7 +48,8 @@ struct compute_key_functor {
     const float voxel_size_;
     __device__ Eigen::Vector3i operator()(const Eigen::Vector3f &pt) {
         auto ref_coord = (pt - voxel_min_bound_) / voxel_size_;
-        return Eigen::device_vectorize<float, 3, ::floor>(ref_coord).cast<int>();
+        return Eigen::device_vectorize<float, 3, ::floor>(ref_coord)
+                .cast<int>();
     }
 };
 
@@ -188,8 +189,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out =
                 CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(
-                        keys,
-                        make_tuple_begin(sorted_points, sorted_normals),
+                        keys, make_tuple_begin(sorted_points, sorted_normals),
                         make_tuple_begin(output->points_, output->normals_));
         resize_all(n_out, output->points_, output->normals_);
         thrust::for_each(
@@ -204,8 +204,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         typedef thrust::zip_iterator<IteratorTuple> ZipIterator;
         auto n_out =
                 CalcAverageByKey<ZipIterator, Eigen::Vector3f, Eigen::Vector3f>(
-                        keys,
-                        make_tuple_begin(sorted_points, sorted_colors),
+                        keys, make_tuple_begin(sorted_points, sorted_colors),
                         make_tuple_begin(output->points_, output->colors_));
         resize_all(n_out, output->points_, output->colors_);
     } else {
@@ -220,8 +219,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto n_out = CalcAverageByKey<ZipIterator, Eigen::Vector3f,
                                       Eigen::Vector3f, Eigen::Vector3f>(
                 keys,
-                make_tuple_begin(sorted_points, sorted_normals,
-                                 sorted_colors),
+                make_tuple_begin(sorted_points, sorted_normals, sorted_colors),
                 make_tuple_begin(output->points_, output->normals_,
                                  output->colors_));
         resize_all(n_out, output->points_, output->normals_, output->colors_);
@@ -349,10 +347,14 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     const float std_dev = std::sqrt(sq_sum / (valid_distances - 1));
     const float distance_threshold = cloud_mean + std_ratio * std_dev;
     check_distance_threshold_functor th_func(distance_threshold);
-    auto begin = make_tuple_iterator(indices.begin(), thrust::make_discard_iterator());
-    auto end = thrust::copy_if(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), avg_distances.begin()),
-                               make_tuple_iterator(thrust::make_counting_iterator((size_t)n_pt), avg_distances.end()),
-                               begin, th_func);
+    auto begin = make_tuple_iterator(indices.begin(),
+                                     thrust::make_discard_iterator());
+    auto end = thrust::copy_if(
+            make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
+                                avg_distances.begin()),
+            make_tuple_iterator(thrust::make_counting_iterator((size_t)n_pt),
+                                avg_distances.end()),
+            begin, th_func);
     indices.resize(thrust::distance(begin, end));
     return std::make_tuple(SelectByIndex(indices), indices);
 }

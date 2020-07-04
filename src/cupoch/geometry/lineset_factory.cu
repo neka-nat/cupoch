@@ -4,8 +4,8 @@
 #include "cupoch/geometry/lineset.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -69,7 +69,8 @@ std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
         const utility::device_vector<thrust::pair<int, int>> &correspondences) {
-    utility::LogError("LineSet<2>::CreateFromPointCloudCorrespondences is not supported");
+    utility::LogError(
+            "LineSet<2>::CreateFromPointCloudCorrespondences is not supported");
     return std::make_shared<LineSet<2>>();
 }
 
@@ -133,7 +134,8 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromOrientedBoundingBox(
 template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromOrientedBoundingBox(
         const OrientedBoundingBox &box) {
-    utility::LogError("LineSet<2>::CreateFromOrientedBoundingBox is not supported");
+    utility::LogError(
+            "LineSet<2>::CreateFromOrientedBoundingBox is not supported");
     return std::make_shared<LineSet<2>>();
 }
 
@@ -162,6 +164,7 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromAxisAlignedBoundingBox(
 template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromAxisAlignedBoundingBox(
         const AxisAlignedBoundingBox &box) {
-    utility::LogError("LineSet<2>::CreateFromAxisAlignedBoundingBox is not supported");
+    utility::LogError(
+            "LineSet<2>::CreateFromAxisAlignedBoundingBox is not supported");
     return std::make_shared<LineSet<2>>();
 }

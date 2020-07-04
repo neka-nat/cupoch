@@ -32,7 +32,8 @@ public:
     LineSet(const LineSet &other);
     ~LineSet();
 
-    void SetPoints(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points);
+    void SetPoints(
+            const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points);
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> GetPoints() const;
 
     void SetLines(const thrust::host_vector<Eigen::Vector2i> &lines);
@@ -48,11 +49,13 @@ public:
     Eigen::Matrix<float, Dim, 1> GetMaxBound() const override;
     Eigen::Matrix<float, Dim, 1> GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    LineSet<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) override;
+    LineSet<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1>
+                                    &transformation) override;
     LineSet<Dim> &Translate(const Eigen::Matrix<float, Dim, 1> &translation,
                             bool relative = true) override;
     LineSet<Dim> &Scale(const float scale, bool center = true) override;
-    LineSet<Dim> &Rotate(const Eigen::Matrix<float, Dim, Dim> &R, bool center = true) override;
+    LineSet<Dim> &Rotate(const Eigen::Matrix<float, Dim, Dim> &R,
+                         bool center = true) override;
 
     bool HasPoints() const { return points_.size() > 0; }
 
@@ -62,8 +65,8 @@ public:
         return HasLines() && colors_.size() == lines_.size();
     }
 
-    thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>> GetLineCoordinate(
-            size_t line_index) const;
+    thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>>
+    GetLineCoordinate(size_t line_index) const;
 
     /// Assigns each line in the LineSet the same color \param color.
     LineSet &PaintUniformColor(const Eigen::Vector3f &color) {

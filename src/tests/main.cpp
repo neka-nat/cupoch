@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "cupoch/utility/device_vector.h"
 
 int main(int argc, char **argv) {

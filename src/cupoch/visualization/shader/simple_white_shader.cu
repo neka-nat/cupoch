@@ -1,12 +1,11 @@
-#include "cupoch/visualization/shader/simple_white_shader.h"
+#include <cuda_runtime.h>
 
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/visualization/shader/shader.h"
-#include "cupoch/visualization/utility/color_map.h"
 #include "cupoch/utility/platform.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
+#include "cupoch/visualization/shader/shader.h"
+#include "cupoch/visualization/shader/simple_white_shader.h"
+#include "cupoch/visualization/utility/color_map.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -15,14 +14,14 @@ using namespace cupoch::visualization::glsl;
 namespace {
 
 struct copy_pointcloud_normal_functor {
-    copy_pointcloud_normal_functor(const Eigen::Vector3f* points,
-                                   const Eigen::Vector3f* normals, float line_length)
-                                   : points_(points), normals_(normals), line_length_(line_length) {};
-    const Eigen::Vector3f* points_;
-    const Eigen::Vector3f* normals_;
+    copy_pointcloud_normal_functor(const Eigen::Vector3f *points,
+                                   const Eigen::Vector3f *normals,
+                                   float line_length)
+        : points_(points), normals_(normals), line_length_(line_length){};
+    const Eigen::Vector3f *points_;
+    const Eigen::Vector3f *normals_;
     const float line_length_;
-    __device__
-    Eigen::Vector3f operator() (size_t idx) {
+    __device__ Eigen::Vector3f operator()(size_t idx) {
         int i = idx / 2;
         int j = idx % 2;
         if (j == 0) {
@@ -34,18 +33,18 @@ struct copy_pointcloud_normal_functor {
 };
 
 struct copy_mesh_wireflame_functor {
-    copy_mesh_wireflame_functor(const Eigen::Vector3f* vertices, const int* triangles)
-                                : vertices_(vertices), triangles_(triangles) {};
-    const Eigen::Vector3f* vertices_;
-    const int* triangles_;
-    __device__
-    Eigen::Vector3f operator() (size_t k) {
+    copy_mesh_wireflame_functor(const Eigen::Vector3f *vertices,
+                                const int *triangles)
+        : vertices_(vertices), triangles_(triangles){};
+    const Eigen::Vector3f *vertices_;
+    const int *triangles_;
+    __device__ Eigen::Vector3f operator()(size_t k) {
         int vi = triangles_[k];
         return vertices_[vi];
     }
 };
 
-}
+}  // namespace
 
 bool SimpleWhiteShader::Compile() {
     if (CompileShaders(simple_white_vertex_shader, NULL,
@@ -80,15 +79,20 @@ bool SimpleWhiteShader::BindGeometry(const geometry::Geometry &geometry,
     // Create buffers and bind the geometry
     glGenBuffers(1, &vertex_position_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_position_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0,
+                 GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], vertex_position_buffer_, cudaGraphicsMapFlagsNone));
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0],
+                                              vertex_position_buffer_,
+                                              cudaGraphicsMapFlagsNone));
 
-    Eigen::Vector3f* raw_points_ptr;
+    Eigen::Vector3f *raw_points_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(1, cuda_graphics_resources_));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
-    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr = thrust::device_pointer_cast(raw_points_ptr);
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_points_ptr, &n_bytes, cuda_graphics_resources_[0]));
+    thrust::device_ptr<Eigen::Vector3f> dev_points_ptr =
+            thrust::device_pointer_cast(raw_points_ptr);
 
     if (PrepareBinding(geometry, option, view, dev_points_ptr) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
@@ -120,7 +124,8 @@ bool SimpleWhiteShader::RenderGeometry(const geometry::Geometry &geometry,
 void SimpleWhiteShader::UnbindGeometry(bool finalize) {
     if (bound_) {
         if (!finalize)
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[0]));
         glDeleteBuffers(1, &vertex_position_buffer_);
         bound_ = false;
     }
@@ -158,16 +163,20 @@ bool SimpleWhiteShaderForPointCloudNormal::PrepareBinding(
     }
     float line_length =
             option.point_size_ * 0.01 * view.GetBoundingBox().GetMaxExtent();
-    copy_pointcloud_normal_functor func(thrust::raw_pointer_cast(pointcloud.points_.data()),
-                                        thrust::raw_pointer_cast(pointcloud.normals_.data()), line_length);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(pointcloud.points_.size() * 2),
-                      points, func);
+    copy_pointcloud_normal_functor func(
+            thrust::raw_pointer_cast(pointcloud.points_.data()),
+            thrust::raw_pointer_cast(pointcloud.normals_.data()), line_length);
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator(pointcloud.points_.size() * 2),
+            points, func);
     draw_arrays_mode_ = GL_LINES;
     draw_arrays_size_ = GLsizei(pointcloud.points_.size() * 2);
     return true;
 }
 
-size_t SimpleWhiteShaderForPointCloudNormal::GetDataSize(const geometry::Geometry &geometry) const {
+size_t SimpleWhiteShaderForPointCloudNormal::GetDataSize(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::PointCloud &)geometry).points_.size() * 2;
 }
 
@@ -176,7 +185,7 @@ bool SimpleWhiteShaderForTriangleMeshWireFrame::PrepareRendering(
         const RenderOption &option,
         const ViewControl &view) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -194,7 +203,7 @@ bool SimpleWhiteShaderForTriangleMeshWireFrame::PrepareBinding(
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points) {
     if (geometry.GetGeometryType() !=
-                geometry::Geometry::GeometryType::TriangleMesh) {
+        geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
         return false;
     }
@@ -204,15 +213,19 @@ bool SimpleWhiteShaderForTriangleMeshWireFrame::PrepareBinding(
         PrintShaderWarning("Binding failed with empty geometry::TriangleMesh.");
         return false;
     }
-    copy_mesh_wireflame_functor func(thrust::raw_pointer_cast(mesh.vertices_.data()),
-                                     (int*)(thrust::raw_pointer_cast(mesh.triangles_.data())));
-    thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
-                      points, func);
+    copy_mesh_wireflame_functor func(
+            thrust::raw_pointer_cast(mesh.vertices_.data()),
+            (int *)(thrust::raw_pointer_cast(mesh.triangles_.data())));
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(mesh.triangles_.size() * 3),
+            points, func);
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(mesh.triangles_.size() * 3);
     return true;
 }
 
-size_t SimpleWhiteShaderForTriangleMeshWireFrame::GetDataSize(const geometry::Geometry &geometry) const {
+size_t SimpleWhiteShaderForTriangleMeshWireFrame::GetDataSize(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::TriangleMesh &)geometry).triangles_.size() * 3;
 }

@@ -1,6 +1,5 @@
-#include "cupoch/visualization/visualizer/render_option.h"
 #include "cupoch/io/class_io/ijson_convertible_io.h"
-
+#include "cupoch/visualization/visualizer/render_option.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/visualization/visualization.h"
 #include "cupoch_pybind/visualization/visualization_trampoline.h"
@@ -20,22 +19,24 @@ void pybind_renderoption(py::module &m) {
                  [](const visualization::RenderOption &vc) {
                      return std::string("RenderOption");
                  })
-            .def("load_from_json",
-                 [](visualization::RenderOption &ro,
-                    const std::string &filename) {
-                     io::ReadIJsonConvertible(filename, ro);
-                 },
-                 "Function to load visualization::RenderOption from a JSON "
-                 "file.",
-                 "filename"_a)
-            .def("save_to_json",
-                 [](visualization::RenderOption &ro,
-                    const std::string &filename) {
-                     io::WriteIJsonConvertible(filename, ro);
-                 },
-                 "Function to save visualization::RenderOption to a JSON "
-                 "file.",
-                 "filename"_a)
+            .def(
+                    "load_from_json",
+                    [](visualization::RenderOption &ro,
+                       const std::string &filename) {
+                        io::ReadIJsonConvertible(filename, ro);
+                    },
+                    "Function to load visualization::RenderOption from a JSON "
+                    "file.",
+                    "filename"_a)
+            .def(
+                    "save_to_json",
+                    [](visualization::RenderOption &ro,
+                       const std::string &filename) {
+                        io::WriteIJsonConvertible(filename, ro);
+                    },
+                    "Function to save visualization::RenderOption to a JSON "
+                    "file.",
+                    "filename"_a)
             .def_readwrite(
                     "background_color",
                     &visualization::RenderOption::background_color_,

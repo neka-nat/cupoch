@@ -3,9 +3,9 @@
 #include <unordered_map>
 
 #include "cupoch/geometry/pointcloud.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/filesystem.h"
+#include "cupoch/utility/platform.h"
 
 namespace cupoch {
 

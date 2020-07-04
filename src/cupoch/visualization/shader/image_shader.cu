@@ -1,14 +1,13 @@
-#include "cupoch/visualization/shader/image_shader.h"
+#include <cuda_runtime.h>
 
 #include <algorithm>
 
 #include "cupoch/geometry/image.h"
+#include "cupoch/utility/platform.h"
+#include "cupoch/utility/range.h"
+#include "cupoch/visualization/shader/image_shader.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
-#include "cupoch/utility/range.h"
-#include "cupoch/utility/platform.h"
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
 
 using namespace cupoch;
 using namespace cupoch::visualization;
@@ -16,8 +15,7 @@ using namespace cupoch::visualization::glsl;
 
 namespace {
 
-__device__
-uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
+__device__ uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
     if (isnan(color)) {
         return 0;
     } else {
@@ -29,10 +27,9 @@ uint8_t ConvertColorFromFloatToUnsignedChar(float color) {
 }
 
 struct copy_float_gray_image_functor {
-    copy_float_gray_image_functor(const uint8_t* gray) : gray_(gray) {};
-    const uint8_t* gray_;
-    __device__
-    uint8_t operator() (size_t k) const {
+    copy_float_gray_image_functor(const uint8_t *gray) : gray_(gray){};
+    const uint8_t *gray_;
+    __device__ uint8_t operator()(size_t k) const {
         int idx = k / 3;
         float *p = (float *)(gray_ + idx * 4);
         uint8_t color = ConvertColorFromFloatToUnsignedChar(*p);
@@ -41,33 +38,30 @@ struct copy_float_gray_image_functor {
 };
 
 struct copy_float_rgb_image_functor {
-    copy_float_rgb_image_functor(const uint8_t* rgb) : rgb_(rgb) {};
-    const uint8_t* rgb_;
-    __device__
-    uint8_t operator() (size_t idx) const {
+    copy_float_rgb_image_functor(const uint8_t *rgb) : rgb_(rgb){};
+    const uint8_t *rgb_;
+    __device__ uint8_t operator()(size_t idx) const {
         float *p = (float *)(rgb_ + idx * 4);
         return ConvertColorFromFloatToUnsignedChar(*p);
     }
 };
 
 struct copy_int16_rgb_image_functor {
-    copy_int16_rgb_image_functor(const uint8_t* rgb) : rgb_(rgb) {};
-    const uint8_t* rgb_;
-    __device__
-    uint8_t operator() (size_t idx) const {
+    copy_int16_rgb_image_functor(const uint8_t *rgb) : rgb_(rgb){};
+    const uint8_t *rgb_;
+    __device__ uint8_t operator()(size_t idx) const {
         uint16_t *p = (uint16_t *)(rgb_ + idx * 2);
         return (uint8_t)((*p) & 0xff);
     }
 };
 
 struct copy_depth_image_functor {
-    copy_depth_image_functor(const uint8_t* depth, int max_depth)
-        : depth_(depth), max_depth_(max_depth) {};
-    const uint8_t* depth_;
+    copy_depth_image_functor(const uint8_t *depth, int max_depth)
+        : depth_(depth), max_depth_(max_depth){};
+    const uint8_t *depth_;
     const int max_depth_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
-    __device__
-    uint8_t operator() (size_t k) const {
+    __device__ uint8_t operator()(size_t k) const {
         thrust::minimum<float> min;
         int i = k / 3;
         int j = k % 3;
@@ -81,7 +75,8 @@ struct copy_depth_image_functor {
 }  // unnamed namespace
 
 bool ImageShader::Compile() {
-    if (CompileShaders(image_vertex_shader, NULL, image_fragment_shader) == false) {
+    if (CompileShaders(image_vertex_shader, NULL, image_fragment_shader) ==
+        false) {
         PrintShaderWarning("Compiling shaders failed.");
         return false;
     }
@@ -132,8 +127,8 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
 
     glGenTextures(1, &image_texture_buffer_);
     glBindTexture(GL_TEXTURE_2D, image_texture_buffer_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, num_data_width,
-                 num_data_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, num_data_width, num_data_height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, 0);
 
     if (option.interpolation_option_ ==
         RenderOption::TextureInterpolationOption::Nearest) {
@@ -151,12 +146,17 @@ bool ImageShader::BindGeometry(const geometry::Geometry &geometry,
     size_t data_size = GetDataSize(geometry);
     glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STATIC_DRAW);
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0], image_pixel_buffer_, cudaGraphicsMapFlagsNone));
-    uint8_t* raw_render_image_ptr;
+    cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[0],
+                                              image_pixel_buffer_,
+                                              cudaGraphicsMapFlagsNone));
+    uint8_t *raw_render_image_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(1, cuda_graphics_resources_));
-    cudaSafeCall(cudaGraphicsResourceGetMappedPointer((void **)&raw_render_image_ptr, &n_bytes, cuda_graphics_resources_[0]));
-    thrust::device_ptr<uint8_t> dev_render_image_ptr = thrust::device_pointer_cast(raw_render_image_ptr);
+    cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
+            (void **)&raw_render_image_ptr, &n_bytes,
+            cuda_graphics_resources_[0]));
+    thrust::device_ptr<uint8_t> dev_render_image_ptr =
+            thrust::device_pointer_cast(raw_render_image_ptr);
     if (PrepareBinding(geometry, option, view, dev_render_image_ptr) == false) {
         PrintShaderWarning("Binding failed when preparing data.");
         return false;
@@ -202,7 +202,8 @@ bool ImageShader::RenderGeometry(const geometry::Geometry &geometry,
 void ImageShader::UnbindGeometry(bool finalize) {
     if (bound_) {
         if (!finalize)
-            cudaSafeCall(cudaGraphicsUnregisterResource(cuda_graphics_resources_[0]));
+            cudaSafeCall(cudaGraphicsUnregisterResource(
+                    cuda_graphics_resources_[0]));
         glDeleteBuffers(1, &image_pixel_buffer_);
         glDeleteBuffers(1, &vertex_position_buffer_);
         glDeleteBuffers(1, &vertex_UV_buffer_);
@@ -249,10 +250,11 @@ bool ImageShaderForImage::PrepareRendering(const geometry::Geometry &geometry,
     return true;
 }
 
-bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
-                                         const RenderOption &option,
-                                         const ViewControl &view,
-                                         thrust::device_ptr<uint8_t> &render_image) {
+bool ImageShaderForImage::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<uint8_t> &render_image) {
     if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Image) {
         PrintShaderWarning("Rendering type is not geometry::Image.");
         return false;
@@ -268,36 +270,46 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
     } else {
         if (image.num_of_channels_ == 1 && image.bytes_per_channel_ == 1) {
             // grayscale image
-            thrust::repeated_range<utility::device_vector<uint8_t>::const_iterator> range(image.data_.begin(), image.data_.end(), 3);
+            thrust::repeated_range<
+                    utility::device_vector<uint8_t>::const_iterator>
+                    range(image.data_.begin(), image.data_.end(), 3);
             thrust::copy(range.begin(), range.end(), render_image);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 4) {
             // grayscale image with floating point per channel
-            copy_float_gray_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            copy_float_gray_image_functor func(
+                    thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              thrust::make_counting_iterator<size_t>(
+                                      image.height_ * image.width_ * 3),
                               render_image, func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 4) {
             // RGB image with floating point per channel
-            copy_float_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            copy_float_rgb_image_functor func(
+                    thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              thrust::make_counting_iterator<size_t>(
+                                      image.height_ * image.width_ * 3),
                               render_image, func);
         } else if (image.num_of_channels_ == 3 &&
                    image.bytes_per_channel_ == 2) {
             // image with RGB channels, each channel is a 16-bit integer
-            copy_int16_rgb_image_functor func(thrust::raw_pointer_cast(image.data_.data()));
+            copy_int16_rgb_image_functor func(
+                    thrust::raw_pointer_cast(image.data_.data()));
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              thrust::make_counting_iterator<size_t>(
+                                      image.height_ * image.width_ * 3),
                               render_image, func);
         } else if (image.num_of_channels_ == 1 &&
                    image.bytes_per_channel_ == 2) {
             // depth image, one channel of 16-bit integer
             const int max_depth = option.image_max_depth_;
-            copy_depth_image_functor func(thrust::raw_pointer_cast(image.data_.data()), max_depth);
+            copy_depth_image_functor func(
+                    thrust::raw_pointer_cast(image.data_.data()), max_depth);
             thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                              thrust::make_counting_iterator<size_t>(image.height_ * image.width_ * 3),
+                              thrust::make_counting_iterator<size_t>(
+                                      image.height_ * image.width_ * 3),
                               render_image, func);
         }
     }
@@ -307,14 +319,17 @@ bool ImageShaderForImage::PrepareBinding(const geometry::Geometry &geometry,
     return true;
 }
 
-size_t ImageShaderForImage::GetDataSize(const geometry::Geometry &geometry) const {
+size_t ImageShaderForImage::GetDataSize(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::Image &)geometry).data_.size();
 }
 
-size_t ImageShaderForImage::GetDataHeight(const geometry::Geometry &geometry) const {
+size_t ImageShaderForImage::GetDataHeight(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::Image &)geometry).height_;
 }
 
-size_t ImageShaderForImage::GetDataWidth(const geometry::Geometry &geometry) const {
+size_t ImageShaderForImage::GetDataWidth(
+        const geometry::Geometry &geometry) const {
     return ((const geometry::Image &)geometry).width_;
 }

@@ -1,5 +1,5 @@
-#include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -24,7 +24,8 @@ Eigen::Vector2f RGBDImage::GetMaxBound() const {
 }
 
 Eigen::Vector2f RGBDImage::GetCenter() const {
-    return Eigen::Vector2f((color_.width_ + depth_.width_) / 2, color_.height_ / 2);
+    return Eigen::Vector2f((color_.width_ + depth_.width_) / 2,
+                           color_.height_ / 2);
 }
 
 AxisAlignedBoundingBox RGBDImage::GetAxisAlignedBoundingBox() const {
@@ -37,7 +38,8 @@ RGBDImage &RGBDImage::Transform(const Eigen::Matrix3f &transformation) {
     return *this;
 }
 
-RGBDImage &RGBDImage::Translate(const Eigen::Vector2f &translation, bool relative) {
+RGBDImage &RGBDImage::Translate(const Eigen::Vector2f &translation,
+                                bool relative) {
     utility::LogError("RGBDImage::Translate is not supported");
     return *this;
 }

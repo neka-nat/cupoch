@@ -1,6 +1,6 @@
 #include "cupoch/geometry/distancetransform.h"
-#include "cupoch/geometry/voxelgrid.h"
 
+#include "cupoch/geometry/voxelgrid.h"
 #include "tests/test_utility/raw.h"
 #include "tests/test_utility/unit_test.h"
 
@@ -20,5 +20,7 @@ TEST(DistanceTransform, ComputeVoronoiDiagram) {
     dt.ComputeVoronoiDiagram(voxelgrid);
     auto v = dt.GetVoxel(Eigen::Vector3f(0.0, 0.0, 0.0));
     EXPECT_TRUE(thrust::get<0>(v));
-    EXPECT_EQ(thrust::get<1>(v).nearest_index_, ref.cast<unsigned short>() + Eigen::Vector3ui16::Constant(512 / 2));
+    EXPECT_EQ(
+            thrust::get<1>(v).nearest_index_,
+            ref.cast<unsigned short>() + Eigen::Vector3ui16::Constant(512 / 2));
 }

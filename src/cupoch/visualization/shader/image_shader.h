@@ -38,6 +38,7 @@ protected:
     virtual size_t GetDataSize(const geometry::Geometry &geometry) const = 0;
     virtual size_t GetDataHeight(const geometry::Geometry &geometry) const = 0;
     virtual size_t GetDataWidth(const geometry::Geometry &geometry) const = 0;
+
 protected:
     GLuint vertex_position_;
     GLuint vertex_position_buffer_;
@@ -59,10 +60,11 @@ protected:
     virtual bool PrepareRendering(const geometry::Geometry &geometry,
                                   const RenderOption &option,
                                   const ViewControl &view) final;
-    virtual bool PrepareBinding(const geometry::Geometry &geometry,
-                                const RenderOption &option,
-                                const ViewControl &view,
-                                thrust::device_ptr<uint8_t> &render_image) final;
+    virtual bool PrepareBinding(
+            const geometry::Geometry &geometry,
+            const RenderOption &option,
+            const ViewControl &view,
+            thrust::device_ptr<uint8_t> &render_image) final;
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
     size_t GetDataHeight(const geometry::Geometry &geometry) const final;
     size_t GetDataWidth(const geometry::Geometry &geometry) const final;

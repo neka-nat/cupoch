@@ -1,9 +1,9 @@
 #include "cupoch/geometry/trianglemesh.h"
+
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/pointcloud.h"
-#include "cupoch_pybind/dl_converter.h"
 #include "cupoch/utility/console.h"
-
+#include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
@@ -21,9 +21,11 @@ void pybind_trianglemesh(py::module &m) {
     py::detail::bind_default_constructor<geometry::TriangleMesh>(trianglemesh);
     py::detail::bind_copy_functions<geometry::TriangleMesh>(trianglemesh);
     trianglemesh
-            .def(py::init([](const wrapper::device_vector_vector3f& vertices,
-                             const wrapper::device_vector_vector3i& triangles) {
-                    return std::unique_ptr<geometry::TriangleMesh>(new geometry::TriangleMesh(vertices.data_, triangles.data_));
+            .def(py::init([](const wrapper::device_vector_vector3f &vertices,
+                             const wrapper::device_vector_vector3i &triangles) {
+                     return std::unique_ptr<geometry::TriangleMesh>(
+                             new geometry::TriangleMesh(vertices.data_,
+                                                        triangles.data_));
                  }),
                  "Create a triangle mesh from vertices and triangle indices",
                  "vertices"_a, "triangles"_a)
@@ -55,8 +57,7 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to compute vertex normals, usually called before "
                  "rendering",
                  "normalized"_a = true)
-            .def("compute_edge_list",
-                 &geometry::TriangleMesh::ComputeEdgeList,
+            .def("compute_edge_list", &geometry::TriangleMesh::ComputeEdgeList,
                  "Function to compute edge list, call before edge "
                  "list is needed")
             .def("remove_duplicated_vertices",
@@ -128,8 +129,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("has_triangle_normals",
                  &geometry::TriangleMesh::HasTriangleNormals,
                  "Returns ``True`` if the mesh contains triangle normals.")
-            .def("has_edge_list",
-                 &geometry::TriangleMesh::HasEdgeList,
+            .def("has_edge_list", &geometry::TriangleMesh::HasEdgeList,
                  "Returns ``True`` if the mesh contains edge list.")
             .def("has_triangle_uvs", &geometry::TriangleMesh::HasTriangleUvs,
                  "Returns ``True`` if the mesh contains uv coordinates.")
@@ -222,129 +222,176 @@ void pybind_trianglemesh(py::module &m) {
                         "rendered as red, green, and blue arrows respectively.",
                         "size"_a = 1.0,
                         "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_property("triangles", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3i(mesh.triangles_);},
-                                       [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3i& vec) {wrapper::FromWrapper(mesh.triangles_, vec);})
-            .def_property("triangle_normals", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector3f(mesh.triangle_normals_);},
-                                              [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector3f& vec) {wrapper::FromWrapper(mesh.triangle_normals_, vec);})
-            .def_property("edge_list", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector2i(mesh.edge_list_);},
-                                       [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector2i& vec) {wrapper::FromWrapper(mesh.edge_list_, vec);})
-            .def_property("triangle_uvs", [] (geometry::TriangleMesh &mesh) {return wrapper::device_vector_vector2f(mesh.triangle_uvs_);},
-                                          [] (geometry::TriangleMesh &mesh, const wrapper::device_vector_vector2f& vec) {wrapper::FromWrapper(mesh.triangle_uvs_, vec);})
+            .def_property(
+                    "triangles",
+                    [](geometry::TriangleMesh &mesh) {
+                        return wrapper::device_vector_vector3i(mesh.triangles_);
+                    },
+                    [](geometry::TriangleMesh &mesh,
+                       const wrapper::device_vector_vector3i &vec) {
+                        wrapper::FromWrapper(mesh.triangles_, vec);
+                    })
+            .def_property(
+                    "triangle_normals",
+                    [](geometry::TriangleMesh &mesh) {
+                        return wrapper::device_vector_vector3f(
+                                mesh.triangle_normals_);
+                    },
+                    [](geometry::TriangleMesh &mesh,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(mesh.triangle_normals_, vec);
+                    })
+            .def_property(
+                    "edge_list",
+                    [](geometry::TriangleMesh &mesh) {
+                        return wrapper::device_vector_vector2i(mesh.edge_list_);
+                    },
+                    [](geometry::TriangleMesh &mesh,
+                       const wrapper::device_vector_vector2i &vec) {
+                        wrapper::FromWrapper(mesh.edge_list_, vec);
+                    })
+            .def_property(
+                    "triangle_uvs",
+                    [](geometry::TriangleMesh &mesh) {
+                        return wrapper::device_vector_vector2f(
+                                mesh.triangle_uvs_);
+                    },
+                    [](geometry::TriangleMesh &mesh,
+                       const wrapper::device_vector_vector2f &vec) {
+                        wrapper::FromWrapper(mesh.triangle_uvs_, vec);
+                    })
             .def_readwrite("texture", &geometry::TriangleMesh::texture_,
                            "cupoch.geometry.Image: The texture image.")
-            .def("to_vertices_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertices_);})
-            .def("to_vertex_normals_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertex_normals_);})
-            .def("to_vertex_colors_dlpack", [](geometry::TriangleMesh &mesh) {return dlpack::ToDLpackCapsule(mesh.vertex_colors_);})
-            .def("from_vertices_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertices_);})
-            .def("from_vertex_normals_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_normals_);})
-            .def("from_vertex_colors_dlpack", [](geometry::TriangleMesh &mesh, py::capsule dlpack) {dlpack::FromDLpackCapsule(dlpack, mesh.vertex_colors_);});
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "compute_edge_list");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "compute_triangle_normals");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "compute_vertex_normals");
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_edge_list");
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "has_triangle_normals",
-             {{"normalized",
-               "Set to ``True`` to normalize the normal to length 1."}});
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "has_vertex_normals",
-             {{"normalized",
-               "Set to ``True`` to normalize the normal to length 1."}});
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
-     docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "remove_duplicated_vertices");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "remove_duplicated_triangles");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "remove_unreferenced_vertices");
-     docstring::ClassMethodDocInject(m, "TriangleMesh",
-                                     "remove_degenerate_triangles");
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "filter_sharpen",
-             {{"number_of_iterations",
-               " Number of repetitions of this operation"},
-              {"strengh", "Filter parameter."},
-              {"scope", "Mesh property that should be filtered."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "filter_smooth_simple",
-             {{"number_of_iterations",
-               " Number of repetitions of this operation"},
-              {"scope", "Mesh property that should be filtered."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "filter_smooth_laplacian",
-             {{"number_of_iterations",
-               " Number of repetitions of this operation"},
-              {"lambda", "Filter parameter."},
-              {"scope", "Mesh property that should be filtered."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "filter_smooth_taubin",
-             {{"number_of_iterations",
-               " Number of repetitions of this operation"},
-              {"lambda", "Filter parameter."},
-              {"mu", "Filter parameter."},
-              {"scope", "Mesh property that should be filtered."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "paint_uniform_color",
-             {{"color", "RGB color for the PointCloud."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "create_sphere",
-             {{"radius", "The radius of the sphere."},
-              {"resolution",
-               "The resolution of the sphere. The longitues will be split into "
-               "``resolution`` segments (i.e. there are ``resolution + 1`` "
-               "latitude lines including the north and south pole). The "
-               "latitudes will be split into ```2 * resolution`` segments (i.e. "
-               "there are ``2 * resolution`` longitude lines.)"}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "create_cylinder",
-             {{"radius", "The radius of the cylinder."},
-              {"height",
-               "The height of the cylinder. The axis of the cylinder will be "
-               "from (0, 0, -height/2) to (0, 0, height/2)."},
-              {"resolution",
-               " The circle will be split into ``resolution`` segments"},
-              {"split",
-               "The ``height`` will be split into ``split`` segments."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "create_cone",
-             {{"radius", "The radius of the cone."},
-              {"height",
-               "The height of the cone. The axis of the cone will be from (0, "
-               "0, 0) to (0, 0, height)."},
-              {"resolution",
-               "The circle will be split into ``resolution`` segments"},
-              {"split",
-               "The ``height`` will be split into ``split`` segments."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "create_arrow",
-             {{"cylinder_radius", "The radius of the cylinder."},
-              {"cone_radius", "The radius of the cone."},
-              {"cylinder_height",
-               "The height of the cylinder. The cylinder is from (0, 0, 0) to "
-               "(0, 0, cylinder_height)"},
-              {"cone_height",
-               "The height of the cone. The axis of the cone will be from (0, "
-               "0, cylinder_height) to (0, 0, cylinder_height + cone_height)"},
-              {"resolution",
-               "The cone will be split into ``resolution`` segments."},
-              {"cylinder_split",
-               "The ``cylinder_height`` will be split into ``cylinder_split`` "
-               "segments."},
-              {"cone_split",
-               "The ``cone_height`` will be split into ``cone_split`` "
-               "segments."}});
-     docstring::ClassMethodDocInject(
-             m, "TriangleMesh", "create_coordinate_frame",
-             {{"size", "The size of the coordinate frame."},
-              {"origin", "The origin of the cooridnate frame."}});
+            .def("to_vertices_dlpack",
+                 [](geometry::TriangleMesh &mesh) {
+                     return dlpack::ToDLpackCapsule(mesh.vertices_);
+                 })
+            .def("to_vertex_normals_dlpack",
+                 [](geometry::TriangleMesh &mesh) {
+                     return dlpack::ToDLpackCapsule(mesh.vertex_normals_);
+                 })
+            .def("to_vertex_colors_dlpack",
+                 [](geometry::TriangleMesh &mesh) {
+                     return dlpack::ToDLpackCapsule(mesh.vertex_colors_);
+                 })
+            .def("from_vertices_dlpack",
+                 [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule(dlpack, mesh.vertices_);
+                 })
+            .def("from_vertex_normals_dlpack",
+                 [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule(dlpack, mesh.vertex_normals_);
+                 })
+            .def("from_vertex_colors_dlpack",
+                 [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule(dlpack, mesh.vertex_colors_);
+                 });
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_edge_list");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "compute_triangle_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "compute_vertex_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_edge_list");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "has_triangle_normals",
+            {{"normalized",
+              "Set to ``True`` to normalize the normal to length 1."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_triangle_uvs");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_texture");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertex_colors");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "has_vertex_normals",
+            {{"normalized",
+              "Set to ``True`` to normalize the normal to length 1."}});
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "has_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh", "normalize_normals");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_duplicated_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_duplicated_triangles");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_unreferenced_vertices");
+    docstring::ClassMethodDocInject(m, "TriangleMesh",
+                                    "remove_degenerate_triangles");
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_sharpen",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"strengh", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_simple",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_laplacian",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"lambda", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "filter_smooth_taubin",
+            {{"number_of_iterations",
+              " Number of repetitions of this operation"},
+             {"lambda", "Filter parameter."},
+             {"mu", "Filter parameter."},
+             {"scope", "Mesh property that should be filtered."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "paint_uniform_color",
+            {{"color", "RGB color for the PointCloud."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_sphere",
+            {{"radius", "The radius of the sphere."},
+             {"resolution",
+              "The resolution of the sphere. The longitues will be split into "
+              "``resolution`` segments (i.e. there are ``resolution + 1`` "
+              "latitude lines including the north and south pole). The "
+              "latitudes will be split into ```2 * resolution`` segments (i.e. "
+              "there are ``2 * resolution`` longitude lines.)"}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cylinder",
+            {{"radius", "The radius of the cylinder."},
+             {"height",
+              "The height of the cylinder. The axis of the cylinder will be "
+              "from (0, 0, -height/2) to (0, 0, height/2)."},
+             {"resolution",
+              " The circle will be split into ``resolution`` segments"},
+             {"split",
+              "The ``height`` will be split into ``split`` segments."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cone",
+            {{"radius", "The radius of the cone."},
+             {"height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, 0) to (0, 0, height)."},
+             {"resolution",
+              "The circle will be split into ``resolution`` segments"},
+             {"split",
+              "The ``height`` will be split into ``split`` segments."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_arrow",
+            {{"cylinder_radius", "The radius of the cylinder."},
+             {"cone_radius", "The radius of the cone."},
+             {"cylinder_height",
+              "The height of the cylinder. The cylinder is from (0, 0, 0) to "
+              "(0, 0, cylinder_height)"},
+             {"cone_height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, cylinder_height) to (0, 0, cylinder_height + cone_height)"},
+             {"resolution",
+              "The cone will be split into ``resolution`` segments."},
+             {"cylinder_split",
+              "The ``cylinder_height`` will be split into ``cylinder_split`` "
+              "segments."},
+             {"cone_split",
+              "The ``cone_height`` will be split into ``cone_split`` "
+              "segments."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_coordinate_frame",
+            {{"size", "The size of the coordinate frame."},
+             {"origin", "The origin of the cooridnate frame."}});
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}

@@ -1,23 +1,24 @@
 #include "cupoch/geometry/voxelgrid.h"
+
+#include <sstream>
+
 #include "cupoch/camera/pinhole_camera_parameters.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/pointcloud.h"
-
-#include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/device_map_wrapper.h"
+#include "cupoch_pybind/docstring.h"
+#include "cupoch_pybind/geometry/eigen_type_caster.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
-#include "cupoch_pybind/geometry/eigen_type_caster.h"
-
-#include <sstream>
 
 using namespace cupoch;
 
 void pybind_voxelgrid(py::module &m) {
-    py::class_<wrapper::VoxelMap, std::shared_ptr<wrapper::VoxelMap>> voxel_map(m, "DeviceVoxelMap");
+    py::class_<wrapper::VoxelMap, std::shared_ptr<wrapper::VoxelMap>> voxel_map(
+            m, "DeviceVoxelMap");
     voxel_map.def(py::init<>())
-             .def("__len__", &wrapper::VoxelMap::size)
-             .def("cpu", &wrapper::VoxelMap::cpu);
+            .def("__len__", &wrapper::VoxelMap::size)
+            .def("cpu", &wrapper::VoxelMap::cpu);
     py::class_<geometry::Voxel, std::shared_ptr<geometry::Voxel>> voxel(
             m, "Voxel", "Base Voxel class, containing grid id and color");
     py::detail::bind_default_constructor<geometry::Voxel>(voxel);
@@ -62,8 +63,16 @@ void pybind_voxelgrid(py::module &m) {
                             std::to_string(voxelgrid.voxels_keys_.size()) +
                             " voxels.";
                  })
-            .def_property("voxels", [] (geometry::VoxelGrid &vg) {return wrapper::VoxelMap(vg.voxels_keys_, vg.voxels_values_);},
-                                    [] (geometry::VoxelGrid &vg, const wrapper::VoxelMap& map) {wrapper::FromWrapper(vg.voxels_keys_, vg.voxels_values_, map);})
+            .def_property(
+                    "voxels",
+                    [](geometry::VoxelGrid &vg) {
+                        return wrapper::VoxelMap(vg.voxels_keys_,
+                                                 vg.voxels_values_);
+                    },
+                    [](geometry::VoxelGrid &vg, const wrapper::VoxelMap &map) {
+                        wrapper::FromWrapper(vg.voxels_keys_, vg.voxels_values_,
+                                             map);
+                    })
             .def(py::self + py::self)
             .def(py::self += py::self)
             .def("has_colors", &geometry::VoxelGrid::HasColors,

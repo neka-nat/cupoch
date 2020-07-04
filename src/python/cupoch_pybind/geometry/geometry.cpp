@@ -1,4 +1,5 @@
 #include "cupoch_pybind/geometry/geometry.h"
+
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 
@@ -6,18 +7,18 @@ using namespace cupoch;
 
 void pybind_geometry_classes(py::module &m) {
     // cupoch.geometry functions
-    m.def("get_rotation_matrix_from_xyz",
-          &geometry::GetRotationMatrixFromXYZ, "rotation"_a);
-    m.def("get_rotation_matrix_from_yzx",
-          &geometry::GetRotationMatrixFromYZX, "rotation"_a);
-    m.def("get_rotation_matrix_from_zxy",
-          &geometry::GetRotationMatrixFromZXY, "rotation"_a);
-    m.def("get_rotation_matrix_from_xzy",
-          &geometry::GetRotationMatrixFromXZY, "rotation"_a);
-    m.def("get_rotation_matrix_from_zyx",
-          &geometry::GetRotationMatrixFromZYX, "rotation"_a);
-    m.def("get_rotation_matrix_from_yxz",
-          &geometry::GetRotationMatrixFromYXZ, "rotation"_a);
+    m.def("get_rotation_matrix_from_xyz", &geometry::GetRotationMatrixFromXYZ,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_yzx", &geometry::GetRotationMatrixFromYZX,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_zxy", &geometry::GetRotationMatrixFromZXY,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_xzy", &geometry::GetRotationMatrixFromXZY,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_zyx", &geometry::GetRotationMatrixFromZYX,
+          "rotation"_a);
+    m.def("get_rotation_matrix_from_yxz", &geometry::GetRotationMatrixFromYXZ,
+          "rotation"_a);
     m.def("get_rotation_matrix_from_axis_angle",
           &geometry::GetRotationMatrixFromAxisAngle, "rotation"_a);
     m.def("get_rotation_matrix_from_quaternion",
@@ -54,7 +55,8 @@ void pybind_geometry_classes(py::module &m) {
             .value("Unspecified", geometry::Geometry::GeometryType::Unspecified)
             .value("PointCloud", geometry::Geometry::GeometryType::PointCloud)
             .value("VoxelGrid", geometry::Geometry::GeometryType::VoxelGrid)
-            .value("OccupancyGrid", geometry::Geometry::GeometryType::OccupancyGrid)
+            .value("OccupancyGrid",
+                   geometry::Geometry::GeometryType::OccupancyGrid)
             .value("LineSet", geometry::Geometry::GeometryType::LineSet)
             .value("TriangleMesh",
                    geometry::Geometry::GeometryType::TriangleMesh)
@@ -62,7 +64,8 @@ void pybind_geometry_classes(py::module &m) {
             .value("RGBDImage", geometry::Geometry::GeometryType::RGBDImage)
             .export_values();
 
-    py::class_<geometry::GeometryBase<3>, PyGeometry3D<geometry::GeometryBase<3>>,
+    py::class_<geometry::GeometryBase<3>,
+               PyGeometry3D<geometry::GeometryBase<3>>,
                std::shared_ptr<geometry::GeometryBase<3>>, geometry::Geometry>
             geometry3d(m, "Geometry3D",
                        "The base geometry class for 3D geometries.");
@@ -116,7 +119,8 @@ void pybind_geometry_classes(py::module &m) {
                                       "to the centered geometry"}});
 
     // cupoch.geometry.Geometry2D
-    py::class_<geometry::GeometryBase<2>, PyGeometry2D<geometry::GeometryBase<2>>,
+    py::class_<geometry::GeometryBase<2>,
+               PyGeometry2D<geometry::GeometryBase<2>>,
                std::shared_ptr<geometry::GeometryBase<2>>, geometry::Geometry>
             geometry2d(m, "Geometry2D",
                        "The base geometry class for 2D geometries.");

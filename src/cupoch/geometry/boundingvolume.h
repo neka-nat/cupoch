@@ -22,8 +22,7 @@ public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Oriented Bounding Box.
-    __host__ __device__
-    OrientedBoundingBox()
+    __host__ __device__ OrientedBoundingBox()
         : GeometryBase<3>(Geometry::GeometryType::OrientedBoundingBox),
           center_(0, 0, 0),
           R_(Eigen::Matrix3f::Identity()),
@@ -35,10 +34,9 @@ public:
     /// \param R The rotation matrix specifying the orientation of the
     /// bounding box with the original frame of reference.
     /// \param extent The extent of the bounding box.
-    __host__ __device__
-    OrientedBoundingBox(const Eigen::Vector3f &center,
-                        const Eigen::Matrix3f &R,
-                        const Eigen::Vector3f &extent)
+    __host__ __device__ OrientedBoundingBox(const Eigen::Vector3f &center,
+                                            const Eigen::Matrix3f &R,
+                                            const Eigen::Vector3f &extent)
         : GeometryBase<3>(Geometry::GeometryType::OrientedBoundingBox),
           center_(center),
           R_(R),
@@ -102,8 +100,7 @@ public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Axis Aligned Bounding Box.
-    __host__ __device__
-    AxisAlignedBoundingBox()
+    __host__ __device__ AxisAlignedBoundingBox()
         : GeometryBase<3>(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
           max_bound_(0, 0, 0),
@@ -112,9 +109,8 @@ public:
     ///
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
-    __host__ __device__
-    AxisAlignedBoundingBox(const Eigen::Vector3f &min_bound,
-                           const Eigen::Vector3f &max_bound)
+    __host__ __device__ AxisAlignedBoundingBox(const Eigen::Vector3f &min_bound,
+                                               const Eigen::Vector3f &max_bound)
         : GeometryBase<3>(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(min_bound),
           max_bound_(max_bound),

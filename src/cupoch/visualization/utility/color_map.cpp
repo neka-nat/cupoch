@@ -9,9 +9,7 @@ static ColorMap::ColorMapOption global_option = ColorMap::ColorMapOption::Jet;
 
 namespace visualization {
 
-ColorMap::ColorMapOption GetGlobalColorMapOption() {
-    return global_option;
-}
+ColorMap::ColorMapOption GetGlobalColorMapOption() { return global_option; }
 
 void SetGlobalColorMapOption(ColorMap::ColorMapOption option) {
     global_option = option;

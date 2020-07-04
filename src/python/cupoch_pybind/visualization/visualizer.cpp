@@ -1,6 +1,6 @@
 #include "cupoch/visualization/visualizer/visualizer.h"
-#include "cupoch/geometry/image.h"
 
+#include "cupoch/geometry/image.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/visualization/visualization.h"
 #include "cupoch_pybind/visualization/visualization_trampoline.h"

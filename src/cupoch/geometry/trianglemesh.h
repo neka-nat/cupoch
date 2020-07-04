@@ -49,8 +49,7 @@ public:
     }
 
     __host__ __device__ bool HasEdgeList() const {
-        return vertices_.size() > 0 &&
-               edge_list_.size() > 0;
+        return vertices_.size() > 0 && edge_list_.size() > 0;
     }
 
     __host__ __device__ bool HasTriangleUvs() const {
@@ -169,7 +168,7 @@ public:
     /// normals. The triangle normals will be computed and added to the mesh
     /// if necessary.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-        size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points, bool use_triangle_normal = false);
 
     /// Function that returns a list of triangles that are intersecting the
     /// mesh.
@@ -237,9 +236,9 @@ public:
 
     /// Factory function to create a capsule mesh (TriangleMeshFactory.cpp)
     /// The axis of the capsule will be from (0, 0, -radius-height/2) to (0, 0,
-    /// radius+height/2). The half sphere with \param radius will be split into \param
-    /// resolution segments. The \param height will be split into \param split
-    /// segments.
+    /// radius+height/2). The half sphere with \param radius will be split into
+    /// \param resolution segments. The \param height will be split into \param
+    /// split segments.
     static std::shared_ptr<TriangleMesh> CreateCapsule(float radius = 1.0,
                                                        float height = 2.0,
                                                        int resolution = 20,
@@ -315,11 +314,11 @@ public:
     Image texture_;
 };
 
-    /// Function that computes the area of a mesh triangle
-__host__ __device__
-inline float ComputeTriangleArea(const Eigen::Vector3f &p0,
-                                 const Eigen::Vector3f &p1,
-                                 const Eigen::Vector3f &p2) {
+/// Function that computes the area of a mesh triangle
+__host__ __device__ inline float ComputeTriangleArea(
+        const Eigen::Vector3f &p0,
+        const Eigen::Vector3f &p1,
+        const Eigen::Vector3f &p2) {
     const Eigen::Vector3f x = p0 - p1;
     const Eigen::Vector3f y = p0 - p2;
     float area = 0.5 * x.cross(y).norm();
@@ -328,10 +327,10 @@ inline float ComputeTriangleArea(const Eigen::Vector3f &p0,
 
 /// Function that computes the area of a mesh triangle identified by the
 /// triangle index
-__host__ __device__
-inline float GetTriangleArea(const Eigen::Vector3f* vertices,
-                             const Eigen::Vector3i* triangles,
-                             size_t triangle_idx) {
+__host__ __device__ inline float GetTriangleArea(
+        const Eigen::Vector3f *vertices,
+        const Eigen::Vector3i *triangles,
+        size_t triangle_idx) {
     const Eigen::Vector3i &triangle = triangles[triangle_idx];
     const Eigen::Vector3f &vertex0 = vertices[triangle(0)];
     const Eigen::Vector3f &vertex1 = vertices[triangle(1)];
@@ -339,10 +338,9 @@ inline float GetTriangleArea(const Eigen::Vector3f* vertices,
     return ComputeTriangleArea(vertex0, vertex1, vertex2);
 }
 
-__host__ __device__
-inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
-                                          int vidx1,
-                                          int vidx2) {
+__host__ __device__ inline Eigen::Vector3i GetOrderedTriangle(int vidx0,
+                                                              int vidx1,
+                                                              int vidx2) {
     if (vidx0 > vidx2) {
         thrust::swap(vidx0, vidx2);
     }

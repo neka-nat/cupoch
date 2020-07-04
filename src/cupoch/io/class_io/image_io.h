@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
 #include <cupoch/utility/device_vector.h>
+
+#include <string>
 
 namespace cupoch {
 
@@ -15,10 +16,10 @@ class HostImage {
 public:
     HostImage() = default;
     ~HostImage() = default;
-    void FromDevice(const geometry::Image& image);
-    void ToDevice(geometry::Image& image) const;
+    void FromDevice(const geometry::Image &image);
+    void ToDevice(geometry::Image &image) const;
     void Clear();
-    HostImage& Prepare(int width,
+    HostImage &Prepare(int width,
                        int height,
                        int num_of_channels,
                        int bytes_per_channel);
@@ -69,5 +70,5 @@ bool WriteImageToJPG(const std::string &filename,
                      const geometry::Image &image,
                      int quality = 90);
 
-}
-}
+}  // namespace io
+}  // namespace cupoch

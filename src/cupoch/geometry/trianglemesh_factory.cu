@@ -41,10 +41,12 @@ struct compute_sphere_triangles_functor1 {
 };
 
 struct compute_sphere_triangles_functor2 {
-    compute_sphere_triangles_functor2(Eigen::Vector3i *triangle, int resolution,
+    compute_sphere_triangles_functor2(Eigen::Vector3i *triangle,
+                                      int resolution,
                                       int initial_base = 2)
-        : triangles_(triangle), resolution_(resolution),
-        initial_base_(initial_base) {};
+        : triangles_(triangle),
+          resolution_(resolution),
+          initial_base_(initial_base){};
     Eigen::Vector3i *triangles_;
     const int resolution_;
     const int initial_base_;
@@ -61,7 +63,8 @@ struct compute_sphere_triangles_functor2 {
 };
 
 struct compute_half_sphere_triangles_functor1 {
-    compute_half_sphere_triangles_functor1(Eigen::Vector3i *triangle, int resolution)
+    compute_half_sphere_triangles_functor1(Eigen::Vector3i *triangle,
+                                           int resolution)
         : triangles_(triangle), resolution_(resolution){};
     Eigen::Vector3i *triangles_;
     const int resolution_;
@@ -118,8 +121,9 @@ struct compute_cylinder_triangles_functor2 {
     compute_cylinder_triangles_functor2(Eigen::Vector3i *triangle,
                                         int resolution,
                                         int initial_base = 2)
-        : triangles_(triangle), resolution_(resolution),
-        initial_base_(initial_base) {};
+        : triangles_(triangle),
+          resolution_(resolution),
+          initial_base_(initial_base){};
     Eigen::Vector3i *triangles_;
     const int resolution_;
     const int initial_base_;
@@ -193,29 +197,33 @@ struct compute_cone_triangles_functor2 {
 };
 
 struct compute_torus_mesh_functor {
-    compute_torus_mesh_functor(Eigen::Vector3f* vertices, Eigen::Vector3i* triangles,
-                               float torus_radius, float tube_radius,
-                               int radial_resolution, int tubular_resolution)
-                               : vertices_(vertices), triangles_(triangles), torus_radius_(torus_radius),
-                               tube_radius_(tube_radius), radial_resolution_(radial_resolution),
-                               tubular_resolution_(tubular_resolution),
-                               u_step_(2 * M_PI / float(radial_resolution_)),
-                               v_step_(2 * M_PI / float(tubular_resolution_)) {};
-    Eigen::Vector3f* vertices_;
-    Eigen::Vector3i* triangles_;
+    compute_torus_mesh_functor(Eigen::Vector3f *vertices,
+                               Eigen::Vector3i *triangles,
+                               float torus_radius,
+                               float tube_radius,
+                               int radial_resolution,
+                               int tubular_resolution)
+        : vertices_(vertices),
+          triangles_(triangles),
+          torus_radius_(torus_radius),
+          tube_radius_(tube_radius),
+          radial_resolution_(radial_resolution),
+          tubular_resolution_(tubular_resolution),
+          u_step_(2 * M_PI / float(radial_resolution_)),
+          v_step_(2 * M_PI / float(tubular_resolution_)){};
+    Eigen::Vector3f *vertices_;
+    Eigen::Vector3i *triangles_;
     const float torus_radius_;
     const float tube_radius_;
     const int radial_resolution_;
     const int tubular_resolution_;
     const float u_step_;
     const float v_step_;
-    __device__
-    int vert_idx(int uidx, int vidx) const {
+    __device__ int vert_idx(int uidx, int vidx) const {
         return uidx * tubular_resolution_ + vidx;
     };
 
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int uidx = idx / tubular_resolution_;
         int vidx = idx % tubular_resolution_;
         float u = uidx * u_step_;
@@ -226,11 +234,11 @@ struct compute_torus_mesh_functor {
                 Eigen::Vector3f(0, 0, tube_radius_ * sin(v));
 
         int tri_idx = (uidx * tubular_resolution_ + vidx) * 2;
-        triangles_[tri_idx + 0] = Eigen::Vector3i(
-                vert_idx((uidx + 1) % radial_resolution_, vidx),
-                vert_idx((uidx + 1) % radial_resolution_,
-                         (vidx + 1) % tubular_resolution_),
-                vert_idx(uidx, vidx));
+        triangles_[tri_idx + 0] =
+                Eigen::Vector3i(vert_idx((uidx + 1) % radial_resolution_, vidx),
+                                vert_idx((uidx + 1) % radial_resolution_,
+                                         (vidx + 1) % tubular_resolution_),
+                                vert_idx(uidx, vidx));
         triangles_[tri_idx + 1] = Eigen::Vector3i(
                 vert_idx(uidx, vidx),
                 vert_idx((uidx + 1) % radial_resolution_,
@@ -240,15 +248,21 @@ struct compute_torus_mesh_functor {
 };
 
 struct compute_moebius_vertices_functor {
-    compute_moebius_vertices_functor(int length_split, int width_split,
-                                     int twists, float radius,
-                                     float flatness, float width,
+    compute_moebius_vertices_functor(int length_split,
+                                     int width_split,
+                                     int twists,
+                                     float radius,
+                                     float flatness,
+                                     float width,
                                      float scale)
-                                     : width_split_(width_split),
-                                     twists_(twists), radius_(radius), flatness_(flatness),
-                                     width_(width), scale_(scale),
-                                     u_step_(2 * M_PI / length_split),
-                                     v_step_(width / (width_split - 1)) {};
+        : width_split_(width_split),
+          twists_(twists),
+          radius_(radius),
+          flatness_(flatness),
+          width_(width),
+          scale_(scale),
+          u_step_(2 * M_PI / length_split),
+          v_step_(width / (width_split - 1)){};
     const int width_split_;
     const int twists_;
     const float radius_;
@@ -257,8 +271,7 @@ struct compute_moebius_vertices_functor {
     const float scale_;
     const float u_step_;
     const float v_step_;
-    __device__
-    Eigen::Vector3f operator() (size_t idx) {
+    __device__ Eigen::Vector3f operator()(size_t idx) {
         int uidx = idx / width_split_;
         int vidx = idx % width_split_;
         float u = uidx * u_step_;
@@ -268,24 +281,27 @@ struct compute_moebius_vertices_functor {
         float alpha = twists_ * 0.5 * u;
         float cos_alpha = cos(alpha);
         float sin_alpha = sin(alpha);
-        return Eigen::Vector3f(scale_ * ((cos_alpha * cos_u * v) + radius_ * cos_u),
-                               scale_ * ((cos_alpha * sin_u * v) + radius_ * sin_u),
-                               scale_ * sin_alpha * v * flatness_);
+        return Eigen::Vector3f(
+                scale_ * ((cos_alpha * cos_u * v) + radius_ * cos_u),
+                scale_ * ((cos_alpha * sin_u * v) + radius_ * sin_u),
+                scale_ * sin_alpha * v * flatness_);
     }
 };
 
 struct compute_moebius_triangles_functor {
-    compute_moebius_triangles_functor(Eigen::Vector3i* triangles,
-                                      int length_split, int width_split,
+    compute_moebius_triangles_functor(Eigen::Vector3i *triangles,
+                                      int length_split,
+                                      int width_split,
                                       int twists)
-        : triangles_(triangles), length_split_(length_split),
-        width_split_(width_split), twists_(twists) {};
-    Eigen::Vector3i* triangles_;
+        : triangles_(triangles),
+          length_split_(length_split),
+          width_split_(width_split),
+          twists_(twists){};
+    Eigen::Vector3i *triangles_;
     const int length_split_;
     const int width_split_;
     const int twists_;
-    __device__
-    void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int uidx = idx / (width_split_ - 1);
         int vidx = idx % (width_split_ - 1);
 
@@ -296,23 +312,25 @@ struct compute_moebius_triangles_functor {
                             Eigen::Vector3i((width_split_ - 1) - (vidx + 1),
                                             uidx * width_split_ + vidx,
                                             uidx * width_split_ + vidx + 1);
-                    triangles_[idx * 2 + 1] = Eigen::Vector3i(
-                            (width_split_ - 1) - vidx, uidx * width_split_ + vidx,
-                            (width_split_ - 1) - (vidx + 1));
+                    triangles_[idx * 2 + 1] =
+                            Eigen::Vector3i((width_split_ - 1) - vidx,
+                                            uidx * width_split_ + vidx,
+                                            (width_split_ - 1) - (vidx + 1));
                 } else {
                     triangles_[idx * 2] =
                             Eigen::Vector3i(uidx * width_split_ + vidx,
                                             uidx * width_split_ + vidx + 1,
                                             (width_split_ - 1) - vidx);
-                    triangles_[idx * 2 + 1] = Eigen::Vector3i(
-                            (width_split_ - 1) - vidx, uidx * width_split_ + vidx + 1,
-                            (width_split_ - 1) - (vidx + 1));
+                    triangles_[idx * 2 + 1] =
+                            Eigen::Vector3i((width_split_ - 1) - vidx,
+                                            uidx * width_split_ + vidx + 1,
+                                            (width_split_ - 1) - (vidx + 1));
                 }
             } else {
                 if ((uidx + vidx) % 2 == 0) {
-                    triangles_[idx * 2] =
-                            Eigen::Vector3i(uidx * width_split_ + vidx, vidx + 1,
-                                            uidx * width_split_ + vidx + 1);
+                    triangles_[idx * 2] = Eigen::Vector3i(
+                            uidx * width_split_ + vidx, vidx + 1,
+                            uidx * width_split_ + vidx + 1);
                     triangles_[idx * 2 + 1] = Eigen::Vector3i(
                             uidx * width_split_ + vidx, vidx, vidx + 1);
                 } else {
@@ -578,7 +596,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution), func_tr1);
     compute_cylinder_triangles_functor2 func_tr2(
-            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + 2 * resolution,
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) +
+                    2 * resolution,
             resolution);
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution * split),
@@ -586,11 +605,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCylinder(
     return mesh_ptr;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateTube(
-        float radius /* = 1.0*/,
-        float height /* = 2.0*/,
-        int resolution /* = 20*/,
-        int split /* = 4*/) {
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateTube(float radius /* = 1.0*/,
+                                                       float height /* = 2.0*/,
+                                                       int resolution /* = 20*/,
+                                                       int split /* = 4*/) {
     auto mesh_ptr = std::make_shared<TriangleMesh>();
     if (radius <= 0) {
         utility::LogError("[CreateTube] radius <= 0");
@@ -615,8 +633,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTube(
                       mesh_ptr->vertices_.begin(), func_vt);
     mesh_ptr->triangles_.resize(2 * split * resolution);
     compute_cylinder_triangles_functor2 func_tr2(
-            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()),
-            resolution, 0);
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()), resolution,
+            0);
     for_each(thrust::make_counting_iterator<size_t>(0),
              thrust::make_counting_iterator<size_t>(resolution * split),
              func_tr2);
@@ -691,7 +709,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCone(float radius /* = 1.0*/,
                      thrust::make_counting_iterator<size_t>(resolution),
                      func_tr1);
     compute_cone_triangles_functor2 func_tr2(
-            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) + 2 * resolution,
+            thrust::raw_pointer_cast(mesh_ptr->triangles_.data()) +
+                    2 * resolution,
             resolution);
     thrust::for_each(
             thrust::make_counting_iterator<size_t>(0),
@@ -721,12 +740,14 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateTorus(
 
     mesh->vertices_.resize(radial_resolution * tubular_resolution);
     mesh->triangles_.resize(2 * radial_resolution * tubular_resolution);
-    compute_torus_mesh_functor func(thrust::raw_pointer_cast(mesh->vertices_.data()),
-                                    thrust::raw_pointer_cast(mesh->triangles_.data()),
-                                    torus_radius, tube_radius,
-                                    radial_resolution, tubular_resolution);
+    compute_torus_mesh_functor func(
+            thrust::raw_pointer_cast(mesh->vertices_.data()),
+            thrust::raw_pointer_cast(mesh->triangles_.data()), torus_radius,
+            tube_radius, radial_resolution, tubular_resolution);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(radial_resolution * tubular_resolution), func);
+                     thrust::make_counting_iterator<size_t>(radial_resolution *
+                                                            tubular_resolution),
+                     func);
     return mesh;
 }
 
@@ -846,15 +867,20 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
     }
 
     mesh->vertices_.resize(length_split * width_split);
-    compute_moebius_vertices_functor func1(length_split, width_split, twists, radius, flatness, width, scale);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(length_split * width_split),
-                      mesh->vertices_.begin(), func1);
+    compute_moebius_vertices_functor func1(length_split, width_split, twists,
+                                           radius, flatness, width, scale);
+    thrust::transform(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(length_split * width_split),
+            mesh->vertices_.begin(), func1);
 
     mesh->triangles_.resize(2 * length_split * (width_split - 1));
-    compute_moebius_triangles_functor func2(thrust::raw_pointer_cast(mesh->triangles_.data()), length_split,
-                                            width_split, twists);
+    compute_moebius_triangles_functor func2(
+            thrust::raw_pointer_cast(mesh->triangles_.data()), length_split,
+            width_split, twists);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(length_split * (width_split - 1)), func2);
+                     thrust::make_counting_iterator<size_t>(length_split *
+                                                            (width_split - 1)),
+                     func2);
     return mesh;
 }

@@ -1,9 +1,9 @@
+#include "cupoch_pybind/integration/integration.h"
+
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/integration/tsdfvolume.h"
 #include "cupoch/integration/uniform_tsdfvolume.h"
-
 #include "cupoch_pybind/docstring.h"
-#include "cupoch_pybind/integration/integration.h"
 
 using namespace cupoch;
 

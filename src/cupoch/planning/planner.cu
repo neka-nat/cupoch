@@ -1,42 +1,49 @@
-#include "cupoch/planning/planner.h"
+#include <thrust/gather.h>
+
 #include "cupoch/collision/collision.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/planning/planner.h"
 #include "cupoch/utility/console.h"
-
-#include <thrust/gather.h>
 
 namespace cupoch {
 namespace planning {
 
-PlannerBase &PlannerBase::AddObstacle(const std::shared_ptr<geometry::Geometry>& obstacle) {
+PlannerBase& PlannerBase::AddObstacle(
+        const std::shared_ptr<geometry::Geometry>& obstacle) {
     obstacles_.push_back(obstacle);
     return *this;
 }
 
-Pos3DPlanner::Pos3DPlanner(float object_radius) : object_radius_(object_radius) {}
+Pos3DPlanner::Pos3DPlanner(float object_radius)
+    : object_radius_(object_radius) {}
 Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius)
-: graph_(graph), object_radius_(object_radius) {}
+    : graph_(graph), object_radius_(object_radius) {}
 
 Pos3DPlanner::~Pos3DPlanner() {}
 
-Pos3DPlanner &Pos3DPlanner::UpdateGraph() {
+Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
     for (const auto& obstacle : obstacles_) {
         auto res = std::make_shared<collision::CollisionResult>();
         switch (obstacle->GetGeometryType()) {
             case geometry::Geometry::GeometryType::VoxelGrid: {
-                const geometry::VoxelGrid& voxel_grid = (const geometry::VoxelGrid&)(*obstacle);
-                res = collision::ComputeIntersection(voxel_grid, graph_, object_radius_);
+                const geometry::VoxelGrid& voxel_grid =
+                        (const geometry::VoxelGrid&)(*obstacle);
+                res = collision::ComputeIntersection(voxel_grid, graph_,
+                                                     object_radius_);
             }
             default: {
                 utility::LogError("Unsupported obstacle type.");
             }
         }
         if (res->IsCollided()) {
-            utility::device_vector<Eigen::Vector2i> remove_edges(res->collision_index_pairs_.size());
-            thrust::gather(thrust::make_transform_iterator(res->collision_index_pairs_.begin(),
-                                                           extract_element_functor<int, 2, 1>()),
-                           thrust::make_transform_iterator(res->collision_index_pairs_.end(),
-                                                           extract_element_functor<int, 2, 1>()),
+            utility::device_vector<Eigen::Vector2i> remove_edges(
+                    res->collision_index_pairs_.size());
+            thrust::gather(thrust::make_transform_iterator(
+                                   res->collision_index_pairs_.begin(),
+                                   extract_element_functor<int, 2, 1>()),
+                           thrust::make_transform_iterator(
+                                   res->collision_index_pairs_.end(),
+                                   extract_element_functor<int, 2, 1>()),
                            graph_.lines_.begin(), remove_edges.begin());
             graph_.RemoveEdges(remove_edges);
         }
@@ -44,7 +51,8 @@ Pos3DPlanner &Pos3DPlanner::UpdateGraph() {
     return *this;
 }
 
-std::shared_ptr<Path> Pos3DPlanner::FindPath(const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
+std::shared_ptr<Path> Pos3DPlanner::FindPath(
+        const Eigen::Vector3f& start, const Eigen::Vector3f& goal) const {
     auto ex_graph = graph_;
     size_t n_start = ex_graph.points_.size();
     size_t n_goal = n_start + 1;
@@ -60,6 +68,5 @@ std::shared_ptr<Path> Pos3DPlanner::FindPath(const Eigen::Vector3f& start, const
     return out;
 }
 
-
-}
-}
+}  // namespace planning
+}  // namespace cupoch

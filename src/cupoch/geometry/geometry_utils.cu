@@ -10,12 +10,14 @@ namespace {
 
 template <int Dim>
 struct transform_points_functor {
-    transform_points_functor(const Eigen::Matrix<float, Dim + 1, Dim + 1> &transform)
+    transform_points_functor(
+            const Eigen::Matrix<float, Dim + 1, Dim + 1> &transform)
         : transform_(transform){};
     const Eigen::Matrix<float, Dim + 1, Dim + 1> transform_;
     __device__ void operator()(Eigen::Matrix<float, Dim, 1> &pt) {
         const Eigen::Matrix<float, Dim + 1, 1> new_pt =
-                transform_ * (Eigen::Matrix<float, Dim + 1, 1>() << pt, 1.0).finished();
+                transform_ *
+                (Eigen::Matrix<float, Dim + 1, 1>() << pt, 1.0).finished();
         pt = new_pt.template head<Dim>() / new_pt(Dim);
     }
 };
@@ -32,82 +34,83 @@ struct transform_normals_functor {
 };
 }  // namespace
 
-template<int Dim>
+template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeMinBound(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     return ComputeMinBound(0, points);
 }
 
-template<int Dim>
+template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeMinBound(
         cudaStream_t stream,
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     if (points.empty()) return Eigen::Matrix<float, Dim, 1>::Zero();
     Eigen::Matrix<float, Dim, 1> init = points[0];
-    return thrust::reduce(utility::exec_policy(stream)->on(stream),
-                          points.begin(), points.end(), init,
-                          thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>());
+    return thrust::reduce(
+            utility::exec_policy(stream)->on(stream), points.begin(),
+            points.end(), init,
+            thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>());
 }
 
-template<int Dim>
+template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     return ComputeMaxBound(0, points);
 }
 
-template<int Dim>
+template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
         cudaStream_t stream,
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     if (points.empty()) return Eigen::Matrix<float, Dim, 1>::Zero();
     Eigen::Matrix<float, Dim, 1> init = points[0];
-    return thrust::reduce(utility::exec_policy(stream)->on(stream),
-                          points.begin(), points.end(), init,
-                          thrust::elementwise_maximum<Eigen::Matrix<float, Dim, 1>>());
+    return thrust::reduce(
+            utility::exec_policy(stream)->on(stream), points.begin(),
+            points.end(), init,
+            thrust::elementwise_maximum<Eigen::Matrix<float, Dim, 1>>());
 }
 
-template<int Dim>
+template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeCenter(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     Eigen::Matrix<float, Dim, 1> init = Eigen::Matrix<float, Dim, 1>::Zero();
     if (points.empty()) return init;
-    Eigen::Matrix<float, Dim, 1> sum = thrust::reduce(points.begin(), points.end(), init,
-                                           thrust::plus<Eigen::Matrix<float, Dim, 1>>());
+    Eigen::Matrix<float, Dim, 1> sum =
+            thrust::reduce(points.begin(), points.end(), init,
+                           thrust::plus<Eigen::Matrix<float, Dim, 1>>());
     return sum / points.size();
 }
 
 template Eigen::Matrix<float, 2, 1> ComputeMinBound(
-    const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 2, 1> ComputeMinBound(
-    cudaStream_t stream,
-    const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points); 
+        cudaStream_t stream,
+        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMinBound(
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMinBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
-    
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
+
 template Eigen::Matrix<float, 2, 1> ComputeMaxBound(
-        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 2, 1> ComputeMaxBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMaxBound(
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMaxBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points); 
+        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 
 template Eigen::Matrix<float, 2, 1> ComputeCenter(
         const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeCenter(
         const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 
-
-void ResizeAndPaintUniformColor(
-        utility::device_vector<Eigen::Vector3f> &colors,
-        const size_t size,
-        const Eigen::Vector3f &color) {
+void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f> &colors,
+                                const size_t size,
+                                const Eigen::Vector3f &color) {
     colors.resize(size);
     Eigen::Vector3f clipped_color = color;
     if (color.minCoeff() < 0 || color.maxCoeff() > 1) {
@@ -140,34 +143,28 @@ void TransformPoints(
                      points.end(), func);
 }
 
-template void TransformPoints(
-    const Eigen::Matrix3f &transformation,
-    utility::device_vector<Eigen::Vector2f> &points);
+template void TransformPoints(const Eigen::Matrix3f &transformation,
+                              utility::device_vector<Eigen::Vector2f> &points);
 
-template void TransformPoints(
-    cudaStream_t stream,
-    const Eigen::Matrix3f &transformation,
-    utility::device_vector<Eigen::Vector2f> &points);
+template void TransformPoints(cudaStream_t stream,
+                              const Eigen::Matrix3f &transformation,
+                              utility::device_vector<Eigen::Vector2f> &points);
 
-template void TransformPoints(
-        const Eigen::Matrix4f &transformation,
-        utility::device_vector<Eigen::Vector3f> &points);
+template void TransformPoints(const Eigen::Matrix4f &transformation,
+                              utility::device_vector<Eigen::Vector3f> &points);
 
-template void TransformPoints(
-        cudaStream_t stream,
-        const Eigen::Matrix4f &transformation,
-        utility::device_vector<Eigen::Vector3f> &points);
+template void TransformPoints(cudaStream_t stream,
+                              const Eigen::Matrix4f &transformation,
+                              utility::device_vector<Eigen::Vector3f> &points);
 
-void TransformNormals(
-        const Eigen::Matrix4f &transformation,
-        utility::device_vector<Eigen::Vector3f> &normals) {
+void TransformNormals(const Eigen::Matrix4f &transformation,
+                      utility::device_vector<Eigen::Vector3f> &normals) {
     TransformNormals(0, transformation, normals);
 }
 
-void TransformNormals(
-        cudaStream_t stream,
-        const Eigen::Matrix4f &transformation,
-        utility::device_vector<Eigen::Vector3f> &normals) {
+void TransformNormals(cudaStream_t stream,
+                      const Eigen::Matrix4f &transformation,
+                      utility::device_vector<Eigen::Vector3f> &normals) {
     transform_normals_functor func(transformation);
     thrust::for_each(utility::exec_policy(stream)->on(stream), normals.begin(),
                      normals.end(), func);
@@ -183,32 +180,33 @@ void TranslatePoints(
         transform -= ComputeCenter<Dim>(points);
     }
     thrust::for_each(points.begin(), points.end(),
-                     [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) { pt += transform; });
+                     [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) {
+                         pt += transform;
+                     });
 }
 
 template <int Dim>
 void ScalePoints(const float scale,
                  utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                  bool center) {
-    Eigen::Matrix<float, Dim, 1> points_center = Eigen::Matrix<float, Dim, 1>::Zero();
+    Eigen::Matrix<float, Dim, 1> points_center =
+            Eigen::Matrix<float, Dim, 1>::Zero();
     if (center && !points.empty()) {
         points_center = ComputeCenter<Dim>(points);
     }
     thrust::for_each(points.begin(), points.end(),
-                     [=] __device__(Eigen::Matrix<float, Dim, 1>& pt) {
+                     [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) {
                          pt = (pt - points_center) * scale + points_center;
                      });
 }
 
-template void TranslatePoints(
-        const Eigen::Vector2f &translation,
-        utility::device_vector<Eigen::Vector2f> &points,
-        bool relative);
+template void TranslatePoints(const Eigen::Vector2f &translation,
+                              utility::device_vector<Eigen::Vector2f> &points,
+                              bool relative);
 
-template void TranslatePoints(
-        const Eigen::Vector3f &translation,
-        utility::device_vector<Eigen::Vector3f> &points,
-        bool relative);
+template void TranslatePoints(const Eigen::Vector3f &translation,
+                              utility::device_vector<Eigen::Vector3f> &points,
+                              bool relative);
 
 template void ScalePoints(const float scale,
                           utility::device_vector<Eigen::Vector2f> &points,
@@ -230,16 +228,17 @@ void RotatePoints(cudaStream_t stream,
                   const Eigen::Matrix<float, Dim, Dim> &R,
                   utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
                   bool center) {
-    Eigen::Matrix<float, Dim, 1> points_center = Eigen::Matrix<float, Dim, 1>::Zero();
+    Eigen::Matrix<float, Dim, 1> points_center =
+            Eigen::Matrix<float, Dim, 1>::Zero();
     if (center && !points.empty()) {
         points_center = ComputeCenter<Dim>(points);
     }
     thrust::for_each(utility::exec_policy(stream)->on(stream), points.begin(),
-                     points.end(), [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) {
+                     points.end(),
+                     [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) {
                          pt = R * (pt - points_center) + points_center;
                      });
 }
-
 
 template void RotatePoints(const Eigen::Matrix2f &R,
                            utility::device_vector<Eigen::Vector2f> &points,
@@ -257,59 +256,51 @@ template void RotatePoints(cudaStream_t stream,
                            utility::device_vector<Eigen::Vector3f> &points,
                            bool center);
 
-void RotateNormals(
-        const Eigen::Matrix3f &R,
-        utility::device_vector<Eigen::Vector3f> &normals) {
+void RotateNormals(const Eigen::Matrix3f &R,
+                   utility::device_vector<Eigen::Vector3f> &normals) {
     RotateNormals(0, R, normals);
 }
 
-void RotateNormals(
-        cudaStream_t stream,
-        const Eigen::Matrix3f &R,
-        utility::device_vector<Eigen::Vector3f> &normals) {
+void RotateNormals(cudaStream_t stream,
+                   const Eigen::Matrix3f &R,
+                   utility::device_vector<Eigen::Vector3f> &normals) {
     thrust::for_each(utility::exec_policy(stream)->on(stream), normals.begin(),
                      normals.end(), [=] __device__(Eigen::Vector3f & normal) {
                          normal = R * normal;
                      });
 }
 
-Eigen::Matrix3f GetRotationMatrixFromXYZ(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromXYZ(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixX(rotation(0)) *
            cupoch::utility::RotationMatrixY(rotation(1)) *
            cupoch::utility::RotationMatrixZ(rotation(2));
 }
 
-Eigen::Matrix3f GetRotationMatrixFromYZX(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromYZX(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixY(rotation(0)) *
            cupoch::utility::RotationMatrixZ(rotation(1)) *
            cupoch::utility::RotationMatrixX(rotation(2));
 }
 
-Eigen::Matrix3f GetRotationMatrixFromZXY(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromZXY(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixZ(rotation(0)) *
            cupoch::utility::RotationMatrixX(rotation(1)) *
            cupoch::utility::RotationMatrixY(rotation(2));
 }
 
-Eigen::Matrix3f GetRotationMatrixFromXZY(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromXZY(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixX(rotation(0)) *
            cupoch::utility::RotationMatrixZ(rotation(1)) *
            cupoch::utility::RotationMatrixY(rotation(2));
 }
 
-Eigen::Matrix3f GetRotationMatrixFromZYX(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromZYX(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixZ(rotation(0)) *
            cupoch::utility::RotationMatrixY(rotation(1)) *
            cupoch::utility::RotationMatrixX(rotation(2));
 }
 
-Eigen::Matrix3f GetRotationMatrixFromYXZ(
-        const Eigen::Vector3f &rotation) {
+Eigen::Matrix3f GetRotationMatrixFromYXZ(const Eigen::Vector3f &rotation) {
     return cupoch::utility::RotationMatrixY(rotation(0)) *
            cupoch::utility::RotationMatrixX(rotation(1)) *
            cupoch::utility::RotationMatrixZ(rotation(2));
@@ -329,5 +320,5 @@ Eigen::Matrix3f GetRotationMatrixFromQuaternion(
             .toRotationMatrix();
 }
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

@@ -1,30 +1,30 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <cuda_runtime.h>
+
+#include <Eigen/Core>
 
 namespace cupoch {
 namespace registration {
 
-template<int Dim>
+template <int Dim>
 struct LatticeCoordKey {
-    __host__ __device__ LatticeCoordKey() {};
-    __host__ __device__ ~LatticeCoordKey() {};
+    __host__ __device__ LatticeCoordKey(){};
+    __host__ __device__ ~LatticeCoordKey(){};
 
-    //The hashing of this key
-    __host__ __device__ __forceinline__
-    unsigned short hash() const {
+    // The hashing of this key
+    __host__ __device__ __forceinline__ unsigned short hash() const {
         unsigned short hash_value = 0;
-        for(int i = 0; i < Dim; i++) {
+        for (int i = 0; i < Dim; i++) {
             hash_value += key_[i];
-            hash_value *= 1500007; //This is a prime number
+            hash_value *= 1500007;  // This is a prime number
         }
         return hash_value;
     }
 
-    //The comparator of a key
-    __host__ __device__ __forceinline__
-    char less_than(const LatticeCoordKey<Dim>& rhs) const {
+    // The comparator of a key
+    __host__ __device__ __forceinline__ char less_than(
+            const LatticeCoordKey<Dim>& rhs) const {
         char is_less_than = 0;
         for (int i = 0; i < Dim; i++) {
             if (key_[i] < rhs.key_[i]) {
@@ -38,9 +38,9 @@ struct LatticeCoordKey {
         return is_less_than;
     }
 
-	//Operator
-    __host__ __device__ __forceinline__
-    bool operator==(const LatticeCoordKey<Dim>& rhs) const {
+    // Operator
+    __host__ __device__ __forceinline__ bool operator==(
+            const LatticeCoordKey<Dim>& rhs) const {
         for (int i = 0; i < Dim; i++) {
             if (key_[i] != rhs.key_[i]) return false;
         }
@@ -62,15 +62,14 @@ struct LatticeCoordKey {
 ///                    of the lattice_coord_keys
 /// \param no_blur The flag of calculating without or with blur
 ///
-template<int Dim> __host__ __device__ __forceinline__
-void CreateLatticeGrid(
-    float* feature,
-    LatticeCoordKey<Dim>* lattice_coord_keys,
-    float* barycentric,
-    bool no_blur = false
-);
+template <int Dim>
+__host__ __device__ __forceinline__ void CreateLatticeGrid(
+        float* feature,
+        LatticeCoordKey<Dim>* lattice_coord_keys,
+        float* barycentric,
+        bool no_blur = false);
 
-}
-}
+}  // namespace registration
+}  // namespace cupoch
 
 #include "cupoch/registration/lattice_utils.inl"

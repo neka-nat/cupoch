@@ -1,6 +1,6 @@
 #include "cupoch/collision/collision.h"
-#include "cupoch/geometry/voxelgrid.h"
 
+#include "cupoch/geometry/voxelgrid.h"
 #include "tests/test_utility/raw.h"
 #include "tests/test_utility/unit_test.h"
 

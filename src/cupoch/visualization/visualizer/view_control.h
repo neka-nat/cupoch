@@ -29,8 +29,7 @@ public:
     };
 
 public:
-    __host__ __device__
-    virtual ~ViewControl() {};
+    __host__ __device__ virtual ~ViewControl(){};
 
     /// Function to set view points
     /// This function obtains OpenGL context and calls OpenGL functions to set
@@ -73,10 +72,7 @@ public:
     /// cursor started to move from.
     /// Coordinates are measured in screen coordinates relative to the top-left
     /// corner of the window client area.
-    virtual void Translate(float x,
-                           float y,
-                           float xo = 0.0,
-                           float yo = 0.0);
+    virtual void Translate(float x, float y, float xo = 0.0, float yo = 0.0);
 
     // Function to process rolling
     /// \param x is the distances the mouse cursor has moved.
@@ -84,8 +80,8 @@ public:
     /// corner of the window client area.
     virtual void Roll(float x);
 
-    __host__ __device__
-    const geometry::AxisAlignedBoundingBox &GetBoundingBox() const {
+    __host__ __device__ const geometry::AxisAlignedBoundingBox &GetBoundingBox()
+            const {
         return bounding_box_;
     }
 
