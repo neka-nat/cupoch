@@ -12,6 +12,7 @@ using make_index_sequence = std::make_index_sequence<N>;
 }
 #endif
 
+#include <stdgpu/functional.h>
 #include <Eigen/Core>
 #include <string>
 #include <vector>
@@ -273,6 +274,20 @@ __host__ __device__ inline int IndexOf(const Eigen::Vector3i &xyz,
 }
 
 namespace utility {
+
+template <typename T>
+struct hash_eigen {
+    __host__ __device__
+    std::size_t operator()(T const& matrix) const {
+        size_t seed = 0;
+        for (int i = 0; i < (int)matrix.size(); i++) {
+            auto elem = *(matrix.data() + i);
+            seed ^= stdgpu::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+                    (seed << 6) + (seed >> 2);
+        }
+        return seed;
+    }
+};
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c

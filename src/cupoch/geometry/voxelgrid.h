@@ -46,8 +46,8 @@ public:
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid();
 
-    thrust::pair<thrust::host_vector<Eigen::Vector3i>,
-                 thrust::host_vector<Voxel>>
+    std::pair<thrust::host_vector<Eigen::Vector3i>,
+              thrust::host_vector<Voxel>>
     GetVoxels() const;
     void SetVoxels(const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
                    const thrust::host_vector<Voxel> &voxels_values);

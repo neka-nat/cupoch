@@ -208,7 +208,7 @@ set(STDGPU_SETUP_COMPILER_FLAGS OFF CACHE INTERNAL "")
 add_subdirectory(stdgpu)
 target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
 target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--compiler-options -fPIC>)
-set(stdgpu_INCLUDE_DIRS stdgpu/src)
+set(stdgpu_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/stdgpu/src ${CMAKE_CURRENT_BINARY_DIR}/stdgpu/src/stdgpu/include)
 set(stdgpu_LIBRARIES stdgpu)
 
 # tinyobjloader

@@ -127,11 +127,11 @@ VoxelGrid::VoxelGrid(const VoxelGrid &src_voxel_grid)
       voxels_keys_(src_voxel_grid.voxels_keys_),
       voxels_values_(src_voxel_grid.voxels_values_) {}
 
-thrust::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>>
+std::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>>
 VoxelGrid::GetVoxels() const {
     thrust::host_vector<Eigen::Vector3i> h_keys = voxels_keys_;
     thrust::host_vector<Voxel> h_values = voxels_values_;
-    return thrust::make_pair(h_keys, h_values);
+    return std::make_pair(h_keys, h_values);
 }
 
 void VoxelGrid::SetVoxels(
