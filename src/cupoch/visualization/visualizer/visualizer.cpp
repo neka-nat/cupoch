@@ -272,7 +272,7 @@ void Visualizer::Close() {
 }
 
 bool Visualizer::WaitEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -285,7 +285,7 @@ bool Visualizer::WaitEvents() {
 }
 
 bool Visualizer::PollEvents() {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -300,7 +300,7 @@ bool Visualizer::PollEvents() {
 bool Visualizer::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
-    if (is_initialized_ == false) {
+    if (!is_initialized_) {
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -311,43 +311,43 @@ bool Visualizer::AddGeometry(
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::PointCloud) {
         renderer_ptr = std::make_shared<glsl::PointCloudRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::VoxelGrid) {
         renderer_ptr = std::make_shared<glsl::VoxelGridRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::OccupancyGrid) {
         renderer_ptr = std::make_shared<glsl::OccupancyGridRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::LineSet) {
         renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::Graph) {
         renderer_ptr = std::make_shared<glsl::GraphRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::TriangleMesh) {
         renderer_ptr = std::make_shared<glsl::TriangleMeshRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::Image) {
         renderer_ptr = std::make_shared<glsl::ImageRenderer>();
-        if (renderer_ptr->AddGeometry(geometry_ptr) == false) {
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
     } else {

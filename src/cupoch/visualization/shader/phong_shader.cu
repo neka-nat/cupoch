@@ -195,17 +195,13 @@ struct default_color_functor {
 };
 
 struct occupancy_color_functor {
-    __host__ __device__ occupancy_color_functor(float occ_prob_thres_log,
-                                                bool visualize_free_area)
-        : occ_prob_thres_log_(occ_prob_thres_log),
-          visualize_free_area_(visualize_free_area){};
+    __host__ __device__ occupancy_color_functor(float occ_prob_thres_log)
+        : occ_prob_thres_log_(occ_prob_thres_log) {};
     const float occ_prob_thres_log_;
-    const bool visualize_free_area_;
     __host__ __device__ ~occupancy_color_functor(){};
     __host__ __device__
     occupancy_color_functor(const occupancy_color_functor &other)
-        : occ_prob_thres_log_(other.occ_prob_thres_log_),
-          visualize_free_area_(other.visualize_free_area_){};
+        : occ_prob_thres_log_(other.occ_prob_thres_log_) {};
     __device__ Eigen::Vector3f color(geometry::OccupancyVoxel ocv) const {
         return (ocv.prob_log_ > occ_prob_thres_log_)
                        ? ocv.color_
@@ -213,8 +209,7 @@ struct occupancy_color_functor {
     }
     __device__ float alpha(geometry::OccupancyVoxel ocv) const {
         return (ocv.prob_log_ > occ_prob_thres_log_)
-                       ? 1.0
-                       : ((visualize_free_area_) ? 0.2 : 0.0);
+                       ? 1.0 : 0.2;
     }
 };
 
@@ -285,19 +280,6 @@ struct copy_voxelgrid_face_functor {
                 Eigen::Vector3f(cuboid_normals[j][0], cuboid_normals[j][1],
                                 cuboid_normals[j][2]),
                 voxel_color);
-    }
-};
-
-struct alpha_greater_functor {
-    __device__ bool operator()(const thrust::tuple<Eigen::Vector3f,
-                                                   Eigen::Vector3f,
-                                                   Eigen::Vector4f> &lhs,
-                               const thrust::tuple<Eigen::Vector3f,
-                                                   Eigen::Vector3f,
-                                                   Eigen::Vector4f> &rhs) {
-        const Eigen::Vector4f &lc = thrust::get<2>(lhs);
-        const Eigen::Vector4f &rc = thrust::get<2>(rhs);
-        return lc[3] > rc[3];
     }
 };
 
@@ -752,7 +734,11 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
         return false;
     }
 
-    auto voxels = occupancy_grid.ExtractKnownVoxels();
+    auto voxels = occupancy_grid.ExtractOccupiedVoxels();
+    if (occupancy_grid.visualize_free_area_) {
+        auto free_voxels = occupancy_grid.ExtractFreeVoxels();
+        voxels->insert(voxels->end(), free_voxels->begin(), free_voxels->end());
+    }
     utility::device_vector<Eigen::Vector3f> vertices(voxels->size() * 8);
     Eigen::Vector3f origin =
             occupancy_grid.origin_ -
@@ -773,13 +759,10 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
                   thrust::raw_pointer_cast(voxels->data()),
                   occupancy_grid.HasColors(), option.mesh_color_option_,
                   option.default_mesh_color_, view,
-                  occupancy_color_functor(occupancy_grid.occ_prob_thres_log_,
-                                          occupancy_grid.visualize_free_area_));
+                  occupancy_color_functor(occupancy_grid.occ_prob_thres_log_));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, normals, colors), func2);
-    auto begin = make_tuple_iterator(points, normals, colors);
-    thrust::sort(begin, begin + n_out, alpha_greater_functor());
     draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(n_out);
 
