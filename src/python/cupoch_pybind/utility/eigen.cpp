@@ -84,6 +84,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
     auto vec = py::bind_vector_without_repr<
             cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name,
                                                             py::module_local());
+    vec.def(py::init<thrust::host_vector<Scalar>>());
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
     vec.def(
             "__iadd__",

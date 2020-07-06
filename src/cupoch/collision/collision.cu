@@ -1,5 +1,3 @@
-#include <thrust/iterator/discard_iterator.h>
-
 #include "cupoch/collision/collision.h"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/lineset.h"

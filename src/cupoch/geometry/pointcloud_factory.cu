@@ -1,11 +1,14 @@
 #include <Eigen/Dense>
 #include <limits>
+#include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
+#include "cupoch/geometry/laserscanbuffer.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/range.h"
 #include "cupoch/utility/helper.h"
 
 using namespace cupoch;
@@ -148,6 +151,35 @@ struct convert_from_rgbdimage_functor {
     }
 };
 
+struct compute_points_from_scan {
+    compute_points_from_scan(float min_range, float max_range,
+                             float min_angle, float angle_increment,
+                             int num_steps)
+    : min_range_(min_range), max_range_(max_range),
+    min_angle_(min_angle), angle_increment_(angle_increment),
+    num_steps_(num_steps) {};
+    const float min_range_;
+    const float max_range_;
+    const float min_angle_;
+    const float angle_increment_;
+    const int num_steps_;
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (const thrust::tuple<size_t, float, Eigen::Matrix4f_u, float>& x) const {
+        size_t idx = thrust::get<0>(x);
+        float r = thrust::get<1>(x);
+        Eigen::Vector3f color = Eigen::Vector3f::Constant(thrust::get<3>(x));
+        if (isnan(r) || r < min_range_ || max_range_ < r) {
+            return thrust::make_tuple(Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
+                                                      std::numeric_limits<float>::quiet_NaN(),
+                                                      std::numeric_limits<float>::quiet_NaN()), color);
+        }
+        Eigen::Matrix4f origin = thrust::get<2>(x);
+        int i = idx % num_steps_;
+        float angle = min_angle_ + i * angle_increment_;
+        Eigen::Vector4f pt = origin * Eigen::Vector4f(r * cos(angle), r * sin(angle), 0.0, 1.0);
+        return thrust::make_tuple(pt.head<3>(), color);
+    }
+};
+
 template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
@@ -220,4 +252,42 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
     utility::LogError(
             "[CreatePointCloudFromRGBDImage] Unsupported image format.");
     return std::make_shared<PointCloud>();
+}
+
+std::shared_ptr<PointCloud> PointCloud::CreateFromLaserScanBuffer(
+        const LaserScanBuffer &scan,
+        float min_range,
+        float max_range) {
+    auto pointcloud = std::make_shared<PointCloud>();
+    thrust::repeated_range<utility::device_vector<Eigen::Matrix4f_u>::const_iterator>
+        range(scan.origins_.begin(), scan.origins_.end(), scan.num_steps_);
+    compute_points_from_scan func(min_range, max_range,
+                                  scan.min_angle_, scan.GetAngleIncrement(),
+                                  scan.num_steps_);
+    pointcloud->points_.resize(scan.ranges_.size());
+    if (scan.HasIntensities()) {
+        pointcloud->colors_.resize(scan.ranges_.size());
+        thrust::transform(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
+                                              scan.ranges_.begin(),
+                                              range.begin(),
+                                              scan.intensities_.begin()),
+                          make_tuple_iterator(thrust::make_counting_iterator(scan.ranges_.size()),
+                                              scan.ranges_.end(),
+                                              range.end(),
+                                              scan.intensities_.end()),
+                          make_tuple_iterator(pointcloud->points_.begin(), pointcloud->colors_.begin()), func);
+
+    } else {
+        thrust::transform(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
+                                              scan.ranges_.begin(),
+                                              range.begin(),
+                                              thrust::make_constant_iterator<float>(0)),
+                          make_tuple_iterator(thrust::make_counting_iterator(scan.ranges_.size()),
+                                              scan.ranges_.end(),
+                                              range.end(),
+                                              thrust::make_constant_iterator<float>(0)),
+                          make_tuple_iterator(pointcloud->points_.begin(), thrust::make_discard_iterator()), func);
+    }
+    pointcloud->RemoveNoneFinitePoints(true, true);
+    return pointcloud;
 }

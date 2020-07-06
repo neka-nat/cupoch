@@ -40,8 +40,8 @@ public:
         OrientedBoundingBox = 11,
         /// AxisAlignedBoundingBox
         AxisAlignedBoundingBox = 12,
-        /// LaserScan
-        LaserScan = 13,
+        /// LaserScanBuffer
+        LaserScanBuffer = 13,
     };
 
 public:

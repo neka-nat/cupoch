@@ -16,6 +16,7 @@ namespace geometry {
 
 class Image;
 class RGBDImage;
+class LaserScanBuffer;
 class OrientedBoundingBox;
 
 class PointCloud : public GeometryBase<3> {
@@ -177,6 +178,11 @@ public:
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4f &extrinsic = Eigen::Matrix4f::Identity(),
             bool project_valid_depth_only = true);
+
+    static std::shared_ptr<PointCloud> CreateFromLaserScanBuffer(
+            const LaserScanBuffer &scan,
+            float min_range,
+            float max_range);
 
 public:
     utility::device_vector<Eigen::Vector3f> points_;

@@ -6,6 +6,7 @@ void pybind_geometry(py::module &m);
 void pybind_pointcloud(py::module &m);
 void pybind_voxelgrid(py::module &m);
 void pybind_occupanygrid(py::module &m);
+void pybind_laserscanbuffer(py::module &m);
 void pybind_lineset(py::module &m);
 void pybind_graph(py::module &m);
 void pybind_meshbase(py::module &m);
