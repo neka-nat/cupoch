@@ -3,7 +3,6 @@
 #include <algorithm>
 #ifdef WINDOWS
 #include <direct.h>
-#include <dirent/dirent.h>
 #include <windows.h>
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH

@@ -196,7 +196,9 @@ endif ()
 if (BUILD_JPEG)
     message(STATUS "Building libjpeg-turbo from source")
     include(libjpeg-turbo/libjpeg-turbo.cmake)
-    set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/libjpeg-turbo)
+    set(JPEG_TURBO_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg-turbo/libjpeg-turbo
+        ${CMAKE_CURRENT_BINARY_DIR}/turbojpeg/src/ext_turbojpeg-build)
+    set(JPEG_TURBO_LIBRARIES turbojpeg)
 endif()
 
 # stdgpu
@@ -231,18 +233,21 @@ set(rply_LIBRARIES rply)
 set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
 
 # rmm
-add_library(rmm STATIC rmm/src/rmm.cpp
-            rmm/src/memory_manager.cpp
-            cnmem/src/cnmem.cpp
-            rmm/src/mr/device/default_memory_resource.cpp)
-target_include_directories(rmm PRIVATE cnmem/include rmm/include)
-target_link_libraries(rmm ${CUDA_LIBRARIES})
 if (WIN32)
-  target_compile_definitions(rmm PRIVATE -DNOMINMAX)
+  set(cnmem_INCLUDE_DIRS "")
+  set(rmm_INCLUDE_DIRS "")
+  set(rmm_LIBRARIES "")
+else ()
+  add_library(rmm STATIC rmm/src/rmm.cpp
+              rmm/src/memory_manager.cpp
+              cnmem/src/cnmem.cpp
+              rmm/src/mr/device/default_memory_resource.cpp)
+  target_include_directories(rmm PRIVATE cnmem/include rmm/include)
+  target_link_libraries(rmm ${CUDA_LIBRARIES})
+  set(cnmem_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cnmem/include)
+  set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
+  set(rmm_LIBRARIES rmm)
 endif ()
-set(cnmem_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cnmem/include)
-set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
-set(rmm_LIBRARIES rmm)
 
 # imgui
 add_library(imgui STATIC imgui/imgui.cpp

@@ -114,5 +114,11 @@ template void FromWrapper<collision::PrimitivePack>(
         utility::device_vector<collision::PrimitivePack>& dv,
         const device_vector_wrapper<collision::PrimitivePack>& vec);
 
+#if defined(_WIN32)
+template class device_vector_wrapper<unsigned long>;
+template void FromWrapper<unsigned long>(
+    utility::device_vector<unsigned long>& dv,
+    const device_vector_wrapper<unsigned long>& vec);
+#endif
 }  // namespace wrapper
 }  // namespace cupoch

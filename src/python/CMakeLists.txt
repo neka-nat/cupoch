@@ -30,6 +30,9 @@ target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
                       cupoch_integration cupoch_geometry cupoch_utility
                       cupoch_wrapper
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
+if (WIN32)
+    target_link_libraries(${PACKAGE_NAME} PRIVATE ${PYTHON_LIBRARIES})
+endif ()
 
 set_target_properties(${PACKAGE_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
 set_target_properties(${PACKAGE_NAME} PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")

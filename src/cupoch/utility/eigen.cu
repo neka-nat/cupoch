@@ -52,12 +52,16 @@ cupoch::utility::SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
     }
 
     if (check_det) {
+#if defined(_WIN32)
+        LogWarning("Cannot use check_det on WIN32.");
+#else
         float det = A.determinant();
         if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
             LogWarning("check_det failed, empty vector will be returned");
             return thrust::make_tuple(false,
                                       Eigen::Matrix<float, Dim, 1>::Zero());
         }
+#endif
     }
 
     Eigen::Matrix<float, Dim, 1> x;

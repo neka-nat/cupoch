@@ -135,9 +135,8 @@ struct create_from_swept_primitive_functor {
         Eigen::Vector3f box_center =
                 (dtf * Eigen::Vector4f(voxel_size_ * (widx + 0.5),
                                        voxel_size_ * (hidx + 0.5),
-                                       voxel_size_ * (didx + 0.5), 1.0))
-                        .head<3>();
-        Eigen::Vector3i grid_index = (box_center / voxel_size_).cast<int>();
+                                       voxel_size_ * (didx + 0.5), 1.0)).template head<3>();
+        Eigen::Vector3i grid_index = (box_center / voxel_size_).template cast<int>();
         box_center = grid_index.cast<float>() * voxel_size_;
         if (intersect(dtf, box_center)) {
             return thrust::make_tuple(grid_index, geometry::Voxel(grid_index));

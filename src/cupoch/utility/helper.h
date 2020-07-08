@@ -3,7 +3,7 @@
 #include <thrust/host_vector.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/remove.h>
-#if THRUST_VERSION >= 100905
+#if THRUST_VERSION >= 100905 && !defined(_WIN32)
 #include <thrust/type_traits/integer_sequence.h>
 #else
 namespace thrust {

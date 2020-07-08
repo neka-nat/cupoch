@@ -48,6 +48,10 @@ using device_vector_occupancyvoxel =
 using device_vector_primitives =
         device_vector_wrapper<collision::PrimitivePack>;
 
+#if defined(_WIN32)
+using device_vector_ulong = device_vector_wrapper<unsigned long>;
+#endif
+
 template <typename Type>
 void FromWrapper(utility::device_vector<Type>& dv,
                  const device_vector_wrapper<Type>& vec);

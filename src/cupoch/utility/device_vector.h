@@ -5,6 +5,11 @@
 #include <rmm/thrust_rmm_allocator.h>
 #else
 #include <thrust/device_vector.h>
+enum rmmAllocationMode_t {
+    CudaDefaultAllocation = 0,
+    PoolAllocation = 1,
+    CudaManagedMemory = 2,
+};
 #endif
 #include <thrust/host_vector.h>
 #include <thrust/system/cuda/experimental/pinned_allocator.h>

@@ -20,6 +20,7 @@ public:
         PYBIND11_OVERLOAD_PURE(registration::TransformationEstimationType,
                                TransformationEstimationBase, void);
     }
+#if !defined(_WIN32)
     float ComputeRMSE(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
@@ -34,6 +35,7 @@ public:
         PYBIND11_OVERLOAD_PURE(Eigen::Matrix4f, TransformationEstimationBase,
                                source, target, corres);
     }
+#endif
 };
 
 void pybind_registration_classes(py::module &m) {
