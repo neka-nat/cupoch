@@ -99,16 +99,16 @@ utility::device_vector<thrust::tuple<int, int>> AdvancedMatching(
     utility::device_vector<float> dis;
     utility::device_vector<thrust::tuple<int, int>> corres;
     corres.resize(nPti + nPtj);
-    geometry::BruteForceNN(features_vec[fi].data_, features_vec[fj].data_,
-                           corresK, dis);
+    geometry::BruteForceNN<Dim>(features_vec[fi].data_, features_vec[fj].data_,
+                                corresK, dis);
     thrust::copy(make_tuple_iterator(corresK.begin(),
                                      thrust::make_counting_iterator<int>(0)),
                  make_tuple_iterator(
                          corresK.end(),
                          thrust::make_counting_iterator<int>(corresK.size())),
                  corres.begin());
-    geometry::BruteForceNN(features_vec[fj].data_, features_vec[fi].data_,
-                           corresK, dis);
+    geometry::BruteForceNN<Dim>(features_vec[fj].data_, features_vec[fi].data_,
+                                corresK, dis);
     thrust::copy(make_tuple_iterator(thrust::make_counting_iterator<int>(0),
                                      corresK.begin()),
                  make_tuple_iterator(

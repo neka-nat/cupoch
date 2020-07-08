@@ -76,7 +76,7 @@ cupoch::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(
     bool solution_exist;
     Eigen::Vector6f x;
     thrust::tie(solution_exist, x) =
-            SolveLinearSystemPSD(JTJ, Eigen::Vector6f(-JTr));
+            SolveLinearSystemPSD<6>(JTJ, Eigen::Vector6f(-JTr));
 
     if (solution_exist) {
         Eigen::Matrix4f extrinsic = TransformVector6fToMatrix4f(x);

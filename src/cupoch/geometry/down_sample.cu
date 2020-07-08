@@ -291,7 +291,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     const size_t n_pt = points_.size();
     utility::device_vector<size_t> indices(n_pt);
     has_radius_points_functor func(thrust::raw_pointer_cast(tmp_indices.data()),
-                                   nb_points, NUM_MAX_NN);
+                                   int(nb_points), NUM_MAX_NN);
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
                                thrust::make_counting_iterator(n_pt),
                                indices.begin(), func);
@@ -320,7 +320,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     utility::device_vector<float> dist;
     kdtree.SearchKNN(points_, int(nb_neighbors), tmp_indices, dist);
     average_distance_functor avg_func(thrust::raw_pointer_cast(dist.data()),
-                                      nb_neighbors);
+                                      int(nb_neighbors));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator((size_t)n_pt),
                       avg_distances.begin(), avg_func);

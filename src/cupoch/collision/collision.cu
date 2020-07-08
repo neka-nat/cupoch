@@ -227,7 +227,7 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(out->collision_index_pairs_);
+    remove_negative<2>(out->collision_index_pairs_);
     return out;
 }
 
@@ -250,7 +250,7 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(out->collision_index_pairs_);
+    remove_negative<2>(out->collision_index_pairs_);
     return out;
 }
 
@@ -334,7 +334,7 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(out->collision_index_pairs_);
+    remove_negative<2>(out->collision_index_pairs_);
     return out;
 }
 

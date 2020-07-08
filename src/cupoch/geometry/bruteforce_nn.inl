@@ -95,7 +95,7 @@ void BruteForceNN(
     const dim3 blocks1(DIV_CEILING(query.size(), THREAD_2D_UNIT),
                        DIV_CEILING(ref.size(), THREAD_2D_UNIT));
     const dim3 threads1(THREAD_2D_UNIT, THREAD_2D_UNIT);
-    ComputeDistancesKernel<<<blocks1, threads1>>>(
+    ComputeDistancesKernel<Dim><<<blocks1, threads1>>>(
             thrust::raw_pointer_cast(ref.data()),
             thrust::raw_pointer_cast(query.data()),
             thrust::raw_pointer_cast(distance_mat.data()), ref.size(),
