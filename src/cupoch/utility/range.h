@@ -3,13 +3,13 @@
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/iterator/transform_iterator.h>
 
+namespace thrust {
+
 // examples:
 //   repeated_range([0, 1, 2, 3], 1) -> [0, 1, 2, 3]
 //   repeated_range([0, 1, 2, 3], 2) -> [0, 0, 1, 1, 2, 2, 3, 3]
 //   repeated_range([0, 1, 2, 3], 3) -> [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
 //   ...
-
-namespace thrust {
 
 template <typename Iterator>
 class repeated_range {
@@ -112,6 +112,59 @@ protected:
     Iterator first;
     Iterator last;
     difference_type stride;
+};
+
+// examples:
+//   tiled_range([0, 1, 2, 3], 1) -> [0, 1, 2, 3]
+//   tiled_range([0, 1, 2, 3], 2) -> [0, 1, 2, 3, 0, 1, 2, 3]
+//   tiled_range([0, 1, 2, 3], 3) -> [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
+//   ...
+
+template <typename Iterator>
+class tiled_range {
+public:
+    typedef typename thrust::iterator_difference<Iterator>::type
+            difference_type;
+
+    struct tile_functor
+        : public thrust::unary_function<difference_type, difference_type> {
+        difference_type tiles;
+
+        tile_functor(difference_type tiles) : tiles(tiles) {}
+
+        __host__ __device__ difference_type
+        operator()(const difference_type &i) const {
+            return i % tiles;
+        }
+    };
+
+    typedef typename thrust::counting_iterator<difference_type>
+            CountingIterator;
+    typedef typename thrust::transform_iterator<tile_functor,
+                                                CountingIterator>
+            TransformIterator;
+    typedef typename thrust::permutation_iterator<Iterator, TransformIterator>
+            PermutationIterator;
+
+    // type of the tiled_range iterator
+    typedef PermutationIterator iterator;
+
+    // construct tiled_range for the range [first,last)
+    tiled_range(Iterator first, Iterator last, difference_type tiles)
+        : first(first), last(last), tiles(tiles) {}
+
+    iterator begin(void) const {
+        return PermutationIterator(first,
+                                   TransformIterator(CountingIterator(0),
+                                                     tile_functor(tiles)));
+    }
+
+    iterator end(void) const { return begin() + tiles * (last - first); }
+
+protected:
+    Iterator first;
+    Iterator last;
+    difference_type tiles;
 };
 
 }  // namespace thrust
