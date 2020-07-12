@@ -25,6 +25,7 @@ This library is based on the functionality of Open3D, with additional features f
     * Point cloud clustering
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling
+    * Create Point Cloud from Laser Scan or RGBD Image
     * Visual Odometry
         * [Real-time visual odometry from dense RGB-D images](https://ieeexplore.ieee.org/document/6130321)
         * [Robust Odometry Estimation for RGB-D Cameras](https://ieeexplore.ieee.org/document/6631104)
@@ -94,6 +95,10 @@ python benchmarks.py
 ### Fast Global Registration
 
 ![fgr](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/fgr.png)
+
+### Point cloud from laser scan
+
+![fgr](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/laserscan.gif)
 
 ### Path finding
 

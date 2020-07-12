@@ -31,5 +31,21 @@ void pybind_laserscanbuffer(py::module &m) {
                   "This filter removes laser readings that are most likely caused"
                   " by the veiling effect when the edge of an object is being scanned.",
                   "min_angle"_a, "max_angle"_a, "window"_a,
-                  "neighbors"_a = 0, "remove_shadow_start_point"_a = false);
+                  "neighbors"_a = 0, "remove_shadow_start_point"_a = false)
+            .def_readonly("num_steps", &geometry::LaserScanBuffer::num_steps_,
+                          "Integer: Number of steps per scan.")
+            .def_readonly("num_max_scans", &geometry::LaserScanBuffer::num_max_scans_,
+                          "Integer: Maximum buffer size.")
+            .def_readwrite("min_angle", &geometry::LaserScanBuffer::min_angle_)
+            .def_readwrite("max_angle", &geometry::LaserScanBuffer::max_angle_)
+            .def_property_readonly(
+                    "ranges",
+                    [](geometry::LaserScanBuffer &scan) {
+                        return wrapper::device_vector_float(scan.ranges_);
+                    })
+            .def_property_readonly(
+                    "intensities",
+                    [](geometry::LaserScanBuffer &scan) {
+                        return wrapper::device_vector_float(scan.intensities_);
+                    });
 }

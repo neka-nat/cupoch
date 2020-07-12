@@ -2,6 +2,7 @@
 
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/rgbdimage.h"
+#include "cupoch/geometry/laserscanbuffer.h"
 #include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
@@ -228,7 +229,12 @@ void pybind_pointcloud(py::module &m) {
         )",
                     "image"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4f::Identity(),
-                    "project_valid_depth_only"_a = true);
+                    "project_valid_depth_only"_a = true)
+            .def_static(
+                    "create_from_laserscanbuffer",
+                    &geometry::PointCloud::CreateFromLaserScanBuffer,
+                    "Factory function to create a pointcloud from an laser scan and a LiDAR.",
+                    "scan"_a, "min_range"_a, "max_range"_a);
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
