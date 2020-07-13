@@ -12,7 +12,7 @@ struct compute_lattice_key_value_functor {
             const Eigen::Matrix<float, Dim, 1>* features,
             LatticeCoordKey<Dim>* keys,
             float* weights,
-            const Eigen::Matrix<float, Dim, 1> sigma)
+            const Eigen::Matrix<float, Dim, 1>& sigma)
         : inv_sigma_(1.0f / sigma.array()),
           features_(features),
           keys_(keys),
@@ -175,7 +175,7 @@ void Permutohedral<Dim>::BuildLatticeIndexNoBlur(
                out_values);
     lattice_map_ = MapType::createDeviceObject(n_lt);
     const dim3 threads(32);
-    const dim3 blocks((n_lt / 2 + threads.x - 1) / threads.x);
+    const dim3 blocks((n_lt + threads.x - 1) / threads.x);
     map_insert_kernel<<<blocks, threads>>>(
             thrust::raw_pointer_cast(out_keys.data()),
             thrust::raw_pointer_cast(out_values.data()), n_lt, lattice_map_);
@@ -205,7 +205,7 @@ void Permutohedral<Dim>::ComputeTarget(
                      thrust::make_counting_iterator(n), func);
 
     const dim3 threads(32);
-    const dim3 blocks((n / 2 + threads.x - 1) / threads.x);
+    const dim3 blocks((n + threads.x - 1) / threads.x);
     compute_target_kernel<Dim><<<blocks, threads>>>(
             thrust::raw_pointer_cast(keys.data()),
             thrust::raw_pointer_cast(w.data()), lattice_map_, n,
