@@ -16,19 +16,19 @@ namespace {
 
 template <int Dim>
 struct convert_float4_functor {
-    __device__ float4 operator()(const Eigen::Matrix<float, Dim, 1> &x) const;
+    __device__ float4_t operator()(const Eigen::Matrix<float, Dim, 1> &x) const;
 };
 
 template <>
-__device__ float4
+__device__ float4_t
 convert_float4_functor<3>::operator()(const Eigen::Vector3f &x) const {
-    return make_float4(x[0], x[1], x[2], 0.0f);
+    return make_float4_t(x[0], x[1], x[2], 0.0f);
 }
 
 template <>
-__device__ float4
+__device__ float4_t
 convert_float4_functor<2>::operator()(const Eigen::Vector2f &x) const {
-    return make_float4(x[0], x[1], 0.0f, 0.0f);
+    return make_float4_t(x[0], x[1], 0.0f, 0.0f);
 }
 
 }  // namespace
@@ -92,7 +92,7 @@ int KDTreeFlann::SearchKNN(const utility::device_vector<T> &query,
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
     convert_float4_functor<T::RowsAtCompileTime> func;
-    utility::device_vector<float4> query_f4(query.size());
+    utility::device_vector<float4_t> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
             (float *)(thrust::raw_pointer_cast(query_f4.data())), query.size(),
@@ -124,7 +124,7 @@ int KDTreeFlann::SearchRadius(const utility::device_vector<T> &query,
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
     convert_float4_functor<T::RowsAtCompileTime> func;
-    utility::device_vector<float4> query_f4(query.size());
+    utility::device_vector<float4_t> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
             (float *)(thrust::raw_pointer_cast(query_f4.data())), query.size(),
@@ -158,7 +158,7 @@ int KDTreeFlann::SearchHybrid(const utility::device_vector<T> &query,
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
     convert_float4_functor<T::RowsAtCompileTime> func;
-    utility::device_vector<float4> query_f4(query.size());
+    utility::device_vector<float4_t> query_f4(query.size());
     thrust::transform(query.begin(), query.end(), query_f4.begin(), func);
     flann::Matrix<float> query_flann(
             (float *)(thrust::raw_pointer_cast(query_f4.data())), query.size(),

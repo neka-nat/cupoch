@@ -87,7 +87,7 @@ public:
     bool SetRawData(const utility::device_vector<T> &data);
 
 protected:
-    utility::device_vector<float4> data_;
+    utility::device_vector<float4_t> data_;
     std::unique_ptr<flann::Matrix<float>> flann_dataset_;
     std::unique_ptr<flann::KDTreeCuda3dIndex<flann::L2<float>>> flann_index_;
     size_t dimension_ = 0;

@@ -14,6 +14,26 @@ enum rmmAllocationMode_t {
 #include <thrust/host_vector.h>
 #include <thrust/system/cuda/experimental/pinned_allocator.h>
 
+#if defined(_WIN32)
+struct float4_t {
+    float x, y, z, w;
+};
+
+__host__ __device__
+inline float4_t make_float4_t(float x, float y, float z, float w) {
+    float4_t f4 = {x, y, z, w};
+    return f4;
+}
+#else
+#include <cuda_runtime.h>
+using float4_t = float4;
+
+__host__ __device__
+inline float4_t make_float4_t(float x, float y, float z, float w) {
+    return make_float4(x, y, z, w);
+}
+#endif
+
 namespace cupoch {
 namespace utility {
 

@@ -1,4 +1,7 @@
 #include <thrust/gather.h>
+#include <thrust/count.h>
+#include <thrust/sort.h>
+#include <thrust/set_operations.h>
 #include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/geometry/kdtree_flann.h"
@@ -80,12 +83,12 @@ __host__ int CalcAverageByKey(utility::device_vector<Eigen::Vector3i> &keys,
 }
 
 struct has_radius_points_functor {
-    has_radius_points_functor(const int *indices, int n_points, int knn)
+    has_radius_points_functor(const thrust::device_ptr<int>& indices, int n_points, int knn)
         : indices_(indices), n_points_(n_points), knn_(knn){};
-    const int *indices_;
+    const thrust::device_ptr<int> indices_;
     const int n_points_;
     const int knn_;
-    __device__ bool operator()(int idx) const {
+    __device__ bool operator()(size_t idx) const {
         int count = 0;
         for (int i = 0; i < knn_; ++i) {
             if (indices_[idx * knn_ + i] >= 0) count++;
@@ -95,11 +98,11 @@ struct has_radius_points_functor {
 };
 
 struct average_distance_functor {
-    average_distance_functor(const float *distance, int knn)
+    average_distance_functor(const thrust::device_ptr<float>& distance, int knn)
         : distance_(distance), knn_(knn){};
-    const float *distance_;
+    const thrust::device_ptr<float> distance_;
     const int knn_;
-    __device__ float operator()(int idx) const {
+    __device__ float operator()(size_t idx) const {
         int count = 0;
         float avg = 0;
         for (int i = 0; i < knn_; ++i) {
@@ -290,7 +293,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     kdtree.SearchRadius(points_, search_radius, tmp_indices, dist);
     const size_t n_pt = points_.size();
     utility::device_vector<size_t> indices(n_pt);
-    has_radius_points_functor func(thrust::raw_pointer_cast(tmp_indices.data()),
+    has_radius_points_functor func(thrust::device_pointer_cast(tmp_indices.data()),
                                    int(nb_points), NUM_MAX_NN);
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
                                thrust::make_counting_iterator(n_pt),
@@ -313,16 +316,16 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
-    const int n_pt = points_.size();
+    const size_t n_pt = points_.size();
     utility::device_vector<float> avg_distances(n_pt);
     utility::device_vector<size_t> indices(n_pt);
     utility::device_vector<int> tmp_indices;
     utility::device_vector<float> dist;
     kdtree.SearchKNN(points_, int(nb_neighbors), tmp_indices, dist);
-    average_distance_functor avg_func(thrust::raw_pointer_cast(dist.data()),
+    average_distance_functor avg_func(thrust::device_pointer_cast(dist.data()),
                                       int(nb_neighbors));
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator((size_t)n_pt),
+                      thrust::make_counting_iterator(n_pt),
                       avg_distances.begin(), avg_func);
     const size_t valid_distances =
             thrust::count_if(avg_distances.begin(), avg_distances.end(),
@@ -352,7 +355,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     auto end = thrust::copy_if(
             make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
                                 avg_distances.begin()),
-            make_tuple_iterator(thrust::make_counting_iterator((size_t)n_pt),
+            make_tuple_iterator(thrust::make_counting_iterator(n_pt),
                                 avg_distances.end()),
             begin, th_func);
     indices.resize(thrust::distance(begin, end));
