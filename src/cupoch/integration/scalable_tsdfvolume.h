@@ -21,7 +21,6 @@
 #pragma once
 
 #include <memory>
-#include <stdgpu/unordered_map.cuh>
 
 #include "cupoch/integration/uniform_tsdfvolume.h"
 #include "cupoch/utility/helper.h"
@@ -54,13 +53,14 @@ public:
     template <int Num = 16>
     struct VolumeUnit {
     public:
-        __host__ __device__ VolumeUnit(const Eigen::Vector3f& origin) : origin_(origin) {};
+        __host__ __device__ VolumeUnit(const Eigen::Vector3f& origin) : origin_(origin), is_initialized_(true) {};
         __host__ __device__ ~VolumeUnit() {};
 
     public:
         geometry::TSDFVoxel voxels_[Num * Num * Num];
         Eigen::Vector3f origin_;
         const int voxel_num_ = Num * Num * Num;
+        bool is_initialized_ = false;
         static int GetResolution() { return Num; };
         static int GetVoxelNum() { return Num * Num * Num; };
     };
@@ -70,7 +70,7 @@ public:
                        float sdf_trunc,
                        TSDFVolumeColorType color_type,
                        int depth_sampling_stride = 4,
-                       int map_size = 10000);
+                       int map_size = 1000);
     ~ScalableTSDFVolume() override;
 
 public:
@@ -92,16 +92,12 @@ public:
     /// Assume the index of the volume key is (x, y, z), then the unit spans
     /// from (x, y, z) * volume_unit_length_
     /// to (x + 1, y + 1, z + 1) * volume_unit_length_
-    typedef stdgpu::unordered_map<Eigen::Vector3i, VolumeUnit<>, utility::hash_eigen<Eigen::Vector3i>> VolumeUnitsMap;
-    VolumeUnitsMap volume_units_;
+    class VolumeUnitsImpl;
+    std::shared_ptr<VolumeUnitsImpl> impl_;
     float volume_unit_length_;
     int resolution_;
     int volume_unit_voxel_num_;
     int depth_sampling_stride_;
-
-private:
-    Eigen::Vector3f GetNormalAt(const Eigen::Vector3f &p);
-    float GetTSDFAt(const Eigen::Vector3f &p);
 };
 
 __host__ __device__

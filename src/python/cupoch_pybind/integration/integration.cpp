@@ -23,6 +23,7 @@
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/integration/tsdfvolume.h"
 #include "cupoch/integration/uniform_tsdfvolume.h"
+#include "cupoch/integration/scalable_tsdfvolume.h"
 #include "cupoch_pybind/docstring.h"
 
 using namespace cupoch;
@@ -144,6 +145,50 @@ In SIGGRAPH, 1996)");
                            "``voxel_length = length / resolution``");
     docstring::ClassMethodDocInject(m, "UniformTSDFVolume",
                                     "extract_voxel_point_cloud");
+
+    // open3d.integration.ScalableTSDFVolume: open3d.integration.TSDFVolume
+    py::class_<integration::ScalableTSDFVolume,
+               PyTSDFVolume<integration::ScalableTSDFVolume>,
+               integration::TSDFVolume>
+            scalable_tsdfvolume(m, "ScalableTSDFVolume", R"(The
+ScalableTSDFVolume implements a more memory efficient data structure for
+volumetric integration.
+This implementation is based on the following repository:
+https://github.com/qianyizh/ElasticReconstruction/tree/master/Integrate
+An observed depth pixel gives two types of information: (a) an approximation
+of the nearby surface, and (b) empty space from the camera to the surface.
+They induce two core concepts of volumetric integration: weighted average of
+a truncated signed distance function (TSDF), and carving. The weighted
+average of TSDF is great in addressing the Gaussian noise along surface
+normal and producing a smooth surface output. The carving is great in
+removing outlier structures like floating noise pixels and bumps along
+structure edges.
+Ref: Dense Scene Reconstruction with Points of Interest
+Q.-Y. Zhou and V. Koltun
+In SIGGRAPH, 2013)");
+    py::detail::bind_copy_functions<integration::ScalableTSDFVolume>(
+            scalable_tsdfvolume);
+    scalable_tsdfvolume
+            .def(py::init([](float voxel_length, float sdf_trunc,
+                             integration::TSDFVolumeColorType
+                                     color_type,
+                             int depth_sampling_stride) {
+                     return new integration::ScalableTSDFVolume(
+                             voxel_length, sdf_trunc, color_type,
+                             depth_sampling_stride);
+                 }),
+                 "voxel_length"_a, "sdf_trunc"_a, "color_type"_a,
+                 "depth_sampling_stride"_a = 4)
+            .def("__repr__",
+                 [](const integration::ScalableTSDFVolume &vol) {
+                     return std::string(
+                                    "pipelines::integration::"
+                                    "ScalableTSDFVolume ") +
+                            (vol.color_type_ == integration::TSDFVolumeColorType::
+                                                                NoColor
+                                     ? std::string("without color.")
+                                     : std::string("with color."));
+                 });
 }
 
 void pybind_integration_methods(py::module &m) {

@@ -20,7 +20,6 @@
 **/
 #pragma once
 #include "cupoch/integration/uniform_tsdfvolume.h"
-#include "cupoch/integration/scalable_tsdfvolume.h"
 
 namespace cupoch {
 namespace integration {
@@ -178,50 +177,6 @@ struct uniform_integrate_functor : public integrate_functor {
         int y = yz / resolution_;
         int z = yz % resolution_;
         ComputeTSDF(voxels_[idx], origin_, x, y, z);
-    }
-};
-
-struct scalable_integrate_functor : public integrate_functor {
-    scalable_integrate_functor(float fx,
-                               float fy,
-                               float cx,
-                               float cy,
-                               const Eigen::Matrix4f &extrinsic,
-                               float voxel_length,
-                               float sdf_trunc,
-                               float safe_width,
-                               float safe_height,
-                               int resolution,
-                               const uint8_t *color,
-                               const uint8_t *depth,
-                               const uint8_t *depth_to_camera_distance_multiplier,
-                               int width,
-                               int num_of_channels,
-                               TSDFVolumeColorType color_type,
-                               int volume_unit_voxel_num,
-                               ScalableTSDFVolume::VolumeUnitsMap volume_units)
-          : integrate_functor(fx, fy, cx, cy,
-                              extrinsic, voxel_length,
-                              sdf_trunc, safe_width,
-                              safe_height, resolution,
-                              color, depth,
-                              depth_to_camera_distance_multiplier,
-                              width, num_of_channels,
-                              color_type),
-          volume_unit_voxel_num_(volume_unit_voxel_num),
-          volume_units_(volume_units) {};
-    const int volume_unit_voxel_num_;
-    ScalableTSDFVolume::VolumeUnitsMap volume_units_;
-    __device__ void operator() (size_t idx) {
-        int n_v = idx / volume_unit_voxel_num_;
-        int xyz = idx % volume_unit_voxel_num_;
-        int res2 = resolution_ * resolution_;
-        int x = idx / res2;
-        int yz = idx % res2;
-        int y = yz / resolution_;
-        int z = yz % resolution_;
-        auto& tsdfvol = (volume_units_.begin() + n_v)->second;
-        ComputeTSDF(tsdfvol.voxels_[xyz], tsdfvol.origin_, x, y, z);
     }
 };
 
