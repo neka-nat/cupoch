@@ -40,37 +40,29 @@ struct depth_to_pointcloud_functor {
     depth_to_pointcloud_functor(
             const uint8_t *depth,
             const int width,
-            int num_of_channels,
-            int bytes_per_channel,
             const int stride,
             const thrust::pair<float, float> &principal_point,
             const thrust::pair<float, float> &focal_length,
             const Eigen::Matrix4f &camera_pose)
         : depth_(depth),
           width_(width),
-          num_of_channels_(num_of_channels),
-          bytes_per_channel_(bytes_per_channel),
           stride_(stride),
           principal_point_(principal_point),
           focal_length_(focal_length),
           camera_pose_(camera_pose){};
     const uint8_t *depth_;
     const int width_;
-    const int num_of_channels_;
-    const int bytes_per_channel_;
     const int stride_;
     const thrust::pair<float, float> principal_point_;
     const thrust::pair<float, float> focal_length_;
     const Eigen::Matrix4f camera_pose_;
     __device__ Eigen::Vector3f operator()(size_t idx) {
-        int row = idx / width_;
-        int col = idx % width_;
-        const float d = *(float *)(&depth_[idx * num_of_channels_ *
-                                           bytes_per_channel_ * stride_]);
+        int strided_width = width_ / stride_;
+        int row = idx / strided_width * stride_;
+        int col = idx % strided_width * stride_;
+        const float d = *(float *)(&depth_[(row * width_ + col) * sizeof(float)]);
         if (d <= 0.0) {
-            return Eigen::Vector3f(std::numeric_limits<float>::infinity(),
-                                   std::numeric_limits<float>::infinity(),
-                                   std::numeric_limits<float>::infinity());
+            return Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());
         } else {
             float z = d;
             float x = (col - principal_point_.first) * z / focal_length_.first;
@@ -92,11 +84,10 @@ std::shared_ptr<PointCloud> CreatePointCloudFromFloatDepthImage(
     const Eigen::Matrix4f camera_pose = extrinsic.inverse();
     const auto focal_length = intrinsic.GetFocalLength();
     const auto principal_point = intrinsic.GetPrincipalPoint();
-    const size_t depth_size = depth.width_ * depth.height_;
+    const size_t depth_size = (depth.width_ / stride) * (depth.height_ / stride);
     pointcloud->points_.resize(depth_size);
     depth_to_pointcloud_functor func(
-            thrust::raw_pointer_cast(depth.data_.data()), depth.width_,
-            depth.num_of_channels_, depth.bytes_per_channel_, stride,
+            thrust::raw_pointer_cast(depth.data_.data()), depth.width_, stride,
             principal_point, focal_length, camera_pose);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(depth_size),
@@ -150,23 +141,13 @@ struct convert_from_rgbdimage_functor {
                     scale_;
             return thrust::make_tuple(points, colors);
         } else if (!project_valid_depth_only_) {
-            float z = std::numeric_limits<float>::quiet_NaN();
-            float x = std::numeric_limits<float>::quiet_NaN();
-            float y = std::numeric_limits<float>::quiet_NaN();
             return thrust::make_tuple(
-                    Eigen::Vector3f(x, y, z),
-                    Eigen::Vector3f(std::numeric_limits<TC>::quiet_NaN(),
-                                    std::numeric_limits<TC>::quiet_NaN(),
-                                    std::numeric_limits<TC>::quiet_NaN()));
+                    Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                    Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()));
         } else {
-            float z = std::numeric_limits<float>::infinity();
-            float x = std::numeric_limits<float>::infinity();
-            float y = std::numeric_limits<float>::infinity();
             return thrust::make_tuple(
-                    Eigen::Vector3f(x, y, z),
-                    Eigen::Vector3f(std::numeric_limits<float>::infinity(),
-                                    std::numeric_limits<float>::infinity(),
-                                    std::numeric_limits<float>::infinity()));
+                    Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()),
+                    Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()));
         }
     }
 };
@@ -188,9 +169,8 @@ struct compute_points_from_scan {
         float r = thrust::get<1>(x);
         Eigen::Vector3f color = Eigen::Vector3f::Constant(thrust::get<3>(x));
         if (isnan(r) || r < min_range_ || max_range_ < r) {
-            return thrust::make_tuple(Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
-                                                      std::numeric_limits<float>::quiet_NaN(),
-                                                      std::numeric_limits<float>::quiet_NaN()), color);
+            return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                                      color);
         }
         Eigen::Matrix4f origin = thrust::get<2>(x);
         int i = idx % num_steps_;
