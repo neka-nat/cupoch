@@ -293,6 +293,15 @@ __host__ __device__ inline int IndexOf(const Eigen::Vector3i &xyz,
     return IndexOf(xyz(0), xyz(1), xyz(2), resolution);
 }
 
+__host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx, int resolution) {
+    int res2 = resolution * resolution;
+    int x = idx / res2;
+    int yz = idx % res2;
+    int y = yz / resolution;
+    int z = yz % resolution;
+    return thrust::make_tuple(x, y, z);
+}
+
 namespace utility {
 
 template <typename T>

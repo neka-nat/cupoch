@@ -20,5 +20,6 @@ networkx = "*"
 pycryptodomex = "*"
 gnupg = "*"
 rospkg = "*"
+importlib-metadata = "*"
 
 [requires]

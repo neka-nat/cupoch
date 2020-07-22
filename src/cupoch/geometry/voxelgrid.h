@@ -60,6 +60,24 @@ public:
     Eigen::Vector3f color_ = Eigen::Vector3f(1.0, 1.0, 1.0);
 };
 
+struct add_voxel_color_functor {
+    __device__ Voxel operator()(const Voxel &x, const Voxel &y) const {
+        Voxel ans;
+        ans.grid_index_ = x.grid_index_;
+        ans.color_ = x.color_ + y.color_;
+        return ans;
+    }
+};
+
+struct devide_voxel_color_functor {
+    __device__ Voxel operator()(const Voxel &x, int y) const {
+        Voxel ans;
+        ans.grid_index_ = x.grid_index_;
+        ans.color_ = x.color_ / y;
+        return ans;
+    }
+};
+
 class VoxelGrid : public GeometryBase<3> {
 public:
     VoxelGrid();

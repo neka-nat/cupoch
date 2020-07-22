@@ -49,24 +49,6 @@ struct create_dense_functor {
     }
 };
 
-struct add_voxel_color_functor {
-    __device__ Voxel operator()(const Voxel &x, const Voxel &y) const {
-        Voxel ans;
-        ans.grid_index_ = x.grid_index_;
-        ans.color_ = x.color_ + y.color_;
-        return ans;
-    }
-};
-
-struct devide_voxel_color_functor {
-    __device__ Voxel operator()(const Voxel &x, int y) const {
-        Voxel ans;
-        ans.grid_index_ = x.grid_index_;
-        ans.color_ = x.color_ / y;
-        return ans;
-    }
-};
-
 struct create_from_pointcloud_functor {
     create_from_pointcloud_functor(const Eigen::Vector3f &min_bound,
                                    float voxel_size,

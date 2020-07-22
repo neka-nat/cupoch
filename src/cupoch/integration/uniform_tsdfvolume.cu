@@ -108,15 +108,9 @@ struct extract_pointcloud_functor {
         int z = zi / 3 + 1;
         int i = zi % 3;
 
-        Eigen::Vector3f point(std::numeric_limits<float>::quiet_NaN(),
-                              std::numeric_limits<float>::quiet_NaN(),
-                              std::numeric_limits<float>::quiet_NaN());
-        Eigen::Vector3f normal(std::numeric_limits<float>::quiet_NaN(),
-                               std::numeric_limits<float>::quiet_NaN(),
-                               std::numeric_limits<float>::quiet_NaN());
-        Eigen::Vector3f color(std::numeric_limits<float>::quiet_NaN(),
-                              std::numeric_limits<float>::quiet_NaN(),
-                              std::numeric_limits<float>::quiet_NaN());
+        Eigen::Vector3f point = Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN());
+        Eigen::Vector3f normal = Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN());
+        Eigen::Vector3f color = Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN());
         Eigen::Vector3i idx0(x, y, z);
         float w0 = voxels_[IndexOf(idx0, resolution_)].weight_;
         float f0 = voxels_[IndexOf(idx0, resolution_)].tsdf_;
@@ -185,11 +179,8 @@ struct extract_mesh_phase0_functor {
     const geometry::TSDFVoxel *voxels_;
     const int resolution_;
     __device__ thrust::tuple<Eigen::Vector3i, int> operator()(size_t idx) {
-        int res2 = (resolution_ - 1) * (resolution_ - 1);
-        int x = idx / res2;
-        int yz = idx % res2;
-        int y = yz / (resolution_ - 1);
-        int z = yz % (resolution_ - 1);
+        int x, y, z;
+        thrust::tie(x, y, z) = KeyOf(idx, resolution_ - 1);
 
         int cube_index = 0;
         Eigen::Vector3i key = Eigen::Vector3i(x, y, z);
@@ -369,12 +360,8 @@ struct extract_voxel_pointcloud_functor {
             return thrust::make_tuple(pt + origin_, Eigen::Vector3f(c, c, c));
         }
         return thrust::make_tuple(
-                Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
-                                std::numeric_limits<float>::quiet_NaN(),
-                                std::numeric_limits<float>::quiet_NaN()),
-                Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
-                                std::numeric_limits<float>::quiet_NaN(),
-                                std::numeric_limits<float>::quiet_NaN()));
+                Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()));
     }
 };
 
@@ -392,9 +379,7 @@ struct extract_voxel_grid_functor {
                     geometry::Voxel(v.grid_index_, Eigen::Vector3f(c, c, c)));
         }
         return thrust::make_tuple(
-                Eigen::Vector3i(geometry::INVALID_VOXEL_INDEX,
-                                geometry::INVALID_VOXEL_INDEX,
-                                geometry::INVALID_VOXEL_INDEX),
+                Eigen::Vector3i::Constant(geometry::INVALID_VOXEL_INDEX),
                 geometry::Voxel());
     }
 };

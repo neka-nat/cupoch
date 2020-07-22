@@ -37,24 +37,6 @@ struct extract_grid_index_functor {
     }
 };
 
-struct add_voxel_color_functor {
-    __device__ Voxel operator()(const Voxel &x, const Voxel &y) const {
-        Voxel ans;
-        ans.grid_index_ = x.grid_index_;
-        ans.color_ = x.color_ + y.color_;
-        return ans;
-    }
-};
-
-struct devide_voxel_color_functor {
-    __device__ Voxel operator()(const Voxel &x, int y) const {
-        Voxel ans;
-        ans.grid_index_ = x.grid_index_;
-        ans.color_ = x.color_ / y;
-        return ans;
-    }
-};
-
 __host__ __device__ void GetVoxelBoundingPoints(const Eigen::Vector3f &x,
                                                 float r,
                                                 Eigen::Vector3f points[8]) {
