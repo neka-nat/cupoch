@@ -52,9 +52,16 @@ Eigen::Matrix4f cupoch::utility::TransformVector6fToMatrix4f(
 
 Eigen::Vector6f cupoch::utility::TransformMatrix4fToVector6f(
         const Eigen::Matrix4f &input) {
-    Eigen::AngleAxisf aa(input.topLeftCorner<3, 3>());
+    Eigen::Quaternionf q(input.topLeftCorner<3, 3>());
+    float angle = 0;
+    Eigen::Vector3f axis(0, 0, 1.0);
+    const float n = q.vec().norm();
+    if (n > 0) {
+        angle = 2.0 * std::atan2(n, q.w());
+        axis = q.vec() / n;
+    }
     Eigen::Vector6f output;
-    output.head<3>() = aa.angle() * aa.axis();
+    output.head<3>() = angle * axis;
     output.tail<3>() = input.topRightCorner<3, 1>();
     return output;
 }
