@@ -153,14 +153,14 @@ PointCloud &PointCloud::Clear() {
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
 Eigen::Vector3f PointCloud::GetMinBound() const {
-    return ComputeMinBound(points_);
+    return ComputeMinBound<3>(points_);
 }
 
 Eigen::Vector3f PointCloud::GetMaxBound() const {
-    return ComputeMaxBound(points_);
+    return ComputeMaxBound<3>(points_);
 }
 
-Eigen::Vector3f PointCloud::GetCenter() const { return ComputeCenter(points_); }
+Eigen::Vector3f PointCloud::GetCenter() const { return ComputeCenter<3>(points_); }
 
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
@@ -168,17 +168,17 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
 
 PointCloud &PointCloud::Translate(const Eigen::Vector3f &translation,
                                   bool relative) {
-    TranslatePoints(translation, points_, relative);
+    TranslatePoints<3>(translation, points_, relative);
     return *this;
 }
 
 PointCloud &PointCloud::Scale(const float scale, bool center) {
-    ScalePoints(scale, points_, center);
+    ScalePoints<3>(scale, points_, center);
     return *this;
 }
 
 PointCloud &PointCloud::Rotate(const Eigen::Matrix3f &R, bool center) {
-    RotatePoints(utility::GetStream(0), R, points_, center);
+    RotatePoints<3>(utility::GetStream(0), R, points_, center);
     RotateNormals(utility::GetStream(1), R, normals_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;
@@ -227,7 +227,7 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
-    TransformPoints(utility::GetStream(0), transformation, points_);
+    TransformPoints<3>(utility::GetStream(0), transformation, points_);
     TransformNormals(utility::GetStream(1), transformation, normals_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;

@@ -80,21 +80,21 @@ MeshBase &MeshBase::Clear() {
 bool MeshBase::IsEmpty() const { return !HasVertices(); }
 
 Eigen::Vector3f MeshBase::GetMinBound() const {
-    return ComputeMinBound(vertices_);
+    return ComputeMinBound<3>(vertices_);
 }
 
 Eigen::Vector3f MeshBase::GetMaxBound() const {
-    return ComputeMaxBound(vertices_);
+    return ComputeMaxBound<3>(vertices_);
 }
 
-Eigen::Vector3f MeshBase::GetCenter() const { return ComputeCenter(vertices_); }
+Eigen::Vector3f MeshBase::GetCenter() const { return ComputeCenter<3>(vertices_); }
 
 AxisAlignedBoundingBox MeshBase::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4f &transformation) {
-    TransformPoints(utility::GetStream(0), transformation, vertices_);
+    TransformPoints<3>(utility::GetStream(0), transformation, vertices_);
     TransformNormals(utility::GetStream(1), transformation, vertex_normals_);
     cudaDeviceSynchronize();
     return *this;
@@ -102,17 +102,17 @@ MeshBase &MeshBase::Transform(const Eigen::Matrix4f &transformation) {
 
 MeshBase &MeshBase::Translate(const Eigen::Vector3f &translation,
                               bool relative) {
-    TranslatePoints(translation, vertices_, relative);
+    TranslatePoints<3>(translation, vertices_, relative);
     return *this;
 }
 
 MeshBase &MeshBase::Scale(const float scale, bool center) {
-    ScalePoints(scale, vertices_, center);
+    ScalePoints<3>(scale, vertices_, center);
     return *this;
 }
 
 MeshBase &MeshBase::Rotate(const Eigen::Matrix3f &R, bool center) {
-    RotatePoints(utility::GetStream(0), R, vertices_, center);
+    RotatePoints<3>(utility::GetStream(0), R, vertices_, center);
     RotateNormals(utility::GetStream(0), R, vertex_normals_);
     cudaDeviceSynchronize();
     return *this;
