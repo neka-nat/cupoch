@@ -69,6 +69,7 @@ if __name__ == "__main__":
     path.append(cur_trans[:3, 3].tolist())
     line = ax1.plot(*list(zip(*path)), 'r-')[0]
     pos = ax1.plot(*list(zip(*path)), 'yo')[0]
+    ax1.invert_yaxis()
     depth_im = ax2.imshow(np.zeros((480, 640), dtype=np.uint8), cmap="gray", vmin=0, vmax=255)
     color_im = ax3.imshow(np.zeros((480, 640, 3), dtype=np.uint8))
     try:
@@ -115,9 +116,9 @@ if __name__ == "__main__":
             print(cur_trans)
             path.append(cur_trans[:3, 3])
             data = list(zip(*path))
-            line.set_data(data[:2])
+            line.set_data(np.array(data[0]), np.array(data[1]))
             line.set_3d_properties(data[2])
-            pos.set_data([cur_trans[0, 3]], [cur_trans[1, 3]])
+            pos.set_data(np.array([cur_trans[0, 3]]), np.array([cur_trans[1, 3]]))
             pos.set_3d_properties(cur_trans[2, 3])
             depth_offset = depth_temp.min()
             depth_scale = depth_temp.max() - depth_offset
