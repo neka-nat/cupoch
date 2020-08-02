@@ -83,8 +83,6 @@ struct integrate_functor {
     __device__ virtual ~integrate_functor() {};
     __device__ void ComputeTSDF(geometry::TSDFVoxel &voxel, const Eigen::Vector3f& origin,
                                 int x, int y, int z) {
-        voxel.grid_index_ = Eigen::Vector3i(x, y, z);
-
         Eigen::Vector4f pt_3d_homo(
                 float(half_voxel_length_ + voxel_length_ * x + origin(0)),
                 float(half_voxel_length_ + voxel_length_ * y + origin(1)),

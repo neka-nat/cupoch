@@ -296,11 +296,7 @@ Graph<Dim> &Graph<Dim>::AddNodeAndConnect(
     utility::device_vector<Eigen::Vector2i> new_edges(n_points);
     utility::device_vector<float> new_weights(n_points);
     extract_near_edges_functor<Dim> func(point, n_points, max_edge_distance);
-    thrust::transform(
-            make_tuple_iterator(thrust::make_counting_iterator(0),
-                                this->points_.begin()),
-            make_tuple_iterator(thrust::make_counting_iterator<int>(n_points),
-                                this->points_.end()),
+    thrust::transform(enumerate_begin(this->points_), enumerate_end(this->points_),
             make_tuple_begin(new_edges, new_weights), func);
     auto remove_fn =
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {

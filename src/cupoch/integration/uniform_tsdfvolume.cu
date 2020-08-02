@@ -155,16 +155,16 @@ struct count_valid_voxels_functor {
         : voxels_(voxels), resolution_(resolution){};
     const geometry::TSDFVoxel *voxels_;
     const int resolution_;
-    __device__ bool operator()(const geometry::TSDFVoxel &v) const {
-        if (v.grid_index_[0] == resolution_ - 1 ||
-            v.grid_index_[1] == resolution_ - 1 ||
-            v.grid_index_[2] == resolution_ - 1)
-            return false;
+    __device__ bool operator()(const thrust::tuple<size_t, geometry::TSDFVoxel> &kv) const {
+        size_t idx = thrust::get<0>(kv);
+        int x, y, z;
+        thrust::tie(x, y, z) = KeyOf(idx, resolution_);
+        if (x == resolution_ - 1 || y == resolution_ - 1 || z == resolution_ - 1) return false;
+        geometry::TSDFVoxel v = thrust::get<1>(kv);
 #pragma unroll
         for (int i = 0; i < 8; ++i) {
             Eigen::Vector3i idx =
-                    v.grid_index_ +
-                    Eigen::Vector3i(shift[i][0], shift[i][1], shift[i][2]);
+                    Eigen::Vector3i(x + shift[i][0], y + shift[i][1], z + shift[i][2]);
             if (voxels_[IndexOf(idx, resolution_)].weight_ == 0.0f)
                 return false;
         }
@@ -348,10 +348,11 @@ struct extract_voxel_pointcloud_functor {
     const float voxel_length_;
     const float half_voxel_length_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
-            const geometry::TSDFVoxel &v) {
-        int x = v.grid_index_[0];
-        int y = v.grid_index_[1];
-        int z = v.grid_index_[2];
+            const thrust::tuple<size_t, geometry::TSDFVoxel> &kv) {
+        int idx = thrust::get<0>(kv);
+        int x, y, z;
+        thrust::tie(x, y, z) = KeyOf(idx, resolution_);
+        geometry::TSDFVoxel v = thrust::get<1>(kv);
         Eigen::Vector3f pt(half_voxel_length_ + voxel_length_ * x,
                            half_voxel_length_ + voxel_length_ * y,
                            half_voxel_length_ + voxel_length_ * z);
@@ -369,14 +370,19 @@ struct extract_voxel_grid_functor {
     extract_voxel_grid_functor(int resolution) : resolution_(resolution){};
     const int resolution_;
     __device__ thrust::tuple<Eigen::Vector3i, geometry::Voxel> operator()(
-            const geometry::TSDFVoxel &v) {
+            const thrust::tuple<size_t, geometry::TSDFVoxel> &kv) {
+        int idx = thrust::get<0>(kv);
+        int x, y, z;
+        thrust::tie(x, y, z) = KeyOf(idx, resolution_);
+        Eigen::Vector3i grid_idx = Eigen::Vector3i(x, y, z);
+        geometry::TSDFVoxel v = thrust::get<1>(kv);
         const float w = v.weight_;
         const float f = v.tsdf_;
         if (w != 0.0f && f < 0.98f && f >= -0.98f) {
             float c = (f + 1.0) * 0.5;
             return thrust::make_tuple(
-                    v.grid_index_,
-                    geometry::Voxel(v.grid_index_, Eigen::Vector3f(c, c, c)));
+                    grid_idx,
+                    geometry::Voxel(grid_idx, Eigen::Vector3f(c, c, c)));
         }
         return thrust::make_tuple(
                 Eigen::Vector3i::Constant(geometry::INVALID_VOXEL_INDEX),
@@ -487,7 +493,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     // http://paulbourke.net/geometry/polygonise/
     auto mesh = std::make_shared<geometry::TriangleMesh>();
     size_t n_valid_voxels = thrust::count_if(
-            voxels_.begin(), voxels_.end(),
+            enumerate_begin(voxels_),
+            enumerate_end(voxels_),
             count_valid_voxels_functor(thrust::raw_pointer_cast(voxels_.data()),
                                        resolution_));
     size_t res3 = (resolution_ - 1) * (resolution_ - 1) * (resolution_ - 1);
@@ -595,8 +602,8 @@ UniformTSDFVolume::ExtractVoxelPointCloud() const {
     extract_voxel_pointcloud_functor func(origin_, resolution_, voxel_length_);
     resize_all(n_valid_voxels, voxel->points_, voxel->colors_);
     thrust::copy_if(
-            thrust::make_transform_iterator(voxels_.begin(), func),
-            thrust::make_transform_iterator(voxels_.end(), func),
+            thrust::make_transform_iterator(enumerate_begin(voxels_), func),
+            thrust::make_transform_iterator(enumerate_end(voxels_), func),
             make_tuple_begin(voxel->points_, voxel->colors_),
             [] __device__(
                     const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> &x) {
@@ -622,8 +629,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
                voxel_grid->voxels_values_);
     extract_voxel_grid_functor func(resolution_);
     thrust::copy_if(
-            thrust::make_transform_iterator(voxels_.begin(), func),
-            thrust::make_transform_iterator(voxels_.end(), func),
+            thrust::make_transform_iterator(enumerate_begin(voxels_), func),
+            thrust::make_transform_iterator(enumerate_end(voxels_), func),
             make_tuple_begin(voxel_grid->voxels_keys_,
                              voxel_grid->voxels_values_),
             [] __device__(

@@ -50,10 +50,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
             dists.begin(), dists.end(),
             [] __device__(float d) { return (isinf(d)) ? 0.0 : d; }, 0.0f,
             thrust::plus<float>());
-    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator(0),
-                                          indices.begin()),
-                      make_tuple_iterator(thrust::make_counting_iterator(n_pt),
-                                          indices.end()),
+    thrust::transform(enumerate_begin(indices), enumerate_end(indices),
                       result.correspondence_set_.begin(),
                       [] __device__(const thrust::tuple<int, int> &idxs) {
                           int j = thrust::get<1>(idxs);

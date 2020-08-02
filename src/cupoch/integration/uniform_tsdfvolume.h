@@ -27,19 +27,17 @@ namespace cupoch {
 
 namespace geometry {
 
-class TSDFVoxel : public Voxel {
+class TSDFVoxel {
 public:
-    __host__ __device__ TSDFVoxel() : Voxel() {}
-    __host__ __device__ TSDFVoxel(const Eigen::Vector3i &grid_index)
-        : Voxel(grid_index) {}
-    __host__ __device__ TSDFVoxel(const Eigen::Vector3i &grid_index,
-                                  const Eigen::Vector3f &color)
-        : Voxel(grid_index, color) {}
+    __host__ __device__ TSDFVoxel() {}
+    __host__ __device__ TSDFVoxel(const Eigen::Vector3f &color)
+        : color_(color) {}
     __host__ __device__ ~TSDFVoxel() {}
 
 public:
     float tsdf_ = 0;
     float weight_ = 0;
+    Eigen::Vector3f color_ = Eigen::Vector3f(1.0, 1.0, 1.0);
 };
 
 }  // namespace geometry

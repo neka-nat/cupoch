@@ -267,15 +267,9 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromLaserScanBuffer(
     pointcloud->points_.resize(scan.ranges_.size());
     if (scan.HasIntensities()) {
         pointcloud->colors_.resize(scan.ranges_.size());
-        thrust::transform(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
-                                              scan.ranges_.begin(),
-                                              range.begin(),
-                                              scan.intensities_.begin()),
-                          make_tuple_iterator(thrust::make_counting_iterator(scan.ranges_.size()),
-                                              scan.ranges_.end(),
-                                              range.end(),
-                                              scan.intensities_.end()),
-                          make_tuple_iterator(pointcloud->points_.begin(), pointcloud->colors_.begin()), func);
+        thrust::transform(enumerate_begin(scan.ranges_, range, scan.intensities_),
+                          enumerate_end(scan.ranges_, range, scan.intensities_),
+                          make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
 
     } else {
         thrust::transform(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),

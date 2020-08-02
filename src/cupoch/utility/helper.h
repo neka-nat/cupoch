@@ -222,6 +222,26 @@ auto make_tuple_end(Args &... args) {
     return make_tuple_iterator(std::end(args)...);
 }
 
+template <class... Args>
+auto enumerate_begin(Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), std::begin(args)...);
+}
+
+template <class... Args>
+auto enumerate_begin(const Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), std::begin(args)...);
+}
+
+template <class T, class... Args>
+auto enumerate_end(T& first, Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator(first.size()), std::end(first), std::end(args)...);
+}
+
+template <class T, class... Args>
+auto enumerate_end(const T& first, const Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator(first.size()), std::end(first), std::end(args)...);
+}
+
 template <class T>
 void resize_fn(size_t new_size, T &a) {
     a.resize(new_size);

@@ -182,12 +182,7 @@ OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
     utility::device_vector<size_t> indices(points.size());
     auto begin = make_tuple_iterator(indices.begin(),
                                      thrust::make_discard_iterator());
-    auto end = thrust::copy_if(
-            make_tuple_iterator(thrust::make_counting_iterator(0),
-                                points.begin()),
-            make_tuple_iterator(
-                    thrust::make_counting_iterator<int>(points.size()),
-                    points.end()),
+    auto end = thrust::copy_if(enumerate_begin(points), enumerate_end(points),
             begin, func);
     indices.resize(thrust::distance(begin, end));
     return indices;

@@ -372,12 +372,9 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     check_distance_threshold_functor th_func(distance_threshold);
     auto begin = make_tuple_iterator(indices.begin(),
                                      thrust::make_discard_iterator());
-    auto end = thrust::copy_if(
-            make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
-                                avg_distances.begin()),
-            make_tuple_iterator(thrust::make_counting_iterator(n_pt),
-                                avg_distances.end()),
-            begin, th_func);
+    auto end = thrust::copy_if(enumerate_begin(avg_distances),
+                               enumerate_end(avg_distances),
+                               begin, th_func);
     indices.resize(thrust::distance(begin, end));
     return std::make_tuple(SelectByIndex(indices), indices);
 }
