@@ -29,6 +29,30 @@ namespace collision {
 
 namespace {
 
+struct voxel_to_point_functor {
+    voxel_to_point_functor(float voxel_size,
+                           const Eigen::Vector3f& origin)
+                           : voxel_size_(voxel_size),
+                           box_half_size_(Eigen::Vector3f(
+                                voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+                           origin_(origin) {};
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;
+    __device__ Eigen::Vector3f operator() (const Eigen::Vector3i& vkey) const {
+        return vkey.cast<float>() * voxel_size_ + box_half_size_ + origin_;
+    }
+};
+
+struct lineset_to_point_functor {
+    lineset_to_point_functor() {};
+    __device__ Eigen::Vector3f operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& ppair) const {
+        const Eigen::Vector3f p1 = thrust::get<0>(ppair);
+        const Eigen::Vector3f p2 = thrust::get<1>(ppair);
+        return (p1 + p2) * 0.5;
+    }
+};
+
 struct intersect_voxel_voxel_functor {
     intersect_voxel_voxel_functor(const Eigen::Vector3i* voxels_keys1,
                                   const Eigen::Vector3i* voxels_keys2,
@@ -224,6 +248,48 @@ thrust::host_vector<Eigen::Vector2i> CollisionResult::GetCollisionIndexPairs()
     thrust::host_vector<Eigen::Vector2i> h_collision_index_pairs =
             collision_index_pairs_;
     return h_collision_index_pairs;
+}
+
+template <>
+void Intersection::SetTarget<geometry::VoxelGrid>(const geometry::VoxelGrid& target) {
+    voxel_to_point_functor func(target.voxel_size_, target.origin_);
+    auto begin = thrust::make_transform_iterator(target.voxels_keys_.begin(), func);
+    kdtree_.SetRawData<decltype(begin), 3>(begin,
+                                        thrust::make_transform_iterator(target.voxels_keys_.end(), func));
+    target_radius_ = target.voxel_size_ * std::sqrt(3.0) * 0.5;
+}
+
+template <>
+void Intersection::SetTarget<geometry::LineSet<3>>(const geometry::LineSet<3>& target) {
+    lineset_to_point_functor func;
+    auto begin = thrust::make_transform_iterator(
+            make_tuple_iterator(
+                thrust::make_permutation_iterator(
+                        target.points_.begin(),
+                        thrust::make_transform_iterator(
+                                target.lines_.begin(),
+                                extract_element_functor<int, 2, 0>())),
+                thrust::make_permutation_iterator(
+                        target.points_.begin(),
+                        thrust::make_transform_iterator(
+                                target.lines_.begin(),
+                                extract_element_functor<int, 2, 1>()))), func);
+    kdtree_.SetRawData<decltype(begin), 3>(
+            begin,
+            thrust::make_transform_iterator(
+                    make_tuple_iterator(
+                            thrust::make_permutation_iterator(
+                                    target.points_.begin(),
+                                    thrust::make_transform_iterator(
+                                            target.lines_.end(),
+                                            extract_element_functor<int, 2, 0>())),
+                            thrust::make_permutation_iterator(
+                                    target.points_.begin(),
+                                    thrust::make_transform_iterator(
+                                            target.lines_.end(),
+                                            extract_element_functor<int, 2, 1>()))),
+                 func));
+    target_radius_ = target.GetMaxLineLength() * 0.5;
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(

@@ -168,5 +168,36 @@ LineSet<Dim>::GetLineCoordinate(size_t line_index) const {
     return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
 }
 
+template <int Dim>
+float LineSet<Dim>::GetMaxLineLength() const {
+    return thrust::transform_reduce(
+            make_tuple_iterator(
+                    thrust::make_permutation_iterator(
+                            points_.begin(),
+                            thrust::make_transform_iterator(
+                                    lines_.begin(),
+                                    extract_element_functor<int, 2, 0>())),
+                    thrust::make_permutation_iterator(
+                            points_.begin(),
+                            thrust::make_transform_iterator(
+                                    lines_.begin(),
+                                    extract_element_functor<int, 2, 1>()))),
+            make_tuple_iterator(
+                    thrust::make_permutation_iterator(
+                            points_.begin(),
+                            thrust::make_transform_iterator(
+                                    lines_.end(),
+                                    extract_element_functor<int, 2, 0>())),
+                    thrust::make_permutation_iterator(
+                            points_.begin(),
+                            thrust::make_transform_iterator(
+                                    lines_.end(),
+                                    extract_element_functor<int, 2, 1>()))),
+            [] __device__ (const thrust::tuple<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>>& ppair) {
+                return (thrust::get<0>(ppair) - thrust::get<1>(ppair)).norm();
+            },
+            0.0f, thrust::maximum<float>());
+}
+
 template class LineSet<2>;
 template class LineSet<3>;

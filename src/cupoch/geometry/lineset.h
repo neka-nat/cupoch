@@ -94,6 +94,8 @@ public:
         return *this;
     }
 
+    float GetMaxLineLength() const;
+
     /// Factory function to create a LineSet from two PointClouds
     /// (\param cloud0, \param cloud1) and a correspondence set
     /// \param correspondences.

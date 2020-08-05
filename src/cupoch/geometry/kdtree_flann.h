@@ -53,6 +53,35 @@ public:
 public:
     bool SetGeometry(const Geometry &geometry);
 
+    template <typename InputIterator, int Dim>
+    int Search(InputIterator first,
+               InputIterator last,
+               const KDTreeSearchParam &param,
+               utility::device_vector<int> &indices,
+               utility::device_vector<float> &distance2) const;
+
+    template <typename InputIterator, int Dim>
+    int SearchKNN(InputIterator first,
+                  InputIterator last,
+                  int knn,
+                  utility::device_vector<int> &indices,
+                  utility::device_vector<float> &distance2) const;
+
+    template <typename InputIterator, int Dim>
+    int SearchRadius(InputIterator first,
+                     InputIterator last,
+                     float radius,
+                     utility::device_vector<int> &indices,
+                     utility::device_vector<float> &distance2) const;
+
+    template <typename InputIterator, int Dim>
+    int SearchHybrid(InputIterator first,
+                     InputIterator last,
+                     float radius,
+                     int max_nn,
+                     utility::device_vector<int> &indices,
+                     utility::device_vector<float> &distance2) const;
+
     template <typename T>
     int Search(const utility::device_vector<T> &query,
                const KDTreeSearchParam &param,
@@ -103,6 +132,9 @@ public:
                      thrust::host_vector<int> &indices,
                      thrust::host_vector<float> &distance2) const;
 
+    template <typename InputIterator, int Dim>
+    bool SetRawData(InputIterator first, InputIterator last);
+
     template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);
 
@@ -116,3 +148,5 @@ protected:
 
 }  // namespace geometry
 }  // namespace cupoch
+
+#include "cupoch/geometry/kdtree_flann.inl"
