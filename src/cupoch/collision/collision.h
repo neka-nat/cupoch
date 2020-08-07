@@ -24,7 +24,6 @@
 
 #include "cupoch/collision/primitives.h"
 #include "cupoch/geometry/geometry.h"
-#include "cupoch/geometry/kdtree_flann.h"
 
 namespace cupoch {
 
@@ -51,6 +50,8 @@ struct CollisionResult {
 
     CollisionResult();
     CollisionResult(CollisionResult::CollisionType first,
+                    CollisionResult::CollisionType second);
+    CollisionResult(CollisionResult::CollisionType first,
                     CollisionResult::CollisionType second,
                     const utility::device_vector<Eigen::Vector2i>&
                             collision_index_pairs);
@@ -61,19 +62,22 @@ struct CollisionResult {
     thrust::host_vector<Eigen::Vector2i> GetCollisionIndexPairs() const;
 };
 
+template <typename TargetT>
+class ConstructorImpl;
+
+template <typename TargetT>
 class Intersection {
 public:
-    Intersection();
-    ~Intersection();
+    Intersection(const TargetT& target) : target_(target) { Construct(); };
+    ~Intersection() {};
 
-    template <typename TargetT>
-    void SetTarget(const TargetT& target);
-
-    template <typename TargetT, typename QueryT>
+    template <typename QueryT>
     std::shared_ptr<CollisionResult> Compute(const QueryT& query, float margin = 0.0f) const;
+private:
+    void Construct();
 public:
-    geometry::KDTreeFlann kdtree_;
-    float target_radius_ = 0.0;
+    const TargetT& target_;
+    std::shared_ptr<ConstructorImpl<TargetT>> impl_;
 };
 
 std::shared_ptr<CollisionResult> ComputeIntersection(

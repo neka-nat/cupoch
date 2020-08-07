@@ -260,6 +260,9 @@ target_include_directories(imgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui
 set(imgui_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 set(imgui_LIBRARIES imgui)
 
+# lbvh
+set(lbvh_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lbvh)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
@@ -279,6 +282,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${stdgpu_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
+     ${lbvh_INCLUDE_DIRS}
 )
 
 # set 3RDPARTY_LIBRARIES

@@ -18,6 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
+#include <lbvh/bvh.cuh>
+#include <lbvh/query.cuh>
+
 #include "cupoch/collision/collision.h"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/lineset.h"
@@ -29,168 +32,172 @@ namespace collision {
 
 namespace {
 
-struct voxel_to_point_functor {
-    voxel_to_point_functor(float voxel_size,
-                           const Eigen::Vector3f& origin)
-                           : voxel_size_(voxel_size),
-                           box_half_size_(Eigen::Vector3f(
-                                voxel_size / 2, voxel_size / 2, voxel_size / 2)),
-                           origin_(origin) {};
-    const float voxel_size_;
-    const Eigen::Vector3f box_half_size_;
-    const Eigen::Vector3f origin_;
-    __device__ Eigen::Vector3f operator() (const Eigen::Vector3i& vkey) const {
-        return vkey.cast<float>() * voxel_size_ + box_half_size_ + origin_;
-    }
-};
 
-struct lineset_to_point_functor {
-    lineset_to_point_functor() {};
-    __device__ Eigen::Vector3f operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f>& ppair) const {
-        const Eigen::Vector3f p1 = thrust::get<0>(ppair);
-        const Eigen::Vector3f p2 = thrust::get<1>(ppair);
-        return (p1 + p2) * 0.5;
-    }
-};
-
+template<typename LBVHType>
 struct intersect_voxel_voxel_functor {
-    intersect_voxel_voxel_functor(const Eigen::Vector3i* voxels_keys1,
-                                  const Eigen::Vector3i* voxels_keys2,
-                                  float voxel_size1,
-                                  float voxel_size2,
-                                  const Eigen::Vector3f& origin1,
-                                  const Eigen::Vector3f& origin2,
-                                  int n_v2,
+    intersect_voxel_voxel_functor(const LBVHType& lbvh,
+                                  float voxel_size,
+                                  const Eigen::Vector3f& origin,
                                   float margin)
-        : voxels_keys1_(voxels_keys1),
-          voxels_keys2_(voxels_keys2),
-          voxel_size1_(voxel_size1),
-          voxel_size2_(voxel_size2),
-          box_half_size1_(Eigen::Vector3f(
-                  voxel_size1 / 2, voxel_size1 / 2, voxel_size1 / 2)),
-          box_half_size2_(Eigen::Vector3f(
-                  voxel_size2 / 2, voxel_size2 / 2, voxel_size2 / 2)),
-          origin1_(origin1),
-          origin2_(origin2),
-          n_v2_(n_v2),
+        : lbvh_(lbvh),
+          voxel_size_(voxel_size),
+          origin_(origin),
           margin_(margin){};
-    const Eigen::Vector3i* voxels_keys1_;
-    const Eigen::Vector3i* voxels_keys2_;
-    const float voxel_size1_;
-    const float voxel_size2_;
-    const Eigen::Vector3f box_half_size1_;
-    const Eigen::Vector3f box_half_size2_;
-    const Eigen::Vector3f origin1_;
-    const Eigen::Vector3f origin2_;
-    const int n_v2_;
+    const LBVHType lbvh_;
+    const float voxel_size_;
+    const Eigen::Vector3f origin_;
     const float margin_;
-    __device__ Eigen::Vector2i operator()(size_t idx) const {
-        int i1 = idx / n_v2_;
-        int i2 = idx % n_v2_;
-        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
-        const Eigen::Vector3f ms = Eigen::Vector3f::Constant(margin_);
-        Eigen::Vector3f center1 =
-                ((voxels_keys1_[i1].cast<float>() + h3) * voxel_size1_) +
-                origin1_;
-        Eigen::Vector3f center2 =
-                ((voxels_keys2_[i2].cast<float>() + h3) * voxel_size2_) +
-                origin2_;
-        int coll = geometry::intersection_test::AABBAABB(
-                center1 - box_half_size1_ - ms, center1 + box_half_size1_ + ms,
-                center2 - box_half_size2_, center2 + box_half_size2_);
-        return (coll == 1) ? Eigen::Vector2i(i1, i2) : Eigen::Vector2i(-1, -1);
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, Eigen::Vector3i>& x) const {
+        Eigen::Vector3i key = thrust::get<1>(x);
+        Eigen::Vector3f vl = key.cast<float>() * voxel_size_ + origin_ - Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f vu = (key + Eigen::Vector3i::Constant(1)).cast<float>() * voxel_size_ + origin_ + Eigen::Vector3f::Constant(margin_);
+        // make a query box.
+        lbvh::aabb<float> box;
+        box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+        box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+        unsigned int buffer[1];
+        const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+        return (num_found > 0) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x)) : Eigen::Vector2i(-1, -1);
     }
 };
 
+template<typename LBVHType>
 struct intersect_voxel_line_functor {
-    intersect_voxel_line_functor(const Eigen::Vector3i* voxels_keys,
-                                 const Eigen::Vector3f* points,
-                                 const Eigen::Vector2i* lines,
+    intersect_voxel_line_functor(const LBVHType& lbvh,
                                  float voxel_size,
                                  const Eigen::Vector3f& origin,
-                                 int n_v2,
                                  float margin)
-        : voxels_keys_(voxels_keys),
-          points_(points),
-          lines_(lines),
+        : lbvh_(lbvh),
           voxel_size_(voxel_size),
           box_half_size_(Eigen::Vector3f(
-                  voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+            voxel_size / 2, voxel_size / 2, voxel_size / 2)),
           origin_(origin),
-          n_v2_(n_v2),
           margin_(margin){};
-    const Eigen::Vector3i* voxels_keys_;
-    const Eigen::Vector3f* points_;
-    const Eigen::Vector2i* lines_;
+    const LBVHType lbvh_;
     const float voxel_size_;
     const Eigen::Vector3f box_half_size_;
     const Eigen::Vector3f origin_;
-    const int n_v2_;
     const float margin_;
-    __device__ Eigen::Vector2i operator()(size_t idx) const {
-        int i1 = idx / n_v2_;
-        int i2 = idx % n_v2_;
-        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, Eigen::Vector3f, Eigen::Vector3f>& x) const {
+        Eigen::Vector3f p1 = thrust::get<1>(x);
+        Eigen::Vector3f p2 = thrust::get<2>(x);
         const Eigen::Vector3f ms = Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f vl = p1.array().min(p2.array()).matrix() - ms;
+        Eigen::Vector3f vu = p1.array().max(p2.array()).matrix() + ms;
+        // make a query box.
+        lbvh::aabb<float> box;
+        box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+        box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+        unsigned int buffer[1];
+        const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+        if (num_found == 0) return Eigen::Vector2i(-1, -1);
+        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+        const Eigen::Vector3i& other = lbvh_.objects[buffer[0]];
         Eigen::Vector3f center =
-                ((voxels_keys_[i1].cast<float>() + h3) * voxel_size_) + origin_;
-        Eigen::Vector2i lidx = lines_[idx];
+                ((other.cast<float>() + h3) * voxel_size_) + origin_;
         int coll = geometry::intersection_test::LineSegmentAABB(
-                points_[lidx[0]], points_[lidx[1]], center - box_half_size_,
+                p1, p2, center - box_half_size_,
                 center + box_half_size_);
-        return (coll == 1) ? Eigen::Vector2i(i1, i2) : Eigen::Vector2i(-1, -1);
+        return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x)) : Eigen::Vector2i(-1, -1);
     }
 };
 
-struct intersect_primitives_voxel_functor {
-    intersect_primitives_voxel_functor(const PrimitivePack* primitives,
-                                       const Eigen::Vector3i* voxels_keys,
-                                       float voxel_size,
-                                       const Eigen::Vector3f& origin,
-                                       int n_v2,
-                                       float margin)
-        : primitives_(primitives),
-          voxels_keys_(voxels_keys),
+template<typename LBVHType>
+struct intersect_voxel_occgrid_functor {
+    intersect_voxel_occgrid_functor(const LBVHType& lbvh,
+                                    float voxel_size,
+                                    const Eigen::Vector3f& origin,
+                                    float margin)
+        : lbvh_(lbvh),
           voxel_size_(voxel_size),
-          box_half_size_(Eigen::Vector3f(
-                  voxel_size / 2, voxel_size / 2, voxel_size / 2)),
           origin_(origin),
-          n_v2_(n_v2),
           margin_(margin){};
-    const PrimitivePack* primitives_;
-    const Eigen::Vector3i* voxels_keys_;
+    const LBVHType lbvh_;
+    const float voxel_size_;
+    const Eigen::Vector3f origin_;
+    const float margin_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, geometry::OccupancyVoxel>& x) const {
+        geometry::OccupancyVoxel voxel = thrust::get<1>(x);
+        Eigen::Vector3f vl = voxel.grid_index_.cast<float>() * voxel_size_ + origin_ - Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f vu = (voxel.grid_index_ + Eigen::Vector3ui16::Constant(1)).cast<float>() * voxel_size_ + origin_ + Eigen::Vector3f::Constant(margin_);
+        // make a query box.
+        lbvh::aabb<float> box;
+        box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+        box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+        unsigned int buffer[1];
+        const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+        return (num_found > 0) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x)) : Eigen::Vector2i(-1, -1);
+    }
+};
+
+template<typename LBVHType>
+struct intersect_voxel_primitive_functor {
+    intersect_voxel_primitive_functor(const LBVHType& lbvh,
+                                      float voxel_size,
+                                      const Eigen::Vector3f& origin,
+                                      float margin)
+        : lbvh_(lbvh),
+        voxel_size_(voxel_size),
+        box_half_size_(Eigen::Vector3f(
+          voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+        origin_(origin),
+        margin_(margin){};
+    const LBVHType lbvh_;
     const float voxel_size_;
     const Eigen::Vector3f box_half_size_;
-    const Eigen::Vector3f origin_;
-    const int n_v2_;
-    const float margin_;
-    __device__ Eigen::Vector2i operator()(size_t idx) const {
-        int i1 = idx / n_v2_;
-        int i2 = idx % n_v2_;
+    const Eigen::Vector3f origin_;    const float margin_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, PrimitivePack>& x) const {
+        PrimitivePack primitive = thrust::get<1>(x);
         const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
-        const Eigen::Vector3f ms = Eigen::Vector3f::Constant(margin_);
-        Eigen::Vector3f center =
-                ((voxels_keys_[i2].cast<float>() + h3) * voxel_size_) + origin_;
-        switch (primitives_[i1].primitive_.type_) {
+        unsigned int buffer[1];
+        switch (primitive.primitive_.type_) {
             case Primitive::PrimitiveType::Box: {
-                const Box box = primitives_[i1].box_;
+                const Box& obox = primitive.box_;
+                auto bbox = obox.GetAxisAlignedBoundingBox();
+                // make a query box.
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const Eigen::Vector3i& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.cast<float>() + h3) * voxel_size_) + origin_;
                 int coll = geometry::intersection_test::BoxBox(
-                        box.lengths_ * 0.5, box.transform_.block<3, 3>(0, 0),
-                        box.transform_.block<3, 1>(0, 3), box_half_size_,
+                        obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
+                        obox.transform_.block<3, 1>(0, 3), box_half_size_,
                         Eigen::Matrix3f::Identity(), center);
-                return (coll == 1) ? Eigen::Vector2i(i1, i2)
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
                                    : Eigen::Vector2i(-1, -1);
             }
             case Primitive::PrimitiveType::Sphere: {
-                const Sphere sphere = primitives_[i1].sphere_;
+                const Sphere& sphere = primitive.sphere_;
+                auto bbox = sphere.GetAxisAlignedBoundingBox();
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const Eigen::Vector3i& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.cast<float>() + h3) * voxel_size_) + origin_;
                 int coll = geometry::intersection_test::SphereAABB(
                         sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
                         center - box_half_size_, center + box_half_size_);
-                return (coll == 1) ? Eigen::Vector2i(i1, i2)
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
                                    : Eigen::Vector2i(-1, -1);
             }
             case Primitive::PrimitiveType::Capsule: {
-                const Capsule capsule = primitives_[i1].capsule_;
+                const Capsule& capsule = primitive.capsule_;
+                auto bbox = capsule.GetAxisAlignedBoundingBox();
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const Eigen::Vector3i& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.cast<float>() + h3) * voxel_size_) + origin_;
                 Eigen::Vector3f d =
                         capsule.transform_.block<3, 1>(0, 3) -
                         0.5 * capsule.height_ *
@@ -199,7 +206,7 @@ struct intersect_primitives_voxel_functor {
                         capsule.radius_, d,
                         capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                         center - box_half_size_, center + box_half_size_);
-                return (coll == 1) ? Eigen::Vector2i(i1, i2)
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
                                    : Eigen::Vector2i(-1, -1);
             }
             default: {
@@ -209,16 +216,110 @@ struct intersect_primitives_voxel_functor {
     }
 };
 
-struct convert_index_functor {
-    convert_index_functor(const Eigen::Vector3i* occupied_voxels_keys,
-                          int resolution)
-        : occupied_voxels_keys_(occupied_voxels_keys),
-          resolution_(resolution){};
-    const Eigen::Vector3i* occupied_voxels_keys_;
+template<typename LBVHType>
+struct intersect_occvoxel_primitive_functor {
+    intersect_occvoxel_primitive_functor(const LBVHType& lbvh,
+                                         float voxel_size,
+                                         const Eigen::Vector3f& origin,
+                                         float margin)
+        : lbvh_(lbvh),
+        voxel_size_(voxel_size),
+        box_half_size_(Eigen::Vector3f(
+          voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+        origin_(origin),
+        margin_(margin){};
+    const LBVHType lbvh_;
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;    const float margin_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, PrimitivePack>& x) const {
+        PrimitivePack primitive = thrust::get<1>(x);
+        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+        unsigned int buffer[1];
+        switch (primitive.primitive_.type_) {
+            case Primitive::PrimitiveType::Box: {
+                const Box& obox = primitive.box_;
+                auto bbox = obox.GetAxisAlignedBoundingBox();
+                // make a query box.
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const geometry::OccupancyVoxel& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::BoxBox(
+                        obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
+                        obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                        Eigen::Matrix3f::Identity(), center);
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Sphere: {
+                const Sphere& sphere = primitive.sphere_;
+                auto bbox = sphere.GetAxisAlignedBoundingBox();
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const geometry::OccupancyVoxel& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::SphereAABB(
+                        sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Capsule: {
+                const Capsule& capsule = primitive.capsule_;
+                auto bbox = capsule.GetAxisAlignedBoundingBox();
+                lbvh::aabb<float> box;
+                box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+                if (num_found == 0) return Eigen::Vector2i(-1, -1);
+                const geometry::OccupancyVoxel& other = lbvh_.objects[buffer[0]];
+                Eigen::Vector3f center =
+                        ((other.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                Eigen::Vector3f d =
+                        capsule.transform_.block<3, 1>(0, 3) -
+                        0.5 * capsule.height_ *
+                                capsule.transform_.block<3, 1>(0, 2);
+                int coll = geometry::intersection_test::CapsuleAABB(
+                        capsule.radius_, d,
+                        capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            default: {
+                return Eigen::Vector2i(-1, -1);
+            }
+        }
+    }
+};
+
+struct convert_index_functor1 {
+    convert_index_functor1(int resolution)
+    : resolution_(resolution){};
     const int resolution_;
-    __device__ Eigen::Vector2i operator()(const Eigen::Vector2i& idxs) {
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<Eigen::Vector2i, geometry::OccupancyVoxel>& x) {
+        return Eigen::Vector2i(thrust::get<0>(x)[0],
+            IndexOf(thrust::get<1>(x).grid_index_.cast<int>(), resolution_));
+    }
+};
+
+struct convert_index_functor2 {
+    convert_index_functor2(int resolution)
+    : resolution_(resolution){};
+    const int resolution_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<Eigen::Vector2i, geometry::OccupancyVoxel>& x) {
         return Eigen::Vector2i(
-                idxs[0], IndexOf(occupied_voxels_keys_[idxs[1]], resolution_));
+            IndexOf(thrust::get<1>(x).grid_index_.cast<int>(), resolution_),
+            thrust::get<0>(x)[0]);
     }
 };
 
@@ -230,11 +331,9 @@ CollisionResult::CollisionResult()
 
 CollisionResult::CollisionResult(
         CollisionResult::CollisionType first,
-        CollisionResult::CollisionType second,
-        const utility::device_vector<Eigen::Vector2i>& collision_index_pairs)
+        CollisionResult::CollisionType second)
     : first_(first),
-      second_(second),
-      collision_index_pairs_(collision_index_pairs){};
+      second_(second){};
 
 CollisionResult::CollisionResult(const CollisionResult& other)
     : first_(other.first_),
@@ -250,92 +349,271 @@ thrust::host_vector<Eigen::Vector2i> CollisionResult::GetCollisionIndexPairs()
     return h_collision_index_pairs;
 }
 
+template<>
+class ConstructorImpl<geometry::VoxelGrid> {
+public:
+    struct aabb_getter {
+        aabb_getter(float voxel_size, const Eigen::Vector3f& origin)
+        : voxel_size_(voxel_size), origin_(origin) {};
+        const float voxel_size_;
+        const Eigen::Vector3f origin_;
+        __device__ lbvh::aabb<float> operator() (const Eigen::Vector3i& obj) const {
+            Eigen::Vector3f vl = obj.cast<float>() * voxel_size_ + origin_;
+            Eigen::Vector3f vu = (obj + Eigen::Vector3i::Constant(1)).cast<float>() * voxel_size_ + origin_;
+            lbvh::aabb<float> box;
+            box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+            box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+            return box;
+        }
+    };
+    ConstructorImpl(const geometry::VoxelGrid& voxelgrid)
+    : bvh_(voxelgrid.voxels_keys_.begin(), voxelgrid.voxels_keys_.end(),
+           aabb_getter(voxelgrid.voxel_size_, voxelgrid.origin_)) {};
+    ~ConstructorImpl() {};
+    lbvh::bvh<float, Eigen::Vector3i, aabb_getter> bvh_;
+};
+
+template<>
+class ConstructorImpl<geometry::OccupancyGrid> {
+public:
+    struct aabb_getter {
+        aabb_getter(float voxel_size, const Eigen::Vector3f& origin)
+        : voxel_size_(voxel_size), origin_(origin) {};
+        const float voxel_size_;
+        const Eigen::Vector3f origin_;
+        __device__ lbvh::aabb<float> operator() (const geometry::OccupancyVoxel& obj) const {
+            Eigen::Vector3f vl = obj.grid_index_.cast<float>() * voxel_size_ + origin_;
+            Eigen::Vector3f vu = (obj.grid_index_ + Eigen::Vector3ui16::Constant(1)).cast<float>() * voxel_size_ + origin_;
+            lbvh::aabb<float> box;
+            box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+            box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+            return box;
+        }
+    };
+    ConstructorImpl(const utility::device_vector<geometry::OccupancyVoxel>& values,
+                    float voxel_size, const Eigen::Vector3f& origin)
+    : bvh_(values.begin(), values.end(),
+           aabb_getter(voxel_size, origin)) {};
+    ~ConstructorImpl() {};
+    lbvh::bvh<float, geometry::OccupancyVoxel, aabb_getter> bvh_;
+};
+
 template <>
-void Intersection::SetTarget<geometry::VoxelGrid>(const geometry::VoxelGrid& target) {
-    voxel_to_point_functor func(target.voxel_size_, target.origin_);
-    auto begin = thrust::make_transform_iterator(target.voxels_keys_.begin(), func);
-    kdtree_.SetRawData<decltype(begin), 3>(begin,
-                                        thrust::make_transform_iterator(target.voxels_keys_.end(), func));
-    target_radius_ = target.voxel_size_ * std::sqrt(3.0) * 0.5;
+void Intersection<geometry::VoxelGrid>::Construct() {
+    if (target_.IsEmpty()) {
+        utility::LogWarning("[Intersection::Construct] target is empty.");
+        return;
+    }
+    impl_ = std::make_shared<ConstructorImpl<geometry::VoxelGrid>>(target_);
 }
 
 template <>
-void Intersection::SetTarget<geometry::LineSet<3>>(const geometry::LineSet<3>& target) {
-    lineset_to_point_functor func;
-    auto begin = thrust::make_transform_iterator(
-            make_tuple_iterator(
+void Intersection<geometry::OccupancyGrid>::Construct() {
+    if (target_.IsEmpty()) {
+        utility::LogWarning("[Intersection::Construct] target is empty.");
+        return;
+    }
+    const Eigen::Vector3f occ_origin =
+            target_.origin_ -
+            0.5 * target_.voxel_size_ *
+                    Eigen::Vector3f::Constant(target_.resolution_);
+    auto occupied_voxels = target_.ExtractOccupiedVoxels();
+    impl_ = std::make_shared<ConstructorImpl<geometry::OccupancyGrid>>(*occupied_voxels, target_.voxel_size_, occ_origin);
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geometry::VoxelGrid>(const geometry::VoxelGrid& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::VoxelGrid,
+                                                 CollisionResult::CollisionType::VoxelGrid);
+    if (target_.IsEmpty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    intersect_voxel_voxel_functor<decltype(bvh_dev)> func(bvh_dev, query.voxel_size_, query.origin_, margin);
+    out->collision_index_pairs_.resize(query.voxels_keys_.size());
+    thrust::transform(
+        enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geometry::LineSet<3>>(const geometry::LineSet<3>& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::VoxelGrid,
+                                                 CollisionResult::CollisionType::LineSet);
+    if (target_.IsEmpty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    out->collision_index_pairs_.resize(query.lines_.size());
+    intersect_voxel_line_functor<decltype(bvh_dev)> func(bvh_dev,
+                                                         target_.voxel_size_,
+                                                         target_.origin_,
+                                                         margin);
+    thrust::transform(
+        make_tuple_iterator(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_permutation_iterator(
+                    query.points_.begin(),
+                    thrust::make_transform_iterator(
+                            query.lines_.begin(),
+                            extract_element_functor<int, 2, 0>())),
+            thrust::make_permutation_iterator(
+                    query.points_.begin(),
+                    thrust::make_transform_iterator(
+                            query.lines_.begin(),
+                            extract_element_functor<int, 2, 1>()))),
+        make_tuple_iterator(
+                thrust::make_counting_iterator(query.lines_.size()),
                 thrust::make_permutation_iterator(
-                        target.points_.begin(),
+                        query.points_.begin(),
                         thrust::make_transform_iterator(
-                                target.lines_.begin(),
+                                query.lines_.end(),
                                 extract_element_functor<int, 2, 0>())),
                 thrust::make_permutation_iterator(
-                        target.points_.begin(),
+                        query.points_.begin(),
                         thrust::make_transform_iterator(
-                                target.lines_.begin(),
-                                extract_element_functor<int, 2, 1>()))), func);
-    kdtree_.SetRawData<decltype(begin), 3>(
-            begin,
-            thrust::make_transform_iterator(
-                    make_tuple_iterator(
-                            thrust::make_permutation_iterator(
-                                    target.points_.begin(),
-                                    thrust::make_transform_iterator(
-                                            target.lines_.end(),
-                                            extract_element_functor<int, 2, 0>())),
-                            thrust::make_permutation_iterator(
-                                    target.points_.begin(),
-                                    thrust::make_transform_iterator(
-                                            target.lines_.end(),
-                                            extract_element_functor<int, 2, 1>()))),
-                 func));
-    target_radius_ = target.GetMaxLineLength() * 0.5;
+                                query.lines_.end(),
+                                extract_element_functor<int, 2, 1>()))),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geometry::OccupancyGrid>(const geometry::OccupancyGrid& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::VoxelGrid,
+                                                 CollisionResult::CollisionType::OccupancyGrid);
+    if (target_.IsEmpty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    intersect_voxel_occgrid_functor<decltype(bvh_dev)> func(bvh_dev, query.voxel_size_, query.origin_, margin);
+    auto occ_voxels = query.ExtractOccupiedVoxels();
+    out->collision_index_pairs_.resize(occ_voxels->size());
+    thrust::transform(
+        enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    convert_index_functor1 cfunc(query.resolution_);
+    thrust::transform(
+            make_tuple_iterator(
+                    out->collision_index_pairs_.begin(),
+                    thrust::make_permutation_iterator(
+                            occ_voxels->begin(),
+                            thrust::make_transform_iterator(
+                                    out->collision_index_pairs_.begin(),
+                                    extract_element_functor<int, 2, 1>()))),
+            make_tuple_iterator(
+                    out->collision_index_pairs_.end(),
+                    thrust::make_permutation_iterator(
+                            occ_voxels->begin(),
+                            thrust::make_transform_iterator(
+                                    out->collision_index_pairs_.end(),
+                                    extract_element_functor<int, 2, 1>()))),
+            out->collision_index_pairs_.begin(), cfunc);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<geometry::VoxelGrid>(const geometry::VoxelGrid& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::OccupancyGrid,
+                                                 CollisionResult::CollisionType::VoxelGrid);
+    if (target_.IsEmpty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    out->collision_index_pairs_.resize(query.voxels_keys_.size());
+    intersect_voxel_voxel_functor<decltype(bvh_dev)> func(bvh_dev, query.voxel_size_, query.origin_, margin);
+    thrust::transform(
+        enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    convert_index_functor2 cfunc(target_.resolution_);
+    thrust::transform(
+            thrust::device,
+            make_tuple_iterator(
+                    out->collision_index_pairs_.begin(),
+                    thrust::make_permutation_iterator(
+                            bvh_dev.objects,
+                            thrust::make_transform_iterator(
+                                    out->collision_index_pairs_.begin(),
+                                    extract_element_functor<int, 2, 1>()))),
+            make_tuple_iterator(
+                    out->collision_index_pairs_.end(),
+                    thrust::make_permutation_iterator(
+                            bvh_dev.objects,
+                            thrust::make_transform_iterator(
+                                    out->collision_index_pairs_.end(),
+                                    extract_element_functor<int, 2, 1>()))),
+            out->collision_index_pairs_.begin(), cfunc);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<PrimitiveArray>(const PrimitiveArray& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::VoxelGrid,
+                                                 CollisionResult::CollisionType::Primitives);
+    if (target_.IsEmpty() || query.empty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    out->collision_index_pairs_.resize(query.size());
+    intersect_voxel_primitive_functor<decltype(bvh_dev)> func(bvh_dev,
+            target_.voxel_size_, target_.origin_, margin);
+    thrust::transform(
+        enumerate_begin(query), enumerate_end(query),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<PrimitiveArray>(const PrimitiveArray& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::OccupancyGrid,
+                                                 CollisionResult::CollisionType::Primitives);
+    if (target_.IsEmpty() || query.empty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    out->collision_index_pairs_.resize(query.size());
+    auto occ_voxels = target_.ExtractOccupiedVoxels();
+    intersect_occvoxel_primitive_functor<decltype(bvh_dev)> func(bvh_dev,
+            target_.voxel_size_, target_.origin_, margin);
+    thrust::transform(
+        enumerate_begin(query), enumerate_end(query),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    return out;
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
         const geometry::VoxelGrid& voxelgrid1,
         const geometry::VoxelGrid& voxelgrid2,
         float margin) {
-    auto out = std::make_shared<CollisionResult>();
-    size_t n_v1 = voxelgrid1.voxels_keys_.size();
-    size_t n_v2 = voxelgrid2.voxels_keys_.size();
-    size_t n_total = n_v1 * n_v2;
-    intersect_voxel_voxel_functor func(
-            thrust::raw_pointer_cast(voxelgrid1.voxels_keys_.data()),
-            thrust::raw_pointer_cast(voxelgrid2.voxels_keys_.data()),
-            voxelgrid1.voxel_size_, voxelgrid2.voxel_size_, voxelgrid1.origin_,
-            voxelgrid2.origin_, n_v2, margin);
-    out->first_ = CollisionResult::CollisionType::VoxelGrid;
-    out->second_ = CollisionResult::CollisionType::VoxelGrid;
-    out->collision_index_pairs_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
-    return out;
+    Intersection<geometry::VoxelGrid> intsct(voxelgrid1);
+    return intsct.Compute<geometry::VoxelGrid>(voxelgrid2, margin);
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
         const geometry::VoxelGrid& voxelgrid,
         const geometry::LineSet<3>& lineset,
         float margin) {
-    auto out = std::make_shared<CollisionResult>();
-    size_t n_v1 = voxelgrid.voxels_keys_.size();
-    size_t n_v2 = lineset.lines_.size();
-    size_t n_total = n_v1 * n_v2;
-    intersect_voxel_line_functor func(
-            thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
-            thrust::raw_pointer_cast(lineset.points_.data()),
-            thrust::raw_pointer_cast(lineset.lines_.data()),
-            voxelgrid.voxel_size_, voxelgrid.origin_, n_v2, margin);
-    out->first_ = CollisionResult::CollisionType::VoxelGrid;
-    out->second_ = CollisionResult::CollisionType::LineSet;
-    out->collision_index_pairs_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
-    return out;
+    Intersection<geometry::VoxelGrid> intsct(voxelgrid);
+    return intsct.Compute<geometry::LineSet<3>>(lineset, margin);
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
@@ -353,132 +631,52 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
         const geometry::VoxelGrid& voxelgrid,
         const geometry::OccupancyGrid& occgrid,
         float margin) {
-    auto out = std::make_shared<CollisionResult>();
-    size_t n_v1 = voxelgrid.voxels_keys_.size();
-    auto occupied_voxels = occgrid.ExtractOccupiedVoxels();
-    utility::device_vector<Eigen::Vector3i> occupied_voxels_keys(
-            occupied_voxels->size());
-    thrust::transform(occupied_voxels->begin(), occupied_voxels->end(),
-                      occupied_voxels_keys.begin(),
-                      [] __device__(const geometry::OccupancyVoxel& voxel) {
-                          return voxel.grid_index_.cast<int>();
-                      });
-    size_t n_v2 = occupied_voxels->size();
-    size_t n_total = n_v1 * n_v2;
-    const Eigen::Vector3f occ_origin =
-            occgrid.origin_ -
-            0.5 * occgrid.voxel_size_ *
-                    Eigen::Vector3f::Constant(occgrid.resolution_);
-    intersect_voxel_voxel_functor func(
-            thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
-            thrust::raw_pointer_cast(occupied_voxels_keys.data()),
-            voxelgrid.voxel_size_, occgrid.voxel_size_, voxelgrid.origin_,
-            occ_origin, n_v2, margin);
-    out->first_ = CollisionResult::CollisionType::VoxelGrid;
-    out->second_ = CollisionResult::CollisionType::OccupancyGrid;
-    out->collision_index_pairs_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      out->collision_index_pairs_.begin(), func);
-    convert_index_functor func_c(
-            thrust::raw_pointer_cast(occupied_voxels_keys.data()),
-            occgrid.resolution_);
-    thrust::transform(out->collision_index_pairs_.begin(),
-                      out->collision_index_pairs_.end(),
-                      out->collision_index_pairs_.begin(), func_c);
-    return out;
+    Intersection<geometry::VoxelGrid> intsct(voxelgrid);
+    return intsct.Compute<geometry::OccupancyGrid>(occgrid, margin);
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
         const geometry::OccupancyGrid& occgrid,
         const geometry::VoxelGrid& voxelgrid,
         float margin) {
-    auto out = ComputeIntersection(voxelgrid, occgrid, margin);
-    out->first_ = CollisionResult::CollisionType::OccupancyGrid;
+    Intersection<geometry::OccupancyGrid> intsct(occgrid);
+    return intsct.Compute<geometry::VoxelGrid>(voxelgrid, margin);
+}
+
+std::shared_ptr<CollisionResult> ComputeIntersection(
+        const geometry::VoxelGrid& voxelgrid,
+        const PrimitiveArray& primitives,
+        float margin) {
+    Intersection<geometry::VoxelGrid> intsct(voxelgrid);
+    return intsct.Compute<PrimitiveArray>(primitives, margin);
+}
+
+std::shared_ptr<CollisionResult> ComputeIntersection(
+        const PrimitiveArray& primitives,
+        const geometry::VoxelGrid& voxelgrid,
+        float margin) {
+    auto out = ComputeIntersection(voxelgrid, primitives, margin);
+    out->first_ = CollisionResult::CollisionType::Primitives;
     out->second_ = CollisionResult::CollisionType::VoxelGrid;
     swap_index(out->collision_index_pairs_);
     return out;
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
-        const PrimitiveArray& primitives,
-        const geometry::VoxelGrid& voxelgrid,
-        float margin) {
-    auto out = std::make_shared<CollisionResult>();
-    size_t n_v1 = primitives.size();
-    size_t n_v2 = voxelgrid.voxels_keys_.size();
-    size_t n_total = n_v1 * n_v2;
-    intersect_primitives_voxel_functor func(
-            thrust::raw_pointer_cast(primitives.data()),
-            thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
-            voxelgrid.voxel_size_, voxelgrid.origin_, n_v2, margin);
-    out->first_ = CollisionResult::CollisionType::Primitives;
-    out->second_ = CollisionResult::CollisionType::VoxelGrid;
-    out->collision_index_pairs_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
-    return out;
-}
-
-std::shared_ptr<CollisionResult> ComputeIntersection(
-        const geometry::VoxelGrid& voxelgrid,
+        const geometry::OccupancyGrid& occgrid,
         const PrimitiveArray& primitives,
         float margin) {
-    auto out = ComputeIntersection(primitives, voxelgrid, margin);
-    out->first_ = CollisionResult::CollisionType::VoxelGrid;
-    out->second_ = CollisionResult::CollisionType::Primitives;
-    swap_index(out->collision_index_pairs_);
-    return out;
+    Intersection<geometry::OccupancyGrid> intsct(occgrid);
+    return intsct.Compute<PrimitiveArray>(primitives, margin);
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
         const PrimitiveArray& primitives,
         const geometry::OccupancyGrid& occgrid,
         float margin) {
-    auto out = std::make_shared<CollisionResult>();
-    size_t n_v1 = primitives.size();
-    auto occupied_voxels = occgrid.ExtractOccupiedVoxels();
-    utility::device_vector<Eigen::Vector3i> occupied_voxels_keys(
-            occupied_voxels->size());
-    thrust::transform(occupied_voxels->begin(), occupied_voxels->end(),
-                      occupied_voxels_keys.begin(),
-                      [] __device__(const geometry::OccupancyVoxel& voxel) {
-                          return voxel.grid_index_.cast<int>();
-                      });
-    size_t n_v2 = occupied_voxels->size();
-    size_t n_total = n_v1 * n_v2;
-    const Eigen::Vector3f occ_origin =
-            occgrid.origin_ -
-            0.5 * occgrid.voxel_size_ *
-                    Eigen::Vector3f::Constant(occgrid.resolution_);
-    intersect_primitives_voxel_functor func(
-            thrust::raw_pointer_cast(primitives.data()),
-            thrust::raw_pointer_cast(occupied_voxels_keys.data()),
-            occgrid.voxel_size_, occ_origin, n_v2, margin);
+    auto out = ComputeIntersection(occgrid, primitives, margin);
     out->first_ = CollisionResult::CollisionType::Primitives;
     out->second_ = CollisionResult::CollisionType::OccupancyGrid;
-    out->collision_index_pairs_.resize(n_total);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_total),
-                      out->collision_index_pairs_.begin(), func);
-    convert_index_functor func_c(
-            thrust::raw_pointer_cast(occupied_voxels_keys.data()),
-            occgrid.resolution_);
-    thrust::transform(out->collision_index_pairs_.begin(),
-                      out->collision_index_pairs_.end(),
-                      out->collision_index_pairs_.begin(), func_c);
-    return out;
-}
-
-std::shared_ptr<CollisionResult> ComputeIntersection(
-        const geometry::OccupancyGrid& occgrid,
-        const PrimitiveArray& primitives,
-        float margin) {
-    auto out = ComputeIntersection(primitives, occgrid, margin);
-    out->first_ = CollisionResult::CollisionType::OccupancyGrid;
-    out->second_ = CollisionResult::CollisionType::Primitives;
     swap_index(out->collision_index_pairs_);
     return out;
 }
