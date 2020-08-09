@@ -40,5 +40,5 @@ for i in range(15):
     vis.update_geometry(query)
     vis.poll_events()
     vis.update_renderer()
-    time.sleep(0.5)
+    time.sleep(0.1)
 vis.destroy_window()

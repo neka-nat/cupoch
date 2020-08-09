@@ -100,6 +100,10 @@ python benchmarks.py
 
 ![fgr](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/laserscan.gif)
 
+### Collision detection for 2 voxel grids
+
+![col](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/collision_voxels.gif)
+
 ### Path finding
 
 ![pf](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/path_finding.png)
