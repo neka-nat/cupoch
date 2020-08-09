@@ -60,6 +60,8 @@ struct CollisionResult {
 
     bool IsCollided() const { return !collision_index_pairs_.empty(); };
     thrust::host_vector<Eigen::Vector2i> GetCollisionIndexPairs() const;
+    utility::device_vector<int> GetFirstCollisionIndices() const;
+    utility::device_vector<int> GetSecondCollisionIndices() const;
 };
 
 template <typename TargetT>

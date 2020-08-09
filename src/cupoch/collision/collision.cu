@@ -349,6 +349,20 @@ thrust::host_vector<Eigen::Vector2i> CollisionResult::GetCollisionIndexPairs()
     return h_collision_index_pairs;
 }
 
+utility::device_vector<int> CollisionResult::GetFirstCollisionIndices() const {
+    utility::device_vector<int> res(collision_index_pairs_.size());
+    thrust::transform(collision_index_pairs_.begin(), collision_index_pairs_.end(),
+                      res.begin(), extract_element_functor<int, 2, 0>());
+    return res;
+}
+
+utility::device_vector<int> CollisionResult::GetSecondCollisionIndices() const {
+    utility::device_vector<int> res(collision_index_pairs_.size());
+    thrust::transform(collision_index_pairs_.begin(), collision_index_pairs_.end(),
+                      res.begin(), extract_element_functor<int, 2, 1>());
+    return res;
+}
+
 template<>
 class ConstructorImpl<geometry::VoxelGrid> {
 public:

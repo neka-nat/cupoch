@@ -311,6 +311,24 @@ void VoxelGrid::AddVoxels(const thrust::host_vector<Voxel> &voxels) {
     AddVoxels(voxels_dev);
 }
 
+VoxelGrid &VoxelGrid::PaintUniformColor(const Eigen::Vector3f &color) {
+    thrust::for_each(voxels_values_.begin(), voxels_values_.end(),
+                     [c=color] __device__ (Voxel& v) {
+                         v.color_ = c;
+                     });
+    return *this;
+}
+
+VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<int>& indices,
+                                        const Eigen::Vector3f &color) {
+    thrust::for_each(thrust::make_permutation_iterator(voxels_values_.begin(), indices.begin()),
+                     thrust::make_permutation_iterator(voxels_values_.begin(), indices.end()),
+                     [c=color] __device__ (Voxel& v) {
+                         v.color_ = c;
+                     });
+    return *this;
+}
+
 Eigen::Vector3i VoxelGrid::GetVoxel(const Eigen::Vector3f &point) const {
     Eigen::Vector3f voxel_f = (point - origin_) / voxel_size_;
     return (Eigen::floor(voxel_f.array())).cast<int>();

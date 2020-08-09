@@ -35,6 +35,21 @@ void pybind_collision_methods(py::module& m) {
     py::detail::bind_default_constructor<collision::CollisionResult>(col_res);
     py::detail::bind_copy_functions<collision::CollisionResult>(col_res);
     col_res.def("is_collided", &collision::CollisionResult::IsCollided)
+            .def("__repr__",
+                    [](const collision::CollisionResult &res) {
+                        return std::string("collision::CollisionResult with ") +
+                               std::to_string(res.collision_index_pairs_.size()) + " collisions.";
+                    })
+            .def("get_first_collision_indices",
+                    [] (const collision::CollisionResult& self) {
+                        return wrapper::device_vector_int(self.GetFirstCollisionIndices());
+                    })
+            .def("get_second_collision_indices",
+                    [] (const collision::CollisionResult& self) {
+                        return wrapper::device_vector_int(self.GetSecondCollisionIndices());
+                    })
+            .def_readwrite("first", &collision::CollisionResult::first_)
+            .def_readwrite("second", &collision::CollisionResult::second_)
             .def_property(
                     "collision_index_pairs",
                     [](collision::CollisionResult& res) {
@@ -63,15 +78,21 @@ void pybind_collision_methods(py::module& m) {
     m.def("compute_intersection",
           py::overload_cast<const geometry::VoxelGrid&,
                             const geometry::VoxelGrid&, float>(
-                  &collision::ComputeIntersection));
+                  &collision::ComputeIntersection),
+          "Compute intersection betweeen VoxelGrid and VoxelGrid.",
+          "voxelgrid1"_a, "voxelgrid2"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           py::overload_cast<const geometry::VoxelGrid&,
                             const geometry::LineSet<3>&, float>(
-                  &collision::ComputeIntersection));
+                  &collision::ComputeIntersection),
+          "Compute intersection betweeen VoxelGrid and LineSet.",
+          "voxelgrid"_a, "lineset"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           py::overload_cast<const geometry::LineSet<3>&,
                             const geometry::VoxelGrid&, float>(
-                  &collision::ComputeIntersection));
+                  &collision::ComputeIntersection),
+          "Compute intersection betweeen LineSet and VoxelGrid.",
+          "lineset"_a, "voxelgrid"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           py::overload_cast<const geometry::VoxelGrid&,
                             const geometry::OccupancyGrid&, float>(
@@ -79,33 +100,43 @@ void pybind_collision_methods(py::module& m) {
     m.def("compute_intersection",
           py::overload_cast<const geometry::OccupancyGrid&,
                             const geometry::VoxelGrid&, float>(
-                  &collision::ComputeIntersection));
+                  &collision::ComputeIntersection),
+          "Compute intersection betweeen OccupancyGrid and VoxelGrid.",
+          "occgrid"_a, "voxelgrid"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           [](const wrapper::device_vector_primitives& primitives,
              const geometry::VoxelGrid& voxel, float margin) {
               return collision::ComputeIntersection(primitives.data_, voxel,
                                                     margin);
-          });
+          },
+          "Compute intersection betweeen Primitives and VoxelGrid.",
+          "primitives"_a, "voxelgrid"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           [](const geometry::VoxelGrid& voxel,
              const wrapper::device_vector_primitives& primitives,
              float margin) {
               return collision::ComputeIntersection(voxel, primitives.data_,
                                                     margin);
-          });
+          },
+          "Compute intersection betweeen VoxelGrid and Primitives.",
+          "voxelgrid"_a, "primitives"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           [](const wrapper::device_vector_primitives& primitives,
              const geometry::OccupancyGrid& occgrid, float margin) {
               return collision::ComputeIntersection(primitives.data_, occgrid,
                                                     margin);
-          });
+          },
+          "Compute intersection betweeen Primitives and OccupancyGrid.",
+          "primitives"_a, "occgrid"_a, "margin"_a = 0.0f);
     m.def("compute_intersection",
           [](const geometry::OccupancyGrid& occgrid,
              const wrapper::device_vector_primitives& primitives,
              float margin) {
               return collision::ComputeIntersection(occgrid, primitives.data_,
                                                     margin);
-          });
+          },
+          "Compute intersection betweeen OccupancyGrid and Primitives.",
+          "occgrid"_a, "primitives"_a, "margin"_a = 0.0f);
 }
 
 void pybind_collision(py::module& m) {

@@ -120,6 +120,12 @@ public:
     void AddVoxels(const utility::device_vector<Voxel> &voxels);
     void AddVoxels(const thrust::host_vector<Voxel> &voxels);
 
+    /// Assigns each voxel in the VoxelGrid the same color \param color.
+    VoxelGrid &PaintUniformColor(const Eigen::Vector3f &color);
+
+    VoxelGrid &PaintIndexedColor(const utility::device_vector<int>& indices,
+                                 const Eigen::Vector3f &color);
+
     /// Return a vector of 3D coordinates that define the indexed voxel cube.
     std::array<Eigen::Vector3f, 8> GetVoxelBoundingPoints(
             const Eigen::Vector3i &index) const;
