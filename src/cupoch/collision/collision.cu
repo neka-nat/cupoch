@@ -217,6 +217,79 @@ struct intersect_voxel_primitive_functor {
 };
 
 template<typename LBVHType>
+struct intersect_primitive_voxel_functor {
+    intersect_primitive_voxel_functor(const LBVHType& lbvh,
+                                      float voxel_size,
+                                      const Eigen::Vector3f& origin,
+                                      float margin)
+        : lbvh_(lbvh),
+        voxel_size_(voxel_size),
+        box_half_size_(Eigen::Vector3f(
+          voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+        origin_(origin),
+        margin_(margin){};
+    const LBVHType lbvh_;
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;    const float margin_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, Eigen::Vector3i>& x) const {
+        Eigen::Vector3i key = thrust::get<1>(x);
+        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+        Eigen::Vector3f vl = key.cast<float>() * voxel_size_ + origin_ - Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f vu = (key + Eigen::Vector3i::Constant(1)).cast<float>() * voxel_size_ + origin_ + Eigen::Vector3f::Constant(margin_);
+        // make a query box.
+        lbvh::aabb<float> box;
+        box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+        box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+        unsigned int buffer[1];
+        const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+        if (num_found == 0) return Eigen::Vector2i(-1, -1);
+        const PrimitivePack other = lbvh_.objects[buffer[0]];
+        switch (other.primitive_.type_) {
+            case Primitive::PrimitiveType::Box: {
+                const Box& obox = other.box_;
+                Eigen::Vector3f center =
+                        ((key.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::BoxBox(
+                        obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
+                        obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                        Eigen::Matrix3f::Identity(), center);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Sphere: {
+                const Sphere& sphere = other.sphere_;
+                Eigen::Vector3f center =
+                        ((key.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::SphereAABB(
+                        sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Capsule: {
+                const Capsule& capsule = other.capsule_;
+                Eigen::Vector3f center =
+                        ((key.cast<float>() + h3) * voxel_size_) + origin_;
+                Eigen::Vector3f d =
+                        capsule.transform_.block<3, 1>(0, 3) -
+                        0.5 * capsule.height_ *
+                                capsule.transform_.block<3, 1>(0, 2);
+                int coll = geometry::intersection_test::CapsuleAABB(
+                        capsule.radius_, d,
+                        capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            default: {
+                return Eigen::Vector2i(-1, -1);
+            }
+        }
+    }
+};
+
+template<typename LBVHType>
 struct intersect_occvoxel_primitive_functor {
     intersect_occvoxel_primitive_functor(const LBVHType& lbvh,
                                          float voxel_size,
@@ -293,6 +366,79 @@ struct intersect_occvoxel_primitive_functor {
                         capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                         center - box_half_size_, center + box_half_size_);
                 return (coll == 1) ? Eigen::Vector2i(buffer[0], thrust::get<0>(x))
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            default: {
+                return Eigen::Vector2i(-1, -1);
+            }
+        }
+    }
+};
+
+template<typename LBVHType>
+struct intersect_primitive_occvoxel_functor {
+    intersect_primitive_occvoxel_functor(const LBVHType& lbvh,
+                                         float voxel_size,
+                                         const Eigen::Vector3f& origin,
+                                         float margin)
+        : lbvh_(lbvh),
+        voxel_size_(voxel_size),
+        box_half_size_(Eigen::Vector3f(
+          voxel_size / 2, voxel_size / 2, voxel_size / 2)),
+        origin_(origin),
+        margin_(margin){};
+    const LBVHType lbvh_;
+    const float voxel_size_;
+    const Eigen::Vector3f box_half_size_;
+    const Eigen::Vector3f origin_;    const float margin_;
+    __device__ Eigen::Vector2i operator()(const thrust::tuple<size_t, geometry::OccupancyVoxel>& x) const {
+        geometry::OccupancyVoxel voxel = thrust::get<1>(x);
+        const Eigen::Vector3f h3 = Eigen::Vector3f::Constant(0.5);
+        Eigen::Vector3f vl = voxel.grid_index_.cast<float>() * voxel_size_ + origin_ - Eigen::Vector3f::Constant(margin_);
+        Eigen::Vector3f vu = (voxel.grid_index_ + Eigen::Vector3ui16::Constant(1)).cast<float>() * voxel_size_ + origin_ + Eigen::Vector3f::Constant(margin_);
+        // make a query box.
+        lbvh::aabb<float> box;
+        box.lower = make_float4(vl[0], vl[1], vl[2], 0.0f);
+        box.upper = make_float4(vu[0], vu[1], vu[2], 0.0f);
+        unsigned int buffer[1];
+        const auto num_found = lbvh::query_device(lbvh_, lbvh::overlaps(box), buffer, 1);
+        if (num_found == 0) return Eigen::Vector2i(-1, -1);
+        const PrimitivePack other = lbvh_.objects[buffer[0]];
+        switch (other.primitive_.type_) {
+            case Primitive::PrimitiveType::Box: {
+                const Box& obox = other.box_;
+                Eigen::Vector3f center =
+                        ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::BoxBox(
+                        obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
+                        obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                        Eigen::Matrix3f::Identity(), center);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Sphere: {
+                const Sphere& sphere = other.sphere_;
+                Eigen::Vector3f center =
+                        ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                int coll = geometry::intersection_test::SphereAABB(
+                        sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
+                                   : Eigen::Vector2i(-1, -1);
+            }
+            case Primitive::PrimitiveType::Capsule: {
+                const Capsule& capsule = other.capsule_;
+                Eigen::Vector3f center =
+                        ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) + origin_;
+                Eigen::Vector3f d =
+                        capsule.transform_.block<3, 1>(0, 3) -
+                        0.5 * capsule.height_ *
+                                capsule.transform_.block<3, 1>(0, 2);
+                int coll = geometry::intersection_test::CapsuleAABB(
+                        capsule.radius_, d,
+                        capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
+                        center - box_half_size_, center + box_half_size_);
+                return (coll == 1) ? Eigen::Vector2i(thrust::get<0>(x), buffer[0])
                                    : Eigen::Vector2i(-1, -1);
             }
             default: {
@@ -412,6 +558,51 @@ public:
     lbvh::bvh<float, geometry::OccupancyVoxel, aabb_getter> bvh_;
 };
 
+template<>
+class ConstructorImpl<PrimitiveArray> {
+public:
+    struct aabb_getter {
+        aabb_getter() {};
+        __device__ lbvh::aabb<float> operator() (const PrimitivePack& obj) const {
+            switch (obj.primitive_.type_) {
+                case Primitive::PrimitiveType::Box: {
+                    const Box& obox = obj.box_;
+                    auto bbox = obox.GetAxisAlignedBoundingBox();
+                    // make a query box.
+                    lbvh::aabb<float> box;
+                    box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                    box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                    return box;
+                }
+                case Primitive::PrimitiveType::Sphere: {
+                    const Sphere& sphere = obj.sphere_;
+                    auto bbox = sphere.GetAxisAlignedBoundingBox();
+                    lbvh::aabb<float> box;
+                    box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                    box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                    return box;
+                }
+                case Primitive::PrimitiveType::Capsule: {
+                    const Capsule& capsule = obj.capsule_;
+                    auto bbox = capsule.GetAxisAlignedBoundingBox();
+                    lbvh::aabb<float> box;
+                    box.lower = make_float4(bbox.min_bound_[0], bbox.min_bound_[1], bbox.min_bound_[2], 0.0f);
+                    box.upper = make_float4(bbox.max_bound_[0], bbox.max_bound_[1], bbox.max_bound_[2], 0.0f);
+                    return box;
+                }
+                default: {
+                    return lbvh::aabb<float>();
+                }
+            }
+        }
+    };
+    ConstructorImpl(const PrimitiveArray& primitives)
+    : bvh_(primitives.begin(), primitives.end(),
+           aabb_getter()) {};
+    ~ConstructorImpl() {};
+    lbvh::bvh<float, PrimitivePack, aabb_getter> bvh_;
+};
+
 template <>
 void Intersection<geometry::VoxelGrid>::Construct() {
     if (target_.IsEmpty()) {
@@ -433,6 +624,15 @@ void Intersection<geometry::OccupancyGrid>::Construct() {
                     Eigen::Vector3f::Constant(target_.resolution_);
     auto occupied_voxels = target_.ExtractOccupiedVoxels();
     impl_ = std::make_shared<ConstructorImpl<geometry::OccupancyGrid>>(*occupied_voxels, target_.voxel_size_, occ_origin);
+}
+
+template <>
+void Intersection<PrimitiveArray>::Construct() {
+    if (target_.empty()) {
+        utility::LogWarning("[Intersection::Construct] target is empty.");
+        return;
+    }
+    impl_ = std::make_shared<ConstructorImpl<PrimitiveArray>>(target_);
 }
 
 template <>
@@ -595,6 +795,25 @@ std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<Prim
 
 template <>
 template <>
+std::shared_ptr<CollisionResult> Intersection<PrimitiveArray>::Compute<geometry::VoxelGrid>(const geometry::VoxelGrid& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::Primitives,
+                                                 CollisionResult::CollisionType::VoxelGrid);
+    if (target_.empty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    intersect_primitive_voxel_functor<decltype(bvh_dev)> func(bvh_dev, query.voxel_size_, query.origin_, margin);
+    out->collision_index_pairs_.resize(query.voxels_keys_.size());
+    thrust::transform(
+        enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    return out;
+}
+
+template <>
+template <>
 std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<PrimitiveArray>(const PrimitiveArray& query, float margin) const {
     auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::OccupancyGrid,
                                                  CollisionResult::CollisionType::Primitives);
@@ -611,6 +830,44 @@ std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<
         enumerate_begin(query), enumerate_end(query),
         out->collision_index_pairs_.begin(), func);
     remove_negative<2>(out->collision_index_pairs_);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<CollisionResult> Intersection<PrimitiveArray>::Compute<geometry::OccupancyGrid>(const geometry::OccupancyGrid& query, float margin) const {
+    auto out = std::make_shared<CollisionResult>(CollisionResult::CollisionType::Primitives,
+                                                 CollisionResult::CollisionType::OccupancyGrid);
+    if (target_.empty() || query.IsEmpty()) {
+        utility::LogWarning("[Intersection::Compute] target or query is empty.");
+        return out;
+    }
+    const auto bvh_dev = impl_->bvh_.get_device_repr();
+    intersect_primitive_occvoxel_functor<decltype(bvh_dev)> func(bvh_dev, query.voxel_size_, query.origin_, margin);
+    auto occ_voxels = query.ExtractOccupiedVoxels();
+    out->collision_index_pairs_.resize(occ_voxels->size());
+    thrust::transform(
+        enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
+        out->collision_index_pairs_.begin(), func);
+    remove_negative<2>(out->collision_index_pairs_);
+    convert_index_functor2 cfunc(query.resolution_);
+    thrust::transform(
+        thrust::device,
+        make_tuple_iterator(
+                out->collision_index_pairs_.begin(),
+                thrust::make_permutation_iterator(
+                        occ_voxels->begin(),
+                        thrust::make_transform_iterator(
+                                out->collision_index_pairs_.begin(),
+                                extract_element_functor<int, 2, 1>()))),
+        make_tuple_iterator(
+                out->collision_index_pairs_.end(),
+                thrust::make_permutation_iterator(
+                        occ_voxels->begin(),
+                        thrust::make_transform_iterator(
+                                out->collision_index_pairs_.end(),
+                                extract_element_functor<int, 2, 1>()))),
+        out->collision_index_pairs_.begin(), cfunc);
     return out;
 }
 
@@ -669,11 +926,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
         const PrimitiveArray& primitives,
         const geometry::VoxelGrid& voxelgrid,
         float margin) {
-    auto out = ComputeIntersection(voxelgrid, primitives, margin);
-    out->first_ = CollisionResult::CollisionType::Primitives;
-    out->second_ = CollisionResult::CollisionType::VoxelGrid;
-    swap_index(out->collision_index_pairs_);
-    return out;
+    Intersection<PrimitiveArray> intsct(primitives);
+    return intsct.Compute<geometry::VoxelGrid>(voxelgrid, margin);
 }
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
@@ -688,11 +942,8 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
         const PrimitiveArray& primitives,
         const geometry::OccupancyGrid& occgrid,
         float margin) {
-    auto out = ComputeIntersection(occgrid, primitives, margin);
-    out->first_ = CollisionResult::CollisionType::Primitives;
-    out->second_ = CollisionResult::CollisionType::OccupancyGrid;
-    swap_index(out->collision_index_pairs_);
-    return out;
+    Intersection<PrimitiveArray> intsct(primitives);
+    return intsct.Compute<geometry::OccupancyGrid>(occgrid, margin);
 }
 
 }  // namespace collision

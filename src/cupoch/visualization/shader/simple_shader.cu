@@ -60,24 +60,25 @@ struct copy_pointcloud_functor {
     const RenderOption::PointColorOption color_option_;
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
             const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> &pt_cl) {
         const Eigen::Vector3f &point = thrust::get<0>(pt_cl);
         const Eigen::Vector3f &color = thrust::get<1>(pt_cl);
-        Eigen::Vector3f color_tmp;
+        Eigen::Vector4f color_tmp;
+        color_tmp[3] = 1.0;
         switch (color_option_) {
             case RenderOption::PointColorOption::XCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetXPercentage(point(0)),
                         colormap_option_);
                 break;
             case RenderOption::PointColorOption::YCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetYPercentage(point(1)),
                         colormap_option_);
                 break;
             case RenderOption::PointColorOption::ZCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetZPercentage(point(2)),
                         colormap_option_);
                 break;
@@ -85,9 +86,9 @@ struct copy_pointcloud_functor {
             case RenderOption::PointColorOption::Default:
             default:
                 if (has_colors_) {
-                    color_tmp = color;
+                    color_tmp.head<3>() = color;
                 } else {
-                    color_tmp = GetColorMapColor(
+                    color_tmp.head<3>() = GetColorMapColor(
                             view_.GetBoundingBox().GetZPercentage(point(2)),
                             colormap_option_);
                 }
@@ -108,11 +109,13 @@ struct copy_lineset_functor {
     const thrust::pair<Eigen::Vector3f, Eigen::Vector3f> *line_coords_;
     const Eigen::Vector3f *line_colors_;
     const bool has_colors_;
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
             size_t k) const {
         int i = k / 2;
         int j = k % 2;
-        Eigen::Vector3f color_tmp =
+        Eigen::Vector4f color_tmp;
+        color_tmp[3]  = 1.0;
+        color_tmp.head<3>() =
                 (has_colors_) ? line_colors_[i] : Eigen::Vector3f::Ones();
         if (j == 0) {
             return thrust::make_tuple(line_coords_[i].first, color_tmp);
@@ -154,35 +157,36 @@ struct copy_trianglemesh_functor {
     const Eigen::Vector3f default_mesh_color_;
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
             size_t k) const {
         size_t vi = triangles_[k];
         const auto &vertex = vertices_[vi];
-        Eigen::Vector3f color_tmp;
+        Eigen::Vector4f color_tmp;
+        color_tmp[3] = 1.0;
         switch (color_option_) {
             case RenderOption::MeshColorOption::XCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetXPercentage(vertex(0)),
                         colormap_option_);
                 break;
             case RenderOption::MeshColorOption::YCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetYPercentage(vertex(1)),
                         colormap_option_);
                 break;
             case RenderOption::MeshColorOption::ZCoordinate:
-                color_tmp = GetColorMapColor(
+                color_tmp.head<3>() = GetColorMapColor(
                         view_.GetBoundingBox().GetZPercentage(vertex(2)),
                         colormap_option_);
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (has_vertex_colors_) {
-                    color_tmp = vertex_colors_[vi];
+                    color_tmp.head<3>() = vertex_colors_[vi];
                     break;
                 }
             case RenderOption::MeshColorOption::Default:
             default:
-                color_tmp = default_mesh_color_;
+                color_tmp.head<3>() = default_mesh_color_;
                 break;
         }
         return thrust::make_tuple(vertex, color_tmp);
@@ -231,41 +235,42 @@ struct copy_voxelgrid_line_functor {
     const Eigen::Vector3f default_mesh_color_;
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
             size_t idx) const {
         int i = idx / (12 * 2);
         int jk = idx % (12 * 2);
         int j = jk / 2;
         int k = jk % 2;
         // Voxel color (applied to all points)
-        Eigen::Vector3f voxel_color;
+        Eigen::Vector4f voxel_color;
+        voxel_color[3] = 1.0;
         switch (color_option_) {
             case RenderOption::MeshColorOption::XCoordinate:
-                voxel_color =
+                voxel_color.head<3>() =
                         GetColorMapColor(view_.GetBoundingBox().GetXPercentage(
                                                  vertices_[i * 8](0)),
                                          colormap_option_);
                 break;
             case RenderOption::MeshColorOption::YCoordinate:
-                voxel_color =
+                voxel_color.head<3>() =
                         GetColorMapColor(view_.GetBoundingBox().GetYPercentage(
                                                  vertices_[i * 8](1)),
                                          colormap_option_);
                 break;
             case RenderOption::MeshColorOption::ZCoordinate:
-                voxel_color =
+                voxel_color.head<3>() =
                         GetColorMapColor(view_.GetBoundingBox().GetZPercentage(
                                                  vertices_[i * 8](2)),
                                          colormap_option_);
                 break;
             case RenderOption::MeshColorOption::Color:
                 if (has_colors_) {
-                    voxel_color = voxels_[i].color_;
+                    voxel_color.head<3>() = voxels_[i].color_;
                     break;
                 }
             case RenderOption::MeshColorOption::Default:
             default:
-                voxel_color = default_mesh_color_;
+                voxel_color.head<3>() = default_mesh_color_;
                 break;
         }
         return thrust::make_tuple(
@@ -318,7 +323,7 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
                                               cudaGraphicsMapFlagsNone));
     glGenBuffers(1, &vertex_color_buffer_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector3f), 0,
+    glBufferData(GL_ARRAY_BUFFER, num_data_size * sizeof(Eigen::Vector4f), 0,
                  GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     cudaSafeCall(cudaGraphicsGLRegisterBuffer(&cuda_graphics_resources_[1],
@@ -326,7 +331,7 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
                                               cudaGraphicsMapFlagsNone));
 
     Eigen::Vector3f *raw_points_ptr;
-    Eigen::Vector3f *raw_colors_ptr;
+    Eigen::Vector4f *raw_colors_ptr;
     size_t n_bytes;
     cudaSafeCall(cudaGraphicsMapResources(2, cuda_graphics_resources_));
     cudaSafeCall(cudaGraphicsResourceGetMappedPointer(
@@ -335,7 +340,7 @@ bool SimpleShader::BindGeometry(const geometry::Geometry &geometry,
             (void **)&raw_colors_ptr, &n_bytes, cuda_graphics_resources_[1]));
     thrust::device_ptr<Eigen::Vector3f> dev_points_ptr =
             thrust::device_pointer_cast(raw_points_ptr);
-    thrust::device_ptr<Eigen::Vector3f> dev_colors_ptr =
+    thrust::device_ptr<Eigen::Vector4f> dev_colors_ptr =
             thrust::device_pointer_cast(raw_colors_ptr);
 
     if (PrepareBinding(geometry, option, view, dev_points_ptr,
@@ -363,7 +368,7 @@ bool SimpleShader::RenderGeometry(const geometry::Geometry &geometry,
     glVertexAttribPointer(vertex_position_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(vertex_color_);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_color_buffer_);
-    glVertexAttribPointer(vertex_color_, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glVertexAttribPointer(vertex_color_, 4, GL_FLOAT, GL_FALSE, 0, NULL);
     glDrawArrays(draw_arrays_mode_, 0, draw_arrays_size_);
     glDisableVertexAttribArray(vertex_position_);
     glDisableVertexAttribArray(vertex_color_);
@@ -404,7 +409,7 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::PointCloud) {
         PrintShaderWarning("Rendering type is not geometry::PointCloud.");
@@ -463,7 +468,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::LineSet) {
         PrintShaderWarning("Rendering type is not geometry::LineSet.");
@@ -517,7 +522,7 @@ bool SimpleShaderForGraphNode::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Graph) {
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
@@ -572,7 +577,7 @@ bool SimpleShaderForGraphEdge::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() != geometry::Geometry::GeometryType::Graph) {
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
@@ -625,7 +630,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::AxisAlignedBoundingBox) {
         PrintShaderWarning(
@@ -691,7 +696,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::TriangleMesh) {
         PrintShaderWarning("Rendering type is not geometry::TriangleMesh.");
@@ -744,7 +749,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
         const RenderOption &option,
         const ViewControl &view,
         thrust::device_ptr<Eigen::Vector3f> &points,
-        thrust::device_ptr<Eigen::Vector3f> &colors) {
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
     if (geometry.GetGeometryType() !=
         geometry::Geometry::GeometryType::VoxelGrid) {
         PrintShaderWarning("Rendering type is not geometry::VoxelGrid.");
