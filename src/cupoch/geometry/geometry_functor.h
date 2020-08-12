@@ -25,6 +25,12 @@
 namespace cupoch {
 namespace geometry {
 
+// Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
+__constant__ int cuboid_vertex_offsets[8][3] = {
+        {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
+        {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1},
+};
+
 struct compute_grid_center_functor {
     compute_grid_center_functor(float voxel_size, const Eigen::Vector3f& origin)
         : voxel_size_(voxel_size),
@@ -43,6 +49,34 @@ template <typename TupleType, int Index, typename Func>
 struct tuple_element_compare_functor {
     __device__ bool operator()(const TupleType& rhs, const TupleType& lhs) {
         return Func()(thrust::get<Index>(rhs), thrust::get<Index>(lhs));
+    }
+};
+
+template <typename VoxelType, typename IndexType>
+struct get_grid_index_functor {
+    __device__ IndexType operator() (const VoxelType& v) const {
+        return v.grid_index_;
+    }
+};
+
+template <typename IndexType>
+struct compute_voxel_vertices_functor {
+    compute_voxel_vertices_functor(const Eigen::Vector3f &origin,
+                                   float voxel_size)
+        : origin_(origin), voxel_size_(voxel_size){};
+    const Eigen::Vector3f origin_;
+    const float voxel_size_;
+    __device__ Eigen::Vector3f operator()(const thrust::tuple<size_t, IndexType>& x) const {
+        int j = thrust::get<0>(x);
+        const IndexType grid_index = thrust::get<1>(x);
+        // 8 vertices in a voxel
+        Eigen::Vector3f base_vertex =
+                origin_ +
+                grid_index.template cast<float>() * voxel_size_;
+        const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
+                                              cuboid_vertex_offsets[j][1],
+                                              cuboid_vertex_offsets[j][2]);
+        return base_vertex + offset_v * voxel_size_;
     }
 };
 

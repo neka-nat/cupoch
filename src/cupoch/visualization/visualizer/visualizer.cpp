@@ -347,6 +347,12 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::DistanceTransform) {
+        renderer_ptr = std::make_shared<glsl::DistanceTransformRenderer>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
                geometry::Geometry::GeometryType::LineSet) {
         renderer_ptr = std::make_shared<glsl::LineSetRenderer>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {

@@ -148,13 +148,13 @@ public:
 
     struct tile_functor
         : public thrust::unary_function<difference_type, difference_type> {
-        difference_type tiles;
+        difference_type size;
 
-        tile_functor(difference_type tiles) : tiles(tiles) {}
+        tile_functor(difference_type size) : size(size) {}
 
         __host__ __device__ difference_type
         operator()(const difference_type &i) const {
-            return i % tiles;
+            return i % size;
         }
     };
 
@@ -176,7 +176,7 @@ public:
     iterator begin(void) const {
         return PermutationIterator(first,
                                    TransformIterator(CountingIterator(0),
-                                                     tile_functor(tiles)));
+                                                     tile_functor(last - first)));
     }
 
     iterator end(void) const { return begin() + tiles * (last - first); }

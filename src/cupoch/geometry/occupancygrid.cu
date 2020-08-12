@@ -39,25 +39,22 @@ __constant__ float voxel_offset[7][3] = {{0, 0, 0}, {1, 0, 0},  {-1, 0, 0},
                                          {0, 0, -1}};
 
 struct extract_range_voxels_functor {
-    extract_range_voxels_functor(const OccupancyVoxel* voxels,
-                                 const Eigen::Vector3i& extents,
+    extract_range_voxels_functor(const Eigen::Vector3i& extents,
                                  int resolution,
                                  const Eigen::Vector3i& min_bound)
-        : voxels_(voxels),
-          extents_(extents),
+        : extents_(extents),
           resolution_(resolution),
           min_bound_(min_bound){};
-    const OccupancyVoxel* voxels_;
     const Eigen::Vector3i extents_;
     const int resolution_;
     const Eigen::Vector3i min_bound_;
-    __device__ OccupancyVoxel operator()(size_t idx) const {
+    __device__ int operator()(size_t idx) const {
         int x = idx / (extents_[1] * extents_[2]);
         int yz = idx % (extents_[1] * extents_[2]);
         int y = yz / extents_[2];
         int z = yz % extents_[2];
         Eigen::Vector3i gidx = min_bound_ + Eigen::Vector3i(x, y, z);
-        return voxels_[IndexOf(gidx, resolution_)];
+        return IndexOf(gidx, resolution_);
     }
 };
 
@@ -312,12 +309,13 @@ OccupancyGrid::ExtractBoundVoxels() const {
             max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
     auto out = std::make_shared<utility::device_vector<OccupancyVoxel>>();
     out->resize(diff[0] * diff[1] * diff[2]);
-    extract_range_voxels_functor func(thrust::raw_pointer_cast(voxels_.data()),
-                                      diff.cast<int>(), resolution_,
+    extract_range_voxels_functor func(diff.cast<int>(), resolution_,
                                       min_bound_.cast<int>());
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(out->size()), out->begin(),
-                      func);
+    thrust::copy(thrust::make_permutation_iterator(voxels_.begin(),
+                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
+                      thrust::make_permutation_iterator(voxels_.begin(),
+                            thrust::make_transform_iterator(thrust::make_counting_iterator(out->size()), func)),
+                      out->begin());
     return out;
 }
 

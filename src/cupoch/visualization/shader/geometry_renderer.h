@@ -167,6 +167,20 @@ protected:
     PhongShaderForOccupancyGrid phong_shader_for_occupancy_grid_;
 };
 
+class DistanceTransformRenderer : public GeometryRenderer {
+public:
+    ~DistanceTransformRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForDistanceTransform simple_shader_for_distance_transform_;
+};
+
 class CoordinateFrameRenderer : public GeometryRenderer {
 public:
     ~CoordinateFrameRenderer() override {}

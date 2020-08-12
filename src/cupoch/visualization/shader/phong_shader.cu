@@ -25,7 +25,9 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/range.h"
 #include "cupoch/visualization/shader/phong_shader.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/utility/color_map.h"
@@ -35,12 +37,6 @@ using namespace cupoch::visualization;
 using namespace cupoch::visualization::glsl;
 
 namespace {
-
-// Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
-__constant__ int cuboid_vertex_offsets[8][3] = {
-        {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
-        {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1},
-};
 
 // Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
 __constant__ int cuboid_triangles_vertex_indices[12][3] = {
@@ -176,30 +172,6 @@ struct copy_trianglemesh_functor {
         } else {
             return thrust::make_tuple(vertex, vertex_normals_[vi], color_tmp);
         }
-    }
-};
-
-template <typename VoxelType>
-struct compute_voxel_vertices_functor {
-    compute_voxel_vertices_functor(const VoxelType *voxels,
-                                   const Eigen::Vector3f &origin,
-                                   float voxel_size)
-        : voxels_(voxels), origin_(origin), voxel_size_(voxel_size){};
-    const VoxelType *voxels_;
-    const Eigen::Vector3f origin_;
-    const float voxel_size_;
-    __device__ Eigen::Vector3f operator()(size_t idx) const {
-        int i = idx / 8;
-        int j = idx % 8;
-        const VoxelType &voxel = voxels_[i];
-        // 8 vertices in a voxel
-        Eigen::Vector3f base_vertex =
-                origin_ +
-                voxel.grid_index_.template cast<float>() * voxel_size_;
-        const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
-                                              cuboid_vertex_offsets[j][1],
-                                              cuboid_vertex_offsets[j][2]);
-        return base_vertex + offset_v * voxel_size_;
     }
 };
 
@@ -678,12 +650,16 @@ bool PhongShaderForVoxelGridFace::PrepareBinding(
 
     utility::device_vector<Eigen::Vector3f> vertices(
             voxel_grid.voxels_values_.size() * 8);
-    compute_voxel_vertices_functor<geometry::Voxel> func1(
-            thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-            voxel_grid.origin_, voxel_grid.voxel_size_);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(
-                              voxel_grid.voxels_values_.size() * 8),
+    thrust::tiled_range<
+            thrust::counting_iterator<size_t>>
+            irange(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(8),
+                   voxel_grid.voxels_values_.size());
+    auto gfunc = geometry::get_grid_index_functor<geometry::Voxel, Eigen::Vector3i>();
+    auto begin = thrust::make_transform_iterator(voxel_grid.voxels_values_.begin(), gfunc);
+    thrust::repeated_range<decltype(begin)>
+            vrange(begin, thrust::make_transform_iterator(voxel_grid.voxels_values_.end(), gfunc), 8);
+    geometry::compute_voxel_vertices_functor<Eigen::Vector3i> func1(voxel_grid.origin_, voxel_grid.voxel_size_);
+    thrust::transform(make_tuple_begin(irange, vrange), make_tuple_end(irange, vrange),
                       vertices.begin(), func1);
 
     size_t n_out = voxel_grid.voxels_values_.size() * 12 * 3;
@@ -764,12 +740,17 @@ bool PhongShaderForOccupancyGrid::PrepareBinding(
             occupancy_grid.origin_ -
             0.5 * occupancy_grid.voxel_size_ *
                     Eigen::Vector3f::Constant(occupancy_grid.resolution_);
-    compute_voxel_vertices_functor<geometry::OccupancyVoxel> func1(
-            thrust::raw_pointer_cast(voxels->data()), origin,
-            occupancy_grid.voxel_size_);
+    thrust::tiled_range<
+            thrust::counting_iterator<size_t>>
+            irange(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(8),
+                   voxels->size());
+    auto gfunc = geometry::get_grid_index_functor<geometry::OccupancyVoxel, Eigen::Vector3ui16>();
+    auto begin = thrust::make_transform_iterator(voxels->begin(), gfunc);
+    thrust::repeated_range<decltype(begin)>
+            vrange(begin, thrust::make_transform_iterator(voxels->end(), gfunc), 8);
+    geometry::compute_voxel_vertices_functor<Eigen::Vector3ui16> func1(origin, occupancy_grid.voxel_size_);
     thrust::transform(
-            thrust::make_counting_iterator<size_t>(0),
-            thrust::make_counting_iterator<size_t>(voxels->size() * 8),
+            make_tuple_begin(irange, vrange), make_tuple_end(irange, vrange),
             vertices.begin(), func1);
 
     size_t n_out = voxels->size() * 12 * 3;

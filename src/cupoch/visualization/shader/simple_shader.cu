@@ -26,8 +26,11 @@
 #include "cupoch/geometry/lineset.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/distancetransform.h"
+#include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/range.h"
 #include "cupoch/visualization/shader/shader.h"
 #include "cupoch/visualization/shader/simple_shader.h"
 #include "cupoch/visualization/utility/color_map.h"
@@ -39,10 +42,10 @@ using namespace cupoch::visualization::glsl;
 
 namespace {
 
-// Coordinates of 8 vertices in a cuboid (assume origin (0,0,0), size 1)
-__constant__ int cuboid_vertex_offsets[8][3] = {
-        {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
-        {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1},
+// Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
+__constant__ int cuboid_triangles_vertex_indices[12][3] = {
+    {0, 2, 1}, {0, 1, 4}, {0, 4, 2}, {5, 1, 7}, {5, 7, 4}, {5, 4, 1},
+    {3, 7, 1}, {3, 1, 2}, {3, 2, 7}, {6, 4, 7}, {6, 7, 2}, {6, 2, 4},
 };
 
 // Vertex indices of 12 lines in a cuboid
@@ -193,28 +196,6 @@ struct copy_trianglemesh_functor {
     }
 };
 
-struct compute_voxel_vertices_functor {
-    compute_voxel_vertices_functor(const geometry::Voxel *voxels,
-                                   const Eigen::Vector3f &origin,
-                                   float voxel_size)
-        : voxels_(voxels), origin_(origin), voxel_size_(voxel_size){};
-    const geometry::Voxel *voxels_;
-    const Eigen::Vector3f origin_;
-    const float voxel_size_;
-    __device__ Eigen::Vector3f operator()(size_t idx) const {
-        int i = idx / 8;
-        int j = idx % 8;
-        const geometry::Voxel &voxel = voxels_[i];
-        // 8 vertices in a voxel
-        Eigen::Vector3f base_vertex =
-                origin_ + voxel.grid_index_.cast<float>() * voxel_size_;
-        const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
-                                              cuboid_vertex_offsets[j][1],
-                                              cuboid_vertex_offsets[j][2]);
-        return base_vertex + offset_v * voxel_size_;
-    }
-};
-
 struct copy_voxelgrid_line_functor {
     copy_voxelgrid_line_functor(const Eigen::Vector3f *vertices,
                                 const geometry::Voxel *voxels,
@@ -275,6 +256,42 @@ struct copy_voxelgrid_line_functor {
         }
         return thrust::make_tuple(
                 vertices_[i * 8 + cuboid_lines_vertex_indices[j][k]],
+                voxel_color);
+    }
+};
+
+struct index_to_grid_functor {
+    index_to_grid_functor(int resolution) : resolution_(resolution) {};
+    int resolution_;
+    __device__ Eigen::Vector3i operator() (size_t idx) {
+        int res2 = resolution_ * resolution_;
+        int x = idx / res2;
+        int yz = idx % res2;
+        return Eigen::Vector3i(x, yz / resolution_, yz % resolution_);
+    };
+};
+
+struct copy_distance_face_functor {
+    copy_distance_face_functor(const Eigen::Vector3f *vertices,
+                               const geometry::DistanceVoxel *voxels,
+                               float distance_max)
+        : vertices_(vertices),
+          voxels_(voxels),
+          distance_max_(distance_max){};
+    const Eigen::Vector3f *vertices_;
+    const geometry::DistanceVoxel *voxels_;
+    const float distance_max_;
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f>
+    operator()(size_t idx) const {
+        int i = idx / (12 * 3);
+        int jk = idx % (12 * 3);
+        int j = jk / 3;
+        int k = jk % 3;
+        // Voxel color (applied to all points)
+        Eigen::Vector4f voxel_color = Eigen::Vector4f::Ones();
+        voxel_color[3] = 1.0 - min(voxels_[i].distance_, distance_max_) / distance_max_;
+        return thrust::make_tuple(
+                vertices_[i * 8 + cuboid_triangles_vertex_indices[j][k]],
                 voxel_color);
     }
 };
@@ -764,12 +781,16 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
 
     utility::device_vector<Eigen::Vector3f> vertices(
             voxel_grid.voxels_values_.size() * 8);
-    compute_voxel_vertices_functor func1(
-            thrust::raw_pointer_cast(voxel_grid.voxels_values_.data()),
-            voxel_grid.origin_, voxel_grid.voxel_size_);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(
-                              voxel_grid.voxels_values_.size() * 8),
+    thrust::tiled_range<
+            thrust::counting_iterator<size_t>>
+            irange(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(8),
+                   voxel_grid.voxels_values_.size());
+    auto gfunc = geometry::get_grid_index_functor<geometry::Voxel, Eigen::Vector3i>();
+    auto begin = thrust::make_transform_iterator(voxel_grid.voxels_values_.begin(), gfunc);
+    thrust::repeated_range<decltype(begin)>
+            vrange(begin, thrust::make_transform_iterator(voxel_grid.voxels_values_.end(), gfunc), 8);
+    geometry::compute_voxel_vertices_functor<Eigen::Vector3i> func1(voxel_grid.origin_, voxel_grid.voxel_size_);
+    thrust::transform(make_tuple_begin(irange, vrange), make_tuple_end(irange, vrange),
                       vertices.begin(), func1);
 
     size_t n_out = voxel_grid.voxels_values_.size() * 12 * 2;
@@ -790,4 +811,76 @@ size_t SimpleShaderForVoxelGridLine::GetDataSize(
         const geometry::Geometry &geometry) const {
     return ((const geometry::VoxelGrid &)geometry).voxels_values_.size() * 12 *
            2;
+}
+
+bool SimpleShaderForDistanceTransform::PrepareRendering(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::DistanceTransform) {
+        PrintShaderWarning("Rendering type is not geometry::DistanceTransform.");
+        return false;
+    }
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    return true;
+}
+
+bool SimpleShaderForDistanceTransform::PrepareBinding(
+        const geometry::Geometry &geometry,
+        const RenderOption &option,
+        const ViewControl &view,
+        thrust::device_ptr<Eigen::Vector3f> &points,
+        thrust::device_ptr<Eigen::Vector4f> &colors) {
+    if (geometry.GetGeometryType() !=
+        geometry::Geometry::GeometryType::DistanceTransform) {
+        PrintShaderWarning("Rendering type is not geometry::DistanceTransform.");
+        return false;
+    }
+    const geometry::DistanceTransform &dist_trans =
+            (const geometry::DistanceTransform &)geometry;
+    if (dist_trans.IsEmpty()) {
+        PrintShaderWarning("Binding failed with empty distance transform.");
+        return false;
+    }
+
+    utility::device_vector<Eigen::Vector3f> vertices(dist_trans.voxels_.size() * 8);
+    Eigen::Vector3f origin =
+            dist_trans.origin_ -
+            0.5 * dist_trans.voxel_size_ *
+                    Eigen::Vector3f::Constant(dist_trans.resolution_);
+    thrust::tiled_range<
+            thrust::counting_iterator<size_t>>
+            irange(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(8),
+                   dist_trans.voxels_.size());
+    auto begin = thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0),
+                                                 index_to_grid_functor(dist_trans.resolution_));
+    thrust::repeated_range<decltype(begin)>
+            vrange(begin, thrust::make_transform_iterator(thrust::make_counting_iterator(dist_trans.voxels_.size()),
+                                                          index_to_grid_functor(dist_trans.resolution_)),
+                   8);
+    geometry::compute_voxel_vertices_functor<Eigen::Vector3i> func1(origin, dist_trans.voxel_size_);
+    thrust::transform(
+            make_tuple_begin(irange, vrange), make_tuple_end(irange, vrange),
+            vertices.begin(), func1);
+
+    size_t n_out = dist_trans.voxels_.size() * 12 * 3;
+    copy_distance_face_functor
+            func2(thrust::raw_pointer_cast(vertices.data()),
+                  thrust::raw_pointer_cast(dist_trans.voxels_.data()),
+                  2.0);
+    thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                      thrust::make_counting_iterator(n_out),
+                      make_tuple_iterator(points, colors), func2);
+    draw_arrays_mode_ = GL_LINES;
+    draw_arrays_size_ = GLsizei(n_out);
+    return true;
+}
+
+size_t SimpleShaderForDistanceTransform::GetDataSize(
+        const geometry::Geometry &geometry) const {
+    int res = ((const geometry::DistanceTransform &)geometry).resolution_;
+    return res * res * 12 * 3;
 }
