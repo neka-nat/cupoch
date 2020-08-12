@@ -296,6 +296,13 @@ struct copy_distance_face_functor {
     }
 };
 
+struct alpha_greater_functor {
+    __device__ bool operator() (const thrust::tuple<Eigen::Vector3f, Eigen::Vector4f>& lhs,
+                                const thrust::tuple<Eigen::Vector3f, Eigen::Vector4f>& rhs) const {
+        return thrust::get<1>(lhs)[3] > thrust::get<1>(rhs)[3];
+    }
+};
+
 }  // namespace
 
 bool SimpleShader::Compile() {
@@ -822,9 +829,22 @@ bool SimpleShaderForDistanceTransform::PrepareRendering(
         PrintShaderWarning("Rendering type is not geometry::DistanceTransform.");
         return false;
     }
-    glDisable(GL_CULL_FACE);
+    if (option.mesh_show_back_face_) {
+        glDisable(GL_CULL_FACE);
+    } else {
+        glEnable(GL_CULL_FACE);
+    }
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if (option.mesh_show_wireframe_) {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.0, 1.0);
+    } else {
+        glDisable(GL_POLYGON_OFFSET_FILL);
+    }
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     return true;
 }
 
@@ -870,11 +890,13 @@ bool SimpleShaderForDistanceTransform::PrepareBinding(
     copy_distance_face_functor
             func2(thrust::raw_pointer_cast(vertices.data()),
                   thrust::raw_pointer_cast(dist_trans.voxels_.data()),
-                  2.0);
+                  dist_trans.voxel_size_ * dist_trans.resolution_ * 0.1);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_out),
                       make_tuple_iterator(points, colors), func2);
-    draw_arrays_mode_ = GL_LINES;
+    auto tp_begin = make_tuple_iterator(points, colors);
+    thrust::sort(tp_begin, tp_begin + n_out, alpha_greater_functor());
+    draw_arrays_mode_ = GL_TRIANGLES;
     draw_arrays_size_ = GLsizei(n_out);
     return true;
 }
@@ -882,5 +904,5 @@ bool SimpleShaderForDistanceTransform::PrepareBinding(
 size_t SimpleShaderForDistanceTransform::GetDataSize(
         const geometry::Geometry &geometry) const {
     int res = ((const geometry::DistanceTransform &)geometry).resolution_;
-    return res * res * 12 * 3;
+    return res * res * res * 12 * 3;
 }

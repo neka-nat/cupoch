@@ -53,6 +53,7 @@ public:
     DistanceTransform(float voxel_size,
                       int resolution,
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
+    DistanceTransform(const DistanceTransform& other);
     ~DistanceTransform();
 
     DistanceTransform &Reconstruct(float voxel_size, int resolution);
@@ -63,6 +64,8 @@ public:
     DistanceTransform &ComputeVoronoiDiagram(
             const utility::device_vector<Eigen::Vector3i> &points);
     DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid &voxelgrid);
+
+    float GetDistance(const Eigen::Vector3f& query) const;
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;

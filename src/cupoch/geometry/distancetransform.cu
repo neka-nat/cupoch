@@ -31,6 +31,8 @@ namespace geometry {
 
 namespace {
 
+__device__ const unsigned short INVALID_DENSE_GRID_INDEX = std::numeric_limits<unsigned short>::max();
+
 struct flood_z_functor {
     flood_z_functor(const DistanceVoxel* input,
                     DistanceVoxel* output,
@@ -53,10 +55,10 @@ struct flood_z_functor {
         }
         for (int i = resolution_ - 2; i >= 0; --i) {
             int id = IndexOf(x, y, i, resolution_);
-            unsigned short nz = v1.nearest_index_[2];
+            unsigned short nz = v1.IsNotSite() ? INVALID_DENSE_GRID_INDEX : v1.nearest_index_[2];
             unsigned short dist1 = abs(nz - i);
             DistanceVoxel v2 = output_[id];
-            nz = v2.nearest_index_[2];
+            nz = v2.IsNotSite() ? INVALID_DENSE_GRID_INDEX : v2.nearest_index_[2];
             unsigned short dist2 = abs(nz - i);
             if (dist2 < dist1) {
                 v1 = v2;
@@ -215,17 +217,18 @@ struct set_points_functor {
 };
 
 struct compute_distance_functor {
-    compute_distance_functor(DistanceVoxel* voxels, int resolution)
-        : voxels_(voxels), resolution_(resolution){};
+    compute_distance_functor(DistanceVoxel* voxels, float voxel_size, int resolution)
+        : voxels_(voxels), voxel_size_(voxel_size), resolution_(resolution){};
     DistanceVoxel* voxels_;
+    const float voxel_size_;
     const int resolution_;
     __device__ void operator()(size_t idx) {
         int x = idx / (resolution_ * resolution_);
         int yz = idx % (resolution_ * resolution_);
         int y = yz / resolution_;
         int z = yz % resolution_;
-        auto diff = voxels_[idx].nearest_index_ - Eigen::Vector3ui16(x, y, z);
-        voxels_[idx].distance_ = diff.norm();
+        auto diff = voxels_[idx].nearest_index_.cast<int>() - Eigen::Vector3i(x, y, z);
+        voxels_[idx].distance_ = diff.cast<float>().norm() * voxel_size_;
     }
 };
 
@@ -273,6 +276,14 @@ DistanceTransform::DistanceTransform(float voxel_size,
     buffer_.resize(voxels_.size());
 }
 
+DistanceTransform::DistanceTransform(const DistanceTransform& other)
+    : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform,
+                               other.voxel_size_,
+                               other.resolution_,
+                               other.origin_) {
+    buffer_.resize(voxels_.size());
+}
+
 DistanceTransform::~DistanceTransform() {}
 
 DistanceTransform& DistanceTransform::Reconstruct(float voxel_size,
@@ -286,6 +297,7 @@ DistanceTransform& DistanceTransform::ComputeEDT(
         const utility::device_vector<Eigen::Vector3i>& points) {
     ComputeVoronoiDiagram(points);
     compute_distance_functor func(thrust::raw_pointer_cast(voxels_.data()),
+                                  voxel_size_,
                                   resolution_);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(voxels_.size()), func);
@@ -368,6 +380,13 @@ DistanceTransform& DistanceTransform::ComputeVoronoiDiagram(
     thrust::transform(voxelgrid.voxels_keys_.begin(),
                       voxelgrid.voxels_keys_.end(), obs_cells.begin(), func);
     return ComputeVoronoiDiagram(obs_cells);
+}
+
+float DistanceTransform::GetDistance(const Eigen::Vector3f& query) const {
+    Eigen::Vector3f qv = (query - origin_ + 0.5 * voxel_size_ * Eigen::Vector3f::Constant(resolution_)) / voxel_size_;
+    Eigen::Vector3i idx = (Eigen::floor(qv.array())).cast<int>();
+    DistanceVoxel v = voxels_[IndexOf(idx, resolution_)];
+    return v.distance_;
 }
 
 }  // namespace geometry

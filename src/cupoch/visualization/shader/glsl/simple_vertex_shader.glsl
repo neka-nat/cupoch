@@ -1,10 +1,10 @@
 #version 330
 
 in vec3 vertex_position;
-in vec3 vertex_color;
+in vec4 vertex_color;
 uniform mat4 MVP;
 
-out vec3 fragment_color;
+out vec4 fragment_color;
 
 void main()
 {
