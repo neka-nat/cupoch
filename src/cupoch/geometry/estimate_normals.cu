@@ -19,9 +19,11 @@
  * IN THE SOFTWARE.
 **/
 #include <Eigen/Geometry>
+#include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/utility/range.h"
 #include "cupoch/utility/console.h"
 
 using namespace cupoch;
@@ -197,32 +199,11 @@ __device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
     }
 }
 
-__device__ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f *points,
-                                         const int *indices,
-                                         int knn) {
-    if (knn < 0) return Eigen::Vector3f(0.0, 0.0, 1.0);
-
-    Eigen::Matrix3f covariance;
-    Eigen::Matrix<float, 9, 1> cumulants;
-    cumulants.setZero();
-    int count = 0;
-    for (size_t i = 0; i < knn; i++) {
-        int ii = indices[i];
-        if (ii < 0) continue;
-        const Eigen::Vector3f &point = points[ii];
-        cumulants(0) += point(0);
-        cumulants(1) += point(1);
-        cumulants(2) += point(2);
-        cumulants(3) += point(0) * point(0);
-        cumulants(4) += point(0) * point(1);
-        cumulants(5) += point(0) * point(2);
-        cumulants(6) += point(1) * point(1);
-        cumulants(7) += point(1) * point(2);
-        cumulants(8) += point(2) * point(2);
-        count++;
-    }
+__device__ Eigen::Vector3f ComputeNormal(const Eigen::Matrix<float, 9, 1>& cum,
+                                         int count) {
     if (count < 3) return Eigen::Vector3f(0.0, 0.0, 1.0);
-    cumulants /= (float)count;
+    Eigen::Matrix<float, 9, 1> cumulants = cum / (float)count;
+    Eigen::Matrix3f covariance;
     covariance(0, 0) = cumulants(3) - cumulants(0) * cumulants(0);
     covariance(1, 1) = cumulants(6) - cumulants(1) * cumulants(1);
     covariance(2, 2) = cumulants(8) - cumulants(2) * cumulants(2);
@@ -237,17 +218,31 @@ __device__ Eigen::Vector3f ComputeNormal(const Eigen::Vector3f *points,
 }
 
 struct compute_normal_functor {
-    compute_normal_functor(const Eigen::Vector3f *points,
-                           const int *indices,
-                           int knn)
-        : points_(points), indices_(indices), knn_(knn){};
-    const Eigen::Vector3f *points_;
-    const int *indices_;
-    const int knn_;
-    __device__ Eigen::Vector3f operator()(const int &idx) const {
-        Eigen::Vector3f normal =
-                ComputeNormal(points_, &(indices_[idx * knn_]), knn_);
+    compute_normal_functor() {};
+    __device__ Eigen::Vector3f operator()(const thrust::tuple<Eigen::Matrix<float, 9, 1>, int>& x) const {
+        Eigen::Vector3f normal = ComputeNormal(thrust::get<0>(x), thrust::get<1>(x));
         return (normal.norm() == 0.0) ? Eigen::Vector3f(0.0, 0.0, 1.0) : normal;
+    }
+};
+
+struct compute_cumulant_functor {
+    compute_cumulant_functor(const Eigen::Vector3f* points) : points_(points) {};
+    const Eigen::Vector3f* points_;
+    __device__ thrust::tuple<Eigen::Matrix<float, 9, 1>, int> operator() (int idx) const {
+        Eigen::Matrix<float, 9, 1> cm;
+        cm.setZero();
+        if (idx < 0) return thrust::make_tuple(cm, 0);
+        const Eigen::Vector3f point = points_[idx];
+        cm(0) = point(0);
+        cm(1) = point(1);
+        cm(2) = point(2);
+        cm(3) = point(0) * point(0);
+        cm(4) = point(0) * point(1);
+        cm(5) = point(0) * point(2);
+        cm(6) = point(1) * point(1);
+        cm(7) = point(1) * point(2);
+        cm(8) = point(2) * point(2);
+        return thrust::make_tuple(cm, 1);
     }
 };
 
@@ -291,11 +286,24 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
             utility::LogError("Unknown search param type.");
             return false;
     }
-    compute_normal_functor func(thrust::raw_pointer_cast(points_.data()),
-                                thrust::raw_pointer_cast(indices.data()), knn);
-    thrust::transform(thrust::make_counting_iterator(0),
-                      thrust::make_counting_iterator((int)points_.size()),
-                      normals_.begin(), func);
+    if (knn <= 0) {
+        thrust::fill(normals_.begin(), normals_.end(), Eigen::Vector3f(0.0, 0.0, 1.0));
+        return true;
+    }
+    size_t n_pt = points_.size();
+    utility::device_vector<Eigen::Matrix<float, 9, 1>> cumulants(n_pt);
+    utility::device_vector<int> counts(n_pt);
+    thrust::repeated_range<thrust::counting_iterator<size_t>> range(thrust::make_counting_iterator<size_t>(0),
+                                                                    thrust::make_counting_iterator(n_pt), knn);
+    thrust::reduce_by_key(range.begin(), range.end(),
+                          thrust::make_transform_iterator(indices.begin(),
+                                                          compute_cumulant_functor(thrust::raw_pointer_cast(points_.data()))),
+                          thrust::make_discard_iterator(),
+                          make_tuple_begin(cumulants, counts),
+                          thrust::equal_to<size_t>(),
+                          add_tuple_functor<Eigen::Matrix<float, 9, 1>, int>());
+    thrust::transform(make_tuple_begin(cumulants, counts), make_tuple_end(cumulants, counts),
+                      normals_.begin(), compute_normal_functor());
     return true;
 }
 

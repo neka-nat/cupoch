@@ -112,6 +112,7 @@ struct compute_color_gradient_functor {
         if (nn < 4) return Eigen::Vector3f::Zero();
         // adds orthogonal constraint
         AtA.noalias() += (nn - 1) * (nn - 1) * nt * nt.transpose();
+        AtA.diagonal() += Eigen::Vector3f::Constant(1.0e-6);
         const Eigen::Vector3f x = AtA.inverse() * Atb;
         return x;
     }
