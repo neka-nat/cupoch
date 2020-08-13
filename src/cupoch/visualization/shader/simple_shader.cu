@@ -42,12 +42,6 @@ using namespace cupoch::visualization::glsl;
 
 namespace {
 
-// Vertex indices of 12 triangles in a cuboid, for right-handed manifold mesh
-__constant__ int cuboid_triangles_vertex_indices[12][3] = {
-    {0, 2, 1}, {0, 1, 4}, {0, 4, 2}, {5, 1, 7}, {5, 7, 4}, {5, 4, 1},
-    {3, 7, 1}, {3, 1, 2}, {3, 2, 7}, {6, 4, 7}, {6, 7, 2}, {6, 2, 4},
-};
-
 // Vertex indices of 12 lines in a cuboid
 __constant__ int cuboid_lines_vertex_indices[12][2] = {
         {0, 1}, {0, 2}, {0, 4}, {3, 1}, {3, 2}, {3, 7},
@@ -260,39 +254,32 @@ struct copy_voxelgrid_line_functor {
     }
 };
 
-struct index_to_grid_functor {
-    index_to_grid_functor(int resolution) : resolution_(resolution) {};
-    int resolution_;
-    __device__ Eigen::Vector3i operator() (size_t idx) {
+struct copy_distance_voxel_functor {
+    copy_distance_voxel_functor(float voxel_size,
+                                int resolution,
+                                const Eigen::Vector3f& origin,
+                                float distance_max)
+        : voxel_size_(voxel_size), resolution_(resolution),
+        origin_(origin), distance_max_(distance_max){};
+    const float voxel_size_;
+    const int resolution_;
+    const Eigen::Vector3f origin_;
+    const float distance_max_;
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f>
+    operator()(const thrust::tuple<size_t, geometry::DistanceVoxel>& kv) const {
+        int idx = thrust::get<0>(kv);
+        geometry::DistanceVoxel v = thrust::get<1>(kv);
         int res2 = resolution_ * resolution_;
         int x = idx / res2;
         int yz = idx % res2;
-        return Eigen::Vector3i(x, yz / resolution_, yz % resolution_);
-    };
-};
-
-struct copy_distance_face_functor {
-    copy_distance_face_functor(const Eigen::Vector3f *vertices,
-                               const geometry::DistanceVoxel *voxels,
-                               float distance_max)
-        : vertices_(vertices),
-          voxels_(voxels),
-          distance_max_(distance_max){};
-    const Eigen::Vector3f *vertices_;
-    const geometry::DistanceVoxel *voxels_;
-    const float distance_max_;
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f>
-    operator()(size_t idx) const {
-        int i = idx / (12 * 3);
-        int jk = idx % (12 * 3);
-        int j = jk / 3;
-        int k = jk % 3;
+        int y = yz / resolution_;
+        int z = yz % resolution_;
         // Voxel color (applied to all points)
         Eigen::Vector4f voxel_color = Eigen::Vector4f::Ones();
-        voxel_color[3] = 1.0 - min(voxels_[i].distance_, distance_max_) / distance_max_;
-        return thrust::make_tuple(
-                vertices_[i * 8 + cuboid_triangles_vertex_indices[j][k]],
-                voxel_color);
+        int h_res = resolution_ / 2;
+        Eigen::Vector3f pt = (Eigen::Vector3i(x - h_res, y - h_res, z - h_res).cast<float>() + Eigen::Vector3f::Constant(0.5)) * voxel_size_ - origin_;
+        voxel_color[3] = 1.0 - min(v.distance_, distance_max_) / distance_max_;
+        return thrust::make_tuple(pt, voxel_color);
     }
 };
 
@@ -829,20 +816,9 @@ bool SimpleShaderForDistanceTransform::PrepareRendering(
         PrintShaderWarning("Rendering type is not geometry::DistanceTransform.");
         return false;
     }
-    if (option.mesh_show_back_face_) {
-        glDisable(GL_CULL_FACE);
-    } else {
-        glEnable(GL_CULL_FACE);
-    }
+    glPointSize(GLfloat(option.point_size_));
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GLenum(option.GetGLDepthFunc()));
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    if (option.mesh_show_wireframe_) {
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1.0, 1.0);
-    } else {
-        glDisable(GL_POLYGON_OFFSET_FILL);
-    }
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     return true;
@@ -866,37 +842,16 @@ bool SimpleShaderForDistanceTransform::PrepareBinding(
         return false;
     }
 
-    utility::device_vector<Eigen::Vector3f> vertices(dist_trans.voxels_.size() * 8);
-    Eigen::Vector3f origin =
-            dist_trans.origin_ -
-            0.5 * dist_trans.voxel_size_ *
-                    Eigen::Vector3f::Constant(dist_trans.resolution_);
-    thrust::tiled_range<
-            thrust::counting_iterator<size_t>>
-            irange(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator<size_t>(8),
-                   dist_trans.voxels_.size());
-    auto begin = thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0),
-                                                 index_to_grid_functor(dist_trans.resolution_));
-    thrust::repeated_range<decltype(begin)>
-            vrange(begin, thrust::make_transform_iterator(thrust::make_counting_iterator(dist_trans.voxels_.size()),
-                                                          index_to_grid_functor(dist_trans.resolution_)),
-                   8);
-    geometry::compute_voxel_vertices_functor<Eigen::Vector3i> func1(origin, dist_trans.voxel_size_);
-    thrust::transform(
-            make_tuple_begin(irange, vrange), make_tuple_end(irange, vrange),
-            vertices.begin(), func1);
-
-    size_t n_out = dist_trans.voxels_.size() * 12 * 3;
-    copy_distance_face_functor
-            func2(thrust::raw_pointer_cast(vertices.data()),
-                  thrust::raw_pointer_cast(dist_trans.voxels_.data()),
-                  dist_trans.voxel_size_ * dist_trans.resolution_ * 0.1);
-    thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_out),
-                      make_tuple_iterator(points, colors), func2);
+    size_t n_out = dist_trans.voxels_.size();
+    copy_distance_voxel_functor
+            func(dist_trans.voxel_size_, dist_trans.resolution_, dist_trans.origin_,
+                 dist_trans.voxel_size_ * dist_trans.resolution_ * 0.1);
+    thrust::transform(make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), dist_trans.voxels_.begin()),
+                      make_tuple_iterator(thrust::make_counting_iterator(n_out), dist_trans.voxels_.end()),
+                      make_tuple_iterator(points, colors), func);
     auto tp_begin = make_tuple_iterator(points, colors);
     thrust::sort(tp_begin, tp_begin + n_out, alpha_greater_functor());
-    draw_arrays_mode_ = GL_TRIANGLES;
+    draw_arrays_mode_ = GL_POINTS;
     draw_arrays_size_ = GLsizei(n_out);
     return true;
 }
@@ -904,5 +859,5 @@ bool SimpleShaderForDistanceTransform::PrepareBinding(
 size_t SimpleShaderForDistanceTransform::GetDataSize(
         const geometry::Geometry &geometry) const {
     int res = ((const geometry::DistanceTransform &)geometry).resolution_;
-    return res * res * res * 12 * 3;
+    return res * res * res;
 }

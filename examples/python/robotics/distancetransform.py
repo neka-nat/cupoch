@@ -21,4 +21,4 @@ target = cph.geometry.VoxelGrid.create_from_triangle_mesh_within_bounds(
 
 dt = cph.geometry.DistanceTransform(cubic_size / voxel_resolution, int(voxel_resolution))
 dt.compute_edt(target)
-cph.visualization.draw_geometries([dt])
+cph.visualization.draw_geometries([target, dt])
