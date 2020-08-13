@@ -30,8 +30,8 @@
 #include "cupoch/utility/helper.h"
 #include "cupoch/utility/platform.h"
 
-using namespace cupoch;
-using namespace cupoch::geometry;
+namespace cupoch {
+namespace geometry {
 
 namespace {
 
@@ -89,6 +89,19 @@ struct gaussian_filter_functor {
                                    std::numeric_limits<float>::quiet_NaN(),
                                    std::numeric_limits<float>::quiet_NaN());
         }
+    }
+};
+
+template <class... Args>
+struct pass_through_filter_functor {
+    pass_through_filter_functor(int axis_no, float min_bound, float max_bound)
+    : axis_no_(axis_no), min_bound_(min_bound), max_bound_(max_bound) {};
+    const int axis_no_;
+    const float min_bound_;
+    const float max_bound_;
+    __device__ bool operator() (const thrust::tuple<Eigen::Vector3f, Args...>& x) const {
+        float val = thrust::get<0>(x)[axis_no_];
+        return val < min_bound_ || max_bound_ < val;
     }
 };
 
@@ -313,4 +326,33 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
             });
     out->points_.resize(thrust::distance(out->points_.begin(), end));
     return out;
+}
+
+std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no, float min_bound, float max_bound) {
+    auto out = std::make_shared<PointCloud>();
+    if (axis_no < 0 || axis_no >= 3) {
+        utility::LogError(
+                "[PassThroughFilter] Illegal input parameters, axis_no "
+                "must be 0, 1 or 2.");
+        return out;
+    }
+    *out = *this;
+    bool has_normal = HasNormals();
+    bool has_color = HasColors();
+    if (has_normal && has_color) {
+        remove_if_vectors(pass_through_filter_functor<Eigen::Vector3f, Eigen::Vector3f>(axis_no, min_bound, max_bound),
+                          out->points_, out->normals_, out->colors_);
+    } else if (has_normal) {
+        remove_if_vectors(pass_through_filter_functor<Eigen::Vector3f>(axis_no, min_bound, max_bound),
+                          out->points_, out->normals_);
+    } else if (has_color) {
+        remove_if_vectors(pass_through_filter_functor<Eigen::Vector3f>(axis_no, min_bound, max_bound),
+                          out->points_, out->colors_);
+    } else {
+        remove_if_vectors(pass_through_filter_functor<>(axis_no, min_bound, max_bound), out->points_);
+    }
+    return out;
+}
+
+}
 }

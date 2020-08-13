@@ -149,6 +149,9 @@ void pybind_pointcloud(py::module &m) {
             .def("gaussian_filter", &geometry::PointCloud::GaussianFilter,
                  "Function to apply Gaussian Filter to input pointcloud",
                  "search_radius"_a, "sigma2"_a, "num_max_search_points"_a = 50)
+            .def("pass_through_filter", &geometry::PointCloud::PassThroughFilter,
+                 "Function to apply Pass Through Filter to input pointcloud",
+                 "axis_no"_a, "min_bound"_a, "max_bound"_a)
             .def("crop",
                  (std::shared_ptr<geometry::PointCloud>(
                          geometry::PointCloud::*)(

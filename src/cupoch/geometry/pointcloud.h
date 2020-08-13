@@ -132,6 +132,8 @@ public:
                                                float sigma2,
                                                int num_max_search_points = 50);
 
+    std::shared_ptr<PointCloud> PassThroughFilter(int axis_no, float min_bound, float max_bound);
+
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
