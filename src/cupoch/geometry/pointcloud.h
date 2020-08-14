@@ -173,6 +173,20 @@ public:
             bool print_progress = false,
             size_t max_edges = NUM_MAX_NN) const;
 
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param num_iterations Number of iterations.
+    /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers.
+    std::tuple<Eigen::Vector4f, utility::device_vector<size_t>> SegmentPlane(
+            float distance_threshold = 0.01,
+            int ransac_n = 3,
+            int num_iterations = 100) const;
+
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)
     /// The input depth image can be either a float image, or a uint16_t image.

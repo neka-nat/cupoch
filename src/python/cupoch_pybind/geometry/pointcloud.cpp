@@ -226,6 +226,18 @@ void pybind_pointcloud(py::module &m) {
                     "labels, -1 indicates noise according to the algorithm.",
                     "eps"_a, "min_points"_a, "print_progress"_a = false,
                     "max_edges"_a = geometry::NUM_MAX_NN)
+            .def("segment_plane",
+                 [](const geometry::PointCloud &pcd,
+                    float distance_threshold,
+                    int ransac_n,
+                    int num_iterations) {
+                     auto res = pcd.SegmentPlane(distance_threshold, ransac_n, num_iterations);
+                     return std::make_tuple(std::get<0>(res),
+                              wrapper::device_vector_size_t(std::move(std::get<1>(res))));
+                 },
+                 "Segments a plane in the point cloud using the RANSAC "
+                 "algorithm.",
+                 "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a)
             .def_static(
                     "create_from_depth_image",
                     &geometry::PointCloud::CreateFromDepthImage,

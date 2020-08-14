@@ -222,6 +222,16 @@ auto make_tuple_end(Args &... args) {
     return make_tuple_iterator(std::end(args)...);
 }
 
+template<class... Args>
+auto enumerate_iterator(size_t n, Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n), args...);
+}
+
+template<class... Args>
+auto enumerate_iterator(size_t n, const Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n), args...);
+}
+
 template <class... Args>
 auto enumerate_begin(Args &... args) {
     return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), std::begin(args)...);
@@ -286,6 +296,16 @@ void remove_negative(utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
             idxs.begin(), idxs.end(),
             [] __device__(const Eigen::Matrix<int, Dim, 1> &idx) {
                 return Eigen::device_any(idx.array() < 0);
+            });
+    idxs.resize(thrust::distance(idxs.begin(), end));
+}
+
+template <typename T>
+void remove_scalar_negative(utility::device_vector<T> &idxs) {
+    auto end = thrust::remove_if(
+            idxs.begin(), idxs.end(),
+            [] __device__(const T &idx) {
+                return idx < 0;
             });
     idxs.resize(thrust::distance(idxs.begin(), end));
 }

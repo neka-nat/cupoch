@@ -613,3 +613,20 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
 
     ExpectEQ(ref, pc.GetNormals());
 }
+
+TEST(PointCloud, SegmentPlaneKnownPlane) {
+    // Points sampled from the plane x + y + z + 1 = 0
+    thrust::host_vector<Eigen::Vector3f> ref_points;
+    ref_points.push_back(Eigen::Vector3f({1.0, 1.0, -1.0}));
+    ref_points.push_back(Eigen::Vector3f({2.0, 2.0, -5.0}));
+    ref_points.push_back(Eigen::Vector3f({-1.0, -1.0, 1.0}));
+    ref_points.push_back(Eigen::Vector3f({-2.0, -2.0, 3.0}));
+    ref_points.push_back(Eigen::Vector3f({10.0, 10.0, -21.0}));
+    geometry::PointCloud pcd;
+    pcd.SetPoints(ref_points);
+
+    Eigen::Vector4f plane_model;
+    utility::device_vector<size_t> inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10);
+    ExpectEQ(pcd.SelectByIndex(inliers)->GetPoints(), ref_points);
+}
