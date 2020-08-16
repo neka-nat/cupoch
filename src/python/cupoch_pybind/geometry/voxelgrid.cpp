@@ -103,7 +103,7 @@ void pybind_voxelgrid(py::module &m) {
                  "Returns voxel index given query point.")
             .def("paint_uniform_color", &geometry::VoxelGrid::PaintUniformColor)
             .def("paint_indexed_color",
-                 [] (geometry::VoxelGrid& self, const wrapper::device_vector_int& indices, const Eigen::Vector3f& color) {
+                 [] (geometry::VoxelGrid& self, const wrapper::device_vector_size_t& indices, const Eigen::Vector3f& color) {
                      return self.PaintIndexedColor(indices.data_, color);
                  })
             .def("check_if_included", &geometry::VoxelGrid::CheckIfIncluded,

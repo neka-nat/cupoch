@@ -319,7 +319,7 @@ VoxelGrid &VoxelGrid::PaintUniformColor(const Eigen::Vector3f &color) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<int>& indices,
+VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<size_t>& indices,
                                         const Eigen::Vector3f &color) {
     thrust::for_each(thrust::make_permutation_iterator(voxels_values_.begin(), indices.begin()),
                      thrust::make_permutation_iterator(voxels_values_.begin(), indices.end()),

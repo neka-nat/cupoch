@@ -123,7 +123,7 @@ public:
     /// Assigns each voxel in the VoxelGrid the same color \param color.
     VoxelGrid &PaintUniformColor(const Eigen::Vector3f &color);
 
-    VoxelGrid &PaintIndexedColor(const utility::device_vector<int>& indices,
+    VoxelGrid &PaintIndexedColor(const utility::device_vector<size_t>& indices,
                                  const Eigen::Vector3f &color);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.

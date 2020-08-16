@@ -42,11 +42,11 @@ void pybind_collision_methods(py::module& m) {
                     })
             .def("get_first_collision_indices",
                     [] (const collision::CollisionResult& self) {
-                        return wrapper::device_vector_int(self.GetFirstCollisionIndices());
+                        return wrapper::device_vector_size_t(self.GetFirstCollisionIndices());
                     })
             .def("get_second_collision_indices",
                     [] (const collision::CollisionResult& self) {
-                        return wrapper::device_vector_int(self.GetSecondCollisionIndices());
+                        return wrapper::device_vector_size_t(self.GetSecondCollisionIndices());
                     })
             .def_readwrite("first", &collision::CollisionResult::first_)
             .def_readwrite("second", &collision::CollisionResult::second_)
