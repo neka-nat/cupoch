@@ -123,7 +123,7 @@ public:
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
-    RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points, float search_radius, int max_search_points=NUM_MAX_NN) const;
 
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;

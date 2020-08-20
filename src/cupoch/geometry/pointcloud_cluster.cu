@@ -115,7 +115,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     utility::device_vector<int> indices;
     utility::device_vector<float> distances;
     KDTreeFlann kdtree(*this);
-    kdtree.SearchHybrid(points_, eps, max_edges + 1, indices, distances);
+    kdtree.SearchRadius(points_, eps, max_edges + 1, indices, distances);
     compute_vertex_degree_functor vd_func(
             thrust::raw_pointer_cast(indices.data()), min_points,
             max_edges + 1);

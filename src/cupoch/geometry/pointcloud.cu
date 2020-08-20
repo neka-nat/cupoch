@@ -309,7 +309,7 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
     kdtree.SetGeometry(*this);
     utility::device_vector<int> indices;
     utility::device_vector<float> dist;
-    kdtree.SearchHybrid(points_, search_radius, num_max_search_points, indices,
+    kdtree.SearchRadius(points_, search_radius, num_max_search_points, indices,
                         dist);
     out->points_.resize(points_.size());
     gaussian_filter_functor func(thrust::raw_pointer_cast(points_.data()),

@@ -30,7 +30,6 @@ public:
     enum class SearchType {
         Knn = 0,
         Radius = 1,
-        Hybrid = 2,
     };
 
 public:
@@ -57,17 +56,8 @@ public:
 
 class KDTreeSearchParamRadius : public KDTreeSearchParam {
 public:
-    KDTreeSearchParamRadius(float radius)
-        : KDTreeSearchParam(SearchType::Radius), radius_(radius) {}
-
-public:
-    float radius_;
-};
-
-class KDTreeSearchParamHybrid : public KDTreeSearchParam {
-public:
-    KDTreeSearchParamHybrid(float radius, int max_nn)
-        : KDTreeSearchParam(SearchType::Hybrid),
+    KDTreeSearchParamRadius(float radius, int max_nn)
+        : KDTreeSearchParam(SearchType::Radius),
           radius_(radius),
           max_nn_(max_nn) {}
 

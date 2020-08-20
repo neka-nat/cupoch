@@ -9,10 +9,10 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cupoch)
 [![Downloads](https://pepy.tech/badge/cupoch)](https://pepy.tech/project/cupoch)
 
-Cupoch is a library that implements rapid 3D data processing and robotics computation using CUDA.
+Cupoch is a library that implements rapid 3D data processing for robotics using CUDA.
 
-The goal of this library is to process the input of 3D sensors rapidly and use it to control the robot.
-This library is based on the functionality of Open3D, with additional features for integration into robot systems.
+The goal of this library is to implement fast 3D data computation in robot systems.
+For example, it has applications in SLAM, collision avoidance, path planning and tracking.
 
 ## Core Features
 

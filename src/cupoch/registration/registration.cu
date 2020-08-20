@@ -43,7 +43,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
     const int n_pt = source.points_.size();
     utility::device_vector<int> indices(n_pt);
     utility::device_vector<float> dists(n_pt);
-    target_kdtree.SearchHybrid(source.points_, max_correspondence_distance, 1,
+    target_kdtree.SearchRadius(source.points_, max_correspondence_distance, 1,
                                indices, dists);
     result.correspondence_set_.resize(n_pt);
     const float error2 = thrust::transform_reduce(

@@ -19,13 +19,13 @@ def preprocess_point_cloud(pcd, voxel_size):
     radius_normal = voxel_size * 2
     print(":: Estimate normal with search radius %.3f." % radius_normal)
     pcd_down.estimate_normals(
-        cph.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=30))
+        cph.geometry.KDTreeSearchParamRadius(radius=radius_normal, max_nn=30))
 
     radius_feature = voxel_size * 5
     print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     pcd_fpfh = cph.registration.compute_fpfh_feature(
         pcd_down,
-        cph.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100))
+        cph.geometry.KDTreeSearchParamRadius(radius=radius_feature, max_nn=100))
     return pcd_down, pcd_fpfh
 
 

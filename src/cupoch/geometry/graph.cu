@@ -253,7 +253,7 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
                                                       (max_num_edges + 1));
     geometry::KDTreeFlann kdtree;
     kdtree.SetRawData(this->points_);
-    kdtree.SearchHybrid(this->points_, max_edge_distance, max_num_edges + 1,
+    kdtree.SearchRadius(this->points_, max_edge_distance, max_num_edges + 1,
                         indices, weights);
     thrust::transform(thrust::make_counting_iterator(0),
                       thrust::make_counting_iterator<int>(new_edges.size()),

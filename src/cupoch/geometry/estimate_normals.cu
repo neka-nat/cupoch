@@ -277,10 +277,7 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
             knn = ((const KDTreeSearchParamKNN &)search_param).knn_;
             break;
         case KDTreeSearchParam::SearchType::Radius:
-            knn = NUM_MAX_NN;
-            break;
-        case KDTreeSearchParam::SearchType::Hybrid:
-            knn = ((const KDTreeSearchParamHybrid &)search_param).max_nn_;
+            knn = ((const KDTreeSearchParamRadius &)search_param).max_nn_;
             break;
         default:
             utility::LogError("Unknown search param type.");

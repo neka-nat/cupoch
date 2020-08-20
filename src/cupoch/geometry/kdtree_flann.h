@@ -71,13 +71,6 @@ public:
     int SearchRadius(InputIterator first,
                      InputIterator last,
                      float radius,
-                     utility::device_vector<int> &indices,
-                     utility::device_vector<float> &distance2) const;
-
-    template <typename InputIterator, int Dim>
-    int SearchHybrid(InputIterator first,
-                     InputIterator last,
-                     float radius,
                      int max_nn,
                      utility::device_vector<int> &indices,
                      utility::device_vector<float> &distance2) const;
@@ -97,12 +90,6 @@ public:
     template <typename T>
     int SearchRadius(const utility::device_vector<T> &query,
                      float radius,
-                     utility::device_vector<int> &indices,
-                     utility::device_vector<float> &distance2) const;
-
-    template <typename T>
-    int SearchHybrid(const utility::device_vector<T> &query,
-                     float radius,
                      int max_nn,
                      utility::device_vector<int> &indices,
                      utility::device_vector<float> &distance2) const;
@@ -121,12 +108,6 @@ public:
 
     template <typename T>
     int SearchRadius(const T &query,
-                     float radius,
-                     thrust::host_vector<int> &indices,
-                     thrust::host_vector<float> &distance2) const;
-
-    template <typename T>
-    int SearchHybrid(const T &query,
                      float radius,
                      int max_nn,
                      thrust::host_vector<int> &indices,

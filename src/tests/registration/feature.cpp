@@ -150,6 +150,6 @@ TEST(Feature, ComputeFPFHFeature) {
         ref_features.push_back(mat_features.col(i));
     }
     auto features = registration::ComputeFPFHFeature(
-            pc, geometry::KDTreeSearchParamHybrid(0.05 * 3, 5));
+            pc, geometry::KDTreeSearchParamRadius(0.05 * 3, 5));
     ExpectEQ(ref_features, features->GetData());
 }

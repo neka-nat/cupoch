@@ -50,9 +50,9 @@ if __name__ == "__main__":
 
         print("3-2. Estimate normal.")
         source_down.estimate_normals(
-            cph.geometry.KDTreeSearchParamHybrid(radius=radius * 2, max_nn=30))
+            cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
         target_down.estimate_normals(
-            cph.geometry.KDTreeSearchParamHybrid(radius=radius * 2, max_nn=30))
+            cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
 
         print("3-3. Applying colored point cloud registration")
         result_icp = cph.registration.registration_colored_icp(

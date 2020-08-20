@@ -267,7 +267,7 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
 }
 
 std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
-PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
+PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius, int max_search_points) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
@@ -277,7 +277,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     kdtree.SetGeometry(*this);
     utility::device_vector<int> tmp_indices;
     utility::device_vector<float> dist;
-    kdtree.SearchRadius(points_, search_radius, tmp_indices, dist);
+    kdtree.SearchRadius(points_, search_radius, max_search_points, tmp_indices, dist);
     const size_t n_pt = points_.size();
     utility::device_vector<size_t> counts(n_pt);
     utility::device_vector<size_t> indices(n_pt);

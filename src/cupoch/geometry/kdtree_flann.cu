@@ -78,22 +78,6 @@ int KDTreeFlann::SearchKNN(const utility::device_vector<T> &query,
 template <typename T>
 int KDTreeFlann::SearchRadius(const utility::device_vector<T> &query,
                               float radius,
-                              utility::device_vector<int> &indices,
-                              utility::device_vector<float> &distance2) const {
-    // This is optimized code for heavily repeated search.
-    // Since max_nn is not given, we let flann to do its own memory management.
-    // Other flann::Index::radiusSearch() implementations lose performance due
-    // to memory management and CPU caching.
-    if (data_.empty() || query.empty() || dataset_size_ <= 0) return -1;
-    T query0 = query[0];
-    if (size_t(query0.size()) != dimension_) return -1;
-    return SearchRadius<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
-            query.begin(), query.end(), radius, indices, distance2);
-}
-
-template <typename T>
-int KDTreeFlann::SearchHybrid(const utility::device_vector<T> &query,
-                              float radius,
                               int max_nn,
                               utility::device_vector<int> &indices,
                               utility::device_vector<float> &distance2) const {
@@ -105,7 +89,7 @@ int KDTreeFlann::SearchHybrid(const utility::device_vector<T> &query,
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    return SearchHybrid<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
+    return SearchRadius<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
             query.begin(), query.end(), radius, max_nn, indices, distance2);
 }
 
@@ -145,20 +129,6 @@ int KDTreeFlann::SearchKNN(const T &query,
 template <typename T>
 int KDTreeFlann::SearchRadius(const T &query,
                               float radius,
-                              thrust::host_vector<int> &indices,
-                              thrust::host_vector<float> &distance2) const {
-    utility::device_vector<T> query_dv(1, query);
-    utility::device_vector<int> indices_dv;
-    utility::device_vector<float> distance2_dv;
-    auto result = SearchRadius<T>(query_dv, radius, indices_dv, distance2_dv);
-    indices = indices_dv;
-    distance2 = distance2_dv;
-    return result;
-}
-
-template <typename T>
-int KDTreeFlann::SearchHybrid(const T &query,
-                              float radius,
                               int max_nn,
                               thrust::host_vector<int> &indices,
                               thrust::host_vector<float> &distance2) const {
@@ -166,7 +136,7 @@ int KDTreeFlann::SearchHybrid(const T &query,
     utility::device_vector<int> indices_dv;
     utility::device_vector<float> distance2_dv;
     auto result =
-            SearchHybrid<T>(query_dv, radius, max_nn, indices_dv, distance2_dv);
+            SearchRadius<T>(query_dv, radius, max_nn, indices_dv, distance2_dv);
     indices = indices_dv;
     distance2 = distance2_dv;
     return result;
@@ -183,11 +153,6 @@ template int KDTreeFlann::SearchKNN<Eigen::Vector3f>(
         utility::device_vector<int> &indices,
         utility::device_vector<float> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector3f>(
-        const utility::device_vector<Eigen::Vector3f> &query,
-        float radius,
-        utility::device_vector<int> &indices,
-        utility::device_vector<float> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &query,
         float radius,
         int max_nn,
@@ -204,11 +169,6 @@ template int KDTreeFlann::SearchKNN<Eigen::Vector3f>(
         thrust::host_vector<int> &indices,
         thrust::host_vector<float> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector3f>(
-        const Eigen::Vector3f &query,
-        float radius,
-        thrust::host_vector<int> &indices,
-        thrust::host_vector<float> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::Vector3f>(
         const Eigen::Vector3f &query,
         float radius,
         int max_nn,
@@ -230,11 +190,6 @@ template int KDTreeFlann::SearchKNN<Eigen::Vector2f>(
 template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
         const utility::device_vector<Eigen::Vector2f> &query,
         float radius,
-        utility::device_vector<int> &indices,
-        utility::device_vector<float> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::Vector2f>(
-        const utility::device_vector<Eigen::Vector2f> &query,
-        float radius,
         int max_nn,
         utility::device_vector<int> &indices,
         utility::device_vector<float> &distance2) const;
@@ -249,11 +204,6 @@ template int KDTreeFlann::SearchKNN<Eigen::Vector2f>(
         thrust::host_vector<int> &indices,
         thrust::host_vector<float> &distance2) const;
 template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
-        const Eigen::Vector2f &query,
-        float radius,
-        thrust::host_vector<int> &indices,
-        thrust::host_vector<float> &distance2) const;
-template int KDTreeFlann::SearchHybrid<Eigen::Vector2f>(
         const Eigen::Vector2f &query,
         float radius,
         int max_nn,

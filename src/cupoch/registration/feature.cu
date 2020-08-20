@@ -120,10 +120,7 @@ std::shared_ptr<Feature<33>> ComputeSPFHFeature(
             knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
             break;
         case geometry::KDTreeSearchParam::SearchType::Radius:
-            knn = geometry::NUM_MAX_NN;
-            break;
-        case geometry::KDTreeSearchParam::SearchType::Hybrid:
-            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param)
+            knn = ((const geometry::KDTreeSearchParamRadius &)search_param)
                           .max_nn_;
             break;
         default:
@@ -250,10 +247,7 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
             knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
             break;
         case geometry::KDTreeSearchParam::SearchType::Radius:
-            knn = geometry::NUM_MAX_NN;
-            break;
-        case geometry::KDTreeSearchParam::SearchType::Hybrid:
-            knn = ((const geometry::KDTreeSearchParamHybrid &)search_param)
+            knn = ((const geometry::KDTreeSearchParamRadius &)search_param)
                           .max_nn_;
             break;
         default:

@@ -173,9 +173,10 @@ void pybind_pointcloud(py::module &m) {
             .def(
                     "remove_radius_outlier",
                     [](const geometry::PointCloud &pcd, size_t nb_points,
-                       float search_radius) {
+                       float search_radius, int max_search_points) {
                         auto res = pcd.RemoveRadiusOutliers(nb_points,
-                                                            search_radius);
+                                                            search_radius,
+                                                            max_search_points);
                         return std::make_tuple(
                                 std::get<0>(res),
                                 wrapper::device_vector_size_t(
@@ -183,7 +184,7 @@ void pybind_pointcloud(py::module &m) {
                     },
                     "Function to remove points that have less than nb_points"
                     " in a given sphere of a given radius",
-                    "nb_points"_a, "radius"_a)
+                    "nb_points"_a, "radius"_a, "max_search_points"_a = geometry::NUM_MAX_NN)
             .def(
                     "remove_statistical_outlier",
                     [](const geometry::PointCloud &pcd, size_t nb_neighbors,
