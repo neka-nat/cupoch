@@ -47,32 +47,6 @@
 namespace flann
 {
 
-/**
- * Sets the log level used for all flann functions
- * @param level Verbosity level
- */
-inline void log_verbosity(int level)
-{
-    if (level >= 0) {
-        Logger::setLevel(level);
-    }
-}
-
-#ifdef FLANN_SERIALIZATION_LZ4
-/**
- * (Deprecated) Index parameters for creating a saved index.
- */
-struct SavedIndexParams : public IndexParams
-{
-    SavedIndexParams(std::string filename)
-    {
-        (*this)["algorithm"] = FLANN_INDEX_SAVED;
-        (*this)["filename"] = filename;
-    }
-};
-#endif
-
-
 template<typename Distance>
 class Index
 {
@@ -88,18 +62,7 @@ public:
         loaded_ = false;
 
         Matrix<ElementType> features;
-#ifdef FLANN_SERIALIZATION_LZ4
-        if (index_type == FLANN_INDEX_SAVED) {
-            nnIndex_ = load_saved_index(features, get_param<std::string>(params,"filename"), distance);
-            loaded_ = true;
-        }
-        else {
-        	flann_algorithm_t index_type = get_param<flann_algorithm_t>(params, "algorithm");
-#endif
-            nnIndex_ = create_index_by_type<Distance>(index_type, features, params, distance);
-#ifdef FLANN_SERIALIZATION_LZ4
-        }
-#endif
+        nnIndex_ = create_index_by_type<Distance>(index_type, features, params, distance);
     }
 
 
@@ -108,19 +71,7 @@ public:
     {
         flann_algorithm_t index_type = get_param<flann_algorithm_t>(params,"algorithm");
         loaded_ = false;
-
-#ifdef FLANN_SERIALIZATION_LZ4
-        if (index_type == FLANN_INDEX_SAVED) {
-            nnIndex_ = load_saved_index(features, get_param<std::string>(params,"filename"), distance);
-            loaded_ = true;
-        }
-        else {
-        	flann_algorithm_t index_type = get_param<flann_algorithm_t>(params, "algorithm");
-#endif
-            nnIndex_ = create_index_by_type<Distance>(index_type, features, params, distance);
-#ifdef FLANN_SERIALIZATION_LZ4
-        }
-#endif
+        nnIndex_ = create_index_by_type<Distance>(index_type, features, params, distance);
     }
 
 
@@ -178,22 +129,6 @@ public:
     {
     	return nnIndex_->getPoint(point_id);
     }
-
-#ifdef FLANN_SERIALIZATION_LZ4
-    /**
-     * Save index to file
-     * @param filename
-     */
-    void save(std::string filename)
-    {
-        FILE* fout = fopen(filename.c_str(), "wb");
-        if (fout == NULL) {
-            throw FLANNException("Cannot open file");
-        }
-        nnIndex_->saveIndex(fout);
-        fclose(fout);
-    }
-#endif
 
     /**
      * \returns number of features in this index.
@@ -272,41 +207,6 @@ public:
     }
 
     /**
-     * \brief Perform k-nearest neighbor search
-     * \param[in] queries The query points for which to find the nearest neighbors
-     * \param[out] indices The indices of the nearest neighbors found
-     * \param[out] dists Distances to the nearest neighbors found
-     * \param[in] knn Number of nearest neighbors to return
-     * \param[in] params Search parameters
-     */
-    int knnSearch(const Matrix<ElementType>& queries,
-                                 std::vector< std::vector<size_t> >& indices,
-                                 std::vector<std::vector<DistanceType> >& dists,
-                                 size_t knn,
-                           const SearchParams& params) const
-    {
-    	return nnIndex_->knnSearch(queries, indices, dists, knn, params);
-    }
-
-    /**
-     *
-     * @param queries
-     * @param indices
-     * @param dists
-     * @param knn
-     * @param params
-     * @return
-     */
-    int knnSearch(const Matrix<ElementType>& queries,
-                                 std::vector< std::vector<int> >& indices,
-                                 std::vector<std::vector<DistanceType> >& dists,
-                                 size_t knn,
-                           const SearchParams& params) const
-    {
-    	return nnIndex_->knnSearch(queries, indices, dists, knn, params);
-    }
-
-    /**
      * \brief Perform radius search
      * \param[in] queries The query points
      * \param[out] indices The indices of the neighbors found within the given radius
@@ -342,65 +242,7 @@ public:
     	return nnIndex_->radiusSearch(queries, indices, dists, radius, params);
     }
 
-    /**
-     * \brief Perform radius search
-     * \param[in] queries The query points
-     * \param[out] indices The indices of the neighbors found within the given radius
-     * \param[out] dists The distances to the nearest neighbors found
-     * \param[in] radius The radius used for search
-     * \param[in] params Search parameters
-     * \returns Number of neighbors found
-     */
-    int radiusSearch(const Matrix<ElementType>& queries,
-                                    std::vector< std::vector<size_t> >& indices,
-                                    std::vector<std::vector<DistanceType> >& dists,
-                                    float radius,
-                              const SearchParams& params) const
-    {
-    	return nnIndex_->radiusSearch(queries, indices, dists, radius, params);
-    }
-
-    /**
-     *
-     * @param queries
-     * @param indices
-     * @param dists
-     * @param radius
-     * @param params
-     * @return
-     */
-    int radiusSearch(const Matrix<ElementType>& queries,
-                                    std::vector< std::vector<int> >& indices,
-                                    std::vector<std::vector<DistanceType> >& dists,
-                                    float radius,
-                              const SearchParams& params) const
-    {
-    	return nnIndex_->radiusSearch(queries, indices, dists, radius, params);
-    }
-
 private:
-#ifdef FLANN_SERIALIZATION_LZ4
-    IndexType* load_saved_index(const Matrix<ElementType>& dataset, const std::string& filename, Distance distance)
-    {
-        FILE* fin = fopen(filename.c_str(), "rb");
-        if (fin == NULL) {
-            return NULL;
-        }
-        IndexHeader header = load_header(fin);
-        if (header.h.data_type != flann_datatype_value<ElementType>::value) {
-            throw FLANNException("Datatype of saved index is different than of the one to be loaded.");
-        }
-
-        IndexParams params;
-        params["algorithm"] = header.h.index_type;
-        IndexType* nnIndex = create_index_by_type<Distance>(header.h.index_type, dataset, params, distance);
-        rewind(fin);
-        nnIndex->loadIndex(fin);
-        fclose(fin);
-
-        return nnIndex;
-    }
-#endif
 
     void swap( Index& other)
     {
@@ -417,32 +259,6 @@ private:
     /** Parameters passed to the index */
     IndexParams index_params_;
 };
-
-
-
-
-
-/**
- * Performs a hierarchical clustering of the points passed as argument and then takes a cut in the
- * the clustering tree to return a flat clustering.
- * @param[in] points Points to be clustered
- * @param centers The computed cluster centres. Matrix should be preallocated and centers.rows is the
- *  number of clusters requested.
- * @param params Clustering parameters (The same as for flann::KMeansIndex)
- * @param d Distance to be used for clustering (eg: flann::L2)
- * @return number of clusters computed (can be different than clusters.rows and is the highest number
- * of the form (branching-1)*K+1 smaller than clusters.rows).
- */
-template <typename Distance>
-int hierarchicalClustering(const Matrix<typename Distance::ElementType>& points, Matrix<typename Distance::ResultType>& centers,
-                           const KMeansIndexParams& params, Distance d = Distance())
-{
-    KMeansIndex<Distance> kmeans(points, params, d);
-    kmeans.buildIndex();
-
-    int clusterNum = kmeans.getClusterCenters(centers);
-    return clusterNum;
-}
 
 }
 #endif /* FLANN_HPP_ */

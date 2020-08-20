@@ -49,15 +49,14 @@
 namespace flann
 {
 
-struct KDTreeCuda3dIndexParams
+struct KDTreeCuda3dIndexParams : public IndexParams
 {
     KDTreeCuda3dIndexParams( int leaf_max_size = 64 )
     {
-        leaf_max_size_ = leaf_max_size;
+        (*this)["algorithm"] = FLANN_INDEX_KDTREE_CUDA;
+        (*this)["leaf_max_size"] = leaf_max_size;
+        (*this)["dim"] = 3;
     }
-    int algoritm_ = FLANN_INDEX_KDTREE_CUDA;
-    int dim_ = 3;
-    int leaf_max_size_ = 64;
 };
 
 /**
@@ -87,15 +86,15 @@ public:
      *          inputData = dataset with the input features
      *          params = parameters passed to the kdtree algorithm
      */
-    KDTreeCuda3dIndex(const Matrix<ElementType>& inputData, const KDTreeCuda3dIndexParams& params = KDTreeCuda3dIndexParams(),
-                      Distance d = Distance() ) : BaseClass(d), dataset_(inputData), leaf_count_(0), visited_leafs(0), node_count_(0), current_node_count_(0)
+    KDTreeCuda3dIndex(const Matrix<ElementType>& inputData, const IndexParams& params = KDTreeCuda3dIndexParams(),
+                      Distance d = Distance() ) : BaseClass(params,d), dataset_(inputData), leaf_count_(0), visited_leafs(0), node_count_(0), current_node_count_(0)
     {
         size_ = dataset_.rows;
         dim_ = dataset_.cols;
 
-        int dim_param = params.dim_;
+        int dim_param = get_param(params,"dim",-1);
         if (dim_param>0) dim_ = dim_param;
-        leaf_max_size_ = params.leaf_max_size_;
+        leaf_max_size_ = get_param(params,"leaf_max_size",10);
         assert( dim_ == 3 );
         gpu_helper_=0;
     }
@@ -155,20 +154,6 @@ public:
     	return dataset_[id];
     }
 
-#ifdef FLANN_SERIALIZATION_LZ4
-    void saveIndex(FILE* stream)
-    {
-        throw FLANNException( "Index saving not implemented!" );
-
-    }
-
-
-    void loadIndex(FILE* stream)
-    {
-        throw FLANNException( "Index loading not implemented!" );
-    }
-#endif
-
     size_t veclen() const
     {
         return dim_;
@@ -208,56 +193,10 @@ public:
      * \param[in] knn Number of nearest neighbors to return
      * \param[in] params Search parameters
      */
-    int knnSearch(const Matrix<ElementType>& queries,
-                          std::vector< std::vector<int> >& indices,
-                          std::vector<std::vector<DistanceType> >& dists,
-                          size_t knn,
-                          const SearchParams& params) const
-    {
-    	knnSearchGpu(queries,indices, dists, knn, params);
-        return knn*queries.rows; // hack...
-    }
-
-    /**
-     * \brief Perform k-nearest neighbor search
-     * \param[in] queries The query points for which to find the nearest neighbors
-     * \param[out] indices The indices of the nearest neighbors found
-     * \param[out] dists Distances to the nearest neighbors found
-     * \param[in] knn Number of nearest neighbors to return
-     * \param[in] params Search parameters
-     */
     void knnSearchGpu(const Matrix<ElementType>& queries, Matrix<int>& indices, Matrix<DistanceType>& dists, size_t knn, const SearchParams& params) const;
-
-    int knnSearchGpu(const Matrix<ElementType>& queries,
-                     std::vector< std::vector<int> >& indices,
-                     std::vector<std::vector<DistanceType> >& dists,
-                     size_t knn,
-                     const SearchParams& params) const
-    {
-        flann::Matrix<int> ind( new int[knn*queries.rows], queries.rows,knn);
-        flann::Matrix<DistanceType> dist( new DistanceType[knn*queries.rows], queries.rows,knn);
-        knnSearchGpu(queries,ind,dist,knn,params);
-        for( size_t i = 0; i<queries.rows; i++ ) {
-            indices[i].resize(knn);
-            dists[i].resize(knn);
-            for( size_t j=0; j<knn; j++ ) {
-                indices[i][j]=ind[i][j];
-                dists[i][j]=dist[i][j];
-            }
-        }
-        delete [] ind.ptr();
-        delete [] dist.ptr();
-        return knn*queries.rows; // hack...
-    }
 
     int radiusSearch(const Matrix<ElementType>& queries, Matrix<int>& indices, Matrix<DistanceType>& dists,
                              float radius, const SearchParams& params) const
-    {
-    	return radiusSearchGpu(queries,indices, dists, radius, params);
-    }
-
-    int radiusSearch(const Matrix<ElementType>& queries, std::vector< std::vector<int> >& indices,
-                             std::vector<std::vector<DistanceType> >& dists, float radius, const SearchParams& params) const
     {
     	return radiusSearchGpu(queries,indices, dists, radius, params);
     }
