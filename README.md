@@ -59,13 +59,32 @@ cd build
 cmake ..; make install-pip-package -j
 ```
 
-### Installation for Jetson
-You can also install cupoch using pip on Jetson.
+### Installation for Jetson Nano
+You can also install cupoch using pip on Jetson Nano.
 Please set up Jetson using [jetcard](https://github.com/NVIDIA-AI-IOT/jetcard) and install some packages with apt.
 
 ```
 sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
-pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.1.0/cupoch-0.1.0.0-cp36-cp36m-linux_aarch64.whl
+pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.1.3/cupoch-0.1.3.0-cp36-cp36m-linux_aarch64.whl
+```
+
+Or you can compile it from source.
+Update your version of cmake if necessary.
+
+```
+wget https://github.com/Kitware/CMake/releases/download/v3.16.3/cmake-3.16.3.tar.gz
+tar zxvf cmake-3.16.3.tar.gz
+cd cmake-3.16.3
+./bootstrap -- -DCMAKE_USE_OPENSSL=OFF
+make && sudo make install
+cd ..
+git clone https://github.com/neka-nat/cupoch.git --recurse
+cd cupoch/
+mkdir build
+cd build/
+export PATH=/usr/local/cuda/bin:$PATH
+cmake -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON ..
+sudo make install-pip-package
 ```
 
 ## Results

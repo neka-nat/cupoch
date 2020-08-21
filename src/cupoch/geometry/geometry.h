@@ -56,12 +56,14 @@ public:
         Image = 9,
         /// RGBDImage
         RGBDImage = 10,
+        /// Map2D
+        Map2D = 11,
         /// OrientedBoundingBox
-        OrientedBoundingBox = 11,
+        OrientedBoundingBox = 12,
         /// AxisAlignedBoundingBox
-        AxisAlignedBoundingBox = 12,
+        AxisAlignedBoundingBox = 13,
         /// LaserScanBuffer
-        LaserScanBuffer = 13,
+        LaserScanBuffer = 14,
     };
 
 public:
