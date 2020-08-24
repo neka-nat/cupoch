@@ -46,7 +46,6 @@ namespace mr {
  *---------------------------------------------------------------------------**/
 class host_memory_resource {
  public:
-  host_memory_resource() = default;
   virtual ~host_memory_resource() = default;
 
   /**---------------------------------------------------------------------------*
@@ -62,8 +61,8 @@ class host_memory_resource {
    * @param alignment Alignment of the allocation
    * @return void* Pointer to the newly allocated memory
    *---------------------------------------------------------------------------**/
-  void* allocate(std::size_t bytes,
-                 std::size_t alignment = alignof(std::max_align_t)) {
+  void* allocate(std::size_t bytes, std::size_t alignment = alignof(std::max_align_t))
+  {
     return do_allocate(bytes, alignment);
   }
 
@@ -85,8 +84,8 @@ class host_memory_resource {
    *`p`.
    * @param stream Stream on which to perform deallocation
    *---------------------------------------------------------------------------**/
-  void deallocate(void* p, std::size_t bytes,
-                  std::size_t alignment = alignof(std::max_align_t)) {
+  void deallocate(void* p, std::size_t bytes, std::size_t alignment = alignof(std::max_align_t))
+  {
     do_deallocate(p, bytes, alignment);
   }
 
@@ -103,9 +102,7 @@ class host_memory_resource {
    * @param other The other resource to compare to
    * @returns If the two resources are equivalent
    *---------------------------------------------------------------------------**/
-  bool is_equal(host_memory_resource const& other) const noexcept {
-    return do_is_equal(other);
-  }
+  bool is_equal(host_memory_resource const& other) const noexcept { return do_is_equal(other); }
 
  private:
   /**---------------------------------------------------------------------------*
@@ -121,8 +118,8 @@ class host_memory_resource {
    * @param alignment Alignment of the allocation
    * @return void* Pointer to the newly allocated memory
    *---------------------------------------------------------------------------**/
-  virtual void* do_allocate(
-      std::size_t bytes, std::size_t alignment = alignof(std::max_align_t)) = 0;
+  virtual void* do_allocate(std::size_t bytes,
+                            std::size_t alignment = alignof(std::max_align_t)) = 0;
 
   /**---------------------------------------------------------------------------*
    * @brief Deallocate memory pointed to by `p`.
@@ -142,9 +139,9 @@ class host_memory_resource {
    *`p`.
    * @param stream Stream on which to perform deallocation
    *---------------------------------------------------------------------------**/
-  virtual void do_deallocate(
-      void* p, std::size_t bytes,
-      std::size_t alignment = alignof(std::max_align_t)) = 0;
+  virtual void do_deallocate(void* p,
+                             std::size_t bytes,
+                             std::size_t alignment = alignof(std::max_align_t)) = 0;
 
   /**---------------------------------------------------------------------------*
    * @brief Compare this resource to another.
@@ -160,7 +157,8 @@ class host_memory_resource {
    * @return true If the two resources are equivalent
    * @return false If the two resources are not equal
    *---------------------------------------------------------------------------**/
-  virtual bool do_is_equal(host_memory_resource const& other) const noexcept {
+  virtual bool do_is_equal(host_memory_resource const& other) const noexcept
+  {
     return this == &other;
   }
 };

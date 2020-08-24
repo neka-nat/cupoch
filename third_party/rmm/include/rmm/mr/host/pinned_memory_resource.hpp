@@ -15,9 +15,9 @@
  */
 #pragma once
 
-#include "host_memory_resource.hpp"
+#include <rmm/detail/error.hpp>
+#include <rmm/mr/host/host_memory_resource.hpp>
 
-#include <cuda_runtime_api.h>
 #include <cstddef>
 #include <utility>
 
@@ -31,6 +31,14 @@ namespace mr {
  * See https://devblogs.nvidia.com/how-optimize-data-transfers-cuda-cc/
  *---------------------------------------------------------------------------**/
 class pinned_memory_resource final : public host_memory_resource {
+ public:
+  pinned_memory_resource()                               = default;
+  ~pinned_memory_resource()                              = default;
+  pinned_memory_resource(pinned_memory_resource const &) = default;
+  pinned_memory_resource(pinned_memory_resource &&)      = default;
+  pinned_memory_resource &operator=(pinned_memory_resource const &) = default;
+  pinned_memory_resource &operator=(pinned_memory_resource &&) = default;
+
  private:
   /**---------------------------------------------------------------------------*
    * @brief Allocates pinned memory on the host of size at least `bytes` bytes.
@@ -45,24 +53,19 @@ class pinned_memory_resource final : public host_memory_resource {
    * @param alignment Alignment of the allocation
    * @return void* Pointer to the newly allocated memory
    *---------------------------------------------------------------------------**/
-  void *do_allocate(std::size_t bytes, std::size_t alignment =
-                                           alignof(std::max_align_t)) override {
+  void *do_allocate(std::size_t bytes, std::size_t alignment = alignof(std::max_align_t)) override
+  {
     // don't allocate anything if the user requested zero bytes
-    if (0 == bytes) {
-      return nullptr;
-    }
+    if (0 == bytes) { return nullptr; }
 
     // If the requested alignment isn't supported, use default
-    alignment = (detail::is_supported_alignment(alignment))
-                    ? alignment
-                    : detail::RMM_DEFAULT_HOST_ALIGNMENT;
+    alignment =
+      (detail::is_supported_alignment(alignment)) ? alignment : detail::RMM_DEFAULT_HOST_ALIGNMENT;
 
     return detail::aligned_allocate(bytes, alignment, [](std::size_t size) {
       void *p{nullptr};
       auto status = cudaMallocHost(&p, size);
-      if (cudaSuccess != status) {
-        throw std::bad_alloc{};
-      }
+      if (cudaSuccess != status) { throw std::bad_alloc{}; }
       return p;
     });
   }
@@ -85,17 +88,14 @@ class pinned_memory_resource final : public host_memory_resource {
    *`p`.
    * @param stream Stream on which to perform deallocation
    *---------------------------------------------------------------------------**/
-  void do_deallocate(
-      void *p, std::size_t bytes,
-      std::size_t alignment = alignof(std::max_align_t)) override {
+  void do_deallocate(void *p,
+                     std::size_t bytes,
+                     std::size_t alignment = alignof(std::max_align_t)) override
+  {
     (void)alignment;
-    if (nullptr == p) {
-      return;
-    }
-    detail::aligned_deallocate(p, bytes, alignment, [](void *p) {
-      auto status = cudaFreeHost(p);
-      assert(status == cudaSuccess);
-    });
+    if (nullptr == p) { return; }
+    detail::aligned_deallocate(
+      p, bytes, alignment, [](void *p) { RMM_ASSERT_CUDA_SUCCESS(cudaFreeHost(p)); });
   }
 };
 }  // namespace mr

@@ -238,10 +238,7 @@ if (WIN32)
   set(rmm_INCLUDE_DIRS "")
   set(rmm_LIBRARIES "")
 else ()
-  add_library(rmm STATIC rmm/src/rmm.cpp
-              rmm/src/memory_manager.cpp
-              cnmem/src/cnmem.cpp
-              rmm/src/mr/device/default_memory_resource.cpp)
+  add_library(rmm rmm/src/memory_manager.cpp cnmem/src/cnmem.cpp)
   target_include_directories(rmm PRIVATE cnmem/include rmm/include)
   target_link_libraries(rmm ${CUDA_LIBRARIES})
   set(cnmem_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/cnmem/include)

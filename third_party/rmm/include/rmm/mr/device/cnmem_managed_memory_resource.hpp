@@ -19,20 +19,13 @@
 #include "cnmem_memory_resource.hpp"
 #include "device_memory_resource.hpp"
 
-#include <cuda_runtime_api.h>
-#include <cassert>
-#include <exception>
-#include <iostream>
-#include <mutex>
-#include <set>
-#include <vector>
-
 namespace rmm {
 namespace mr {
 /**
  * @brief Memory resource that allocates/deallocates managed device memory
-    (CUDA Unified Memory) using the cnmem pool sub-allocator.
- * the cnmem pool sub-allocator for allocation/deallocation.
+ * (CUDA Unified Memory) using the cnmem pool sub-allocator.
+ *
+ * @note This class is deprecated as of RMM 0.15. Use pool_memory_resource.
  */
 class cnmem_managed_memory_resource final : public cnmem_memory_resource {
  public:
@@ -45,10 +38,17 @@ class cnmem_managed_memory_resource final : public cnmem_memory_resource {
    * @param initial_pool_size Size, in bytes, of the intial pool size. When
    * zero, an implementation defined pool size is used.
    */
-  explicit cnmem_managed_memory_resource(std::size_t initial_pool_size = 0,
-                                         std::vector<int> const& devices = {})
-      : cnmem_memory_resource(initial_pool_size, devices,
-                              memory_kind::MANAGED) {}
+  [[deprecated]] explicit cnmem_managed_memory_resource(std::size_t initial_pool_size   = 0,
+                                                        std::vector<int> const& devices = {})
+    : cnmem_memory_resource(initial_pool_size, devices, memory_kind::MANAGED)
+  {
+  }
+
+  cnmem_managed_memory_resource(cnmem_managed_memory_resource const&) = delete;
+  cnmem_managed_memory_resource(cnmem_managed_memory_resource&&)      = delete;
+  cnmem_managed_memory_resource& operator=(cnmem_managed_memory_resource const&) = delete;
+  cnmem_managed_memory_resource& operator=(cnmem_managed_memory_resource&&) = delete;
+  ~cnmem_managed_memory_resource()                                          = default;
 };
 
 }  // namespace mr

@@ -17,9 +17,10 @@
 #pragma once
 
 #include <cuda_runtime_api.h>
+#include <cassert>
+#include <iostream>
 #include <stdexcept>
 #include <string>
-#include <string.h>
 
 namespace rmm {
 
@@ -31,8 +32,7 @@ namespace rmm {
  *
  */
 struct logic_error : public std::logic_error {
-  logic_error(char const* const message) : std::logic_error(message) {}
-  logic_error(std::string const& message) : logic_error{message.c_str()} {}
+  using std::logic_error::logic_error;
 };
 
 /**
@@ -40,8 +40,7 @@ struct logic_error : public std::logic_error {
  *
  */
 struct cuda_error : public std::runtime_error {
-  cuda_error(const char* message) : std::runtime_error(message) {}
-  cuda_error(std::string const& message) : cuda_error{message.c_str()} {}
+  using std::runtime_error::runtime_error;
 };
 
 /**
@@ -50,9 +49,9 @@ struct cuda_error : public std::runtime_error {
  */
 class bad_alloc : public std::bad_alloc {
  public:
-  bad_alloc(const char* w)
-      : std::bad_alloc{},
-        _what{std::string{std::bad_alloc::what()} + ": " + w} {}
+  bad_alloc(const char* w) : std::bad_alloc{}, _what{std::string{std::bad_alloc::what()} + ": " + w}
+  {
+  }
 
   bad_alloc(std::string const& w) : bad_alloc(w.c_str()) {}
 
@@ -63,17 +62,19 @@ class bad_alloc : public std::bad_alloc {
  private:
   std::string _what;
 };
+
+/**
+ * @brief Exception thrown when attempting to access outside of a defined range
+ *
+ */
+class out_of_range : public std::out_of_range {
+  using std::out_of_range::out_of_range;
+};
+
 }  // namespace rmm
 
 #define STRINGIFY_DETAIL(x) #x
 #define RMM_STRINGIFY(x) STRINGIFY_DETAIL(x)
-#ifdef _WIN32
-#define __FILENAME__ \
-    (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#else
-#define __FILENAME__ \
-    (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
 
 /**
  * @brief Macro for checking (pre-)conditions that throws an exception when
@@ -104,11 +105,9 @@ class bad_alloc : public std::bad_alloc {
 #define GET_RMM_EXPECTS_MACRO(_1, _2, _3, NAME, ...) NAME
 #define RMM_EXPECTS_3(_condition, _exception_type, _what) \
   (!!(_condition))                                        \
-      ? static_cast<void>(0)                              \
-      : throw _exception_type("RMM failure at: " __FILENAME__ \
-                              ":" RMM_STRINGIFY(__LINE__) ": " _what)
-#define RMM_EXPECTS_2(_condition, _reason) \
-  RMM_EXPECTS_3(_condition, rmm::logic_error, _reason)
+    ? static_cast<void>(0)                                \
+    : throw _exception_type("RMM failure at: " __FILE__ ":" RMM_STRINGIFY(__LINE__) ": " _what)
+#define RMM_EXPECTS_2(_condition, _reason) RMM_EXPECTS_3(_condition, rmm::logic_error, _reason)
 
 /**
  * @brief Indicates that an erroneous code path has been taken.
@@ -126,9 +125,8 @@ class bad_alloc : public std::bad_alloc {
   GET_RMM_FAIL_MACRO(__VA_ARGS__, RMM_FAIL_2, RMM_FAIL_1) \
   (__VA_ARGS__)
 #define GET_RMM_FAIL_MACRO(_1, _2, NAME, ...) NAME
-#define RMM_FAIL_2(_what, _exception_type)         \
-  throw _exception_type{"RMM failure at:" __FILENAME__ \
-                        ":" RMM_STRINGIFY(__LINE__) ": " _what};
+#define RMM_FAIL_2(_what, _exception_type) \
+  throw _exception_type{"RMM failure at:" __FILE__ ":" RMM_STRINGIFY(__LINE__) ": " _what};
 #define RMM_FAIL_1(_what) RMM_FAIL_2(_call, rmm::logic_error)
 
 /**
@@ -152,19 +150,60 @@ class bad_alloc : public std::bad_alloc {
  * ```
  *
  */
-#define RMM_CUDA_TRY(...)                                     \
+#define RMM_CUDA_TRY(...)                                             \
   GET_RMM_CUDA_TRY_MACRO(__VA_ARGS__, RMM_CUDA_TRY_2, RMM_CUDA_TRY_1) \
   (__VA_ARGS__)
 #define GET_RMM_CUDA_TRY_MACRO(_1, _2, NAME, ...) NAME
-#define RMM_CUDA_TRY_2(_call, _exception_type)                              \
-  do {                                                                  \
-    cudaError_t const error = (_call);                                  \
-    if (cudaSuccess != error) {                                         \
-      cudaGetLastError();                                               \
-      throw _exception_type{std::string{"CUDA error at: "} + __FILENAME__ + \
-                            RMM_STRINGIFY(__LINE__) + ": " +            \
-                            cudaGetErrorName(error) + " " +             \
-                            cudaGetErrorString(error)};                 \
-    }                                                                   \
+#define RMM_CUDA_TRY_2(_call, _exception_type)                                               \
+  do {                                                                                       \
+    cudaError_t const error = (_call);                                                       \
+    if (cudaSuccess != error) {                                                              \
+      cudaGetLastError();                                                                    \
+      throw _exception_type{std::string{"CUDA error at: "} + __FILE__ + ":" +                \
+                            RMM_STRINGIFY(__LINE__) + ": " + cudaGetErrorName(error) + " " + \
+                            cudaGetErrorString(error)};                                      \
+    }                                                                                        \
   } while (0);
 #define RMM_CUDA_TRY_1(_call) RMM_CUDA_TRY_2(_call, rmm::cuda_error)
+
+/**
+ * @brief Error checking macro similar to `assert` for CUDA runtime API calls
+ *
+ * This utility should be used in situations where extra error checking is desired in "Debug"
+ * builds, or in situations where an error case cannot throw an exception (such as a class
+ * destructor).
+ *
+ * In "Release" builds, simply invokes the `_call`.
+ *
+ * In "Debug" builds, invokes `_call` and uses `assert` to verify the returned `cudaError_t` is
+ * equal to `cudaSuccess`.
+ *
+ *
+ * Replaces usecases such as:
+ * ```
+ * auto status = cudaRuntimeApi(...);
+ * assert(status == cudaSuccess);
+ * ```
+ *
+ * Example:
+ * ```
+ * RMM_ASSERT_CUDA_SUCCESS(cudaRuntimeApi(...));
+ * ```
+ *
+ */
+#ifdef NDEBUG
+#define RMM_ASSERT_CUDA_SUCCESS(_call) \
+  do {                                 \
+    (_call);                           \
+  } while (0);
+#else
+#define RMM_ASSERT_CUDA_SUCCESS(_call)                                          \
+  do {                                                                          \
+    cudaError_t const status__ = (_call);                                       \
+    if (status__ != cudaSuccess) {                                              \
+      std::cerr << "CUDA Error detected. " << cudaGetErrorName(status__) << " " \
+                << cudaGetErrorString(status__) << std::endl;                   \
+    }                                                                           \
+    assert(status__ == cudaSuccess);                                            \
+  } while (0);
+#endif

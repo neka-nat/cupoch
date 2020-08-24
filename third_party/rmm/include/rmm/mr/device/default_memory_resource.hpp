@@ -16,12 +16,16 @@
 
 #pragma once
 
-#include "device_memory_resource.hpp"
+#include <rmm/mr/device/per_device_resource.hpp>
+
 namespace rmm {
 namespace mr {
 
 /**
  * @brief Get the default device memory resource pointer.
+ *
+ * Deprecated as of RMM v0.15. Please use get_current_device_resource() or
+ * get_per_device_resource().
  *
  * The default device memory resource is used when an explicit memory resource
  * is not supplied. The initial default memory resource is a
@@ -32,10 +36,16 @@ namespace mr {
  * @return device_memory_resource* Pointer to the current default memory
  * resource
  */
-device_memory_resource* get_default_resource();
+[[deprecated]] inline device_memory_resource* get_default_resource()
+{
+  return get_current_device_resource();
+}
 
 /**
  * @brief Sets the default device memory resource pointer.
+ *
+ * Deprecated as of RMM v0.15. Please use set_current_device_resource() or
+ * set_per_device_resource().
  *
  * If `new_resource` is not `nullptr`, sets the default device memory resource
  * pointer to `new_resource`. Otherwise, resets the default device memory
@@ -48,24 +58,13 @@ device_memory_resource* get_default_resource();
  *
  * @param new_resource If not nullptr, pointer to memory resource to use as new
  * default device memory resource
- * @return device_memory_resource* The previous value of the default device
- * memory resource pointer
+ * @return The previous value of the default device memory resource pointer
  */
-device_memory_resource* set_default_resource(
-    device_memory_resource* new_resource);
+[[deprecated]] inline device_memory_resource* set_default_resource(
+  device_memory_resource* new_resource)
+{
+  return set_current_device_resource(new_resource);
+}
 
-namespace detail{
-
-/**
- * @brief gets the default memory_resource when none is set
- *
- * A static function which will return a singleton cuda_memory_resource
- *
- * @return device_memory_resource* a pointer to the static
- * cuda_memory_resource
- */
-device_memory_resource* initial_resource();
-
-}  // namespace detail
 }  // namespace mr
 }  // namespace rmm

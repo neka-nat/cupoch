@@ -23,9 +23,11 @@ python/*/build
 python/rmm/**/_lib/**/*.cpp
 python/rmm/**/_lib/**/*.h
 python/rmm/**/_lib/.nfs*
+python/rmm/tests/*.cpp
 python/rmm/*.ipynb
 python/rmm/.ipynb_checkpoints
 python/*/record.txt
+python/record.txt
 .Python
 env/
 develop-eggs/
@@ -43,6 +45,9 @@ wheels/
 *.egg
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Ignore dynamically generated .pxd files
+python/rmm/_cuda/gpu.pxd
 
 # Unit test / coverage reports
 htmlcov/

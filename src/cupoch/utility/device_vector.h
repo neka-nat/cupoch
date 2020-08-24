@@ -21,8 +21,12 @@
 #pragma once
 
 #ifdef USE_RMM
-#include <rmm/rmm_api.h>
+#include <rmm/detail/memory_manager.hpp>
 #include <rmm/thrust_rmm_allocator.h>
+#include <rmm/mr/device/cnmem_memory_resource.hpp>
+#include <rmm/mr/device/cnmem_managed_memory_resource.hpp>
+#include <rmm/mr/device/cuda_memory_resource.hpp>
+#include <rmm/mr/device/managed_memory_resource.hpp>
 #else
 #include <thrust/device_vector.h>
 enum rmmAllocationMode_t {
@@ -75,9 +79,9 @@ inline void InitializeAllocator(
         bool logging = false,
         const std::vector<int> &devices = {}) {
     static bool is_initialized = false;
-    if (is_initialized) rmmFinalize();
+    if (is_initialized) rmm::Manager::getInstance().finalize();
     rmmOptions_t options = {mode, initial_pool_size, logging, devices};
-    rmmInitialize(&options);
+    rmm::Manager::getInstance().initialize(&options);
     is_initialized = true;
 }
 

@@ -30,6 +30,14 @@ namespace mr {
  * `operator delete` to allocate host memory.
  *---------------------------------------------------------------------------**/
 class new_delete_resource final : public host_memory_resource {
+ public:
+  new_delete_resource()                            = default;
+  ~new_delete_resource()                           = default;
+  new_delete_resource(new_delete_resource const &) = default;
+  new_delete_resource(new_delete_resource &&)      = default;
+  new_delete_resource &operator=(new_delete_resource const &) = default;
+  new_delete_resource &operator=(new_delete_resource &&) = default;
+
  private:
   /**---------------------------------------------------------------------------*
    * @brief Allocates memory on the host of size at least `bytes` bytes.
@@ -44,21 +52,19 @@ class new_delete_resource final : public host_memory_resource {
    * @param alignment Alignment of the allocation
    * @return void* Pointer to the newly allocated memory
    *---------------------------------------------------------------------------**/
-  void *do_allocate(
-      std::size_t bytes,
-      std::size_t alignment = detail::RMM_DEFAULT_HOST_ALIGNMENT) override {
+  void *do_allocate(std::size_t bytes,
+                    std::size_t alignment = detail::RMM_DEFAULT_HOST_ALIGNMENT) override
+  {
 #if __cplusplus >= 201703L
     return ::operator new(bytes, std::align_val_t(alignment));
 #else
 
     // If the requested alignment isn't supported, use default
-    alignment = (detail::is_supported_alignment(alignment))
-                    ? alignment
-                    : detail::RMM_DEFAULT_HOST_ALIGNMENT;
+    alignment =
+      (detail::is_supported_alignment(alignment)) ? alignment : detail::RMM_DEFAULT_HOST_ALIGNMENT;
 
-    return detail::aligned_allocate(bytes, alignment, [](std::size_t size) {
-      return ::operator new(size);
-    });
+    return detail::aligned_allocate(
+      bytes, alignment, [](std::size_t size) { return ::operator new(size); });
 #endif
   }
 
@@ -80,14 +86,14 @@ class new_delete_resource final : public host_memory_resource {
    *`p`.
    * @param stream Stream on which to perform deallocation
    *---------------------------------------------------------------------------**/
-  void do_deallocate(
-      void *p, std::size_t bytes,
-      std::size_t alignment = detail::RMM_DEFAULT_HOST_ALIGNMENT) override {
+  void do_deallocate(void *p,
+                     std::size_t bytes,
+                     std::size_t alignment = detail::RMM_DEFAULT_HOST_ALIGNMENT) override
+  {
 #if __cplusplus >= 201703L
     ::operator delete(p, bytes, std::align_val_t(alignment));
 #else
-    detail::aligned_deallocate(p, bytes, alignment,
-                               [](void *p) { ::operator delete(p); });
+    detail::aligned_deallocate(p, bytes, alignment, [](void *p) { ::operator delete(p); });
 #endif
   }
 };

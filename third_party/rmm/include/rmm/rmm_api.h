@@ -87,7 +87,7 @@ struct rmmOptions_t {
  *                    used if it is null.
  * @return rmmError_t RMM_SUCCESS or RMM_ERROR_CUDA_ERROR on any CUDA error.
  * --------------------------------------------------------------------------**/
-rmmError_t rmmInitialize(rmmOptions_t *options);
+[[deprecated]] rmmError_t rmmInitialize(rmmOptions_t *options);
 
 /** ---------------------------------------------------------------------------*
  * @brief Shutdown memory manager.
@@ -99,7 +99,7 @@ rmmError_t rmmInitialize(rmmOptions_t *options);
  * @return rmmError_t RMM_SUCCESS, or RMM_NOT_INITIALIZED if rmmInitialize() has
  *                    not been called, or RMM_ERROR_CUDA_ERROR on any CUDA error.
  * ---------------------------------------------------------------------------**/
-rmmError_t rmmFinalize();
+[[deprecated]] rmmError_t rmmFinalize();
 
 /** --------------------------------------------------------------------------*
  * @brief Query the initialization state of RMM.
@@ -175,6 +175,26 @@ rmmError_t rmmFinalize();
  * --------------------------------------------------------------------------**/
 [[deprecated]] rmmError_t rmmFree(void *ptr, cudaStream_t stream,
                    const char* file, unsigned int line);
+
+/** ---------------------------------------------------------------------------*
+ * @brief Get the offset of ptr from its base allocation.
+ *
+ * This offset is the difference between the address stored in ptr and the
+ * base device memory allocation that it is a sub-allocation of within the pool.
+ * This is useful for, e.g. IPC, where cudaIpcOpenMemHandle() returns a pointer
+ * to the base  * allocation, so the user needs the offset of the sub-allocation
+ * in order to correctly access its data.
+ *
+ * @param[out] offset The difference between ptr and the base allocation that ptr
+ *                    is sub-allocated from.
+ * @param[in] ptr The ptr to find the base allocation of.
+ * @param[in] stream The stream originally passed to rmmAlloc or rmmRealloc for
+ *                   ptr.
+ * @return rmmError_t RMM_SUCCESS if all goes well
+ * --------------------------------------------------------------------------**/
+rmmError_t rmmGetAllocationOffset(ptrdiff_t *offset,
+                                  void *ptr,
+                                  cudaStream_t stream);
 
 /** ---------------------------------------------------------------------------*
  * @brief Get amounts of free and total memory managed by a manager associated

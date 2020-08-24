@@ -20,9 +20,10 @@
 #include <rmm/detail/error.hpp>
 
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/ostream_sink.h>
 #include <spdlog/spdlog.h>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
 namespace rmm {
 namespace mr {
@@ -30,7 +31,7 @@ namespace mr {
  * @brief Resource that uses `Upstream` to allocate memory and logs information
  * about the requested allocation/deallocations.
  *
- * An instance of this resource can be constructured with an existing, upstream
+ * An instance of this resource can be constructed with an existing, upstream
  * resource in order to satisfy allocation requests and log
  * allocation/deallocation activity.
  *
@@ -58,21 +59,52 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param upstream The resource used for allocating/deallocating device memory
    * @param filename Name of file to write log info. If not specified, retrieves
    * the file name from the environment variable "RMM_LOG_FILE".
+   * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
+   * performance.
    */
-  logging_resource_adaptor(Upstream* upstream, std::string const& filename =
-                                                   std::getenv("RMM_LOG_FILE"))
-      : upstream_{upstream},
-        logger_{std::make_shared<spdlog::logger>(
-            "RMM", std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-                       filename, true /*truncate file*/))} {
-    RMM_EXPECTS(nullptr != upstream,
-                "Unexpected null upstream resource pointer.");
+  logging_resource_adaptor(Upstream* upstream,
+                           std::string const& filename = get_default_filename(),
+                           bool auto_flush             = false)
+    : upstream_{upstream},
+      logger_{std::make_shared<spdlog::logger>(
+        "RMM",
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, true /*truncate file*/))}
+  {
+    RMM_EXPECTS(nullptr != upstream, "Unexpected null upstream resource pointer.");
 
-    auto const csv_header{"Time,Action,Pointer,Size,Stream"};
-    logger_->set_pattern("%v");
-    logger_->info(csv_header);
-    logger_->set_pattern("%H:%M:%S:%f,%v");
+    init_logger(auto_flush);
   }
+
+  /**
+   * @brief Construct a new logging resource adaptor using `upstream` to satisfy
+   * allocation requests and logging information about each allocation/free to
+   * the ostream specified by `stream`.
+   *
+   * The logfile will be written using CSV formatting.
+   *
+   * @throws `rmm::logic_error` if `upstream == nullptr`
+   *
+   * @param upstream The resource used for allocating/deallocating device memory
+   * @param stream The ostream to write log info.
+   * @param auto_flush If true, flushes the log for every (de)allocation. Warning, this will degrade
+   * performance.
+   */
+  logging_resource_adaptor(Upstream* upstream, std::ostream& stream, bool auto_flush = false)
+    : upstream_{upstream},
+      logger_{std::make_shared<spdlog::logger>(
+        "RMM", std::make_shared<spdlog::sinks::ostream_sink_mt>(stream))}
+  {
+    RMM_EXPECTS(nullptr != upstream, "Unexpected null upstream resource pointer.");
+
+    init_logger(auto_flush);
+  }
+
+  logging_resource_adaptor()                                = delete;
+  ~logging_resource_adaptor()                               = default;
+  logging_resource_adaptor(logging_resource_adaptor const&) = delete;
+  logging_resource_adaptor(logging_resource_adaptor&&)      = default;
+  logging_resource_adaptor& operator=(logging_resource_adaptor const&) = delete;
+  logging_resource_adaptor& operator=(logging_resource_adaptor&&) = default;
 
   /**
    * @brief Return pointer to the upstream resource.
@@ -87,18 +119,58 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @return true The upstream resource supports streams
    * @return false The upstream resource does not support streams.
    */
-  bool supports_streams() const noexcept override {
-    return upstream_->supports_streams();
-  }
+  bool supports_streams() const noexcept override { return upstream_->supports_streams(); }
 
   /**
    * @brief Query whether the resource supports the get_mem_info API.
-   * 
+   *
    * @return bool true if the upstream resource supports get_mem_info, false otherwise.
    */
   bool supports_get_mem_info() const noexcept override { return upstream_->supports_streams(); }
 
+  /**
+   * @brief Flush logger contents.
+   */
+  void flush() { logger_->flush(); }
+
+  /**
+   * @brief Return the CSV header string
+   *
+   * @return CSV formatted header string of column names
+   */
+  std::string header() const { return std::string{"Thread,Time,Action,Pointer,Size,Stream"}; }
+
  private:
+  // make_logging_adaptor needs access to private get_default_filename
+  template <typename T>
+  friend logging_resource_adaptor<T> make_logging_adaptor(T* upstream, std::string const& filename);
+
+  /**
+   * @brief Return the value of the environment variable RMM_LOG_FILE.
+   *
+   * @throws `rmm::logic_error` if `RMM_LOG_FILE` is not set.
+   *
+   * @return The value of RMM_LOG_FILE as `std::string`.
+   */
+  static std::string get_default_filename()
+  {
+    auto filename = std::getenv("RMM_LOG_FILE");
+    RMM_EXPECTS(filename != nullptr,
+                "RMM logging requested without an explicit file name, but RMM_LOG_FILE is unset");
+    return std::string{filename};
+  }
+
+  /**
+   * @brief Initialize the logger.
+   */
+  void init_logger(bool auto_flush)
+  {
+    if (auto_flush) { logger_->flush_on(spdlog::level::info); }
+    logger_->set_pattern("%v");
+    logger_->info(header());
+    logger_->set_pattern("%t,%H:%M:%S:%f,%v");
+  }
+
   /**
    * @brief Allocates memory of size at least `bytes` using the upstream
    * resource and logs the allocation.
@@ -106,7 +178,7 @@ class logging_resource_adaptor final : public device_memory_resource {
    * If the upstream allocation is successful logs the
    * following CSV formatted line to the file specified at construction:
    * ```
-   * *TIMESTAMP*,"allocate",*bytes*,*stream*
+   * thread_id,*TIMESTAMP*,"allocate",*bytes*,*stream*
    * ```
    *
    * The returned pointer has at least 256B alignment.
@@ -118,7 +190,8 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param stream Stream on which to perform the allocation
    * @return void* Pointer to the newly allocated memory
    */
-  void* do_allocate(std::size_t bytes, cudaStream_t stream) override {
+  void* do_allocate(std::size_t bytes, cudaStream_t stream) override
+  {
     auto const p = upstream_->allocate(bytes, stream);
     std::string msg{"allocate,"};
     std::stringstream ss;
@@ -139,7 +212,7 @@ class logging_resource_adaptor final : public device_memory_resource {
    * Every invocation of `logging_resource_adaptor::do_deallocate` will write
    * the following CSV formatted line to the file specified at construction:
    * ```
-   * *TIMESTAMP*,"free",*bytes*,*stream*
+   * thread_id,*TIMESTAMP*,"free",*bytes*,*stream*
    * ```
    *
    * @throws Nothing.
@@ -148,7 +221,8 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param bytes Size of the allocation
    * @param stream Stream on which to perform the deallocation
    */
-  void do_deallocate(void* p, std::size_t bytes, cudaStream_t stream) override {
+  void do_deallocate(void* p, std::size_t bytes, cudaStream_t stream) override
+  {
     std::string msg{"free,"};
     std::stringstream ss;
     ss << p;
@@ -170,12 +244,13 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @return true If the two resources are equivalent
    * @return false If the two resources are not equal
    */
-  bool do_is_equal(device_memory_resource const &other) const noexcept override {
+  bool do_is_equal(device_memory_resource const& other) const noexcept override
+  {
     if (this == &other)
       return true;
     else {
-      logging_resource_adaptor<Upstream> const *cast =
-          dynamic_cast<logging_resource_adaptor<Upstream> const *>(&other);
+      logging_resource_adaptor<Upstream> const* cast =
+        dynamic_cast<logging_resource_adaptor<Upstream> const*>(&other);
       if (cast != nullptr)
         return upstream_->is_equal(*cast->get_upstream());
       else
@@ -191,7 +266,8 @@ class logging_resource_adaptor final : public device_memory_resource {
    * @param stream Stream on which to get the mem info.
    * @return std::pair contaiing free_size and total_size of memory
    */
-  std::pair<size_t, size_t> do_get_mem_info(cudaStream_t stream) const override {
+  std::pair<size_t, size_t> do_get_mem_info(cudaStream_t stream) const override
+  {
     return upstream_->get_mem_info(stream);
   }
 
@@ -212,9 +288,24 @@ class logging_resource_adaptor final : public device_memory_resource {
  */
 template <typename Upstream>
 logging_resource_adaptor<Upstream> make_logging_adaptor(
-    Upstream* upstream,
-    std::string const& filename = std::getenv("RMM_LOG_FILE")) {
+  Upstream* upstream,
+  std::string const& filename = logging_resource_adaptor<Upstream>::get_default_filename())
+{
   return logging_resource_adaptor<Upstream>{upstream, filename};
+}
+
+/**
+ * @brief Convenience factory to return a `logging_resource_adaptor` around the
+ * upstream resource `upstream`.
+ *
+ * @tparam Upstream Type of the upstream `device_memory_resource`.
+ * @param upstream Pointer to the upstream resource
+ * @param stream The ostream to write log info.
+ */
+template <typename Upstream>
+logging_resource_adaptor<Upstream> make_logging_adaptor(Upstream* upstream, std::ostream& stream)
+{
+  return logging_resource_adaptor<Upstream>{upstream, stream};
 }
 
 }  // namespace mr
