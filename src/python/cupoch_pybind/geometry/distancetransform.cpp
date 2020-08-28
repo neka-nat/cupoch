@@ -79,6 +79,7 @@ void pybind_distancetransform(py::module &m) {
                          &geometry::DistanceTransform::ComputeEDT),
                  "Function to compute EDT from voxel grid.")
             .def("get_distance", &geometry::DistanceTransform::GetDistance)
+            .def("get_distances", &geometry::DistanceTransform::GetDistances)
             .def_readwrite("voxel_size", &geometry::DistanceTransform::voxel_size_)
             .def_readwrite("resolution", &geometry::DistanceTransform::resolution_)
             .def_readwrite("origin", &geometry::DistanceTransform::origin_);

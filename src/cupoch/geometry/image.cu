@@ -118,26 +118,22 @@ struct transpose_functor {
 };
 
 struct clip_intensity_functor {
-    clip_intensity_functor(uint8_t *fimage, float min, float max)
-        : fimage_(fimage), min_(min), max_(max){};
-    uint8_t *fimage_;
+    clip_intensity_functor(float min, float max)
+        : min_(min), max_(max) {};
     const float min_;
     const float max_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        *p = max(min(max_, *p), min_);
+    __device__ void operator()(float& f) {
+        f = max(min(max_, f), min_);
     }
 };
 
 struct linear_transform_functor {
-    linear_transform_functor(uint8_t *fimage, float scale, float offset)
-        : fimage_(fimage), scale_(scale), offset_(offset){};
-    uint8_t *fimage_;
+    linear_transform_functor(float scale, float offset)
+        : scale_(scale), offset_(offset){};
     const float scale_;
     const float offset_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        (*p) = (float)(scale_ * (*p) + offset_);
+    __device__ void operator() (float& f) {
+        f = scale_ * f + offset_;
     }
 };
 
@@ -248,17 +244,14 @@ struct horizontal_flip_functor {
 };
 
 struct depth_to_float_functor {
-    depth_to_float_functor(int depth_scale, int depth_trunc, uint8_t *fimage)
+    depth_to_float_functor(int depth_scale, int depth_trunc)
         : depth_scale_(depth_scale),
-          depth_trunc_(depth_trunc),
-          fimage_(fimage){};
+          depth_trunc_(depth_trunc) {};
     const int depth_scale_;
     const int depth_trunc_;
-    uint8_t *fimage_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        *p /= (float)depth_scale_;
-        if (*p >= depth_trunc_) *p = 0.0f;
+    __device__ void operator()(float& f) {
+        f /= (float)depth_scale_;
+        if (f >= depth_trunc_) f = 0.0f;
     }
 };
 
@@ -339,10 +332,9 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
     // don't need warning message about image type
     // as we call CreateFloatImage
     auto output = CreateFloatImage();
-    depth_to_float_functor func(depth_scale, depth_trunc,
-                                thrust::raw_pointer_cast(output->data_.data()));
-    for_each(thrust::make_counting_iterator<size_t>(0),
-             thrust::make_counting_iterator<size_t>(width_ * height_), func);
+    depth_to_float_functor func(depth_scale, depth_trunc);
+    float* pt = (float*)thrust::raw_pointer_cast(output->data_.data());
+    for_each(thrust::device, pt, pt + (width_ * height_), func);
     return output;
 }
 
@@ -350,10 +342,9 @@ Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[ClipIntensity] Unsupported image format.");
     }
-    clip_intensity_functor func(thrust::raw_pointer_cast(data_.data()), min,
-                                max);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(width_ * height_),
+    clip_intensity_functor func(min, max);
+    float* pt = (float*)thrust::raw_pointer_cast(data_.data());
+    thrust::for_each(thrust::device, pt, pt + (width_ * height_),
                      func);
     return *this;
 }
@@ -362,10 +353,9 @@ Image &Image::LinearTransform(float scale, float offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[LinearTransform] Unsupported image format.");
     }
-    linear_transform_functor func(thrust::raw_pointer_cast(data_.data()), scale,
-                                  offset);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(width_ * height_),
+    linear_transform_functor func(scale, offset);
+    float* pt = (float*)thrust::raw_pointer_cast(data_.data());
+    thrust::for_each(thrust::device, pt, pt + (width_ * height_),
                      func);
     return *this;
 }

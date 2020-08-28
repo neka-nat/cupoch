@@ -47,12 +47,30 @@ public:
             const utility::device_vector<Type>& other);
     device_vector_wrapper<Type>& operator+=(
             const thrust::host_vector<Type>& other);
+    device_vector_wrapper<Type>& operator-=(
+            const utility::device_vector<Type>& other);
+    device_vector_wrapper<Type>& operator-=(
+            const thrust::host_vector<Type>& other);
     size_t size() const;
     bool empty() const;
     void push_back(const Type& x);
     thrust::host_vector<Type> cpu() const;
     utility::device_vector<Type> data_;
 };
+
+template <typename Type>
+device_vector_wrapper<Type> operator+ (const device_vector_wrapper<Type>& lhs, const device_vector_wrapper<Type>& rhs) {
+    device_vector_wrapper<Type> ans = lhs;
+    ans += rhs;
+    return ans;
+}
+
+template <typename Type>
+device_vector_wrapper<Type> operator- (const device_vector_wrapper<Type>& lhs, const device_vector_wrapper<Type>& rhs) {
+    device_vector_wrapper<Type> ans = lhs;
+    ans -= rhs;
+    return ans;
+}
 
 using device_vector_vector3f = device_vector_wrapper<Eigen::Vector3f>;
 using device_vector_vector2f = device_vector_wrapper<Eigen::Vector2f>;

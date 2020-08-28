@@ -19,6 +19,7 @@
  * IN THE SOFTWARE.
 **/
 #include <thrust/gather.h>
+#include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/boundingvolume.h"
@@ -54,41 +55,52 @@ struct check_nan_functor {
 
 struct gaussian_filter_functor {
     gaussian_filter_functor(const Eigen::Vector3f *points,
+                            const Eigen::Vector3f *normals,
+                            const Eigen::Vector3f *colors,
                             const int *indices,
                             const float *dists,
                             float sigma2,
-                            int num_max_search_points)
+                            int num_max_search_points,
+                            bool has_normal,
+                            bool has_color)
         : points_(points),
+          normals_(normals),
+          colors_(colors),
           indices_(indices),
           dists_(dists),
           sigma2_(sigma2),
-          num_max_search_points_(num_max_search_points){};
+          num_max_search_points_(num_max_search_points),
+          has_normal_(has_normal),
+          has_color_(has_color) {};
     const Eigen::Vector3f *points_;
+    const Eigen::Vector3f *normals_;
+    const Eigen::Vector3f *colors_;
     const int *indices_;
     const float *dists_;
     const float sigma2_;
     const int num_max_search_points_;
-    __device__ Eigen::Vector3f operator()(size_t idx) {
+    const bool has_normal_;
+    const bool has_color_;
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> operator()(size_t idx) const {
         float total_weight = 0.0;
-        Eigen::Vector3f res = Eigen::Vector3f::Zero();
+        Eigen::Vector3f res_p = Eigen::Vector3f::Zero();
+        Eigen::Vector3f res_n = Eigen::Vector3f::Zero();
+        Eigen::Vector3f res_c = Eigen::Vector3f::Zero();
         for (int i = 0; i < num_max_search_points_; ++i) {
-            if (indices_[idx * num_max_search_points_ + i] >= 0) {
-                float weight =
-                        exp(-0.5 * dists_[idx * num_max_search_points_ + i] /
-                            sigma2_);
-                res += weight *
-                       points_[indices_[idx * num_max_search_points_ + i]];
+            const int j = idx * num_max_search_points_ + i;
+            const int idx_j = indices_[j];
+            if (idx_j >= 0) {
+                float weight = exp(-0.5 * dists_[j] / sigma2_);
+                res_p += weight * points_[idx_j];
+                if (has_normal_) res_n += weight * normals_[idx_j];
+                if (has_color_) res_c += weight * colors_[idx_j];
                 total_weight += weight;
             }
         }
-        if (total_weight != 0) {
-            res /= total_weight;
-            return res;
-        } else {
-            return Eigen::Vector3f(std::numeric_limits<float>::quiet_NaN(),
-                                   std::numeric_limits<float>::quiet_NaN(),
-                                   std::numeric_limits<float>::quiet_NaN());
-        }
+        res_p /= total_weight;
+        res_n /= total_weight;
+        res_c /= total_weight;
+        return thrust::make_tuple(res_p, res_n, res_c);
     }
 };
 
@@ -305,26 +317,38 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
                 "must be positive.");
         return out;
     }
+    bool has_normal = HasNormals();
+    bool has_color = HasColors();
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     utility::device_vector<int> indices;
     utility::device_vector<float> dist;
     kdtree.SearchRadius(points_, search_radius, num_max_search_points, indices,
                         dist);
-    out->points_.resize(points_.size());
+    size_t n_pt = points_.size();
+    out->points_.resize(n_pt);
+    if (has_normal) out->normals_.resize(n_pt);
+    if (has_color) out->colors_.resize(n_pt);
     gaussian_filter_functor func(thrust::raw_pointer_cast(points_.data()),
+                                 thrust::raw_pointer_cast(normals_.data()),
+                                 thrust::raw_pointer_cast(colors_.data()),
                                  thrust::raw_pointer_cast(indices.data()),
                                  thrust::raw_pointer_cast(dist.data()), sigma2,
-                                 num_max_search_points);
-    auto end = thrust::copy_if(
-            thrust::make_transform_iterator(
-                    thrust::make_counting_iterator<size_t>(0), func),
-            thrust::make_transform_iterator(
-                    thrust::make_counting_iterator(points_.size()), func),
-            out->points_.begin(), [] __device__(const Eigen::Vector3f &p) {
-                return !isnan(p[0]) && !isnan(p[1]) && !isnan(p[2]);
-            });
-    out->points_.resize(thrust::distance(out->points_.begin(), end));
+                                 num_max_search_points,
+                                 has_normal, has_color);
+    if (has_normal && has_color) {
+        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
+                          make_tuple_begin(out->points_, out->normals_, out->colors_), func);
+    } else if (has_normal) {
+        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
+                          make_tuple_iterator(out->points_.begin(), out->normals_.begin(), thrust::make_discard_iterator()), func);
+    } else if (has_color) {
+        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
+                          make_tuple_iterator(out->points_.begin(), thrust::make_discard_iterator(), out->colors_.begin()), func);
+    } else {
+        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
+                          make_tuple_iterator(out->points_.begin(), thrust::make_discard_iterator(), thrust::make_discard_iterator()), func);
+    }
     return out;
 }
 

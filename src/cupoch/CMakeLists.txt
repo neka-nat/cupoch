@@ -12,14 +12,25 @@ add_subdirectory(registration)
 add_subdirectory(utility)
 add_subdirectory(visualization)
 
-# Install headers
-install(DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}"
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
-        PATTERN     "Visualization/Shader/GLSL" EXCLUDE
-        PATTERN     "*.cpp" EXCLUDE
-        PATTERN     "*.cu" EXCLUDE
-        PATTERN     "*.in" EXCLUDE
-        PATTERN     "*.txt" EXCLUDE)
+# Installation
+install(TARGETS ${PROJECT_NAME}_camera
+                ${PROJECT_NAME}_collision
+                ${PROJECT_NAME}_geometry
+                ${PROJECT_NAME}_integration
+                ${PROJECT_NAME}_io
+                ${PROJECT_NAME}_odometry
+                ${PROJECT_NAME}_planning
+                ${PROJECT_NAME}_registration
+                ${PROJECT_NAME}_utility
+                ${PROJECT_NAME}_visualization
+        EXPORT ${PROJECT_NAME}Targets
+        RUNTIME DESTINATION ${CUPOCH_INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+)
 
-file(GLOB HEADERS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-install(FILES ${HEADERS_ROOT} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${CMAKE_PROJECT_NAME})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DESTINATION ${CUPOCH_INSTALL_INCLUDE_DIR}
+    FILES_MATCHING
+        PATTERN "*.h"
+)
