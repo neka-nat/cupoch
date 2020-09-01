@@ -147,7 +147,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
                             &v) {
                 return repr_name + std::string(" with ") +
                        std::to_string(v.size()) + std::string(" elements.\n") +
-                       std::string("Use numpy.asarray() to copy data to host.");
+                       std::string("Use cpu() method to copy data to host.");
             });
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<EigenVector>::cpu);
     vec.def(
