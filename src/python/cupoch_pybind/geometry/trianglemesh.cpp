@@ -284,27 +284,27 @@ void pybind_trianglemesh(py::module &m) {
                            "cupoch.geometry.Image: The texture image.")
             .def("to_vertices_dlpack",
                  [](geometry::TriangleMesh &mesh) {
-                     return dlpack::ToDLpackCapsule(mesh.vertices_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(mesh.vertices_);
                  })
             .def("to_vertex_normals_dlpack",
                  [](geometry::TriangleMesh &mesh) {
-                     return dlpack::ToDLpackCapsule(mesh.vertex_normals_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(mesh.vertex_normals_);
                  })
             .def("to_vertex_colors_dlpack",
                  [](geometry::TriangleMesh &mesh) {
-                     return dlpack::ToDLpackCapsule(mesh.vertex_colors_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(mesh.vertex_colors_);
                  })
             .def("from_vertices_dlpack",
                  [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, mesh.vertices_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, mesh.vertices_);
                  })
             .def("from_vertex_normals_dlpack",
                  [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, mesh.vertex_normals_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, mesh.vertex_normals_);
                  })
             .def("from_vertex_colors_dlpack",
                  [](geometry::TriangleMesh &mesh, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, mesh.vertex_colors_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, mesh.vertex_colors_);
                  });
     docstring::ClassMethodDocInject(m, "TriangleMesh", "compute_edge_list");
     docstring::ClassMethodDocInject(m, "TriangleMesh",

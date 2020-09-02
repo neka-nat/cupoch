@@ -21,6 +21,7 @@
 #include "cupoch/geometry/graph.h"
 
 #include "cupoch_pybind/docstring.h"
+#include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 
@@ -112,5 +113,13 @@ void pybind_graph(py::module &m) {
                     [](geometry::Graph<3> &graph,
                        const wrapper::device_vector_float &vec) {
                         wrapper::FromWrapper(graph.edge_weights_, vec);
-                    });
+                    })
+            .def("to_edges_dlpack",
+                 [](geometry::Graph<3> &graph) {
+                     return dlpack::ToDLpackCapsule<Eigen::Vector2i>(graph.lines_);
+                 })
+            .def("from_edges_dlpack",
+                 [](geometry::Graph<3> &graph, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule<Eigen::Vector2i>(dlpack, graph.lines_);
+                 });
 }

@@ -24,11 +24,12 @@
 
 #include "cupoch/utility/dl_converter.h"
 
-using namespace cupoch;
-using namespace cupoch::dlpack;
+namespace cupoch {
+namespace dlpack {
 
-py::capsule cupoch::dlpack::ToDLpackCapsule(
-        utility::device_vector<Eigen::Vector3f> &src) {
+template <typename T>
+py::capsule ToDLpackCapsule(
+        utility::device_vector<T> &src) {
     void const *managed_tensor = utility::ToDLPack(src);
 
     return py::capsule(managed_tensor, "dltensor", [](::PyObject *obj) {
@@ -42,10 +43,14 @@ py::capsule cupoch::dlpack::ToDLpackCapsule(
     });
 }
 
-void cupoch::dlpack::FromDLpackCapsule(
-        py::capsule dlpack, utility::device_vector<Eigen::Vector3f> &dst) {
+template <typename T>
+void FromDLpackCapsule(
+        py::capsule dlpack, utility::device_vector<T> &dst) {
     auto obj = py::cast<py::object>(dlpack);
     ::DLManagedTensor *managed_tensor =
             (::DLManagedTensor *)::PyCapsule_GetPointer(obj.ptr(), "dltensor");
-    utility::FromDLPack<float, 3>(managed_tensor, dst);
+    utility::FromDLPack<typename T::Scalar, T::SizeAtCompileTime>(managed_tensor, dst);
+}
+
+}
 }

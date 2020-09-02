@@ -30,10 +30,14 @@ namespace py = pybind11;
 namespace cupoch {
 namespace dlpack {
 
-py::capsule ToDLpackCapsule(utility::device_vector<Eigen::Vector3f>& src);
+template <typename T>
+py::capsule ToDLpackCapsule(utility::device_vector<T>& src);
 
+template <typename T>
 void FromDLpackCapsule(py::capsule dlpack,
-                       utility::device_vector<Eigen::Vector3f>& dst);
+                       utility::device_vector<T>& dst);
 
 }  // namespace dlpack
 }  // namespace cupoch
+
+#include "cupoch_pybind/dl_converter.inl"

@@ -262,9 +262,9 @@ struct sample_points_functor {
              point_idx < n_points_scan_[i + 1]; point_idx += j + 1) {
             float r1 = dist(rng);
             float r2 = dist(rng);
-            float a = (1 - sqrt(r1));
-            float b = sqrt(r1) * (1 - r2);
-            float c = sqrt(r1) * r2;
+            float a = (1 - sqrtf(r1));
+            float b = sqrtf(r1) * (1 - r2);
+            float c = sqrtf(r1) * r2;
 
             points_[point_idx] = a * v1 + b * v2 + c * v3;
             if (has_vert_normal_ && !use_triangle_normal_) {

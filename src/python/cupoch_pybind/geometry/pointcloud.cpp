@@ -81,27 +81,27 @@ void pybind_pointcloud(py::module &m) {
                     })
             .def("to_points_dlpack",
                  [](geometry::PointCloud &pcd) {
-                     return dlpack::ToDLpackCapsule(pcd.points_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(pcd.points_);
                  })
             .def("to_normals_dlpack",
                  [](geometry::PointCloud &pcd) {
-                     return dlpack::ToDLpackCapsule(pcd.normals_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(pcd.normals_);
                  })
             .def("to_colors_dlpack",
                  [](geometry::PointCloud &pcd) {
-                     return dlpack::ToDLpackCapsule(pcd.colors_);
+                     return dlpack::ToDLpackCapsule<Eigen::Vector3f>(pcd.colors_);
                  })
             .def("from_points_dlpack",
                  [](geometry::PointCloud &pcd, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, pcd.points_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, pcd.points_);
                  })
             .def("from_normals_dlpack",
                  [](geometry::PointCloud &pcd, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, pcd.normals_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, pcd.normals_);
                  })
             .def("from_colors_dlpack",
                  [](geometry::PointCloud &pcd, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule(dlpack, pcd.colors_);
+                     dlpack::FromDLpackCapsule<Eigen::Vector3f>(dlpack, pcd.colors_);
                  })
             .def(py::self + py::self)
             .def(py::self += py::self)

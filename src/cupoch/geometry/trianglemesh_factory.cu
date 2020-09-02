@@ -40,8 +40,9 @@ struct compute_sphere_vertices_functor {
 
         float alpha = step_ * i;
         float theta = step_ * j;
-        return Eigen::Vector3f(sin(alpha) * cos(theta), sin(alpha) * sin(theta),
-                               cos(alpha)) *
+        const float sa = sinf(alpha);
+        return Eigen::Vector3f(sa * cosf(theta), sa * sinf(theta),
+                               cosf(alpha)) *
                radius_;
     }
 };
@@ -115,7 +116,7 @@ struct compute_cylinder_vertices_functor {
         int i = idx / resolution_;
         int j = idx % resolution_;
         float theta = step_ * j;
-        return Eigen::Vector3f(cos(theta) * radius_, sin(theta) * radius_,
+        return Eigen::Vector3f(cosf(theta) * radius_, sinf(theta) * radius_,
                                height_ * 0.5 - h_step_ * i);
     }
 };
@@ -177,7 +178,7 @@ struct compute_cone_vertices_functor {
         int j = idx % resolution_;
         float r = r_step_ * (split_ - i);
         float theta = step_ * j;
-        return Eigen::Vector3f(cos(theta) * r, sin(theta) * r, h_step_ * i);
+        return Eigen::Vector3f(cosf(theta) * r, sinf(theta) * r, h_step_ * i);
     }
 };
 

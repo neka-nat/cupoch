@@ -22,6 +22,7 @@
 
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/docstring.h"
+#include "cupoch_pybind/dl_converter.h"
 #include "cupoch_pybind/geometry/geometry.h"
 #include "cupoch_pybind/geometry/geometry_trampoline.h"
 
@@ -112,7 +113,15 @@ void pybind_lineset(py::module &m) {
                     [](geometry::LineSet<3> &line,
                        const wrapper::device_vector_vector3f &vec) {
                         wrapper::FromWrapper(line.colors_, vec);
-                    });
+                    })
+            .def("to_lines_dlpack",
+                 [](geometry::LineSet<3> &line) {
+                     return dlpack::ToDLpackCapsule<Eigen::Vector2i>(line.lines_);
+                 })
+            .def("from_lines_dlpack",
+                 [](geometry::LineSet<3> &line, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule<Eigen::Vector2i>(dlpack, line.lines_);
+                 });
     docstring::ClassMethodDocInject(m, "LineSet", "has_colors");
     docstring::ClassMethodDocInject(m, "LineSet", "has_lines");
     docstring::ClassMethodDocInject(m, "LineSet", "has_points");
