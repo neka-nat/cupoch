@@ -20,7 +20,6 @@
 **/
 #include <thrust/iterator/discard_iterator.h>
 
-#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/integration/marching_cubes_const.h"
 #include "cupoch/integration/uniform_tsdfvolume.h"
 #include "cupoch/integration/integrate_functor.h"

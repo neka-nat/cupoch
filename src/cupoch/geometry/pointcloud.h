@@ -37,6 +37,7 @@ namespace geometry {
 class Image;
 class RGBDImage;
 class LaserScanBuffer;
+class OccupancyGrid;
 class OrientedBoundingBox;
 
 class PointCloud : public GeometryBase<3> {
@@ -219,6 +220,9 @@ public:
             const LaserScanBuffer &scan,
             float min_range,
             float max_range);
+
+    static std::shared_ptr<PointCloud> CreateFromOccupancyGrid(
+            const OccupancyGrid &occgrid);
 
 public:
     utility::device_vector<Eigen::Vector3f> points_;

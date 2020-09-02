@@ -270,7 +270,11 @@ void pybind_pointcloud(py::module &m) {
                     "create_from_laserscanbuffer",
                     &geometry::PointCloud::CreateFromLaserScanBuffer,
                     "Factory function to create a pointcloud from an laser scan and a LiDAR.",
-                    "scan"_a, "min_range"_a, "max_range"_a);
+                    "scan"_a, "min_range"_a, "max_range"_a)
+            .def_static(
+                    "create_from_occupancygrid",
+                    &geometry::PointCloud::CreateFromOccupancyGrid,
+                    "Factory function to create a pointcloud from Occupancy Grid.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");

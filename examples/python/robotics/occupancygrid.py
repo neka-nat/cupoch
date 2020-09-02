@@ -17,3 +17,6 @@ print(ocg)
 cph.visualization.draw_geometries([ocg])
 ocg.visualize_free_area = False
 cph.visualization.draw_geometries([ocg])
+
+pcd = cph.geometry.PointCloud.create_from_occupancygrid(ocg)
+cph.visualization.draw_geometries([pcd])
