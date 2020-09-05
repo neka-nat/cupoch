@@ -74,6 +74,10 @@ public:
             const Eigen::Matrix4f &extrinsic,
             const geometry::Image &depth_to_camera_distance_multiplier);
 
+    std::shared_ptr<geometry::PointCloud> Raycast(const camera::PinholeCameraIntrinsic &intrinsic,
+                                                  const Eigen::Matrix4f &extrinsic,
+                                                  float sdf_trunc) const;
+
 public:
     utility::device_vector<geometry::TSDFVoxel> voxels_;
     Eigen::Vector3f origin_;

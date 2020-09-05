@@ -43,3 +43,7 @@ if __name__ == "__main__":
     print("Extract point cloud")
     pcd = volume.extract_point_cloud()
     cph.visualization.draw_geometries([pcd])
+
+    print("Raycasting")
+    pcd = volume.raycast(camera_intrinsics, np.linalg.inv(camera_poses[0].pose), 0.04)
+    cph.visualization.draw_geometries([pcd])
