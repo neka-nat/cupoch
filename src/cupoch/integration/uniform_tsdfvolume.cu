@@ -24,6 +24,7 @@
 #include "cupoch/integration/uniform_tsdfvolume.h"
 #include "cupoch/integration/integrate_functor.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/eigen.h"
 
 namespace cupoch {
 namespace integration {
@@ -219,15 +220,16 @@ struct extract_mesh_phase1_functor {
         const Eigen::Vector3i &key = keys_[j];
         Eigen::Vector3i idxs =
                 key + Eigen::Vector3i(shift[i][0], shift[i][1], shift[i][2]);
+        const geometry::TSDFVoxel v = voxels_[IndexOf(idxs, resolution_)];
         Eigen::Vector3f c = Eigen::Vector3f::Zero();
-        if (voxels_[IndexOf(idxs, resolution_)].weight_ == 0.0f) {
+        if (v.weight_ == 0.0f) {
             return thrust::make_tuple(0.0f, c);
         } else {
-            float f = voxels_[IndexOf(idxs, resolution_)].tsdf_;
+            float f = v.tsdf_;
             if (color_type_ == TSDFVolumeColorType::RGB8) {
-                c = voxels_[IndexOf(idxs, resolution_)].color_ / 255.0;
+                c = v.color_ / 255.0;
             } else if (color_type_ == TSDFVolumeColorType::Gray32) {
-                c = voxels_[IndexOf(idxs, resolution_)].color_;
+                c = v.color_;
             }
             return thrust::make_tuple(f, c);
         }
@@ -394,30 +396,33 @@ struct raycast_tsdf_functor {
                          int width,
                          float fx, float fy,
                          float cx, float cy,
-                         const Eigen::Matrix4f& extrinsic,
+                         const Eigen::Matrix4f& campose,
                          float voxel_length,
                          int resolution,
                          const Eigen::Vector3f& origin,
-                         float sdf_trunc)
+                         float sdf_trunc,
+                         TSDFVolumeColorType color_type)
     : voxels_(voxels), width_(width),
     fx_(fx), fy_(fy),
     cx_(cx), cy_(cy),
-    extrinsic_(extrinsic),
+    campose_(campose),
     voxel_length_(voxel_length),
     resolution_(resolution),
     origin_(origin),
-    sdf_trunc_(sdf_trunc) {};
+    sdf_trunc_(sdf_trunc),
+    color_type_(color_type) {};
     const geometry::TSDFVoxel *voxels_;
     const int width_;
     const float fx_;
     const float fy_;
     const float cx_;
     const float cy_;
-    const Eigen::Matrix4f extrinsic_;
+    const Eigen::Matrix4f campose_;
     const float voxel_length_;
     const int resolution_;
     const Eigen::Vector3f origin_;
     const float sdf_trunc_;
+    const TSDFVolumeColorType color_type_;
     __device__ __forceinline__
     float InterpolateTrilinearly(const Eigen::Vector3i& point,
                                  const geometry::TSDFVoxel* voxels,
@@ -464,9 +469,9 @@ struct raycast_tsdf_functor {
         const int x = idx % width_;
         const float length = resolution_ * voxel_length_;
         const Eigen::Vector3f pixel_pos((x - cx_) / fx_, (y - cy_) / fy_, 1.0f);
-        Eigen::Vector3f ray_dir = extrinsic_.block<3, 3>(0, 0) * pixel_pos;
+        Eigen::Vector3f ray_dir = campose_.block<3, 3>(0, 0) * pixel_pos;
         ray_dir.normalize();
-        Eigen::Vector3f t = extrinsic_.block<3, 1>(0, 3) - origin_;
+        Eigen::Vector3f t = campose_.block<3, 1>(0, 3) - origin_;
         float ray_len = fmax(GetMinTime(length, t, ray_dir), 0.0f);
         if (ray_len >= GetMaxTime(length, t, ray_dir)) {
             return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
@@ -527,8 +532,14 @@ struct raycast_tsdf_functor {
 
                 if (normal.norm() == 0) break;
                 normal.normalize();
-                geometry::TSDFVoxel vc = voxels_[IndexOf(loc_in_grid, resolution_)];
-                return thrust::make_tuple(vertex + origin_, normal, vc.color_);
+                const geometry::TSDFVoxel v = voxels_[IndexOf(loc_in_grid, resolution_)];
+                Eigen::Vector3f c = Eigen::Vector3f::Zero();
+                if (color_type_ == TSDFVolumeColorType::RGB8) {
+                    c = v.color_ / 255.0;
+                } else if (color_type_ == TSDFVolumeColorType::Gray32) {
+                    c = v.color_;
+                }
+                return thrust::make_tuple(vertex + origin_, normal, c);
             }
         }
         return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
@@ -830,8 +841,9 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::Raycast(const camera::P
     pointcloud->normals_.resize(n_total);
     pointcloud->colors_.resize(n_total);
     raycast_tsdf_functor func(thrust::raw_pointer_cast(voxels_.data()), intrinsic.width_,
-                              fx, fy, cx, cy, extrinsic, voxel_length_, resolution_, origin_,
-                              sdf_trunc);
+                              fx, fy, cx, cy, utility::InverseTransform(extrinsic),
+                              voxel_length_, resolution_, origin_,
+                              sdf_trunc, color_type_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_total),
                       make_tuple_begin(pointcloud->points_, pointcloud->normals_, pointcloud->colors_),

@@ -56,6 +56,8 @@ Eigen::Matrix4f TransformVector6fToMatrix4f(const Eigen::Vector6f &input);
 /// Function to transform 4D motion matrix to 6D motion vector
 Eigen::Vector6f TransformMatrix4fToVector6f(const Eigen::Matrix4f &input);
 
+Eigen::Matrix4f InverseTransform(const Eigen::Matrix4f &input);
+
 /// Function to solve Ax=b
 template <int Dim>
 thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>> SolveLinearSystemPSD(

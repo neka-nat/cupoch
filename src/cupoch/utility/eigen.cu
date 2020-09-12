@@ -22,10 +22,10 @@
 
 #include "cupoch/utility/eigen.h"
 
-using namespace cupoch;
-using namespace cupoch::utility;
+namespace cupoch {
+namespace utility {
 
-Eigen::Matrix4f cupoch::utility::TransformVector6fToMatrix4f(
+Eigen::Matrix4f TransformVector6fToMatrix4f(
         const Eigen::Vector6f &input) {
     Eigen::Matrix4f output = Eigen::Matrix4f::Identity();
     output.topRightCorner<3, 1>() = input.tail<3>();
@@ -50,7 +50,7 @@ Eigen::Matrix4f cupoch::utility::TransformVector6fToMatrix4f(
     return output;
 }
 
-Eigen::Vector6f cupoch::utility::TransformMatrix4fToVector6f(
+Eigen::Vector6f TransformMatrix4fToVector6f(
         const Eigen::Matrix4f &input) {
     Eigen::Quaternionf q(input.topLeftCorner<3, 3>());
     float angle = 0;
@@ -66,12 +66,19 @@ Eigen::Vector6f cupoch::utility::TransformMatrix4fToVector6f(
     return output;
 }
 
+Eigen::Matrix4f InverseTransform(const Eigen::Matrix4f &input) {
+    Eigen::Matrix4f inv_in = Eigen::Matrix4f::Identity();
+    inv_in.block<3, 3>(0, 0) = input.block<3, 3>(0, 0).transpose();
+    inv_in.block<3, 1>(0, 3) = -inv_in.block<3, 3>(0, 0) * input.block<3, 1>(0, 3);
+    return inv_in;
+}
+
 template <int Dim>
 thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>>
-cupoch::utility::SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
-                                      const Eigen::Matrix<float, Dim, 1> &b,
-                                      bool check_symmetric,
-                                      bool check_det) {
+SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
+                     const Eigen::Matrix<float, Dim, 1> &b,
+                     bool check_symmetric,
+                     bool check_det) {
     // PSD implies symmetric
     if (check_symmetric && !A.isApprox(A.transpose())) {
         LogWarning("check_symmetric failed, empty vector will be returned");
@@ -98,7 +105,7 @@ cupoch::utility::SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
 }
 
 thrust::tuple<bool, Eigen::Matrix4f>
-cupoch::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(
+SolveJacobianSystemAndObtainExtrinsicMatrix(
         const Eigen::Matrix6f &JTJ, const Eigen::Vector6f &JTr) {
     bool solution_exist;
     Eigen::Vector6f x;
@@ -114,28 +121,31 @@ cupoch::utility::SolveJacobianSystemAndObtainExtrinsicMatrix(
 }
 
 template thrust::tuple<bool, Eigen::Vector6f>
-cupoch::utility::SolveLinearSystemPSD(const Eigen::Matrix6f &A,
-                                      const Eigen::Vector6f &b,
-                                      bool check_symmetric,
-                                      bool check_det);
+SolveLinearSystemPSD(const Eigen::Matrix6f &A,
+                     const Eigen::Vector6f &b,
+                     bool check_symmetric,
+                     bool check_det);
 
-Eigen::Matrix3f cupoch::utility::RotationMatrixX(float radians) {
+Eigen::Matrix3f RotationMatrixX(float radians) {
     Eigen::Matrix3f rot;
     rot << 1, 0, 0, 0, std::cos(radians), -std::sin(radians), 0,
             std::sin(radians), std::cos(radians);
     return rot;
 }
 
-Eigen::Matrix3f cupoch::utility::RotationMatrixY(float radians) {
+Eigen::Matrix3f RotationMatrixY(float radians) {
     Eigen::Matrix3f rot;
     rot << std::cos(radians), 0, std::sin(radians), 0, 1, 0, -std::sin(radians),
             0, std::cos(radians);
     return rot;
 }
 
-Eigen::Matrix3f cupoch::utility::RotationMatrixZ(float radians) {
+Eigen::Matrix3f RotationMatrixZ(float radians) {
     Eigen::Matrix3f rot;
     rot << std::cos(radians), -std::sin(radians), 0, std::sin(radians),
             std::cos(radians), 0, 0, 0, 1;
     return rot;
+}
+
+}
 }
