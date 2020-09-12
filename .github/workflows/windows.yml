@@ -1,0 +1,90 @@
+name: Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      # explicit include-based build matrix, of known valid options
+      matrix:
+        include:
+          # Windows2019 & VS 2019 supports 10.2+
+          - os: windows-2019
+            cuda: "11.0.167"
+            visual_studio: "Visual Studio 16 2019"
+            python-version: 3.7
+          - os: windows-2019
+            cuda: "10.2.89"
+            visual_studio: "Visual Studio 16 2019"
+            python-version: 3.7
+
+    env:
+      build_dir: "build"
+      config: "Release"
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install CUDA 
+      env: 
+        cuda: ${{ matrix.cuda }}
+        visual_studio: ${{ matrix.visual_studio }}
+      shell: powershell
+      run: |
+        # Install CUDA via a powershell script
+        .\scripts\actions\install_cuda_windows.ps1
+        if ($?) {
+          # Set paths for subsequent steps, using $env:CUDA_PATH
+          echo "Adding CUDA to CUDA_PATH, CUDA_PATH_X_Y and PATH"
+          echo "::set-env name=CUDA_PATH::$env:CUDA_PATH"
+          echo "::set-env name=$env:CUDA_PATH_VX_Y::$env:CUDA_PATH"
+          echo "::add-path::$env:CUDA_PATH/bin"
+        }
+    - name: nvcc check
+      shell: powershell
+      run: |
+        nvcc -V
+        ls $env:CUDA_PATH
+        ls $env:CUDA_PATH\bin
+        ls $env:CUDA_PATH\include
+
+    - name: cmake version
+      shell: bash
+      run: cmake --version
+
+    - name: Configure CMake
+      id: configure
+      shell: bash
+      run: cmake . -B ${{ env.build_dir }} -G "${{ matrix.visual_studio }}" -A x64 -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
+
+    - name: Configure Error Processing
+      if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}
+      working-directory: ${{ env.build_dir }}
+      shell: bash
+      run: |
+          if [[ -f "CMakeFiles/CMakeOutput.log" ]]; then
+            echo "---- CMakeFiles/CMakeOutput.log"
+            cat CMakeFiles/CMakeOutput.log
+            echo "----"
+          fi
+          if [[ -f "CMakeFiles/CMakeError.log" ]]; then
+            echo "---- CMakeFiles/CMakeError.log"
+            cat CMakeFiles/CMakeError.log
+            echo "----"
+          fi
+    - name: Build
+      working-directory: ${{ env.build_dir }}
+      run: cmake --build . --config ${{ env.config }} --target ALL_BUILD --verbose
