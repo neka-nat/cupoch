@@ -141,30 +141,6 @@ TEST(PointCloud, GetMaxBound) {
 }
 
 TEST(PointCloud, Transform) {
-    thrust::host_vector<Vector3f> ref_points;
-    ref_points.push_back(Vector3f(1.411252, 4.274168, 3.130918));
-    ref_points.push_back(Vector3f(1.231757, 4.154505, 3.183678));
-    ref_points.push_back(Vector3f(1.403168, 4.268779, 2.121679));
-    ref_points.push_back(Vector3f(1.456767, 4.304511, 2.640845));
-    ref_points.push_back(Vector3f(1.620902, 4.413935, 1.851255));
-    ref_points.push_back(Vector3f(1.374684, 4.249790, 3.062485));
-    ref_points.push_back(Vector3f(1.328160, 4.218773, 1.795728));
-    ref_points.push_back(Vector3f(1.713446, 4.475631, 1.860145));
-    ref_points.push_back(Vector3f(1.409239, 4.272826, 2.011462));
-    ref_points.push_back(Vector3f(1.480169, 4.320113, 1.177780));
-
-    thrust::host_vector<Vector3f> ref_normals;
-    ref_normals.push_back(Vector3f(396.470588, 1201.176471, 880.352941));
-    ref_normals.push_back(Vector3f(320.392157, 1081.176471, 829.019608));
-    ref_normals.push_back(Vector3f(268.627451, 817.647059, 406.666667));
-    ref_normals.push_back(Vector3f(338.431373, 1000.392157, 614.117647));
-    ref_normals.push_back(Vector3f(423.137255, 1152.549020, 483.607843));
-    ref_normals.push_back(Vector3f(432.549020, 1337.647059, 964.392157));
-    ref_normals.push_back(Vector3f(139.607843, 443.921569, 189.176471));
-    ref_normals.push_back(Vector3f(291.764706, 762.352941, 317.058824));
-    ref_normals.push_back(Vector3f(134.117647, 407.058824, 191.882353));
-    ref_normals.push_back(Vector3f(274.509804, 801.568627, 218.627451));
-
     int size = 10;
     geometry::PointCloud pc;
 
@@ -180,14 +156,21 @@ TEST(PointCloud, Transform) {
     Rand(normals, vmin, vmax, 0);
     pc.SetNormals(normals);
 
+    geometry::PointCloud ref = pc;
+
     Matrix4f transformation;
-    transformation << 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90,
-            0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16;
+    transformation << 1.0, 0.0, 0.0, 1.0,
+                      0.0, std::cos(M_PI / 4), -std::sin(M_PI / 4), 2.0,
+                      0.0, std::sin(M_PI / 4), std::cos(M_PI / 4), 3.0,
+                      0.0, 0.0, 0.0, 1.0;
 
     pc.Transform(transformation);
+    Matrix4f inv_trans = utility::InverseTransform(transformation);
+    pc.Transform(inv_trans);
+    std::cout << transformation * inv_trans << std::endl;
 
-    ExpectEQ(ref_points, pc.GetPoints());
-    ExpectEQ(ref_normals, pc.GetNormals());
+    ExpectEQ(ref.GetPoints(), pc.GetPoints(), 5.0 * unit_test::THRESHOLD_1E_4);
+    ExpectEQ(ref.GetNormals(), pc.GetNormals(), 5.0 * unit_test::THRESHOLD_1E_4);
 }
 
 TEST(PointCloud, HasPoints) {
