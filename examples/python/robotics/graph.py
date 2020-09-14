@@ -2,6 +2,7 @@ import os
 import itertools
 import time
 import cupoch as cph
+cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 import numpy as np
 import networkx as nx
 

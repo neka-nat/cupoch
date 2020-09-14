@@ -27,6 +27,7 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 #include "cupoch/utility/helper.h"
 
 using namespace cupoch;
@@ -145,7 +146,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
             thrust::make_counting_iterator<size_t>(n_total),
             make_tuple_begin(output->voxels_keys_, output->voxels_values_),
             func);
-    thrust::sort_by_key(output->voxels_keys_.begin(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        output->voxels_keys_.begin(),
                         output->voxels_keys_.end(),
                         output->voxels_values_.begin());
     auto end = thrust::unique_by_key(output->voxels_keys_.begin(),
@@ -186,7 +188,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                           input.colors_.begin(),
                           make_tuple_begin(voxels_keys, voxels_values), func);
     }
-    thrust::sort_by_key(voxels_keys.begin(), voxels_keys.end(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        voxels_keys.begin(), voxels_keys.end(),
                         voxels_values.begin());
 
     utility::device_vector<int> counts(voxels_keys.size());

@@ -20,10 +20,12 @@
 **/
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
+#include <stdgpu/unordered_set.cuh>
 
 #include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/graph.h"
 #include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -211,16 +213,20 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     bool has_colors = this->HasColors();
     bool has_weights = this->HasWeights();
     if (has_colors && has_weights) {
-        thrust::sort_by_key(this->lines_.begin(), this->lines_.end(),
+        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                            this->lines_.begin(), this->lines_.end(),
                             make_tuple_begin(edge_weights_, this->colors_));
     } else if (!has_colors && has_weights) {
-        thrust::sort_by_key(this->lines_.begin(), this->lines_.end(),
+        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                            this->lines_.begin(), this->lines_.end(),
                             edge_weights_.begin());
     } else if (has_colors && !has_weights) {
-        thrust::sort_by_key(this->lines_.begin(), this->lines_.end(),
+        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                            this->lines_.begin(), this->lines_.end(),
                             this->colors_.begin());
     } else {
-        thrust::sort(this->lines_.begin(), this->lines_.end());
+        thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                     this->lines_.begin(), this->lines_.end());
         edge_weights_.resize(this->lines_.size(), 1.0);
     }
     edge_index_offsets_.resize(this->points_.size() + 1, 0);
@@ -268,7 +274,8 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
                 return thrust::get<0>(x)[0] < 0;
             };
     remove_if_vectors(remove_fn, new_edges, weights);
-    thrust::sort_by_key(new_edges.begin(), new_edges.end(), weights.begin());
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        new_edges.begin(), new_edges.end(), weights.begin());
     utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
     utility::device_vector<float> res_weights(new_edges.size());
     auto func =
@@ -410,7 +417,8 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
     utility::device_vector<float> new_weights;
     utility::device_vector<Eigen::Vector3f> new_colors;
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
-    thrust::sort(sorted_edges.begin(), sorted_edges.end());
+    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 sorted_edges.begin(), sorted_edges.end());
     auto cnst_w = thrust::make_constant_iterator<float>(1.0);
     auto cnst_c = thrust::make_constant_iterator<Eigen::Vector3f>(
             Eigen::Vector3f::Ones());
@@ -547,7 +555,8 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
         const Eigen::Vector3f &color) {
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     utility::device_vector<size_t> indices(edges.size());
-    thrust::sort(sorted_edges.begin(), sorted_edges.end());
+    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 sorted_edges.begin(), sorted_edges.end());
     thrust::set_intersection(
             make_tuple_iterator(this->lines_.begin(),
                                 thrust::make_counting_iterator<size_t>(0)),
@@ -571,7 +580,8 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
                      [color] __device__(Eigen::Vector3f & c) { c = color; });
     if (!is_directed_) {
         swap_index(sorted_edges);
-        thrust::sort(sorted_edges.begin(), sorted_edges.end());
+        thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                     sorted_edges.begin(), sorted_edges.end());
         thrust::set_intersection(
                 make_tuple_iterator(this->lines_.begin(),
                                     thrust::make_counting_iterator<size_t>(0)),
@@ -676,7 +686,8 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     utility::device_vector<int> old_to_new_edge_table(this->lines_.size());
     thrust::sequence(new_to_old_edge_table.begin(), new_to_old_edge_table.end(),
                      0);
-    thrust::sort_by_key(sorted_lines.begin(), sorted_lines.end(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        sorted_lines.begin(), sorted_lines.end(),
                         new_to_old_edge_table.begin(),
                         [] __device__(const Eigen::Vector2i &lhs,
                                       const Eigen::Vector2i &rhs) {

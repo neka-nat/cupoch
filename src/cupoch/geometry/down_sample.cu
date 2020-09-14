@@ -81,7 +81,8 @@ __host__ int CalcAverageByKey(utility::device_vector<Eigen::Vector3i> &keys,
                               OutputIterator buf_begins,
                               OutputIterator output_begins) {
     const size_t n = keys.size();
-    thrust::sort_by_key(keys.begin(), keys.end(), buf_begins);
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        keys.begin(), keys.end(), buf_begins);
 
     utility::device_vector<int> counts(n);
     auto end1 = thrust::reduce_by_key(
@@ -121,7 +122,8 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     if (invert) {
         size_t n_out = points_.size() - indices.size();
         utility::device_vector<size_t> sorted_indices = indices;
-        thrust::sort(sorted_indices.begin(), sorted_indices.end());
+        thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                     sorted_indices.begin(), sorted_indices.end());
         utility::device_vector<size_t> inv_indices(n_out);
         thrust::set_difference(thrust::make_counting_iterator<size_t>(0),
                                thrust::make_counting_iterator(points_.size()),
