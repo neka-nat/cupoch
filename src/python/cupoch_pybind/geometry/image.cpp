@@ -136,6 +136,21 @@ void pybind_image(py::module &m) {
             .def("flip_horizontal", &geometry::Image::FlipHorizontal,
                  "Function to flip image horizontally (from left to right)")
             .def(
+                    "bilateral_filter",
+                    [](const geometry::Image &input,
+                       int diameter, float sigma_color, float sigma_space) {
+                        if (input.num_of_channels_ != 1 ||
+                            input.bytes_per_channel_ != 4) {
+                            auto input_f = input.CreateFloatImage();
+                            auto output = input_f->BilateralFilter(diameter, sigma_color, sigma_space);
+                            return *output;
+                        } else {
+                            auto output = input.BilateralFilter(diameter, sigma_color, sigma_space);
+                            return *output;
+                        }
+                    },
+                    "Function to apply bilateral filter to the image")
+            .def(
                     "create_pyramid",
                     [](const geometry::Image &input, size_t num_of_levels,
                        bool with_gaussian_filter) {
@@ -164,7 +179,9 @@ void pybind_image(py::module &m) {
                     "Function to filter ImagePyramid", "image_pyramid"_a,
                     "filter_type"_a)
             .def_readonly("width", &geometry::Image::width_)
-            .def_readonly("height", &geometry::Image::height_);
+            .def_readonly("height", &geometry::Image::height_)
+            .def_readonly("num_of_channels", &geometry::Image::num_of_channels_)
+            .def_readonly("bytes_per_channel", &geometry::Image::bytes_per_channel_);
 
     docstring::ClassMethodDocInject(m, "Image", "filter",
                                     map_shared_argument_docstrings);

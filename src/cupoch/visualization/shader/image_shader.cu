@@ -341,7 +341,7 @@ bool ImageShaderForImage::PrepareBinding(
 
 size_t ImageShaderForImage::GetDataSize(
         const geometry::Geometry &geometry) const {
-    return ((const geometry::Image &)geometry).data_.size();
+    return GetDataWidth(geometry) * GetDataHeight(geometry) * 3;
 }
 
 size_t ImageShaderForImage::GetDataHeight(

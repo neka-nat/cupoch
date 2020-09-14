@@ -244,20 +244,20 @@ struct bilateral_filter_functor {
     const float* gaussian_const_;
     uint8_t *dst_;
     __device__ float gaussian(float x, float sig) const {
-        return exp(-(powf(x, 2)) / (2 * powf(sig, 2)));
+        return expf(-(x * x) / (2.0f * sig * sig));
     }
     __device__ void operator() (size_t idx) {
         const int y = idx / width_;
         const int x = idx % width_;
 		float filtered = 0;
         float total_w = 0;
-        float center_p = *(float *)(src_ + idx * sizeof(float));
+        const float center_p = *(float *)(src_ + idx * sizeof(float));
         for (int dy = -diameter_; dy <= diameter_; dy++) {
             for (int dx = -diameter_; dx <= diameter_; dx++) {
-                int mdy = min(max(0, dy), height_);
-                int mdx = min(max(0, dx), width_);
-                float cur_p = *(float *)(src_ + ((y + mdy) * width_ + x + mdx) * sizeof(float));
-                float w = gaussian_const_[dy + diameter_] * gaussian_const_[dx + diameter_] * gaussian(center_p - cur_p, sigma_color_);
+                const int my = fmin(fmax(0, y + dy), height_);
+                const int mx = fmin(fmax(0, x + dx), width_);
+                const float cur_p = *(float *)(src_ + (my * width_ + mx) * sizeof(float));
+                const float w = gaussian_const_[dy + diameter_] * gaussian_const_[dx + diameter_] * gaussian(center_p - cur_p, sigma_color_);
                 filtered += w * cur_p;
                 total_w += w; 
             }
@@ -365,6 +365,7 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
 Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[ClipIntensity] Unsupported image format.");
+        return *this;
     }
     clip_intensity_functor func(min, max);
     float* pt = (float*)thrust::raw_pointer_cast(data_.data());
@@ -376,6 +377,7 @@ Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
 Image &Image::LinearTransform(float scale, float offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[LinearTransform] Unsupported image format.");
+        return *this;
     }
     linear_transform_functor func(scale, offset);
     float* pt = (float*)thrust::raw_pointer_cast(data_.data());
@@ -388,6 +390,7 @@ std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Downsample] Unsupported image format.");
+        return output;
     }
     int half_width = (int)floor((float)width_ / 2.0);
     int half_height = (int)floor((float)height_ / 2.0);
@@ -430,6 +433,7 @@ std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
+        return output;
     }
 
     auto kernels = GetFilterKernel(type);
@@ -453,6 +457,7 @@ std::shared_ptr<Image> Image::Filter(
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
+        return output;
     }
 
     auto temp1 = FilterHorizontal(dx);
@@ -512,6 +517,10 @@ std::shared_ptr<Image> Image::BilateralFilter(
     auto output = std::make_shared<Image>();
     if (diameter >= 64) {
         utility::LogError("[BilateralFilter] Diameter should be less than 64.");
+        return output;
+    }
+    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
+        utility::LogError("[BilateralFilter] Unsupported image format.");
         return output;
     }
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
