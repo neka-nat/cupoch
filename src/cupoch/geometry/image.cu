@@ -254,8 +254,8 @@ struct bilateral_filter_functor {
         const float center_p = *(float *)(src_ + idx * sizeof(float));
         for (int dy = -diameter_; dy <= diameter_; dy++) {
             for (int dx = -diameter_; dx <= diameter_; dx++) {
-                const int my = fmin(fmax(0, y + dy), height_);
-                const int mx = fmin(fmax(0, x + dx), width_);
+                const int my = min(max(0, y + dy), height_);
+                const int mx = min(max(0, x + dx), width_);
                 const float cur_p = *(float *)(src_ + (my * width_ + mx) * sizeof(float));
                 const float w = gaussian_const_[dy + diameter_] * gaussian_const_[dx + diameter_] * gaussian(center_p - cur_p, sigma_color_);
                 filtered += w * cur_p;
