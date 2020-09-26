@@ -3,6 +3,7 @@ name: C/C++ CI
 on:
   push:
     branches: [ master ]
+    tags: ['v*']
   pull_request:
     branches: [ master ]
 
@@ -39,12 +40,25 @@ jobs:
     - name: Install dependencies
       run: |
         ./scripts/actions/install_deps_ubuntu.sh
+        python -m pip install -U pip wheel setuptools
     - name: CMake
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake .. -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
     - name: make
       run: |
         cd build
         make
+        make pip-package
+    - name: Rename package
+      run: |
+        cd build/lib/python_package/pip_package
+        rename s/linux/manylinux1/ *.whl
+    - name: Publish package
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: ${{ secrets.pypi_username }}
+        password: ${{ secrets.pypi_password }}
+        packages_dir: build/lib/python_package
