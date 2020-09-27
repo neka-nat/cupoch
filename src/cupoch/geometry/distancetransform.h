@@ -25,6 +25,7 @@
 namespace cupoch {
 namespace geometry {
 class VoxelGrid;
+class OccupancyGrid;
 
 class DistanceVoxel {
 public:
@@ -67,6 +68,8 @@ public:
 
     float GetDistance(const Eigen::Vector3f& query) const;
     utility::device_vector<float> GetDistances(const utility::device_vector<Eigen::Vector3f>& queries) const;
+
+    static std::shared_ptr<DistanceTransform> CreateFromOccupancyGrid(const OccupancyGrid &input);
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;

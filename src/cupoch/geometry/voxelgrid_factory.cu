@@ -25,6 +25,7 @@
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
@@ -273,4 +274,25 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
     Eigen::Vector3f max_bound = input.GetMaxBound() + voxel_size3 * 0.5;
     return CreateFromTriangleMeshWithinBounds(input, voxel_size, min_bound,
                                               max_bound);
+}
+
+std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromOccupancyGrid(
+    const OccupancyGrid &input) {
+    auto output = std::make_shared<VoxelGrid>();
+    if (input.voxel_size_ <= 0.0) {
+        utility::LogError("[CreateOccupancyGrid] occupancy grid  voxel_size <= 0.");
+    }
+    output->voxel_size_ = input.voxel_size_;
+    output->origin_ = input.origin_;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> occvoxels = input.ExtractOccupiedVoxels();
+    output->voxels_keys_.resize(occvoxels->size());
+    output->voxels_values_.resize(occvoxels->size());
+    thrust::transform(occvoxels->begin(), occvoxels->end(),
+                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
+                      [] __device__ (const OccupancyVoxel& voxel) {
+                          return thrust::make_tuple(voxel.grid_index_.cast<int>(),
+                                                    Voxel(voxel.grid_index_.cast<int>(),
+                                                          voxel.color_));
+                      });
+    return output;
 }

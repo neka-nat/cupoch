@@ -151,6 +151,10 @@ void pybind_voxelgrid(py::module &m) {
                     &geometry::VoxelGrid::CreateFromTriangleMeshWithinBounds,
                     "Function to make voxels from a PointCloud", "input"_a,
                     "voxel_size"_a, "min_bound"_a, "max_bound"_a)
+            .def_static(
+                    "create_from_occupancy_grid",
+                    &geometry::VoxelGrid::CreateFromOccupancyGrid,
+                    "Function to make voxels from a Occupancy Grid")
             .def_readwrite("origin", &geometry::VoxelGrid::origin_,
                            "``float32`` vector of length 3: Coorindate of the "
                            "origin point.")

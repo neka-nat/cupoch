@@ -41,6 +41,7 @@ class PointCloud;
 class TriangleMesh;
 class OrientedBoundingBox;
 class Image;
+class OccupancyGrid;
 
 __device__ const int INVALID_VOXEL_INDEX = std::numeric_limits<int>::min();
 
@@ -193,6 +194,9 @@ public:
             float voxel_size,
             const Eigen::Vector3f &min_bound,
             const Eigen::Vector3f &max_bound);
+
+    static std::shared_ptr<VoxelGrid> CreateFromOccupancyGrid(
+            const OccupancyGrid &input);
 
 public:
     float voxel_size_ = 0.0;
