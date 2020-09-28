@@ -33,52 +33,32 @@ std::pair<utility::device_vector<float>, utility::device_vector<float>>
 GetFilterKernel(Image::FilterType ftype) {
     switch (ftype) {
         case Image::FilterType::Gaussian3: {
-            utility::device_vector<float> g3(3);
-            g3[0] = 0.25;
-            g3[1] = 0.5;
-            g3[2] = 0.25;
+            const float k[3] = {0.25, 0.5, 0.25};
+            utility::device_vector<float> g3(k, k + 3);
             return std::make_pair(g3, g3);
         }
         case Image::FilterType::Gaussian5: {
-            utility::device_vector<float> g5(5);
-            g5[0] = 0.0625;
-            g5[1] = 0.25;
-            g5[2] = 0.375;
-            g5[3] = 0.25;
-            g5[4] = 0.0625;
+            const float k[5] = {0.0625, 0.25, 0.375, 0.25, 0.0625};
+            utility::device_vector<float> g5(k, k + 5);
             return std::make_pair(g5, g5);
         }
         case Image::FilterType::Gaussian7: {
-            utility::device_vector<float> g7(7);
-            g7[0] = 0.03125;
-            g7[1] = 0.109375;
-            g7[2] = 0.21875;
-            g7[3] = 0.28125;
-            g7[4] = 0.21875;
-            g7[5] = 0.109375;
-            g7[6] = 0.03125;
+            const float k[7] = {0.03125, 0.109375, 0.21875, 0.28125, 0.21875, 0.109375, 0.03125};
+            utility::device_vector<float> g7(k, k + 7);
             return std::make_pair(g7, g7);
         }
         case Image::FilterType::Sobel3Dx: {
-            utility::device_vector<float> s31(3);
-            utility::device_vector<float> s32(3);
-            s31[0] = -1.0;
-            s31[1] = 0.0;
-            s31[2] = 1.0;
-            s32[0] = 1.0;
-            s32[1] = 2.0;
-            s32[2] = 1.0;
+            const float k1[3] = {-1.0, 0.0, 1.0};
+            const float k2[3] = {1.0, 2.0, 1.0};
+            utility::device_vector<float> s31(k1, k1 + 3);
+            utility::device_vector<float> s32(k2, k2 + 3);
             return std::make_pair(s31, s32);
         }
         case Image::FilterType::Sobel3Dy: {
-            utility::device_vector<float> s31(3);
-            utility::device_vector<float> s32(3);
-            s31[0] = -1.0;
-            s31[1] = 0.0;
-            s31[2] = 1.0;
-            s32[0] = 1.0;
-            s32[1] = 2.0;
-            s32[2] = 1.0;
+            const float k1[3] = {-1.0, 0.0, 1.0};
+            const float k2[3] = {1.0, 2.0, 1.0};
+            utility::device_vector<float> s31(k1, k1 + 3);
+            utility::device_vector<float> s32(k2, k2 + 3);
             return std::make_pair(s32, s31);
         }
         default: {
@@ -118,26 +98,22 @@ struct transpose_functor {
 };
 
 struct clip_intensity_functor {
-    clip_intensity_functor(uint8_t *fimage, float min, float max)
-        : fimage_(fimage), min_(min), max_(max){};
-    uint8_t *fimage_;
+    clip_intensity_functor(float min, float max)
+        : min_(min), max_(max) {};
     const float min_;
     const float max_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        *p = max(min(max_, *p), min_);
+    __device__ void operator()(float& f) {
+        f = max(min(max_, f), min_);
     }
 };
 
 struct linear_transform_functor {
-    linear_transform_functor(uint8_t *fimage, float scale, float offset)
-        : fimage_(fimage), scale_(scale), offset_(offset){};
-    uint8_t *fimage_;
+    linear_transform_functor(float scale, float offset)
+        : scale_(scale), offset_(offset){};
     const float scale_;
     const float offset_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        (*p) = (float)(scale_ * (*p) + offset_);
+    __device__ void operator() (float& f) {
+        f = scale_ * f + offset_;
     }
 };
 
@@ -189,9 +165,7 @@ struct filter_horizontal_functor {
         float *po = (float *)(dst_ + idx * sizeof(float));
         float temp = 0;
         for (int i = -half_kernel_size_; i <= half_kernel_size_; i++) {
-            int x_shift = x + i;
-            if (x_shift < 0) x_shift = 0;
-            if (x_shift > width_ - 1) x_shift = width_ - 1;
+            int x_shift = min(max(0, x + i), width_ - 1);
             float *pi =
                     (float *)(src_ + (y * width_ + x_shift) * sizeof(float));
             temp += (*pi * kernel_[i + half_kernel_size_]);
@@ -247,18 +221,61 @@ struct horizontal_flip_functor {
     }
 };
 
+struct bilateral_filter_functor {
+    bilateral_filter_functor(const uint8_t *src,
+                             int width,
+                             int height,
+                             int diameter,
+                             float sigma_color,
+                             const float* gaussian_const,
+                             uint8_t *dst)
+        : src_(src),
+          width_(width),
+          height_(height),
+          diameter_(diameter),
+          sigma_color_(sigma_color),
+          gaussian_const_(gaussian_const),
+          dst_(dst){};
+    const uint8_t *src_;
+    const int width_;
+    const int height_;
+    const int diameter_;
+    const float sigma_color_;
+    const float* gaussian_const_;
+    uint8_t *dst_;
+    __device__ float gaussian(float x, float sig) const {
+        return expf(-(x * x) / (2.0f * sig * sig));
+    }
+    __device__ void operator() (size_t idx) {
+        const int y = idx / width_;
+        const int x = idx % width_;
+		float filtered = 0;
+        float total_w = 0;
+        const float center_p = *(float *)(src_ + idx * sizeof(float));
+        for (int dy = -diameter_; dy <= diameter_; dy++) {
+            for (int dx = -diameter_; dx <= diameter_; dx++) {
+                const int my = min(max(0, y + dy), height_);
+                const int mx = min(max(0, x + dx), width_);
+                const float cur_p = *(float *)(src_ + (my * width_ + mx) * sizeof(float));
+                const float w = gaussian_const_[dy + diameter_] * gaussian_const_[dx + diameter_] * gaussian(center_p - cur_p, sigma_color_);
+                filtered += w * cur_p;
+                total_w += w; 
+            }
+        }
+        float* p = (float *)(dst_ + idx * sizeof(float));
+        *p = filtered / total_w;
+    }
+};
+
 struct depth_to_float_functor {
-    depth_to_float_functor(int depth_scale, int depth_trunc, uint8_t *fimage)
+    depth_to_float_functor(int depth_scale, int depth_trunc)
         : depth_scale_(depth_scale),
-          depth_trunc_(depth_trunc),
-          fimage_(fimage){};
+          depth_trunc_(depth_trunc) {};
     const int depth_scale_;
     const int depth_trunc_;
-    uint8_t *fimage_;
-    __device__ void operator()(size_t idx) {
-        float *p = (float *)(fimage_ + idx * sizeof(float));
-        *p /= (float)depth_scale_;
-        if (*p >= depth_trunc_) *p = 0.0f;
+    __device__ void operator()(float& f) {
+        f /= (float)depth_scale_;
+        if (f >= depth_trunc_) f = 0.0f;
     }
 };
 
@@ -339,21 +356,20 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
     // don't need warning message about image type
     // as we call CreateFloatImage
     auto output = CreateFloatImage();
-    depth_to_float_functor func(depth_scale, depth_trunc,
-                                thrust::raw_pointer_cast(output->data_.data()));
-    for_each(thrust::make_counting_iterator<size_t>(0),
-             thrust::make_counting_iterator<size_t>(width_ * height_), func);
+    depth_to_float_functor func(depth_scale, depth_trunc);
+    float* pt = (float*)thrust::raw_pointer_cast(output->data_.data());
+    for_each(thrust::device, pt, pt + (width_ * height_), func);
     return output;
 }
 
 Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[ClipIntensity] Unsupported image format.");
+        return *this;
     }
-    clip_intensity_functor func(thrust::raw_pointer_cast(data_.data()), min,
-                                max);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(width_ * height_),
+    clip_intensity_functor func(min, max);
+    float* pt = (float*)thrust::raw_pointer_cast(data_.data());
+    thrust::for_each(thrust::device, pt, pt + (width_ * height_),
                      func);
     return *this;
 }
@@ -361,11 +377,11 @@ Image &Image::ClipIntensity(float min /* = 0.0*/, float max /* = 1.0*/) {
 Image &Image::LinearTransform(float scale, float offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[LinearTransform] Unsupported image format.");
+        return *this;
     }
-    linear_transform_functor func(thrust::raw_pointer_cast(data_.data()), scale,
-                                  offset);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(width_ * height_),
+    linear_transform_functor func(scale, offset);
+    float* pt = (float*)thrust::raw_pointer_cast(data_.data());
+    thrust::for_each(thrust::device, pt, pt + (width_ * height_),
                      func);
     return *this;
 }
@@ -374,6 +390,7 @@ std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Downsample] Unsupported image format.");
+        return output;
     }
     int half_width = (int)floor((float)width_ / 2.0);
     int half_height = (int)floor((float)height_ / 2.0);
@@ -416,6 +433,7 @@ std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
+        return output;
     }
 
     auto kernels = GetFilterKernel(type);
@@ -439,6 +457,7 @@ std::shared_ptr<Image> Image::Filter(
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
         utility::LogError("[Filter] Unsupported image format.");
+        return output;
     }
 
     auto temp1 = FilterHorizontal(dx);
@@ -487,6 +506,36 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
             thrust::raw_pointer_cast(data_.data()), width_,
             num_of_channels_ * bytes_per_channel_,
             thrust::raw_pointer_cast(output->data_.data()));
+    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                     thrust::make_counting_iterator<size_t>(width_ * height_),
+                     func);
+    return output;
+}
+
+std::shared_ptr<Image> Image::BilateralFilter(
+    int diameter, float sigma_color, float sigma_space) const {
+    auto output = std::make_shared<Image>();
+    if (diameter >= 64) {
+        utility::LogError("[BilateralFilter] Diameter should be less than 64.");
+        return output;
+    }
+    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
+        utility::LogError("[BilateralFilter] Unsupported image format.");
+        return output;
+    }
+    output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
+    float fgaussian[64];
+    const float sigma2 = sigma_space * sigma_space;
+	for (int i = 0; i < 2 * diameter + 1; i++) {
+        const float x = i - diameter;
+        fgaussian[i] = std::exp(-(x * x) / (2 * sigma2));
+    }
+    utility::device_vector<float> gaussian_const(fgaussian, fgaussian + 64);
+    bilateral_filter_functor func(
+        thrust::raw_pointer_cast(data_.data()), width_,
+        height_, diameter, sigma_color,
+        thrust::raw_pointer_cast(gaussian_const.data()),
+        thrust::raw_pointer_cast(output->data_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator<size_t>(width_ * height_),
                      func);

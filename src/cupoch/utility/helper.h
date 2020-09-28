@@ -37,7 +37,7 @@ using make_index_sequence = std::make_index_sequence<N>;
 #include <string>
 #include <vector>
 
-#include "cupoch/utility/device_vector.h"
+#include "device_vector.h"
 
 namespace thrust {
 

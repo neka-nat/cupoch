@@ -21,9 +21,9 @@
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/transform_reduce.h>
 
-#include "cupoch/utility/console.h"
-#include "cupoch/utility/eigen.h"
-#include "cupoch/utility/helper.h"
+#include "console.h"
+#include "eigen.h"
+#include "helper.h"
 
 namespace cupoch {
 namespace utility {

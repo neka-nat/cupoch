@@ -55,12 +55,7 @@ int KDTreeFlann::Search(InputIterator first,
         case KDTreeSearchParam::SearchType::Radius:
             return SearchRadius<InputIterator, Dim>(
                     first, last, ((const KDTreeSearchParamRadius &)param).radius_,
-                    indices, distance2);
-        case KDTreeSearchParam::SearchType::Hybrid:
-            return SearchHybrid<InputIterator, Dim>(
-                    first, last, ((const KDTreeSearchParamHybrid &)param).radius_,
-                    ((const KDTreeSearchParamHybrid &)param).max_nn_, indices,
-                    distance2);
+                    ((const KDTreeSearchParamRadius &)param).max_nn_, indices, distance2);
         default:
             return -1;
     }
@@ -96,33 +91,6 @@ int KDTreeFlann::SearchKNN(InputIterator first,
 
 template <typename InputIterator, int Dim>
 int KDTreeFlann::SearchRadius(InputIterator first,
-                              InputIterator last,
-                              float radius,
-                              utility::device_vector<int> &indices,
-                              utility::device_vector<float> &distance2) const {
-    convert_float4_functor<Dim> func;
-    size_t num_query = thrust::distance(first, last);
-    utility::device_vector<float4_t> query_f4(num_query);
-    thrust::transform(first, last, query_f4.begin(), func);
-    flann::Matrix<float> query_flann(
-            (float *)(thrust::raw_pointer_cast(query_f4.data())), num_query,
-            dimension_, sizeof(float) * 4);
-    flann::SearchParams param(-1, 0.0);
-    param.max_neighbors = NUM_MAX_NN;
-    param.matrices_in_gpu_ram = true;
-    indices.resize(num_query * NUM_MAX_NN);
-    distance2.resize(num_query * NUM_MAX_NN);
-    flann::Matrix<int> indices_flann(thrust::raw_pointer_cast(indices.data()),
-                                     query_flann.rows, NUM_MAX_NN);
-    flann::Matrix<float> dists_flann(thrust::raw_pointer_cast(distance2.data()),
-                                     query_flann.rows, NUM_MAX_NN);
-    int k = flann_index_->radiusSearch(query_flann, indices_flann, dists_flann,
-                                       float(radius * radius), param);
-    return k;
-}
-
-template <typename InputIterator, int Dim>
-int KDTreeFlann::SearchHybrid(InputIterator first,
                               InputIterator last,
                               float radius,
                               int max_nn,

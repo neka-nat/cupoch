@@ -39,6 +39,9 @@ void SetPNGImageFromImage(const geometry::Image &image, png_image &pngimage) {
     if (image.num_of_channels_ == 3) {
         pngimage.format |= PNG_FORMAT_FLAG_COLOR;
     }
+    if (image.num_of_channels_ == 4) {
+        pngimage.format |= PNG_FORMAT_FLAG_ALPHA;
+    }
 }
 
 void SetPNGImageFromImage(const HostImage &image, png_image &pngimage) {
@@ -50,6 +53,9 @@ void SetPNGImageFromImage(const HostImage &image, png_image &pngimage) {
     }
     if (image.num_of_channels_ == 3) {
         pngimage.format |= PNG_FORMAT_FLAG_COLOR;
+    }
+    if (image.num_of_channels_ == 4) {
+        pngimage.format |= PNG_FORMAT_FLAG_ALPHA;
     }
 }
 
@@ -66,13 +72,16 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
         return false;
     }
 
-    // We only support two channel types: gray, and RGB.
-    // There is no alpha channel.
-    // bytes_per_channel is determined by PNG_FORMAT_FLAG_LINEAR flag.
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
     HostImage host_img;
     host_img.Prepare(pngimage.width, pngimage.height,
-                     (pngimage.format & PNG_FORMAT_FLAG_COLOR) ? 3 : 1,
-                     (pngimage.format & PNG_FORMAT_FLAG_LINEAR) ? 2 : 1);
+                     PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                     PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
     SetPNGImageFromImage(host_img, pngimage);
     if (png_image_finish_read(&pngimage, NULL, host_img.data_.data(), 0,
                               NULL) == 0) {

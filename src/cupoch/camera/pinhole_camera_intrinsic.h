@@ -24,7 +24,7 @@
 
 #include <Eigen/Core>
 
-#include "cupoch/utility/ijson_convertible.h"
+#include <cupoch/utility/ijson_convertible.h>
 
 namespace cupoch {
 namespace camera {

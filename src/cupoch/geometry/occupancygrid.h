@@ -58,6 +58,15 @@ inline OccupancyVoxel operator+(const OccupancyVoxel& lhs,
     return out;
 }
 
+inline OccupancyVoxel operator-(const OccupancyVoxel& lhs,
+                                const OccupancyVoxel& rhs) {
+    OccupancyVoxel out = lhs;
+    out.prob_log_ -= rhs.prob_log_;
+    out.color_ += Eigen::Vector3f::Ones() - rhs.color_;
+    out.color_ *= 0.5;
+    return out;
+}
+
 class OccupancyGrid : public DenseGrid<OccupancyVoxel> {
 public:
     OccupancyGrid();

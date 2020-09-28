@@ -22,7 +22,7 @@
 
 #include <Eigen/Core>
 
-#include "cupoch/utility/eigen.h"
+#include "eigen.h"
 
 namespace Json {
 class Value;

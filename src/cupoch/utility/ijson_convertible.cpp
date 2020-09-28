@@ -18,7 +18,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include "cupoch/utility/ijson_convertible.h"
+#include "ijson_convertible.h"
 
 #include <json/json.h>
 

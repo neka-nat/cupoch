@@ -66,6 +66,7 @@ public:
     DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid &voxelgrid);
 
     float GetDistance(const Eigen::Vector3f& query) const;
+    utility::device_vector<float> GetDistances(const utility::device_vector<Eigen::Vector3f>& queries) const;
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;

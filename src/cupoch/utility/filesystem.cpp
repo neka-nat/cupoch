@@ -18,10 +18,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include "cupoch/utility/filesystem.h"
+#include "filesystem.h"
 
 #include <algorithm>
-#ifdef WINDOWS
+#ifdef _WIN32
 #include <direct.h>
 #include <windows.h>
 #ifndef PATH_MAX

@@ -18,11 +18,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include "cupoch/camera/pinhole_camera_parameters.h"
+#include "pinhole_camera_parameters.h"
 
 #include <json/json.h>
 
-#include "cupoch/utility/console.h"
+#include <cupoch/utility/console.h>
 
 using namespace cupoch;
 using namespace cupoch::camera;

@@ -19,6 +19,8 @@
  * IN THE SOFTWARE.
 **/
 #include <numeric>
+#include <thrust/host_vector.h>
+#include <thrust/transform_reduce.h>
 
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/lineset.h"

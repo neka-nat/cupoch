@@ -103,8 +103,8 @@ struct integrate_functor {
             return;
         }
         // Skip if negative depth in depth image
-        int u = (int)u_f;
-        int v = (int)v_f;
+        int u = __float2int_rd(u_f);
+        int v = __float2int_rd(v_f);
         float d = *geometry::PointerAt<float>(depth_, width_, u, v);
         if (d <= 0.0f) {
             return;

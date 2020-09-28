@@ -120,7 +120,7 @@ struct compute_color_gradient_functor {
 
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
-        const geometry::KDTreeSearchParamHybrid &search_param) {
+        const geometry::KDTreeSearchParamRadius &search_param) {
     utility::LogDebug("InitializePointCloudForColoredICP");
 
     geometry::KDTreeFlann tree;
@@ -135,7 +135,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
     output->color_gradient_.resize(n_points, Eigen::Vector3f::Zero());
     utility::device_vector<int> point_idx;
     utility::device_vector<float> point_squared_distance;
-    tree.SearchHybrid(output->points_, search_param.radius_,
+    tree.SearchRadius(output->points_, search_param.radius_,
                       search_param.max_nn_, point_idx, point_squared_distance);
     compute_color_gradient_functor func(
             thrust::raw_pointer_cast(output->points_.data()),
@@ -336,7 +336,7 @@ RegistrationResult cupoch::registration::RegistrationColoredICP(
         const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
         float lambda_geometric /* = 0.968*/) {
     auto target_c = InitializePointCloudForColoredICP(
-            target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
+            target, geometry::KDTreeSearchParamRadius(max_distance * 2.0, 30));
     return RegistrationICP(
             source, *target_c, max_distance, init,
             TransformationEstimationForColoredICP(lambda_geometric), criteria);

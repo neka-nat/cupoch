@@ -25,6 +25,7 @@
 #include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -250,7 +251,8 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         voxels_values_.insert(voxels_values_.end(),
                               voxelgrid.voxels_values_.begin(),
                               voxelgrid.voxels_values_.end());
-        thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                            voxels_keys_.begin(), voxels_keys_.end(),
                             voxels_values_.begin());
         utility::device_vector<int> counts(voxels_keys_.size());
         utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
@@ -283,7 +285,8 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_keys_.push_back(voxel.grid_index_);
     voxels_values_.push_back(voxel);
-    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
@@ -298,7 +301,8 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         thrust::make_transform_iterator(
                                 voxels.end(), extract_grid_index_functor()));
     voxels_values_.insert(voxels_values_.end(), voxels.begin(), voxels.end());
-    thrust::sort_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
@@ -319,7 +323,7 @@ VoxelGrid &VoxelGrid::PaintUniformColor(const Eigen::Vector3f &color) {
     return *this;
 }
 
-VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<int>& indices,
+VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<size_t>& indices,
                                         const Eigen::Vector3f &color) {
     thrust::for_each(thrust::make_permutation_iterator(voxels_values_.begin(), indices.begin()),
                      thrust::make_permutation_iterator(voxels_values_.begin(), indices.end()),

@@ -28,6 +28,7 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/utility/eigen.h"
+#include "cupoch/utility/platform.h"
 
 namespace cupoch {
 namespace geometry {
@@ -135,7 +136,8 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        idx[2] >= max_idx;
             });
     free_voxels.resize(thrust::distance(free_voxels.begin(), end1));
-    thrust::sort(free_voxels.begin(), free_voxels.end());
+    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 free_voxels.begin(), free_voxels.end());
     auto end2 = thrust::unique(free_voxels.begin(), free_voxels.end());
     free_voxels.resize(thrust::distance(free_voxels.begin(), end2));
 }
@@ -188,7 +190,8 @@ void ComputeOccupiedVoxels(
                        idx[2] >= max_idx;
             });
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
-    thrust::sort(occupied_voxels.begin(), occupied_voxels.end());
+    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 occupied_voxels.begin(), occupied_voxels.end());
     auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
 }

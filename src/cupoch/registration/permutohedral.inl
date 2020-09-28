@@ -172,7 +172,8 @@ void Permutohedral<Dim>::BuildLatticeIndexNoBlur(
                                    [] __device__(float w) { return w < 0.0; });
     weights.resize(thrust::distance(weights.begin(), w_end));
 
-    thrust::sort_by_key(keys.begin(), keys.end(),
+    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                        keys.begin(), keys.end(),
                         make_tuple_begin(weights, vertices),
                         [] __device__(const LatticeCoordKey<Dim>& lhs,
                                       const LatticeCoordKey<Dim>& rhs) {

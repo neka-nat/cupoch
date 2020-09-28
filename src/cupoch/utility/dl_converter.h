@@ -24,7 +24,7 @@
 
 #include <Eigen/Core>
 
-#include "cupoch/utility/device_vector.h"
+#include "device_vector.h"
 
 namespace cupoch {
 namespace utility {

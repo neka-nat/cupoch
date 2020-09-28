@@ -170,6 +170,9 @@ public:
     std::shared_ptr<Image> FilterHorizontal(
             const utility::device_vector<float> &kernel) const;
 
+    std::shared_ptr<Image> BilateralFilter(
+            int diameter, float sigma_color, float sigma_space) const;
+
     /// Function to 2x image downsample using simple 2x2 averaging.
     std::shared_ptr<Image> Downsample() const;
 

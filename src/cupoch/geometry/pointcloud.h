@@ -37,6 +37,7 @@ namespace geometry {
 class Image;
 class RGBDImage;
 class LaserScanBuffer;
+class OccupancyGrid;
 class OrientedBoundingBox;
 
 class PointCloud : public GeometryBase<3> {
@@ -123,7 +124,7 @@ public:
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
-    RemoveRadiusOutliers(size_t nb_points, float search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points, float search_radius, int max_search_points=NUM_MAX_NN) const;
 
     std::tuple<std::shared_ptr<PointCloud>, utility::device_vector<size_t>>
     RemoveStatisticalOutliers(size_t nb_neighbors, float std_ratio) const;
@@ -219,6 +220,9 @@ public:
             const LaserScanBuffer &scan,
             float min_range,
             float max_range);
+
+    static std::shared_ptr<PointCloud> CreateFromOccupancyGrid(
+            const OccupancyGrid &occgrid);
 
 public:
     utility::device_vector<Eigen::Vector3f> points_;

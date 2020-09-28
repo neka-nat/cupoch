@@ -24,6 +24,7 @@
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/registration/registration.h"
+#include "cupoch/utility/platform.h"
 
 namespace cupoch {
 namespace registration {
@@ -135,7 +136,8 @@ utility::device_vector<thrust::tuple<int, int>> AdvancedMatching(
                          thrust::make_counting_iterator<int>(corresK.size()),
                          corresK.end()),
                  corres.begin() + nPtj);
-    thrust::sort(corres.begin(), corres.end());
+    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                 corres.begin(), corres.end());
     utility::LogDebug("points are remained : {:d}", corres.size());
 
     // STEP 2) CROSS CHECK

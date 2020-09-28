@@ -1,5 +1,5 @@
 add_subdirectory(cupoch)
-add_subdirectory(tools)
+# add_subdirectory(tools)
 if (BUILD_UNIT_TESTS)
     add_subdirectory(tests)
 endif ()

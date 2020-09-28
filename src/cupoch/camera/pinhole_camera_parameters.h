@@ -20,7 +20,7 @@
 **/
 #pragma once
 
-#include "cupoch/camera/pinhole_camera_intrinsic.h"
+#include "pinhole_camera_intrinsic.h"
 
 namespace cupoch {
 namespace camera {

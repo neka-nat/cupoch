@@ -27,12 +27,13 @@
 #include "cupoch/geometry/laserscanbuffer.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/rgbdimage.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/range.h"
 #include "cupoch/utility/helper.h"
 
-using namespace cupoch;
-using namespace cupoch::geometry;
+namespace cupoch {
+namespace geometry {
 
 namespace {
 
@@ -152,10 +153,10 @@ struct convert_from_rgbdimage_functor {
     }
 };
 
-struct compute_points_from_scan {
-    compute_points_from_scan(float min_range, float max_range,
-                             float min_angle, float angle_increment,
-                             int num_steps)
+struct compute_points_from_scan_functor {
+    compute_points_from_scan_functor(float min_range, float max_range,
+                                     float min_angle, float angle_increment,
+                                     int num_steps)
     : min_range_(min_range), max_range_(max_range),
     min_angle_(min_angle), angle_increment_(angle_increment),
     num_steps_(num_steps) {};
@@ -177,6 +178,18 @@ struct compute_points_from_scan {
         float angle = min_angle_ + i * angle_increment_;
         Eigen::Vector4f pt = origin * Eigen::Vector4f(r * cos(angle), r * sin(angle), 0.0, 1.0);
         return thrust::make_tuple(pt.head<3>(), color);
+    }
+};
+
+struct compute_points_from_occvoxels_functor {
+    compute_points_from_occvoxels_functor(float voxel_size, int resolution, const Eigen::Vector3f& origin)
+    : voxel_size_(voxel_size), resolution_(resolution), origin_(origin) {};
+    const float voxel_size_;
+    const int resolution_;
+    const Eigen::Vector3f origin_;
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator() (const OccupancyVoxel& v) const {
+        const Eigen::Vector3f pt = (v.grid_index_.cast<float>() + Eigen::Vector3f::Constant(-resolution_ / 2 + 0.5)) * voxel_size_ + origin_;
+        return thrust::make_tuple(pt, v.color_);
     }
 };
 
@@ -261,9 +274,9 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromLaserScanBuffer(
     auto pointcloud = std::make_shared<PointCloud>();
     thrust::repeated_range<utility::device_vector<Eigen::Matrix4f_u>::const_iterator>
         range(scan.origins_.begin(), scan.origins_.end(), scan.num_steps_);
-    compute_points_from_scan func(min_range, max_range,
-                                  scan.min_angle_, scan.GetAngleIncrement(),
-                                  scan.num_steps_);
+    compute_points_from_scan_functor func(min_range, max_range,
+                                          scan.min_angle_, scan.GetAngleIncrement(),
+                                          scan.num_steps_);
     pointcloud->points_.resize(scan.ranges_.size());
     if (scan.HasIntensities()) {
         pointcloud->colors_.resize(scan.ranges_.size());
@@ -284,4 +297,19 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromLaserScanBuffer(
     }
     pointcloud->RemoveNoneFinitePoints(true, true);
     return pointcloud;
+}
+
+std::shared_ptr<PointCloud> PointCloud::CreateFromOccupancyGrid(
+        const OccupancyGrid &occgrid) {
+    auto pointcloud = std::make_shared<PointCloud>();
+    auto occvoxels = occgrid.ExtractOccupiedVoxels();
+    pointcloud->points_.resize(occvoxels->size());
+    pointcloud->colors_.resize(occvoxels->size());
+    compute_points_from_occvoxels_functor func(occgrid.voxel_size_, occgrid.resolution_, occgrid.origin_);
+    thrust::transform(occvoxels->begin(), occvoxels->end(),
+                      make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
+    return pointcloud;
+}
+
+}
 }

@@ -18,12 +18,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include <lzf.h>
 
 #include <cstdint>
 #include <cstdio>
 #include <sstream>
 
+#include "cupoch/io/file_format/lzf.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/io/class_io/pointcloud_io.h"
 #include "cupoch/utility/console.h"

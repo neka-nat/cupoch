@@ -35,10 +35,7 @@ struct transform_points_functor {
         : transform_(transform){};
     const Eigen::Matrix<float, Dim + 1, Dim + 1> transform_;
     __device__ void operator()(Eigen::Matrix<float, Dim, 1> &pt) {
-        const Eigen::Matrix<float, Dim + 1, 1> new_pt =
-                transform_ *
-                (Eigen::Matrix<float, Dim + 1, 1>() << pt, 1.0).finished();
-        pt = new_pt.template head<Dim>() / new_pt(Dim);
+        pt = transform_.template block<Dim, Dim>(0, 0) * pt + transform_.template block<Dim, 1>(0, Dim);
     }
 };
 
@@ -47,9 +44,7 @@ struct transform_normals_functor {
         : transform_(transform){};
     const Eigen::Matrix4f transform_;
     __device__ void operator()(Eigen::Vector3f &nl) {
-        const Eigen::Vector4f new_pt =
-                transform_ * Eigen::Vector4f(nl(0), nl(1), nl(2), 0.0);
-        nl = new_pt.head<3>();
+        nl = transform_.block<3, 3>(0, 0) * nl;
     }
 };
 }  // namespace

@@ -18,8 +18,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include <lbvh/bvh.cuh>
-#include <lbvh/query.cuh>
+#include <libvh/bvh.cuh>
+#include <libvh/query.cuh>
 
 #include "cupoch/collision/collision.h"
 #include "cupoch/geometry/intersection_test.h"
@@ -495,15 +495,15 @@ thrust::host_vector<Eigen::Vector2i> CollisionResult::GetCollisionIndexPairs()
     return h_collision_index_pairs;
 }
 
-utility::device_vector<int> CollisionResult::GetFirstCollisionIndices() const {
-    utility::device_vector<int> res(collision_index_pairs_.size());
+utility::device_vector<size_t> CollisionResult::GetFirstCollisionIndices() const {
+    utility::device_vector<size_t> res(collision_index_pairs_.size());
     thrust::transform(collision_index_pairs_.begin(), collision_index_pairs_.end(),
                       res.begin(), extract_element_functor<int, 2, 0>());
     return res;
 }
 
-utility::device_vector<int> CollisionResult::GetSecondCollisionIndices() const {
-    utility::device_vector<int> res(collision_index_pairs_.size());
+utility::device_vector<size_t> CollisionResult::GetSecondCollisionIndices() const {
+    utility::device_vector<size_t> res(collision_index_pairs_.size());
     thrust::transform(collision_index_pairs_.begin(), collision_index_pairs_.end(),
                       res.begin(), extract_element_functor<int, 2, 1>());
     return res;

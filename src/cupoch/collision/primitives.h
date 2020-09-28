@@ -179,6 +179,11 @@ __host__ __device__ inline PrimitivePack operator+(const PrimitivePack& lhs,
     return lhs;
 }
 
+__host__ __device__ inline PrimitivePack operator-(const PrimitivePack& lhs,
+                                                   const PrimitivePack& rhs) {
+    return lhs;
+}
+
 typedef utility::device_vector<PrimitivePack> PrimitiveArray;
 
 std::shared_ptr<geometry::VoxelGrid> CreateVoxelGrid(const Primitive& primitive,
