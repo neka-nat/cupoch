@@ -32,7 +32,7 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../>
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen flann::flann flann::flann_cpp flann::cuda libvh cupoch_utility)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen flann::flann flann::flann_cpp flann::flann_cuda libvh cupoch_utility)
 
 # Installation
 
