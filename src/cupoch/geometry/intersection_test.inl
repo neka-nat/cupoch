@@ -19,8 +19,8 @@
  * IN THE SOFTWARE.
 **/
 #include <thrust/swap.h>
-#include <tomasakeninemoeller/opttritri.h>
-#include <tomasakeninemoeller/tribox3.h>
+#include "cupoch/geometry/tomasakeninemoeller/opttritri.h"
+#include "cupoch/geometry/tomasakeninemoeller/tribox3.h"
 
 #include "cupoch/geometry/distance_test.h"
 #include "cupoch/geometry/intersection_test.h"
