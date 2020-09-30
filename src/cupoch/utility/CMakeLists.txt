@@ -1,67 +1,64 @@
 cmake_minimum_required(VERSION 3.16.0)
 
-project(cupoch_utility LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 17)
+project(cupoch_utility VERSION 0.1.3 LANGUAGES CXX CUDA)
 
 # Check for dependencies
-find_package(CUDA REQUIRED)
 find_package(dlpack CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(jsoncpp CONFIG REQUIRED)
+find_package(Eigen3 3.3.7 CONFIG REQUIRED)
+find_package(fmt 3.0 CONFIG REQUIRED)
+find_package(jsoncpp 1.9 CONFIG REQUIRED)
 
-enable_language("CUDA")
-include_directories(${CUDA_INCLUDE_DIRS})
-link_directories(${CUDA_LIBRARY_DIRS})
-add_definitions(-DUSE_CUDA)
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr;--extended-lambda")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda")
 
 # Define the library
+file(GLOB_RECURSE ALL_SOURCE_FILES "*.cpp" "*.cu")
+file(GLOB_RECURSE ALL_HEADER_FILES "*.h" "*.inl")
 
-file(GLOB_RECURSE ALL_CPP_SOURCE_FILES "*.cpp")
-file(GLOB_RECURSE ALL_CUDA_SOURCE_FILES "*.cu")
-
-cuda_add_library(${PROJECT_NAME} STATIC
-    ${ALL_CPP_SOURCE_FILES}
-    ${ALL_CUDA_SOURCE_FILES}
+add_library(${PROJECT_NAME} STATIC
+    ${ALL_SOURCE_FILES}
 )
-set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 35)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(${PROJECT_NAME} PROPERTIES 
+    CUDA_ARCHITECTURES 75
+    CXX_STANDARD 14
+    CUDA_SEPARABLE_COMPILATION OFF
+    DEBUG_POSTFIX "_d"
+    PUBLIC_HEADER "${ALL_HEADER_FILES}"
+)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../>
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
+    PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-target_link_libraries(${PROJECT_NAME} dlpack::dlpack Eigen3::Eigen fmt::fmt fmt::fmt-header-only jsoncpp_lib)
+target_link_libraries(${PROJECT_NAME} PUBLIC dlpack::dlpack Eigen3::Eigen fmt::fmt fmt::fmt-header-only jsoncpp_lib)
 
 # Installation
-# Add 'd' suffix to debug builds
-set_property(TARGET ${PROJECT_NAME} PROPERTY DEBUG_POSTFIX d)
 
-# Installation
 include(GNUInstallDirs)
 
-file(GLOB_RECURSE ALL_HEADER_FILES "*.h")
-file(GLOB_RECURSE ALL_HEADER_FILES_MISC "*.inl")
-
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${ALL_HEADER_FILES};${ALL_HEADER_FILES_MISC}")
-
-# install(DIRECTORY "include/" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cupoch/utility)
-
-export(TARGETS ${PROJECT_NAME} FILE "${PROJECT_NAME}Config.cmake")
+export(TARGETS ${PROJECT_NAME} NAMESPACE cupoch:: FILE "${PROJECT_NAME}Targets.cmake")
 
 install(TARGETS ${PROJECT_NAME}
-    EXPORT "${PROJECT_NAME}Config"
+    EXPORT "${PROJECT_NAME}Targets"
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cupoch/utility
 )
 
-install(EXPORT "${PROJECT_NAME}Config"
-    FILE "${PROJECT_NAME}Config.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(EXPORT "${PROJECT_NAME}Targets"
+    FILE "${PROJECT_NAME}Targets.cmake"
+    NAMESPACE cupoch::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+)
+
+install(FILES "cmake/${PROJECT_NAME}Config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
 )

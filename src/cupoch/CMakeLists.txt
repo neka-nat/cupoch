@@ -21,3 +21,43 @@ add_subdirectory(planning)
 add_subdirectory(io)
 # add_subdirectory(visualization)
 
+add_library(cupoch INTERFACE)
+target_link_libraries(cupoch 
+    INTERFACE 
+        cupoch_utility cupoch_camera cupoch_geometry cupoch_collision 
+        cupoch_integration cupoch_registration cupoch_odometry cupoch_planning cupoch_io
+    )
+
+target_include_directories(cupoch
+    INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+# Installation
+
+include(GNUInstallDirs)
+
+export(TARGETS cupoch NAMESPACE cupoch:: FILE cupochTargets.cmake)
+
+install(TARGETS ${PROJECT_NAME}
+    EXPORT cupochTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    cupochConfigVersion.cmake
+    VERSION 0.1.3
+    COMPATIBILITY SameMajorVersion
+)
+
+install(EXPORT cupochTargets
+    FILE cupochTargets.cmake
+    NAMESPACE cupoch::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+)
+
+install(FILES cmake/cupochConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/cupochConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+)

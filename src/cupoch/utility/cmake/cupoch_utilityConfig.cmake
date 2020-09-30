@@ -1,0 +1,6 @@
+include(CMakeFindDependencyMacro)
+find_package(dlpack CONFIG REQUIRED)
+find_package(Eigen3 3.3.7 CONFIG REQUIRED)
+find_package(fmt 3.0 CONFIG REQUIRED)
+find_package(jsoncpp 1.9 CONFIG REQUIRED)
+include("${CMAKE_CURRENT_LIST_DIR}/cupoch_utilityTargets.cmake")
