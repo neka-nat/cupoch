@@ -25,14 +25,12 @@ namespace cupoch {
 namespace geometry {
 
 std::shared_ptr<DistanceTransform> DistanceTransform::CreateFromOccupancyGrid(const OccupancyGrid &input) {
-    auto output = std::make_shared<DistanceTransform>();
     if (input.voxel_size_ <= 0.0) {
-        utility::LogError("[CreateOccupancyGrid] occupancy grid  voxel_size <= 0.");
+        utility::LogError(
+                "[CreateOccupancyGrid] occupancy grid  voxel_size <= 0.");
     }
-    output->voxel_size_ = input.voxel_size_;
-    output->origin_ = input.origin_;
-    output->resolution_ = input.resolution_;
-    output->voxels_.resize(input.voxels_.size());
+    auto output = std::make_shared<DistanceTransform>(
+            input.voxel_size_, input.resolution_, input.origin_);
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> occvoxels = input.ExtractOccupiedVoxels();
     thrust::transform(occvoxels->begin(), occvoxels->end(),
                       thrust::make_permutation_iterator(
