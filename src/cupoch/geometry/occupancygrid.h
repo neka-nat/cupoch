@@ -119,11 +119,11 @@ public:
 public:
     Eigen::Vector3ui16 min_bound_ = Eigen::Vector3ui16::Zero();
     Eigen::Vector3ui16 max_bound_ = Eigen::Vector3ui16::Zero();
-    float clamping_thres_min_ = -2.0;
-    float clamping_thres_max_ = 3.5;
-    float prob_hit_log_ = 0.85;
-    float prob_miss_log_ = -0.4;
-    float occ_prob_thres_log_ = 0.0;
+    float clamping_thres_min_ = -2.0f;
+    float clamping_thres_max_ = 3.5f;
+    float prob_hit_log_ = 0.85f;
+    float prob_miss_log_ = -0.4f;
+    float occ_prob_thres_log_ = 0.0f;
     bool visualize_free_area_ = true;
 };
 
