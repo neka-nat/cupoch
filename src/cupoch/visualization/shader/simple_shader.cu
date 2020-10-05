@@ -850,7 +850,7 @@ bool SimpleShaderForDistanceTransform::PrepareBinding(
                       make_tuple_iterator(thrust::make_counting_iterator(n_out), dist_trans.voxels_.end()),
                       make_tuple_iterator(points, colors), func);
     auto tp_begin = make_tuple_iterator(points, colors);
-    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort(utility::exec_policy(0)->on(0),
                  tp_begin, tp_begin + n_out, alpha_greater_functor());
     draw_arrays_mode_ = GL_POINTS;
     draw_arrays_size_ = GLsizei(n_out);

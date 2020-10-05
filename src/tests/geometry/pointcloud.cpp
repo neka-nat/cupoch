@@ -613,3 +613,21 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10);
     ExpectEQ(pcd.SelectByIndex(inliers)->GetPoints(), ref_points);
 }
+
+TEST(PointCloud, RemoveRadiusOutliers) {
+    thrust::host_vector<Eigen::Vector3f> points;
+    points.push_back(Eigen::Vector3f({0.0, 0.0, 0.0}));
+    points.push_back(Eigen::Vector3f({1.0, 0.0, 0.0}));
+    points.push_back(Eigen::Vector3f({-1.0, 0.0, 0.0}));
+    points.push_back(Eigen::Vector3f({0.0, 1.0, 0.0}));
+    points.push_back(Eigen::Vector3f({0.0, -1.0, 0.0}));
+    points.push_back(Eigen::Vector3f({0.0, 0.0, 1.0}));
+    points.push_back(Eigen::Vector3f({0.0, 0.0, -1.0}));
+    points.push_back(Eigen::Vector3f({2.0, 0.0, 0.0}));
+    geometry::PointCloud pcd;
+    pcd.SetPoints(points);
+    auto res = pcd.RemoveRadiusOutliers(6, 1.1);
+    auto h_pt = std::get<0>(res)->GetPoints();
+    EXPECT_EQ((int)h_pt.size(), 1);
+    EXPECT_EQ(h_pt[0], Eigen::Vector3f(0.0, 0.0, 0.0));
+}

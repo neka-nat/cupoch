@@ -198,7 +198,7 @@ std::tuple<Eigen::Vector4f, utility::device_vector<size_t>> PointCloud::SegmentP
     thrust::host_vector<Eigen::Vector3f> h_pt(3);
     for (int itr = 0; itr < num_iterations; itr++) {
         thrust::tabulate(d_keys.begin(), d_keys.end(), random_functor(rand(), num_points));
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             d_keys.begin(), d_keys.end(), d_cards.begin());
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.

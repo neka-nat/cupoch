@@ -501,7 +501,7 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
     utility::device_vector<Eigen::Vector3i> copy_tri = triangles_;
     int *tri_ptr = (int *)(thrust::raw_pointer_cast(copy_tri.data()));
-    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         tri_ptr, tri_ptr + copy_tri.size() * 3,
                         nm_thrice.begin());
     auto end = thrust::reduce_by_key(
@@ -523,7 +523,7 @@ TriangleMesh &TriangleMesh::ComputeEdgeList() {
                                    thrust::raw_pointer_cast(edge_list_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(triangles_.size()), func);
-    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort(utility::exec_policy(0)->on(0),
                  edge_list_.begin(), edge_list_.end());
     auto end = thrust::unique(edge_list_.begin(), edge_list_.end());
     size_t n_out = thrust::distance(edge_list_.begin(), end);
@@ -956,7 +956,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     bool has_vert_color = HasVertexColors();
     size_t k = 0;
     if (has_vert_normal && has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             vertices_.begin(), vertices_.end(),
                             make_tuple_begin(index_new_to_old, vertex_normals_,
                                              vertex_colors_));
@@ -974,7 +974,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
         k = thrust::distance(begin, end1.second);
     } else if (has_vert_normal) {
         thrust::sort_by_key(
-                utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                utility::exec_policy(0)->on(0),
                 vertices_.begin(), vertices_.end(),
                 make_tuple_begin(index_new_to_old, vertex_normals_));
         auto end0 = thrust::reduce_by_key(
@@ -989,7 +989,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                                           vertex_normals_.begin());
         k = thrust::distance(vertex_normals_.begin(), end1.second);
     } else if (has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             vertices_.begin(), vertices_.end(),
                             make_tuple_begin(index_new_to_old, vertex_colors_));
         auto end0 = thrust::reduce_by_key(
@@ -1004,7 +1004,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                                           vertex_colors_.begin());
         k = thrust::distance(vertex_colors_.begin(), end1.second);
     } else {
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             vertices_.begin(), vertices_.end(),
                             index_new_to_old.begin());
         auto end0 = thrust::reduce_by_key(
@@ -1061,7 +1061,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
     thrust::transform(triangles_.begin(), triangles_.end(),
                       new_triangles.begin(), align_triangle_functor());
     if (has_tri_normal) {
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             new_triangles.begin(), new_triangles.end(),
                             triangle_normals_.begin());
         auto end = thrust::unique_by_key(new_triangles.begin(),
@@ -1069,7 +1069,7 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
                                          triangle_normals_.begin());
         k = thrust::distance(new_triangles.begin(), end.first);
     } else {
-        thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort(utility::exec_policy(0)->on(0),
                      new_triangles.begin(), new_triangles.end());
         auto end = thrust::unique(new_triangles.begin(), new_triangles.end());
         k = thrust::distance(new_triangles.begin(), end);

@@ -251,7 +251,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         voxels_values_.insert(voxels_values_.end(),
                               voxelgrid.voxels_values_.begin(),
                               voxelgrid.voxels_values_.end());
-        thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             voxels_keys_.begin(), voxels_keys_.end(),
                             voxels_values_.begin());
         utility::device_vector<int> counts(voxels_keys_.size());
@@ -285,7 +285,7 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_keys_.push_back(voxel.grid_index_);
     voxels_values_.push_back(voxel);
-    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
@@ -301,7 +301,7 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         thrust::make_transform_iterator(
                                 voxels.end(), extract_grid_index_functor()));
     voxels_values_.insert(voxels_values_.end(), voxels.begin(), voxels.end());
-    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
     auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),

@@ -136,7 +136,7 @@ utility::device_vector<thrust::tuple<int, int>> AdvancedMatching(
                          thrust::make_counting_iterator<int>(corresK.size()),
                          corresK.end()),
                  corres.begin() + nPtj);
-    thrust::sort(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort(utility::exec_policy(0)->on(0),
                  corres.begin(), corres.end());
     utility::LogDebug("points are remained : {:d}", corres.size());
 

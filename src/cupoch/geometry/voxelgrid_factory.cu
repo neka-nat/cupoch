@@ -147,7 +147,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
             thrust::make_counting_iterator<size_t>(n_total),
             make_tuple_begin(output->voxels_keys_, output->voxels_values_),
             func);
-    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         output->voxels_keys_.begin(),
                         output->voxels_keys_.end(),
                         output->voxels_values_.begin());
@@ -189,7 +189,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                           input.colors_.begin(),
                           make_tuple_begin(voxels_keys, voxels_values), func);
     }
-    thrust::sort_by_key(utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         voxels_keys.begin(), voxels_keys.end(),
                         voxels_values.begin());
 
