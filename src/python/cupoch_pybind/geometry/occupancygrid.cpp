@@ -106,6 +106,7 @@ void pybind_occupanygrid(py::module &m) {
                          &geometry::OccupancyGrid::Insert),
                  "Function to insert occupancy grid from pointcloud.",
                  "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)
+            .def("set_free_area", &geometry::OccupancyGrid::SetFreeArea)
             .def_readwrite("voxel_size", &geometry::OccupancyGrid::voxel_size_)
             .def_readwrite("resolution", &geometry::OccupancyGrid::resolution_)
             .def_readwrite("origin", &geometry::OccupancyGrid::origin_)

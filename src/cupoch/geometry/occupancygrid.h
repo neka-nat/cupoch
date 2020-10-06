@@ -99,6 +99,8 @@ public:
     ExtractOccupiedVoxels() const;
 
     OccupancyGrid& Reconstruct(float voxel_size, int resolution);
+    OccupancyGrid& SetFreeArea(const Eigen::Vector3f& min_bound,
+                               const Eigen::Vector3f& max_bound);
 
     OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points,
                           const Eigen::Vector3f& viewpoint,

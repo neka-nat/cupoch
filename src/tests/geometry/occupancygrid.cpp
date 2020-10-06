@@ -83,3 +83,10 @@ TEST(OccupancyGrid, Insert) {
     auto res5 = occupancy_grid->GetVoxel(Eigen::Vector3f(0.0, 0.0, 4.5));
     EXPECT_FALSE(thrust::get<0>(res5));
 }
+
+TEST(OccupancyGrid, SetFreeArea) {
+    auto occupancy_grid = std::make_shared<geometry::OccupancyGrid>();
+    occupancy_grid->SetFreeArea(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0.1, 0.1, 0.1));
+    auto res = occupancy_grid->ExtractFreeVoxels();
+    EXPECT_EQ(res->size(), 27);
+}

@@ -271,7 +271,7 @@ OccupancyGrid& OccupancyGrid::Clear() {
 Eigen::Vector3f OccupancyGrid::GetMinBound() const {
     return (min_bound_.cast<int>() - Eigen::Vector3i::Constant(resolution_ / 2))
                            .cast<float>() *
-                   voxel_size_ -
+                   voxel_size_ +
            origin_;
 }
 
@@ -279,7 +279,7 @@ Eigen::Vector3f OccupancyGrid::GetMaxBound() const {
     return (max_bound_.cast<int>() -
             Eigen::Vector3i::Constant(resolution_ / 2 - 1))
                            .cast<float>() *
-                   voxel_size_ -
+                   voxel_size_ +
            origin_;
 }
 
@@ -360,6 +360,27 @@ OccupancyGrid::ExtractOccupiedVoxels() const {
 
 OccupancyGrid& OccupancyGrid::Reconstruct(float voxel_size, int resolution) {
     DenseGrid::Reconstruct(voxel_size, resolution);
+    return *this;
+}
+
+OccupancyGrid& OccupancyGrid::SetFreeArea(const Eigen::Vector3f& min_bound,
+                                          const Eigen::Vector3f& max_bound) {
+    const Eigen::Vector3i half_res = Eigen::Vector3i::Constant(resolution_ / 2);
+    Eigen::Vector3i imin_bound = ((min_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
+    Eigen::Vector3i imax_bound = ((max_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
+    Eigen::Vector3i diff = imax_bound - imin_bound + Eigen::Vector3i::Ones();
+    min_bound_ = imin_bound.cast<unsigned short>();
+    max_bound_ = imax_bound.cast<unsigned short>();
+    extract_range_voxels_functor func(diff, resolution_,
+                                      imin_bound);
+    thrust::for_each(thrust::make_permutation_iterator(voxels_.begin(),
+                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
+                     thrust::make_permutation_iterator(voxels_.begin(),
+                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(diff[0] * diff[1] * diff[2]), func)),
+                     [pml = prob_miss_log_] __device__ (geometry::OccupancyVoxel& v) {
+                         v.prob_log_ = (isnan(v.prob_log_)) ? 0 : v.prob_log_;
+                         v.prob_log_ += pml;
+                     });
     return *this;
 }
 
