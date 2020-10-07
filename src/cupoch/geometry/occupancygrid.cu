@@ -368,11 +368,11 @@ OccupancyGrid& OccupancyGrid::SetFreeArea(const Eigen::Vector3f& min_bound,
     const Eigen::Vector3i half_res = Eigen::Vector3i::Constant(resolution_ / 2);
     Eigen::Vector3i imin_bound = ((min_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
     Eigen::Vector3i imax_bound = ((max_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
-    Eigen::Vector3i diff = imax_bound - imin_bound + Eigen::Vector3i::Ones();
-    min_bound_ = imin_bound.cast<unsigned short>();
-    max_bound_ = imax_bound.cast<unsigned short>();
-    extract_range_voxels_functor func(diff, resolution_,
-                                      imin_bound);
+    min_bound_ = imin_bound.array().max(Eigen::Array3i(0, 0, 0)).matrix().cast<unsigned short>();
+    max_bound_ = imax_bound.array().min(Eigen::Array3i(resolution_ - 1, resolution_ - 1, resolution_ - 1)).matrix().cast<unsigned short>();
+    Eigen::Vector3ui16 diff = max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
+    extract_range_voxels_functor func(diff.cast<int>(), resolution_,
+                                      min_bound_.cast<int>());
     thrust::for_each(thrust::make_permutation_iterator(voxels_.begin(),
                             thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
                      thrust::make_permutation_iterator(voxels_.begin(),
