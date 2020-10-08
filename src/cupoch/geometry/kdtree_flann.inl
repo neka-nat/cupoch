@@ -20,7 +20,7 @@
 **/
 #include "cupoch/geometry/kdtree_flann.h"
 #define FLANN_USE_CUDA
-#include <flann/flann.hpp>
+#include "cupoch-flann/flann.hpp"
 #undef FLANN_USE_CUDA
 
 #include "cupoch/utility/console.h"

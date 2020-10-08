@@ -5,7 +5,6 @@ project(cupoch_geometry VERSION 0.1.3 LANGUAGES CXX CUDA)
 # Check for dependencies
 find_package(Eigen3 3.3.7 CONFIG REQUIRED)
 find_package(libvh CONFIG REQUIRED)
-find_package(flann CONFIG REQUIRED)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --no-host-device-move-forward --expt-relaxed-constexpr --extended-lambda")
 
@@ -17,12 +16,15 @@ add_library(${PROJECT_NAME} STATIC
     ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES}
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE -DFLANN_USE_CUDA)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES 
     CUDA_ARCHITECTURES 75
     CXX_STANDARD 14
     CUDA_SEPARABLE_COMPILATION OFF
     DEBUG_POSTFIX "_d"
     PUBLIC_HEADER "${ALL_HEADER_FILES}"
+    #COMPILE_DEFINITIONS PRIVATE -DFLANN_USE_CUDA
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -32,7 +34,7 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../>
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen flann::flann flann::flann_cpp flann::flann_cuda libvh cupoch_utility)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen libvh cupoch_utility)
 
 # Installation
 
