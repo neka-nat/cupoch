@@ -178,6 +178,16 @@ void pybind_image(py::module &m) {
                     },
                     "Function to filter ImagePyramid", "image_pyramid"_a,
                     "filter_type"_a)
+            .def_static(
+                    "bilateral_filter_pyramid",
+                    [](const geometry::ImagePyramid &input,
+                       int diameter, float sigma_color, float sigma_space) {
+                        auto output = geometry::Image::BilateralFilterPyramid(
+                                input, diameter, sigma_color, sigma_space);
+                        return output;
+                    },
+                    "Function to filter ImagePyramid", "image_pyramid"_a,
+                    "diameter"_a, "sigma_color"_a, "sigma_space"_a)
             .def_readonly("width", &geometry::Image::width_)
             .def_readonly("height", &geometry::Image::height_)
             .def_readonly("num_of_channels", &geometry::Image::num_of_channels_)

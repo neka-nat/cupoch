@@ -451,6 +451,18 @@ ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
     return output;
 }
 
+ImagePyramid Image::BilateralFilterPyramid(const ImagePyramid &input,
+                                           int diameter,
+                                           float sigma_color,
+                                           float sigma_space) {
+    std::vector<std::shared_ptr<Image>> output;
+    for (size_t i = 0; i < input.size(); i++) {
+        auto layer_filtered = input[i]->BilateralFilter(diameter, sigma_color, sigma_space);
+        output.push_back(layer_filtered);
+    }
+    return output;
+}
+
 std::shared_ptr<Image> Image::Filter(
         const utility::device_vector<float> &dx,
         const utility::device_vector<float> &dy) const {

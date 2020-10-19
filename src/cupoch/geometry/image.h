@@ -195,6 +195,10 @@ public:
     /// Function to filter image pyramid.
     static ImagePyramid FilterPyramid(const ImagePyramid &input,
                                       Image::FilterType type);
+    static ImagePyramid BilateralFilterPyramid(const ImagePyramid &input,
+                                               int diameter,
+                                               float sigma_color,
+                                               float sigma_space);
 
     /// Function to create image pyramid.
     ImagePyramid CreatePyramid(size_t num_of_levels,

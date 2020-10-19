@@ -98,6 +98,11 @@ public:
     static RGBDImagePyramid FilterPyramid(
             const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type);
 
+    static RGBDImagePyramid BilateralFilterPyramid(const RGBDImagePyramid &rgbd_image_pyramid,
+                                                   int diameter,
+                                                   float sigma_color,
+                                                   float sigma_space);
+
     RGBDImagePyramid CreatePyramid(
             size_t num_of_levels,
             bool with_gaussian_filter_for_color = true,

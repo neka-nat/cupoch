@@ -77,13 +77,30 @@ RGBDImage &RGBDImage::Rotate(const Eigen::Matrix2f &R, bool center) {
 RGBDImagePyramid RGBDImage::FilterPyramid(
         const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
-    rgbd_image_pyramid_filtered.clear();
     int num_of_levels = (int)rgbd_image_pyramid.size();
     for (int level = 0; level < num_of_levels; level++) {
         auto color_level = rgbd_image_pyramid[level]->color_;
         auto depth_level = rgbd_image_pyramid[level]->depth_;
         auto color_level_filtered = color_level.Filter(type);
         auto depth_level_filtered = depth_level.Filter(type);
+        auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
+                RGBDImage(*color_level_filtered, *depth_level_filtered));
+        rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
+    }
+    return rgbd_image_pyramid_filtered;
+}
+
+RGBDImagePyramid RGBDImage::BilateralFilterPyramid(const RGBDImagePyramid &rgbd_image_pyramid,
+                                                   int diameter,
+                                                   float sigma_color,
+                                                   float sigma_space) {
+    RGBDImagePyramid rgbd_image_pyramid_filtered;
+    int num_of_levels = (int)rgbd_image_pyramid.size();
+    for (int level = 0; level < num_of_levels; level++) {
+        auto color_level = rgbd_image_pyramid[level]->color_;
+        auto depth_level = rgbd_image_pyramid[level]->depth_;
+        auto color_level_filtered = color_level.BilateralFilter(diameter, sigma_color, sigma_space);
+        auto depth_level_filtered = depth_level.BilateralFilter(diameter, sigma_color, sigma_space);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(*color_level_filtered, *depth_level_filtered));
         rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
