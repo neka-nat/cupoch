@@ -86,11 +86,11 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
         if (max_abs_comp > 0) {
             if (absM00 >= absM01) {
                 m01 /= m00;
-                m00 = 1 / std::sqrt(1 + m01 * m01);
+                m00 = 1 / sqrt(1 + m01 * m01);
                 m01 *= m00;
             } else {
                 m00 /= m01;
-                m01 = 1 / std::sqrt(1 + m00 * m00);
+                m01 = 1 / sqrt(1 + m00 * m00);
                 m00 *= m01;
             }
             return m01 * U - m00 * V;
@@ -102,11 +102,11 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
         if (max_abs_comp > 0) {
             if (absM11 >= absM01) {
                 m01 /= m11;
-                m11 = 1 / std::sqrt(1 + m01 * m01);
+                m11 = 1 / sqrt(1 + m01 * m01);
                 m01 *= m11;
             } else {
                 m11 /= m01;
-                m01 = 1 / std::sqrt(1 + m11 * m11);
+                m01 = 1 / sqrt(1 + m11 * m11);
                 m11 *= m01;
             }
             return m11 * U - m01 * V;

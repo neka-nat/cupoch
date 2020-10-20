@@ -214,7 +214,9 @@ public:
             const RGBDImage &image,
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4f &extrinsic = Eigen::Matrix4f::Identity(),
-            bool project_valid_depth_only = true);
+            bool project_valid_depth_only = true,
+            float depth_cutoff = -1.0f,
+            bool compute_normals = false);
 
     static std::shared_ptr<PointCloud> CreateFromLaserScanBuffer(
             const LaserScanBuffer &scan,

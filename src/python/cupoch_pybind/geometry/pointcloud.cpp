@@ -264,7 +264,9 @@ void pybind_pointcloud(py::module &m) {
         )",
                     "image"_a, "intrinsic"_a,
                     "extrinsic"_a = Eigen::Matrix4f::Identity(),
-                    "project_valid_depth_only"_a = true)
+                    "project_valid_depth_only"_a = true,
+                    "depth_cutoff"_a = -1.0f,
+                    "compute_normals"_a = false)
             .def_static(
                     "create_from_laserscanbuffer",
                     &geometry::PointCloud::CreateFromLaserScanBuffer,

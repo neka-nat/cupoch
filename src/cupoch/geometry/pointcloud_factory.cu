@@ -107,7 +107,8 @@ struct convert_from_rgbdimage_functor {
             const thrust::pair<float, float> &principal_point,
             const thrust::pair<float, float> &focal_length,
             float scale,
-            bool project_valid_depth_only)
+            bool project_valid_depth_only,
+            float depth_cutoff)
         : depth_(depth),
           color_(color),
           width_(width),
@@ -115,7 +116,8 @@ struct convert_from_rgbdimage_functor {
           principal_point_(principal_point),
           focal_length_(focal_length),
           scale_(scale),
-          project_valid_depth_only_(project_valid_depth_only){};
+          project_valid_depth_only_(project_valid_depth_only),
+          depth_cutoff_(depth_cutoff) {};
     const uint8_t *depth_;
     const uint8_t *color_;
     const int width_;
@@ -124,13 +126,14 @@ struct convert_from_rgbdimage_functor {
     const thrust::pair<float, float> focal_length_;
     const float scale_;
     const bool project_valid_depth_only_;
+    const float depth_cutoff_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
             size_t idx) const {
         int i = idx / width_;
         int j = idx % width_;
         float *p = (float *)(depth_ + idx * sizeof(float));
         TC *pc = (TC *)(color_ + idx * NC * sizeof(TC));
-        if (*p > 0) {
+        if (*p > 0 && (depth_cutoff_ <= 0 || depth_cutoff_ > *p)) {
             float z = (float)(*p);
             float x = (j - principal_point_.first) * z / focal_length_.first;
             float y = (i - principal_point_.second) * z / focal_length_.second;
@@ -149,6 +152,40 @@ struct convert_from_rgbdimage_functor {
             return thrust::make_tuple(
                     Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()),
                     Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()));
+        }
+    }
+};
+
+struct compute_normals_from_structured_pointcloud_functor {
+    compute_normals_from_structured_pointcloud_functor(
+            const Eigen::Vector3f *points,
+            int width,
+            int height)
+        : points_(points),
+          width_(width),
+          height_(height) {};
+    const Eigen::Vector3f *points_;
+    const int width_;
+    const int height_;
+    __device__ Eigen::Vector3f operator() (size_t idx) const {
+        int i = idx / width_;
+        int j = idx % width_;
+        if (i < 1 || i >= height_ || j < 1 || j >= width_) {
+            return Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+        }
+        Eigen::Vector3f left = *(points_ + width_ * i + j - 1);
+        Eigen::Vector3f right = *(points_ + width_ * i + j + 1);
+        Eigen::Vector3f upper = *(points_ + width_ * (i - 1) + j);
+        Eigen::Vector3f lower = *(points_ + width_ * (i + 1) + j);
+        if (isnan(left(2)) || isnan(right(2)) || isnan(upper(2)) || isnan(lower(2))) {
+            return Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+        } else {
+            Eigen::Vector3f hor = left - right;
+            Eigen::Vector3f ver = upper - lower;
+            Eigen::Vector3f normal = hor.cross(ver);
+            normal.normalize();
+            if (normal.z() > 0) normal *= -1.0f;
+            return normal;
         }
     }
 };
@@ -198,7 +235,9 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4f &extrinsic,
-        bool project_valid_depth_only) {
+        bool project_valid_depth_only,
+        float depth_cutoff,
+        bool compute_normals) {
     auto pointcloud = std::make_shared<PointCloud>();
     Eigen::Matrix4f camera_pose = extrinsic.inverse();
     auto focal_length = intrinsic.GetFocalLength();
@@ -211,11 +250,20 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
             thrust::raw_pointer_cast(image.depth_.data_.data()),
             thrust::raw_pointer_cast(image.color_.data_.data()),
             image.depth_.width_, camera_pose, principal_point, focal_length,
-            scale, project_valid_depth_only);
+            scale, project_valid_depth_only, depth_cutoff);
     thrust::transform(
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator<size_t>(num_valid_pixels),
             make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
+    if (compute_normals) {
+        pointcloud->normals_.resize(num_valid_pixels);
+        compute_normals_from_structured_pointcloud_functor func_n(
+                thrust::raw_pointer_cast(pointcloud->points_.data()),
+                image.depth_.width_, image.depth_.height_);
+        thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(num_valid_pixels),
+                pointcloud->normals_.begin(), func_n);
+    }
     pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, true);
     return pointcloud;
 }
@@ -249,17 +297,19 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         const RGBDImage &image,
         const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4f &extrinsic /* = Eigen::Matrix4f::Identity()*/,
-        bool project_valid_depth_only) {
+        bool project_valid_depth_only,
+        float depth_cutoff,
+        bool compute_normals) {
     if (image.depth_.num_of_channels_ == 1 &&
         image.depth_.bytes_per_channel_ == 4) {
         if (image.color_.bytes_per_channel_ == 1 &&
             image.color_.num_of_channels_ == 3) {
             return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
-                    image, intrinsic, extrinsic, project_valid_depth_only);
+                    image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
         } else if (image.color_.bytes_per_channel_ == 4 &&
                    image.color_.num_of_channels_ == 1) {
             return CreatePointCloudFromRGBDImageT<float, 1>(
-                    image, intrinsic, extrinsic, project_valid_depth_only);
+                    image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
         }
     }
     utility::LogError(
