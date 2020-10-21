@@ -106,6 +106,7 @@ struct copy_lineset_functor {
     const thrust::pair<Eigen::Vector3f, Eigen::Vector3f> *line_coords_;
     const Eigen::Vector3f *line_colors_;
     const bool has_colors_;
+    const Eigen::Vector3f default_line_color_ = geometry::DEFAULT_LINE_COLOR;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
             size_t k) const {
         int i = k / 2;
@@ -113,7 +114,7 @@ struct copy_lineset_functor {
         Eigen::Vector4f color_tmp;
         color_tmp[3]  = 1.0;
         color_tmp.head<3>() =
-                (has_colors_) ? line_colors_[i] : Eigen::Vector3f::Ones();
+                (has_colors_) ? line_colors_[i] : default_line_color_;
         if (j == 0) {
             return thrust::make_tuple(line_coords_[i].first, color_tmp);
         } else {

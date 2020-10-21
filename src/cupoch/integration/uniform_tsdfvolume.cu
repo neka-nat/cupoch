@@ -830,7 +830,8 @@ void UniformTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
 
 std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::Raycast(const camera::PinholeCameraIntrinsic &intrinsic,
         const Eigen::Matrix4f &extrinsic,
-        float sdf_trunc) const {
+        float sdf_trunc,
+        bool project_valid_depth_only) const {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
     size_t n_total = intrinsic.width_ * intrinsic.height_;
     const float fx = intrinsic.GetFocalLength().first;
@@ -848,7 +849,7 @@ std::shared_ptr<geometry::PointCloud> UniformTSDFVolume::Raycast(const camera::P
                       thrust::make_counting_iterator(n_total),
                       make_tuple_begin(pointcloud->points_, pointcloud->normals_, pointcloud->colors_),
                       func);
-    pointcloud->RemoveNoneFinitePoints(true, true);
+    pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, project_valid_depth_only);
     return pointcloud;
 }
 

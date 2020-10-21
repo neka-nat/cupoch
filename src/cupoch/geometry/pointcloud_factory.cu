@@ -107,7 +107,6 @@ struct convert_from_rgbdimage_functor {
             const thrust::pair<float, float> &principal_point,
             const thrust::pair<float, float> &focal_length,
             float scale,
-            bool project_valid_depth_only,
             float depth_cutoff)
         : depth_(depth),
           color_(color),
@@ -116,7 +115,6 @@ struct convert_from_rgbdimage_functor {
           principal_point_(principal_point),
           focal_length_(focal_length),
           scale_(scale),
-          project_valid_depth_only_(project_valid_depth_only),
           depth_cutoff_(depth_cutoff) {};
     const uint8_t *depth_;
     const uint8_t *color_;
@@ -125,7 +123,6 @@ struct convert_from_rgbdimage_functor {
     const thrust::pair<float, float> principal_point_;
     const thrust::pair<float, float> focal_length_;
     const float scale_;
-    const bool project_valid_depth_only_;
     const float depth_cutoff_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> operator()(
             size_t idx) const {
@@ -144,10 +141,6 @@ struct convert_from_rgbdimage_functor {
                     Eigen::Vector3f(pc[0], pc[(NC - 1) / 2], pc[NC - 1]) /
                     scale_;
             return thrust::make_tuple(points, colors);
-        } else if (!project_valid_depth_only_) {
-            return thrust::make_tuple(
-                    Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
-                    Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()));
         } else {
             return thrust::make_tuple(
                     Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()),
@@ -250,7 +243,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
             thrust::raw_pointer_cast(image.depth_.data_.data()),
             thrust::raw_pointer_cast(image.color_.data_.data()),
             image.depth_.width_, camera_pose, principal_point, focal_length,
-            scale, project_valid_depth_only, depth_cutoff);
+            scale, depth_cutoff);
     thrust::transform(
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator<size_t>(num_valid_pixels),
@@ -264,7 +257,7 @@ std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
                 thrust::make_counting_iterator<size_t>(num_valid_pixels),
                 pointcloud->normals_.begin(), func_n);
     }
-    pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, true);
+    pointcloud->RemoveNoneFinitePoints(project_valid_depth_only, project_valid_depth_only);
     return pointcloud;
 }
 

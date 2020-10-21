@@ -66,6 +66,10 @@ void pybind_lineset(py::module &m) {
             .def("paint_uniform_color",
                  &geometry::LineSet<3>::PaintUniformColor,
                  "Assigns each line in the line set the same color.")
+            .def("paint_indexed_color",
+                 [] (geometry::LineSet<3>& self, const wrapper::device_vector_size_t& indices, const Eigen::Vector3f& color) {
+                     return self.PaintIndexedColor(indices.data_, color);
+                 })
             .def_static(
                     "create_from_point_cloud_correspondences",
                     &geometry::LineSet<3>::CreateFromPointCloudCorrespondences,

@@ -76,7 +76,8 @@ public:
 
     std::shared_ptr<geometry::PointCloud> Raycast(const camera::PinholeCameraIntrinsic &intrinsic,
                                                   const Eigen::Matrix4f &extrinsic,
-                                                  float sdf_trunc) const;
+                                                  float sdf_trunc,
+                                                  bool project_valid_depth_only = true) const;
 
 public:
     utility::device_vector<geometry::TSDFVoxel> voxels_;

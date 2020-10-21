@@ -37,6 +37,8 @@ class OrientedBoundingBox;
 class AxisAlignedBoundingBox;
 class TriangleMesh;
 
+static const Eigen::Vector3f DEFAULT_LINE_COLOR = Eigen::Vector3f::Ones();
+
 template <int Dim>
 class LineSet : public GeometryBase<Dim> {
 public:
@@ -93,6 +95,9 @@ public:
         ResizeAndPaintUniformColor(colors_, lines_.size(), color);
         return *this;
     }
+
+    LineSet &PaintIndexedColor(const utility::device_vector<size_t>& indices,
+                               const Eigen::Vector3f &color);
 
     float GetMaxLineLength() const;
 

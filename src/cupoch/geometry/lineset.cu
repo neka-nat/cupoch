@@ -199,5 +199,21 @@ float LineSet<Dim>::GetMaxLineLength() const {
             0.0f, thrust::maximum<float>());
 }
 
+
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::PaintIndexedColor(const utility::device_vector<size_t>& indices,
+                                              const Eigen::Vector3f &color) {
+    if (colors_.empty()) {
+        colors_.resize(lines_.size());
+        thrust::fill(colors_.begin(), colors_.end(), DEFAULT_LINE_COLOR);
+    }
+    thrust::for_each(thrust::make_permutation_iterator(colors_.begin(), indices.begin()),
+                     thrust::make_permutation_iterator(colors_.begin(), indices.end()),
+                     [tc=color] __device__ (Eigen::Vector3f& sc) {
+                         sc = tc;
+                     });
+    return *this;
+}
+
 template class LineSet<2>;
 template class LineSet<3>;

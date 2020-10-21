@@ -21,6 +21,7 @@
 #include "cupoch/collision/collision.h"
 
 #include "cupoch/geometry/voxelgrid.h"
+#include "cupoch/geometry/lineset.h"
 #include "tests/test_utility/raw.h"
 #include "tests/test_utility/unit_test.h"
 
@@ -45,4 +46,28 @@ TEST(Collision, VoxelVoxel) {
     auto res3 = collision::ComputeIntersection(voxel1, voxel2);
     EXPECT_EQ(res3->collision_index_pairs_.size(), 1);
     EXPECT_EQ(res3->GetCollisionIndexPairs()[0], Eigen::Vector2i(0, 0));
+}
+
+TEST(Collision, VoxelLineSet) {
+    geometry::VoxelGrid voxel;
+    geometry::LineSet<3> lineset;
+    auto res1 = collision::ComputeIntersection(voxel, lineset);
+    EXPECT_FALSE(res1->IsCollided());
+    voxel.voxel_size_ = 1.0;
+    voxel.AddVoxel(geometry::Voxel(Eigen::Vector3i(0, 0, 0)));
+    voxel.AddVoxel(geometry::Voxel(Eigen::Vector3i(5, 0, 0)));
+    thrust::host_vector<Eigen::Vector3f> points;
+    points.push_back(Eigen::Vector3f(-0.1, -0.1, -0.1));
+    points.push_back(Eigen::Vector3f(-0.1, -0.1, 1.1));
+    points.push_back(Eigen::Vector3f(1.1, 1.1, 1.1));
+    thrust::host_vector<Eigen::Vector2i> lines;
+    lines.push_back(Eigen::Vector2i(0, 1));
+    lines.push_back(Eigen::Vector2i(0, 2));
+    lineset.SetPoints(points);
+    lineset.SetLines(lines);
+
+    auto res2 = collision::ComputeIntersection(voxel, lineset);
+    EXPECT_TRUE(res2->IsCollided());
+    EXPECT_EQ(res2->collision_index_pairs_.size(), 1);
+    EXPECT_EQ(res2->GetCollisionIndexPairs()[0], Eigen::Vector2i(0, 1));
 }
