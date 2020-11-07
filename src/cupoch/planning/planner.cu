@@ -28,18 +28,22 @@
 namespace cupoch {
 namespace planning {
 
+PlannerBase::PlannerBase(const PlannerBase& other)
+   : obstacles_(other.obstacles_) {}
+
 PlannerBase& PlannerBase::AddObstacle(
         const std::shared_ptr<geometry::Geometry>& obstacle) {
     obstacles_.push_back(obstacle);
     return *this;
 }
 
-Pos3DPlanner::Pos3DPlanner(float object_radius)
-    : object_radius_(object_radius) {}
-Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius)
-    : graph_(graph), object_radius_(object_radius) {}
+Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius, float max_edge_distance)
+    : graph_(graph), object_radius_(object_radius), max_edge_distance_(max_edge_distance) {}
 
 Pos3DPlanner::~Pos3DPlanner() {}
+
+Pos3DPlanner::Pos3DPlanner(const Pos3DPlanner& other)
+    : PlannerBase(other), graph_(other.graph_), object_radius_(other.object_radius_), max_edge_distance_(other.max_edge_distance_) {}
 
 Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
     for (const auto& obstacle : obstacles_) {

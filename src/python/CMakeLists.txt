@@ -26,7 +26,8 @@ if (${PYTHON_VERSION_MAJOR} EQUAL 2)
 endif ()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
-                      cupoch_visualization cupoch_io cupoch_odometry cupoch_collision
+                      cupoch_visualization cupoch_io cupoch_odometry
+                      cupoch_planning cupoch_collision
                       cupoch_integration cupoch_geometry cupoch_utility
                       cupoch_wrapper
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})

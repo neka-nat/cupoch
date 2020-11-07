@@ -32,6 +32,8 @@ class PlannerBase {
 public:
     PlannerBase(){};
     virtual ~PlannerBase(){};
+    PlannerBase(const PlannerBase& other);
+
     virtual PlannerBase& AddObstacle(
             const std::shared_ptr<geometry::Geometry>& obstacle);
     virtual std::shared_ptr<Path> FindPath(
@@ -44,9 +46,11 @@ public:
 
 class Pos3DPlanner : public PlannerBase {
 public:
-    Pos3DPlanner(float object_radius = 0.1);
-    Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius = 0.1);
+    Pos3DPlanner(const geometry::Graph<3>& graph,
+                 float object_radius = 0.1,
+                 float max_edge_distance = 1.0);
     ~Pos3DPlanner();
+    Pos3DPlanner(const Pos3DPlanner& other);
 
     Pos3DPlanner& UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start,
@@ -56,7 +60,7 @@ public:
     geometry::Graph<3> graph_;
 
     float object_radius_;
-    float max_edge_distance_ = 1.0;
+    float max_edge_distance_;
 };
 
 }  // namespace planning
