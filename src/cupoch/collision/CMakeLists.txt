@@ -57,9 +57,9 @@ write_basic_package_version_file(
 install(EXPORT "${PROJECT_NAME}Targets"
     FILE "${PROJECT_NAME}Targets.cmake"
     NAMESPACE cupoch::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
 )
 
 install(FILES "cmake/${PROJECT_NAME}Config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
 )

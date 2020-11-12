@@ -55,9 +55,9 @@ write_basic_package_version_file(
 install(EXPORT cupochTargets
     FILE cupochTargets.cmake
     NAMESPACE cupoch::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
 )
 
 install(FILES cmake/cupochConfig.cmake "${CMAKE_CURRENT_BINARY_DIR}/cupochConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cupoch
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
 )
