@@ -104,6 +104,7 @@ protected:
     SimpleShaderForLineSet simple_lineset_shader_;
 };
 
+template <int Dim>
 class GraphRenderer : public GeometryRenderer {
 public:
     ~GraphRenderer() override {}
@@ -115,8 +116,8 @@ public:
     bool UpdateGeometry() override;
 
 protected:
-    SimpleShaderForGraphNode simple_graph_node_shader_;
-    SimpleShaderForGraphEdge simple_graph_edge_shader_;
+    SimpleShaderForGraphNode<Dim> simple_graph_node_shader_;
+    SimpleShaderForGraphEdge<Dim> simple_graph_edge_shader_;
 };
 
 class TriangleMeshRenderer : public GeometryRenderer {

@@ -28,6 +28,129 @@
 
 using namespace cupoch;
 
+namespace {
+
+template <class LineSetT, int Dim>
+void bind_def(LineSetT& lineset) {
+    py::detail::bind_default_constructor<geometry::LineSet<Dim>>(lineset);
+    py::detail::bind_copy_functions<geometry::LineSet<Dim>>(lineset);
+    lineset.def(py::init<const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &,
+                         const thrust::host_vector<Eigen::Vector2i> &>(),
+                "Create a LineSet from given points and line indices",
+                "points"_a, "lines"_a)
+            .def(py::init([](const wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>> &points,
+                             const wrapper::device_vector_vector2i &lines) {
+                     return std::unique_ptr<geometry::LineSet<Dim>>(
+                             new geometry::LineSet<Dim>(points.data_,
+                                                        lines.data_));
+                 }),
+                 "Create a LineSet from given points and line indices",
+                 "points"_a, "lines"_a)
+            .def("__repr__",
+                 [](const geometry::LineSet<Dim> &lineset) {
+                     return std::string("geometry::LineSet with ") +
+                            std::to_string(lineset.lines_.size()) + " lines.";
+                 })
+            .def("has_points", &geometry::LineSet<Dim>::HasPoints,
+                 "Returns ``True`` if the object contains points.")
+            .def("has_lines", &geometry::LineSet<Dim>::HasLines,
+                 "Returns ``True`` if the object contains lines.")
+            .def("has_colors", &geometry::LineSet<Dim>::HasColors,
+                 "Returns ``True`` if the object's lines contain contain "
+                 "colors.")
+            .def("get_line_coordinate",
+                 &geometry::LineSet<Dim>::GetLineCoordinate, "line_index"_a)
+            .def("paint_uniform_color",
+                 &geometry::LineSet<Dim>::PaintUniformColor,
+                 "Assigns each line in the line set the same color.")
+            .def("paint_indexed_color",
+                 [] (geometry::LineSet<Dim>& self, const wrapper::device_vector_size_t& indices, const Eigen::Vector3f& color) {
+                     return self.PaintIndexedColor(indices.data_, color);
+                 })
+            .def_static(
+                    "create_from_point_cloud_correspondences",
+                    &geometry::LineSet<Dim>::CreateFromPointCloudCorrespondences,
+                    "Factory function to create a LineSet from two "
+                    "pointclouds and a correspondence set.",
+                    "cloud0"_a, "cloud1"_a, "correspondences"_a)
+            .def_static("create_from_oriented_bounding_box",
+                        &geometry::LineSet<Dim>::CreateFromOrientedBoundingBox,
+                        "Factory function to create a LineSet from an "
+                        "OrientedBoundingBox.",
+                        "box"_a)
+            .def_static("create_from_axis_aligned_bounding_box",
+                        &geometry::LineSet<Dim>::CreateFromAxisAlignedBoundingBox,
+                        "Factory function to create a LineSet from an "
+                        "AxisAlignedBoundingBox.",
+                        "box"_a)
+            .def_static("create_from_triangle_mesh",
+                        &geometry::LineSet<Dim>::CreateFromTriangleMesh,
+                        "Factory function to create a LineSet from edges of a "
+                        "triangle mesh.",
+                        "mesh"_a)
+            .def_property(
+                    "points",
+                    [](geometry::LineSet<Dim> &line) {
+                        return wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>>(line.points_);
+                    },
+                    [](geometry::LineSet<Dim> &line,
+                       const wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>> &vec) {
+                        wrapper::FromWrapper(line.points_, vec);
+                    })
+            .def_property(
+                    "lines",
+                    [](geometry::LineSet<Dim> &line) {
+                        return wrapper::device_vector_vector2i(line.lines_);
+                    },
+                    [](geometry::LineSet<Dim> &line,
+                       const wrapper::device_vector_vector2i &vec) {
+                        wrapper::FromWrapper(line.lines_, vec);
+                    })
+            .def_property(
+                    "colors",
+                    [](geometry::LineSet<Dim> &line) {
+                        return wrapper::device_vector_vector3f(line.colors_);
+                    },
+                    [](geometry::LineSet<Dim> &line,
+                       const wrapper::device_vector_vector3f &vec) {
+                        wrapper::FromWrapper(line.colors_, vec);
+                    })
+            .def("to_lines_dlpack",
+                 [](geometry::LineSet<Dim> &line) {
+                     return dlpack::ToDLpackCapsule<Eigen::Vector2i>(line.lines_);
+                 })
+            .def("from_lines_dlpack",
+                 [](geometry::LineSet<Dim> &line, py::capsule dlpack) {
+                     dlpack::FromDLpackCapsule<Eigen::Vector2i>(dlpack, line.lines_);
+                 });
+}
+
+template <class LineSetT>
+void doc_inject(py::module &m, const std::string& name) {
+    docstring::ClassMethodDocInject(m, name, "has_colors");
+    docstring::ClassMethodDocInject(m, name, "has_lines");
+    docstring::ClassMethodDocInject(m, name, "has_points");
+    docstring::ClassMethodDocInject(m, name, "get_line_coordinate",
+                                    {{"line_index", "Index of the line."}});
+    docstring::ClassMethodDocInject(m, name, "paint_uniform_color",
+                                    {{"color", "Color for the LineSet."}});
+    docstring::ClassMethodDocInject(
+            m, name, "create_from_point_cloud_correspondences",
+            {{"cloud0", "First point cloud."},
+             {"cloud1", "Second point cloud."},
+             {"correspondences", "Set of correspondences."}});
+    docstring::ClassMethodDocInject(m, name,
+                                    "create_from_oriented_bounding_box",
+                                    {{"box", "The input bounding box."}});
+    docstring::ClassMethodDocInject(m, name,
+                                    "create_from_axis_aligned_bounding_box",
+                                    {{"box", "The input bounding box."}});
+    docstring::ClassMethodDocInject(m, name, "create_from_triangle_mesh",
+                                    {{"mesh", "The input triangle mesh."}});
+}
+
+}
+
 void pybind_lineset(py::module &m) {
     py::class_<geometry::LineSet<3>, PyGeometry3D<geometry::LineSet<3>>,
                std::shared_ptr<geometry::LineSet<3>>, geometry::GeometryBase<3>>
@@ -35,117 +158,17 @@ void pybind_lineset(py::module &m) {
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "
                     "pairs.");
-    py::detail::bind_default_constructor<geometry::LineSet<3>>(lineset);
-    py::detail::bind_copy_functions<geometry::LineSet<3>>(lineset);
-    lineset.def(py::init<const thrust::host_vector<Eigen::Vector3f> &,
-                         const thrust::host_vector<Eigen::Vector2i> &>(),
-                "Create a LineSet from given points and line indices",
-                "points"_a, "lines"_a)
-            .def(py::init([](const wrapper::device_vector_vector3f &points,
-                             const wrapper::device_vector_vector2i &lines) {
-                     return std::unique_ptr<geometry::LineSet<3>>(
-                             new geometry::LineSet<3>(points.data_,
-                                                      lines.data_));
-                 }),
-                 "Create a LineSet from given points and line indices",
-                 "points"_a, "lines"_a)
-            .def("__repr__",
-                 [](const geometry::LineSet<3> &lineset) {
-                     return std::string("geometry::LineSet with ") +
-                            std::to_string(lineset.lines_.size()) + " lines.";
-                 })
-            .def("has_points", &geometry::LineSet<3>::HasPoints,
-                 "Returns ``True`` if the object contains points.")
-            .def("has_lines", &geometry::LineSet<3>::HasLines,
-                 "Returns ``True`` if the object contains lines.")
-            .def("has_colors", &geometry::LineSet<3>::HasColors,
-                 "Returns ``True`` if the object's lines contain contain "
-                 "colors.")
-            .def("get_line_coordinate",
-                 &geometry::LineSet<3>::GetLineCoordinate, "line_index"_a)
-            .def("paint_uniform_color",
-                 &geometry::LineSet<3>::PaintUniformColor,
-                 "Assigns each line in the line set the same color.")
-            .def("paint_indexed_color",
-                 [] (geometry::LineSet<3>& self, const wrapper::device_vector_size_t& indices, const Eigen::Vector3f& color) {
-                     return self.PaintIndexedColor(indices.data_, color);
-                 })
-            .def_static(
-                    "create_from_point_cloud_correspondences",
-                    &geometry::LineSet<3>::CreateFromPointCloudCorrespondences,
-                    "Factory function to create a LineSet from two "
-                    "pointclouds and a correspondence set.",
-                    "cloud0"_a, "cloud1"_a, "correspondences"_a)
-            .def_static("create_from_oriented_bounding_box",
-                        &geometry::LineSet<3>::CreateFromOrientedBoundingBox,
-                        "Factory function to create a LineSet from an "
-                        "OrientedBoundingBox.",
-                        "box"_a)
-            .def_static("create_from_axis_aligned_bounding_box",
-                        &geometry::LineSet<3>::CreateFromAxisAlignedBoundingBox,
-                        "Factory function to create a LineSet from an "
-                        "AxisAlignedBoundingBox.",
-                        "box"_a)
-            .def_static("create_from_triangle_mesh",
-                        &geometry::LineSet<3>::CreateFromTriangleMesh,
-                        "Factory function to create a LineSet from edges of a "
-                        "triangle mesh.",
-                        "mesh"_a)
-            .def_property(
-                    "points",
-                    [](geometry::LineSet<3> &line) {
-                        return wrapper::device_vector_vector3f(line.points_);
-                    },
-                    [](geometry::LineSet<3> &line,
-                       const wrapper::device_vector_vector3f &vec) {
-                        wrapper::FromWrapper(line.points_, vec);
-                    })
-            .def_property(
-                    "lines",
-                    [](geometry::LineSet<3> &line) {
-                        return wrapper::device_vector_vector2i(line.lines_);
-                    },
-                    [](geometry::LineSet<3> &line,
-                       const wrapper::device_vector_vector2i &vec) {
-                        wrapper::FromWrapper(line.lines_, vec);
-                    })
-            .def_property(
-                    "colors",
-                    [](geometry::LineSet<3> &line) {
-                        return wrapper::device_vector_vector3f(line.colors_);
-                    },
-                    [](geometry::LineSet<3> &line,
-                       const wrapper::device_vector_vector3f &vec) {
-                        wrapper::FromWrapper(line.colors_, vec);
-                    })
-            .def("to_lines_dlpack",
-                 [](geometry::LineSet<3> &line) {
-                     return dlpack::ToDLpackCapsule<Eigen::Vector2i>(line.lines_);
-                 })
-            .def("from_lines_dlpack",
-                 [](geometry::LineSet<3> &line, py::capsule dlpack) {
-                     dlpack::FromDLpackCapsule<Eigen::Vector2i>(dlpack, line.lines_);
-                 });
-    docstring::ClassMethodDocInject(m, "LineSet", "has_colors");
-    docstring::ClassMethodDocInject(m, "LineSet", "has_lines");
-    docstring::ClassMethodDocInject(m, "LineSet", "has_points");
-    docstring::ClassMethodDocInject(m, "LineSet", "get_line_coordinate",
-                                    {{"line_index", "Index of the line."}});
-    docstring::ClassMethodDocInject(m, "LineSet", "paint_uniform_color",
-                                    {{"color", "Color for the LineSet."}});
-    docstring::ClassMethodDocInject(
-            m, "LineSet", "create_from_point_cloud_correspondences",
-            {{"cloud0", "First point cloud."},
-             {"cloud1", "Second point cloud."},
-             {"correspondences", "Set of correspondences."}});
-    docstring::ClassMethodDocInject(m, "LineSet",
-                                    "create_from_oriented_bounding_box",
-                                    {{"box", "The input bounding box."}});
-    docstring::ClassMethodDocInject(m, "LineSet",
-                                    "create_from_axis_aligned_bounding_box",
-                                    {{"box", "The input bounding box."}});
-    docstring::ClassMethodDocInject(m, "LineSet", "create_from_triangle_mesh",
-                                    {{"mesh", "The input triangle mesh."}});
+    bind_def<decltype(lineset), 3>(lineset);
+    doc_inject<decltype(lineset)>(m, "LineSet");
+
+    py::class_<geometry::LineSet<2>, PyGeometry2D<geometry::LineSet<2>>,
+               std::shared_ptr<geometry::LineSet<2>>, geometry::GeometryBase<2>>
+            lineset2d(m, "LineSet2D",
+                      "LineSet define a sets of lines in 2D. A typical "
+                      "application is to display the point cloud correspondence "
+                      "pairs.");
+    bind_def<decltype(lineset2d), 2>(lineset2d);
+    doc_inject<decltype(lineset2d)>(m, "LineSet2D");
 }
 
 void pybind_lineset_methods(py::module &m) {}

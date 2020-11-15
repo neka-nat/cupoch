@@ -88,14 +88,16 @@ bool LineSetRenderer::UpdateGeometry() {
     return true;
 }
 
-bool GraphRenderer::Render(const RenderOption &option,
-                           const ViewControl &view) {
+template <int Dim>
+bool GraphRenderer<Dim>::Render(const RenderOption &option,
+                                const ViewControl &view) {
     if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
     return simple_graph_node_shader_.Render(*geometry_ptr_, option, view) &&
            simple_graph_edge_shader_.Render(*geometry_ptr_, option, view);
 }
 
-bool GraphRenderer::AddGeometry(
+template <int Dim>
+bool GraphRenderer<Dim>::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr) {
     if (geometry_ptr->GetGeometryType() !=
         geometry::Geometry::GeometryType::Graph) {
@@ -105,11 +107,15 @@ bool GraphRenderer::AddGeometry(
     return UpdateGeometry();
 }
 
-bool GraphRenderer::UpdateGeometry() {
+template <int Dim>
+bool GraphRenderer<Dim>::UpdateGeometry() {
     simple_graph_node_shader_.InvalidateGeometry();
     simple_graph_edge_shader_.InvalidateGeometry();
     return true;
 }
+
+template class GraphRenderer<2>;
+template class GraphRenderer<3>;
 
 bool TriangleMeshRenderer::Render(const RenderOption &option,
                                   const ViewControl &view) {

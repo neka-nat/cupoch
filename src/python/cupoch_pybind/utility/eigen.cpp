@@ -224,6 +224,26 @@ Example usage
             }),
             py::none(), py::none(), "");
 
+    auto vector2fvector = pybind_eigen_vector_of_vector<Eigen::Vector2f>(
+            m, "Vector2fVector", "utility::device_vector<Eigen::Vector2f>",
+            py::py_array_to_vectors_float<Eigen::Vector2f>);
+    vector2fvector.attr("__doc__") = static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert float32 numpy array of shape ``(n, 2)`` to Cupoch format..
+Example usage
+.. code-block:: python
+    import cupoch
+    import numpy as np
+    pcd = cupoch.geometry.PointCloud()
+    np_points = np.random.rand(100, 2)
+    # From numpy to Cupoch
+    pcd.points = cupoch.utility.Vector2fVector(np_points)
+    # From Cupoch to numpy
+    np_points = np.asarray(pcd.points.cpu())
+)";
+            }),
+            py::none(), py::none(), "");
+
     auto vector3ivector = pybind_eigen_vector_of_vector<Eigen::Vector3i>(
             m, "Vector3iVector", "utility::device_vector<Eigen::Vector3i>",
             py::py_array_to_vectors_int<Eigen::Vector3i>);

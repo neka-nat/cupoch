@@ -101,6 +101,7 @@ protected:
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
+template <int Dim>
 class SimpleShaderForGraphNode : public SimpleShader {
 public:
     SimpleShaderForGraphNode() : SimpleShader("SimpleShaderForGraphNode") {}
@@ -117,6 +118,7 @@ protected:
     size_t GetDataSize(const geometry::Geometry &geometry) const final;
 };
 
+template <int Dim>
 class SimpleShaderForGraphEdge : public SimpleShader {
 public:
     SimpleShaderForGraphEdge() : SimpleShader("SimpleShaderForGraphEdge") {}

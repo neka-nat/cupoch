@@ -48,6 +48,7 @@ __constant__ int cuboid_lines_vertex_indices[12][2] = {
         {5, 1}, {5, 4}, {5, 7}, {6, 2}, {6, 4}, {6, 7},
 };
 
+template <int Dim>
 struct copy_pointcloud_functor {
     copy_pointcloud_functor(bool has_colors,
                             RenderOption::PointColorOption color_option,
@@ -58,9 +59,10 @@ struct copy_pointcloud_functor {
     const ViewControl view_;
     const ColorMap::ColorMapOption colormap_option_ = GetGlobalColorMapOption();
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> operator()(
-            const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> &pt_cl) {
-        const Eigen::Vector3f &point = thrust::get<0>(pt_cl);
-        const Eigen::Vector3f &color = thrust::get<1>(pt_cl);
+            const thrust::tuple<Eigen::Matrix<float, Dim, 1>, Eigen::Vector3f> &pt_cl);
+
+    __device__ Eigen::Vector4f GetColor(const Eigen::Vector3f& point,
+                                        const Eigen::Vector3f& color) const {
         Eigen::Vector4f color_tmp;
         color_tmp[3] = 1.0;
         switch (color_option_) {
@@ -91,9 +93,28 @@ struct copy_pointcloud_functor {
                 }
                 break;
         }
-        return thrust::make_tuple(point, color_tmp);
+        return color_tmp;
     }
 };
+
+template <>
+__device__
+thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> copy_pointcloud_functor<3>::operator()(
+            const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> &pt_cl) {
+    const Eigen::Vector3f &point = thrust::get<0>(pt_cl);
+    const Eigen::Vector3f &color = thrust::get<1>(pt_cl);
+    return thrust::make_tuple(point, GetColor(point, color));
+}
+
+template <>
+__device__
+thrust::tuple<Eigen::Vector3f, Eigen::Vector4f> copy_pointcloud_functor<2>::operator()(
+            const thrust::tuple<Eigen::Vector2f, Eigen::Vector3f> &pt_cl) {
+    const Eigen::Vector3f point = (Eigen::Vector3f() << thrust::get<0>(pt_cl), 0.0).finished();
+    const Eigen::Vector3f &color = thrust::get<1>(pt_cl);
+    return thrust::make_tuple(point, GetColor(point, color));
+}
+
 
 struct copy_lineset_functor {
     copy_lineset_functor(
@@ -123,14 +144,29 @@ struct copy_lineset_functor {
     }
 };
 
+template <int Dim>
 struct line_coordinates_functor {
-    line_coordinates_functor(const Eigen::Vector3f *points) : points_(points){};
-    const Eigen::Vector3f *points_;
+    line_coordinates_functor(const Eigen::Matrix<float, Dim, 1> *points) : points_(points){};
+    const Eigen::Matrix<float, Dim, 1> *points_;
     __device__ thrust::pair<Eigen::Vector3f, Eigen::Vector3f> operator()(
-            const Eigen::Vector2i &idxs) const {
-        return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
-    }
+            const Eigen::Vector2i &idxs) const;
 };
+
+template <>
+__device__
+thrust::pair<Eigen::Vector3f, Eigen::Vector3f> line_coordinates_functor<3>::operator()(
+    const Eigen::Vector2i &idxs) const {
+    return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
+}
+
+template <>
+__device__
+thrust::pair<Eigen::Vector3f, Eigen::Vector3f> line_coordinates_functor<2>::operator()(
+    const Eigen::Vector2i &idxs) const {
+    const Eigen::Vector3f p1 = (Eigen::Vector3f() << points_[idxs[0]], 0.0).finished();
+    const Eigen::Vector3f p2 = (Eigen::Vector3f() << points_[idxs[1]], 0.0).finished();
+    return thrust::make_pair(p1, p2);
+}
 
 struct copy_trianglemesh_functor {
     copy_trianglemesh_functor(const Eigen::Vector3f *vertices,
@@ -433,8 +469,8 @@ bool SimpleShaderForPointCloud::PrepareBinding(
         PrintShaderWarning("Binding failed with empty pointcloud.");
         return false;
     }
-    copy_pointcloud_functor func(pointcloud.HasColors(),
-                                 option.point_color_option_, view);
+    copy_pointcloud_functor<3> func(pointcloud.HasColors(),
+                                    option.point_color_option_, view);
     if (pointcloud.HasColors()) {
         thrust::transform(
                 make_tuple_begin(pointcloud.points_, pointcloud.colors_),
@@ -494,7 +530,7 @@ bool SimpleShaderForLineSet::PrepareBinding(
     }
     utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>>
             line_coords(lineset.lines_.size());
-    line_coordinates_functor func_line(
+    line_coordinates_functor<3> func_line(
             thrust::raw_pointer_cast(lineset.points_.data()));
     thrust::transform(lineset.lines_.begin(), lineset.lines_.end(),
                       line_coords.begin(), func_line);
@@ -515,7 +551,8 @@ size_t SimpleShaderForLineSet::GetDataSize(
     return ((const geometry::LineSet<3> &)geometry).lines_.size() * 2;
 }
 
-bool SimpleShaderForGraphNode::PrepareRendering(
+template <int Dim>
+bool SimpleShaderForGraphNode<Dim>::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -529,7 +566,8 @@ bool SimpleShaderForGraphNode::PrepareRendering(
     return true;
 }
 
-bool SimpleShaderForGraphNode::PrepareBinding(
+template <int Dim>
+bool SimpleShaderForGraphNode<Dim>::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
@@ -539,13 +577,13 @@ bool SimpleShaderForGraphNode::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
     }
-    const geometry::Graph<3> &graph = (const geometry::Graph<3> &)geometry;
+    const geometry::Graph<Dim> &graph = (const geometry::Graph<Dim> &)geometry;
     if (graph.HasPoints() == false) {
         PrintShaderWarning("Binding failed with empty graph.");
         return false;
     }
-    copy_pointcloud_functor func(graph.HasColors(), option.point_color_option_,
-                                 view);
+    copy_pointcloud_functor<Dim> func(graph.HasColors(), option.point_color_option_,
+                                      view);
     if (graph.HasNodeColors()) {
         thrust::transform(make_tuple_begin(graph.points_, graph.node_colors_),
                           make_tuple_end(graph.points_, graph.node_colors_),
@@ -565,12 +603,17 @@ bool SimpleShaderForGraphNode::PrepareBinding(
     return true;
 }
 
-size_t SimpleShaderForGraphNode::GetDataSize(
+template <int Dim>
+size_t SimpleShaderForGraphNode<Dim>::GetDataSize(
         const geometry::Geometry &geometry) const {
-    return ((const geometry::Graph<3> &)geometry).points_.size();
+    return ((const geometry::Graph<Dim> &)geometry).points_.size();
 }
 
-bool SimpleShaderForGraphEdge::PrepareRendering(
+template class SimpleShaderForGraphNode<2>;
+template class SimpleShaderForGraphNode<3>;
+
+template <int Dim>
+bool SimpleShaderForGraphEdge<Dim>::PrepareRendering(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view) {
@@ -584,7 +627,8 @@ bool SimpleShaderForGraphEdge::PrepareRendering(
     return true;
 }
 
-bool SimpleShaderForGraphEdge::PrepareBinding(
+template <int Dim>
+bool SimpleShaderForGraphEdge<Dim>::PrepareBinding(
         const geometry::Geometry &geometry,
         const RenderOption &option,
         const ViewControl &view,
@@ -594,14 +638,14 @@ bool SimpleShaderForGraphEdge::PrepareBinding(
         PrintShaderWarning("Rendering type is not geometry::Graph.");
         return false;
     }
-    const geometry::Graph<3> &graph = (const geometry::Graph<3> &)geometry;
+    const geometry::Graph<Dim> &graph = (const geometry::Graph<Dim> &)geometry;
     if (graph.HasLines() == false) {
         PrintShaderWarning("Binding failed with empty geometry::Graph.");
         return false;
     }
     utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>>
             line_coords(graph.lines_.size());
-    line_coordinates_functor func_line(
+    line_coordinates_functor<Dim> func_line(
             thrust::raw_pointer_cast(graph.points_.data()));
     thrust::transform(graph.lines_.begin(), graph.lines_.end(),
                       line_coords.begin(), func_line);
@@ -616,10 +660,14 @@ bool SimpleShaderForGraphEdge::PrepareBinding(
     return true;
 }
 
-size_t SimpleShaderForGraphEdge::GetDataSize(
+template <int Dim>
+size_t SimpleShaderForGraphEdge<Dim>::GetDataSize(
         const geometry::Geometry &geometry) const {
-    return ((const geometry::Graph<3> &)geometry).lines_.size() * 2;
+    return ((const geometry::Graph<Dim> &)geometry).lines_.size() * 2;
 }
+
+template class SimpleShaderForGraphEdge<2>;
+template class SimpleShaderForGraphEdge<3>;
 
 bool SimpleShaderForAxisAlignedBoundingBox::PrepareRendering(
         const geometry::Geometry &geometry,
@@ -653,7 +701,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
             (const geometry::AxisAlignedBoundingBox &)geometry);
     utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>>
             line_coords(lineset->lines_.size());
-    line_coordinates_functor func_line(
+    line_coordinates_functor<3> func_line(
             thrust::raw_pointer_cast(lineset->points_.data()));
     thrust::transform(lineset->lines_.begin(), lineset->lines_.end(),
                       line_coords.begin(), func_line);

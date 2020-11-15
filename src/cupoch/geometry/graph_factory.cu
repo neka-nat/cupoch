@@ -27,6 +27,8 @@ namespace geometry {
 
 namespace {
 
+const int NUM_OFFSET[2] = {8, 26};
+
 __constant__ int voxel_offset[26][3] = {
         {1, 0, 0},  {-1, 0, 0},  {0, 1, 0},   {0, -1, 0},  {0, 0, 1},
         {0, 0, -1}, {1, 1, 0},   {1, -1, 0},  {-1, 1, 0},  {-1, -1, 0},
@@ -34,6 +36,10 @@ __constant__ int voxel_offset[26][3] = {
         {0, 1, -1}, {0, -1, 1},  {0, -1, -1}, {1, 1, 1},   {-1, -1, -1},
         {-1, 1, 1}, {1, -1, -1}, {1, -1, 1},  {-1, 1, -1}, {-1, -1, 1},
         {1, 1, -1}};
+
+__constant__ int voxel_offset_2d[8][2] = {
+        {1, 0},  {-1, 0},  {0, 1},   {0, -1},
+        {1, 1},  {1, -1},  {-1, 1},  {-1, -1}};
 
 template <int Dim>
 struct create_dense_grid_points_functor {
@@ -70,32 +76,55 @@ __device__ Eigen::Vector2f create_dense_grid_points_functor<2>::operator()(
                    .matrix();
 }
 
+template <int Dim>
 struct create_dense_grid_lines_functor {
-    create_dense_grid_lines_functor(const Eigen::Vector3i& resolutions)
+    create_dense_grid_lines_functor(const Eigen::Matrix<int, Dim, 1>& resolutions)
         : resolutions_(resolutions){};
-    const Eigen::Vector3i resolutions_;
-    __device__ Eigen::Vector2i operator()(size_t idx) const {
-        int x = idx / (resolutions_[1] * resolutions_[2] * 26);
-        int yzk = idx % (resolutions_[1] * resolutions_[2] * 26);
-        int y = yzk / (resolutions_[2] * 26);
-        int zk = yzk % (resolutions_[2] * 26);
-        int z = zk / 26;
-        int k = zk % 26;
-        Eigen::Vector3i sidx = Eigen::Vector3i(x, y, z);
-        Eigen::Vector3i gidx =
-                Eigen::Vector3i(x + voxel_offset[k][0], y + voxel_offset[k][1],
-                                z + voxel_offset[k][2]);
-        if (gidx[0] < 0 || gidx[0] >= resolutions_[0] || gidx[1] < 0 ||
-            gidx[1] >= resolutions_[1] || gidx[2] < 0 ||
-            gidx[2] >= resolutions_[2])
-            return Eigen::Vector2i(-1, -1);
-        int j = gidx[0] * resolutions_[1] * resolutions_[2] +
-                gidx[1] * resolutions_[2] + gidx[2];
-        int i = sidx[0] * resolutions_[1] * resolutions_[2] +
-                sidx[1] * resolutions_[2] + sidx[2];
-        return Eigen::Vector2i(i, j);
-    }
+    const Eigen::Matrix<int, Dim, 1> resolutions_;
+    __device__ Eigen::Vector2i operator()(size_t idx) const;
 };
+
+template <>
+__device__
+Eigen::Vector2i create_dense_grid_lines_functor<3>::operator()(size_t idx) const {
+    int x = idx / (resolutions_[1] * resolutions_[2] * 26);
+    int yzk = idx % (resolutions_[1] * resolutions_[2] * 26);
+    int y = yzk / (resolutions_[2] * 26);
+    int zk = yzk % (resolutions_[2] * 26);
+    int z = zk / 26;
+    int k = zk % 26;
+    Eigen::Vector3i sidx = Eigen::Vector3i(x, y, z);
+    Eigen::Vector3i gidx =
+            Eigen::Vector3i(x + voxel_offset[k][0], y + voxel_offset[k][1],
+                            z + voxel_offset[k][2]);
+    if (gidx[0] < 0 || gidx[0] >= resolutions_[0] || gidx[1] < 0 ||
+        gidx[1] >= resolutions_[1] || gidx[2] < 0 ||
+        gidx[2] >= resolutions_[2])
+        return Eigen::Vector2i(-1, -1);
+    int j = gidx[0] * resolutions_[1] * resolutions_[2] +
+            gidx[1] * resolutions_[2] + gidx[2];
+    int i = sidx[0] * resolutions_[1] * resolutions_[2] +
+            sidx[1] * resolutions_[2] + sidx[2];
+    return Eigen::Vector2i(i, j);
+}
+
+template <>
+__device__
+Eigen::Vector2i create_dense_grid_lines_functor<2>::operator()(size_t idx) const {
+    int x = idx / (resolutions_[1] * 8);
+    int yk = idx % (resolutions_[1] * 8);
+    int y = yk / 8;
+    int k = yk % 8;
+    Eigen::Vector2i sidx = Eigen::Vector2i(x, y);
+    Eigen::Vector2i gidx =
+            Eigen::Vector2i(x + voxel_offset_2d[k][0], y + voxel_offset_2d[k][1]);
+    if (gidx[0] < 0 || gidx[0] >= resolutions_[0] || gidx[1] < 0 ||
+        gidx[1] >= resolutions_[1])
+        return Eigen::Vector2i(-1, -1);
+    int j = gidx[0] * resolutions_[1] + gidx[1];
+    int i = sidx[0] * resolutions_[1] + sidx[1];
+    return Eigen::Vector2i(i, j);
+}
 
 }  // namespace
 
@@ -155,10 +184,10 @@ std::shared_ptr<Graph<Dim>> Graph<Dim>::CreateFromAxisAlignedBoundingBox(
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_points),
                       out->points_.begin(), pfunc);
-    out->lines_.resize(n_points * 26);
-    create_dense_grid_lines_functor lfunc(resolutions);
+    out->lines_.resize(n_points * NUM_OFFSET[Dim - 2]);
+    create_dense_grid_lines_functor<Dim> lfunc(resolutions);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator(n_points * 26),
+                      thrust::make_counting_iterator(n_points * NUM_OFFSET[Dim - 2]),
                       out->lines_.begin(), lfunc);
     auto end = thrust::remove_if(
             out->lines_.begin(), out->lines_.end(),
@@ -167,6 +196,16 @@ std::shared_ptr<Graph<Dim>> Graph<Dim>::CreateFromAxisAlignedBoundingBox(
     out->ConstructGraph();
     return out;
 }
+
+template std::shared_ptr<Graph<3>> Graph<3>::CreateFromAxisAlignedBoundingBox(
+    const Eigen::Vector3f& min_bound,
+    const Eigen::Vector3f& max_bound,
+    const Eigen::Vector3i& resolutions);
+
+template std::shared_ptr<Graph<2>> Graph<2>::CreateFromAxisAlignedBoundingBox(
+    const Eigen::Vector2f& min_bound,
+    const Eigen::Vector2f& max_bound,
+    const Eigen::Vector2i& resolutions);
 
 }  // namespace geometry
 }  // namespace cupoch

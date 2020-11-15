@@ -359,8 +359,16 @@ bool Visualizer::AddGeometry(
             return false;
         }
     } else if (geometry_ptr->GetGeometryType() ==
-               geometry::Geometry::GeometryType::Graph) {
-        renderer_ptr = std::make_shared<glsl::GraphRenderer>();
+               geometry::Geometry::GeometryType::Graph &&
+               geometry_ptr->Dimension() == 2) {
+        renderer_ptr = std::make_shared<glsl::GraphRenderer<2>>();
+        if (!renderer_ptr->AddGeometry(geometry_ptr)) {
+            return false;
+        }
+    } else if (geometry_ptr->GetGeometryType() ==
+               geometry::Geometry::GeometryType::Graph &&
+               geometry_ptr->Dimension() == 3) {
+        renderer_ptr = std::make_shared<glsl::GraphRenderer<3>>();
         if (!renderer_ptr->AddGeometry(geometry_ptr)) {
             return false;
         }
