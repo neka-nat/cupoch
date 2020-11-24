@@ -38,6 +38,7 @@ static const std::unordered_map<
                 const std::string &, geometry::TriangleMesh &, bool)>>
         file_extension_to_trianglemesh_read_function{
                 {"ply", ReadTriangleMeshFromPLY},
+                {"stl", ReadTriangleMeshFromSTL},
                 {"obj", ReadTriangleMeshFromOBJ},
         };
 
@@ -53,6 +54,7 @@ static const std::unordered_map<
                            const bool)>>
         file_extension_to_trianglemesh_write_function{
                 {"ply", WriteTriangleMeshToPLY},
+                {"stl", WriteTriangleMeshToSTL},
                 {"obj", WriteTriangleMeshToOBJ},
         };
 
