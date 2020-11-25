@@ -51,6 +51,7 @@ struct equal_to<Eigen::Matrix<int, Dim, 1>> {
     __host__ __device__ bool operator()(
             const Eigen::Matrix<int, Dim, 1> &lhs,
             const Eigen::Matrix<int, Dim, 1> &rhs) const {
+        #pragma unroll
         for (int i = 0; i < Dim; ++i) {
             if (lhs[i] != rhs[i]) return false;
         }
@@ -80,6 +81,7 @@ namespace Eigen {
 template <typename T, int Dim>
 __host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
                                    const Eigen::Matrix<T, Dim, 1> &rhs) {
+    #pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return lhs[i] < rhs[i];
     }
@@ -89,6 +91,7 @@ __host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
 template <typename T, int Dim>
 __host__ __device__ bool operator>(const Eigen::Matrix<T, Dim, 1> &lhs,
                                    const Eigen::Matrix<T, Dim, 1> &rhs) {
+    #pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return lhs[i] > rhs[i];
     }
@@ -99,6 +102,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator==(
         const Eigen::Matrix<T, Dim, 1> &lhs,
         const Eigen::Matrix<T, Dim, 1> &rhs) {
+    #pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return false;
     }
@@ -109,6 +113,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator!=(
         const Eigen::Matrix<T, Dim, 1> &lhs,
         const Eigen::Matrix<T, Dim, 1> &rhs) {
+    #pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return true;
     }
@@ -117,6 +122,7 @@ __host__ __device__ inline bool operator!=(
 
 template <typename ArrayType>
 __host__ __device__ bool device_any(const ArrayType &array) {
+    #pragma unroll
     for (int i = 0; i < array.size(); ++i) {
         if (array[i]) return true;
     }
@@ -127,6 +133,7 @@ template <typename T, int Dim, float (*Func)(float)>
 __host__ __device__ Eigen::Matrix<T, Dim, 1> device_vectorize(
         const Eigen::Matrix<T, Dim, 1> &x) {
     Eigen::Matrix<T, Dim, 1> ans;
+    #pragma unroll
     for (int i = 0; i < Dim; ++i) {
         ans[i] = Func(x[i]);
     }
