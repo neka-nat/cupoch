@@ -31,7 +31,7 @@ device_vector_wrapper<Type>::device_vector_wrapper(
     : data_(other.data_) {}
 template <typename Type>
 device_vector_wrapper<Type>::device_vector_wrapper(
-        const thrust::host_vector<Type>& other)
+        const utility::pinned_host_vector<Type>& other)
     : data_(other) {}
 template <typename Type>
 device_vector_wrapper<Type>::device_vector_wrapper(
@@ -101,8 +101,8 @@ void device_vector_wrapper<Type>::push_back(const Type& x) {
 }
 
 template <typename Type>
-thrust::host_vector<Type> device_vector_wrapper<Type>::cpu() const {
-    thrust::host_vector<Type> ans = data_;
+utility::pinned_host_vector<Type> device_vector_wrapper<Type>::cpu() const {
+    utility::pinned_host_vector<Type> ans = data_;
     return ans;
 }
 

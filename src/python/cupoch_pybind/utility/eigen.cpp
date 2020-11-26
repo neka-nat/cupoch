@@ -18,9 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include <thrust/host_vector.h>
-
 #include "cupoch_pybind/cupoch_pybind.h"
+
+#include "cupoch/utility/device_vector.h"
 
 namespace pybind11 {
 
@@ -48,7 +48,7 @@ cupoch::wrapper::device_vector_wrapper<EigenVector> py_array_to_vectors_float(
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
-    thrust::host_vector<EigenVector> eigen_vectors(array.shape(0));
+    cupoch::utility::pinned_host_vector<EigenVector> eigen_vectors(array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
         // The EigenVector here must be a float-typed eigen vector, since only
@@ -66,25 +66,7 @@ cupoch::wrapper::device_vector_wrapper<EigenVector> py_array_to_vectors_int(
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
-    thrust::host_vector<EigenVector> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
-    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
-    }
-    return cupoch::wrapper::device_vector_wrapper<EigenVector>(eigen_vectors);
-}
-
-template <typename EigenVector,
-          typename EigenAllocator = Eigen::aligned_allocator<EigenVector>>
-cupoch::wrapper::device_vector_wrapper<EigenVector>
-py_array_to_vectors_int_eigen_allocator(
-        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
-    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
-        throw py::cast_error();
-    }
-    thrust::host_vector<EigenVector, EigenAllocator> eigen_vectors(
-            array.shape(0));
+    cupoch::utility::pinned_host_vector<EigenVector> eigen_vectors(array.shape(0));
     auto array_unchecked = array.mutable_unchecked<2>();
     for (auto i = 0; i < array_unchecked.shape(0); ++i) {
         eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
@@ -104,7 +86,7 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
     auto vec = py::bind_vector_without_repr<
             cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name,
                                                             py::module_local());
-    vec.def(py::init<thrust::host_vector<Scalar>>());
+    vec.def(py::init<cupoch::utility::pinned_host_vector<Scalar>>());
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
     vec.def(
             "__iadd__",

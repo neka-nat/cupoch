@@ -37,7 +37,7 @@ class device_vector_wrapper {
 public:
     device_vector_wrapper();
     device_vector_wrapper(const device_vector_wrapper<Type>& other);
-    device_vector_wrapper(const thrust::host_vector<Type>& other);
+    device_vector_wrapper(const utility::pinned_host_vector<Type>& other);
     device_vector_wrapper(const utility::device_vector<Type>& other);
     device_vector_wrapper(utility::device_vector<Type>&& other) noexcept;
     ~device_vector_wrapper();
@@ -54,7 +54,7 @@ public:
     size_t size() const;
     bool empty() const;
     void push_back(const Type& x);
-    thrust::host_vector<Type> cpu() const;
+    utility::pinned_host_vector<Type> cpu() const;
     utility::device_vector<Type> data_;
 };
 
