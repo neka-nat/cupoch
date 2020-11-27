@@ -56,3 +56,12 @@ void bind_copy_functions(Class_ &cl) {
 
 }  // namespace detail
 }  // namespace pybind11
+
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<int>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<size_t>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<float>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<Eigen::Vector3f>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<Eigen::Vector3i>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<Eigen::Vector2f>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(cupoch::utility::pinned_host_vector<Eigen::Vector4f>);

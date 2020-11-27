@@ -20,8 +20,6 @@
 **/
 #pragma once
 
-#include <thrust/host_vector.h>
-
 #include <Eigen/Core>
 
 #include "cupoch/collision/primitives.h"

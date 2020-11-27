@@ -109,6 +109,26 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
     return vec;
 }
 
+template <typename Scalar,
+          typename Vector = cupoch::utility::pinned_host_vector<Scalar>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_host_eigen_vector_of_scalar(
+        py::module &m, const std::string &bind_name) {
+    auto vec = py::bind_vector<cupoch::utility::pinned_host_vector<Scalar>>(m, bind_name,
+                                                    py::buffer_protocol());
+    vec.def_buffer([](cupoch::utility::pinned_host_vector<Scalar> &v) -> py::buffer_info {
+        return py::buffer_info(v.data(), sizeof(Scalar),
+                               py::format_descriptor<Scalar>::format(), 1,
+                               {v.size()}, {sizeof(Scalar)});
+    });
+    vec.def("__copy__",
+            [](cupoch::utility::pinned_host_vector<Scalar> &v) { return cupoch::utility::pinned_host_vector<Scalar>(v); });
+    vec.def("__deepcopy__", [](cupoch::utility::pinned_host_vector<Scalar> &v, py::dict &memo) {
+        return cupoch::utility::pinned_host_vector<Scalar>(v);
+    });
+    return vec;
+}
+
 template <typename EigenVector,
           typename Vector = cupoch::wrapper::device_vector_wrapper<EigenVector>,
           typename holder_type = std::unique_ptr<Vector>,
@@ -158,9 +178,64 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_vector(
     return vec;
 }
 
+template <typename EigenVector,
+          typename Vector = cupoch::utility::pinned_host_vector<EigenVector>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_host_eigen_vector_of_vector(
+        py::module &m,
+        const std::string &bind_name,
+        const std::string &repr_name) {
+    typedef typename EigenVector::Scalar Scalar;
+    auto vec = py::bind_vector_without_repr<cupoch::utility::pinned_host_vector<EigenVector>>(
+            m, bind_name, py::buffer_protocol());
+    vec.def_buffer([](cupoch::utility::pinned_host_vector<EigenVector> &v) -> py::buffer_info {
+        size_t rows = EigenVector::RowsAtCompileTime;
+        return py::buffer_info(v.data(), sizeof(Scalar),
+                               py::format_descriptor<Scalar>::format(), 2,
+                               {v.size(), rows},
+                               {sizeof(EigenVector), sizeof(Scalar)});
+    });
+    vec.def("__repr__", [repr_name](const cupoch::utility::pinned_host_vector<EigenVector> &v) {
+        return repr_name + std::string(" with ") + std::to_string(v.size()) +
+               std::string(" elements.\n") +
+               std::string("Use numpy.asarray() to access data.");
+    });
+    vec.def("__copy__", [](cupoch::utility::pinned_host_vector<EigenVector> &v) {
+        return cupoch::utility::pinned_host_vector<EigenVector>(v);
+    });
+    vec.def("__deepcopy__", [](cupoch::utility::pinned_host_vector<EigenVector> &v, py::dict &memo) {
+        return cupoch::utility::pinned_host_vector<EigenVector>(v);
+    });
+
+    // py::detail must be after custom constructor
+    using Class_ = py::class_<Vector, std::unique_ptr<Vector>>;
+    py::detail::vector_if_copy_constructible<Vector, Class_>(vec);
+    py::detail::vector_if_equal_operator<Vector, Class_>(vec);
+    py::detail::vector_modifiers<Vector, Class_>(vec);
+    py::detail::vector_accessor<Vector, Class_>(vec);
+
+    return vec;
+}
+
 }  // unnamed namespace
 
 void pybind_eigen(py::module &m) {
+    auto h_intvector = pybind_host_eigen_vector_of_scalar<int>(m, "HostIntVector");
+    auto h_sizetvector = pybind_host_eigen_vector_of_scalar<size_t>(m, "HostSizeTVector");
+    auto h_floatvector = pybind_host_eigen_vector_of_scalar<float>(m, "HostFloatVector");
+    auto h_vector2ivector = pybind_host_eigen_vector_of_vector<Eigen::Vector2i>(
+            m, "HostVector2iVector", "thrust::host_vector<Eigen::Vector2i>");
+    auto h_vector2fvector = pybind_host_eigen_vector_of_vector<Eigen::Vector2f>(
+            m, "HostVector2fVector", "thrust::host_vector<Eigen::Vector2f>");
+    auto h_vector3ivector = pybind_host_eigen_vector_of_vector<Eigen::Vector3i>(
+            m, "HostVector3iVector", "thrust::host_vector<Eigen::Vector3i>");
+    auto h_vector3fvector = pybind_host_eigen_vector_of_vector<Eigen::Vector3f>(
+            m, "HostVector3fVector", "thrust::host_vector<Eigen::Vector3f>");
+    auto h_vector4ivector = pybind_host_eigen_vector_of_vector<Eigen::Vector4i>(
+            m, "HostVector4iVector", "thrust::host_vector<Eigen::Vector4i>");
+    auto h_vector4fvector = pybind_host_eigen_vector_of_vector<Eigen::Vector4f>(
+            m, "HostVector4fVector", "thrust::host_vector<Eigen::Vector4f>");
+
     py::handle static_property = py::handle(
             (PyObject *)py::detail::get_internals().static_property_type);
 

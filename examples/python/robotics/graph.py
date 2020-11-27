@@ -52,8 +52,8 @@ gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])
 
 # Compare with NetworkX
-h_edges = gp.edges.cpu()
-h_weights = gp.edge_weights.cpu()
+h_edges = np.asarray(gp.edges.cpu())
+h_weights = np.asarray(gp.edge_weights.cpu())
 h_g = nx.Graph()
 for e, w in zip(h_edges, h_weights):
     h_g.add_edge(e[0], e[1], weight=w)

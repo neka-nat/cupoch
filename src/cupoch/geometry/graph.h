@@ -92,9 +92,9 @@ public:
                          const utility::device_vector<float> &weights =
                                  utility::device_vector<float>(),
                          bool lazy_add = false);
-    Graph<Dim> &AddEdges(const thrust::host_vector<Eigen::Vector2i> &edges,
-                         const thrust::host_vector<float> &weights =
-                                 thrust::host_vector<float>(),
+    Graph<Dim> &AddEdges(const utility::pinned_host_vector<Eigen::Vector2i> &edges,
+                         const utility::pinned_host_vector<float> &weights =
+                                 utility::pinned_host_vector<float>(),
                          bool lazy_add = false);
 
     Graph<Dim> &RemoveEdge(const Eigen::Vector2i &edge);

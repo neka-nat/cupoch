@@ -42,11 +42,11 @@ void bind_def(GraphT& graph) {
                  "Add an edge to the graph", "edge"_a, "weight"_a = 1.0,
                  "lazy_add"_a = false)
             .def("add_edges",
-                 py::overload_cast<const thrust::host_vector<Eigen::Vector2i> &,
-                                   const thrust::host_vector<float> &, bool>(
+                 py::overload_cast<const utility::pinned_host_vector<Eigen::Vector2i> &,
+                                   const utility::pinned_host_vector<float> &, bool>(
                          &geometry::Graph<Dim>::AddEdges),
                  "Add edges to the graph", "edges"_a,
-                 "weights"_a = thrust::host_vector<float>(),
+                 "weights"_a = utility::pinned_host_vector<float>(),
                  "lazy_add"_a = false)
             .def("remove_edge", &geometry::Graph<Dim>::RemoveEdge,
                  "Remove an edge from the graph", "edge"_a)

@@ -375,8 +375,8 @@ Graph<Dim> &Graph<Dim>::AddEdges(
 
 template <int Dim>
 Graph<Dim> &Graph<Dim>::AddEdges(
-        const thrust::host_vector<Eigen::Vector2i> &edges,
-        const thrust::host_vector<float> &weights,
+        const utility::pinned_host_vector<Eigen::Vector2i> &edges,
+        const utility::pinned_host_vector<float> &weights,
         bool lazy_add) {
     utility::device_vector<Eigen::Vector2i> d_edges = edges;
     utility::device_vector<float> d_weights = weights;

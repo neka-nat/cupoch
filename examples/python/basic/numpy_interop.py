@@ -11,7 +11,5 @@ print("---- From 2D np.array")
 pts = np.random.rand(10, 3)
 pcd.points = cph.utility.Vector3fVector(pts)
 
-print("---- To list of 1D np.array")
-print(pcd.points.cpu())
 print("---- To 2D np.array")
 print(np.asarray(pcd.points.cpu()))

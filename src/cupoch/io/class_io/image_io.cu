@@ -21,6 +21,7 @@
 #include "cupoch/geometry/image.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::io;
@@ -29,13 +30,13 @@ void HostImage::FromDevice(const geometry::Image& image) {
     data_.resize(image.data_.size());
     Prepare(image.width_, image.height_, image.num_of_channels_,
             image.bytes_per_channel_);
-    thrust::copy(image.data_.begin(), image.data_.end(), data_.begin());
+    cudaSafeCall(cudaMemcpy(data_.data(), thrust::raw_pointer_cast(image.data_.data()), image.data_.size(), cudaMemcpyDeviceToHost));
 }
 
 void HostImage::ToDevice(geometry::Image& image) const {
     image.Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
     image.data_.resize(data_.size());
-    thrust::copy(data_.begin(), data_.end(), image.data_.begin());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(image.data_.data()), data_.data(), image.data_.size(), cudaMemcpyHostToDevice));
 }
 
 void HostImage::Clear() {
