@@ -16,3 +16,4 @@ EXAMPLE_CPP(pointcloud cupoch_visualization cupoch_geometry cupoch_io ${CUDA_LIB
 EXAMPLE_CPP(trianglemesh cupoch_visualization cupoch_geometry cupoch_io ${CUDA_LIBRARIES})
 EXAMPLE_CPP(registration cupoch_visualization cupoch_registration cupoch_io ${CUDA_LIBRARIES})
 EXAMPLE_CPP(voxelization cupoch_visualization cupoch_geometry cupoch_io ${CUDA_LIBRARIES})
+EXAMPLE_CPP(kinematics cupoch_visualization cupoch_kinematics cupoch_io ${CUDA_LIBRARIES})

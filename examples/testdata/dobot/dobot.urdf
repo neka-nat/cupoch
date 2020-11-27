@@ -1,0 +1,356 @@
+<?xml version="0.0" ?>
+<robot name="dobot_arm_kickstarter">
+  <!-- URDF copyright Erwin Coumans for http://pybullet.org -->
+  <link name="baseLink">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".5"/>
+       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+             <geometry>
+        <mesh filename="cad/Dobot/A3.stl" scale="1 1 1"/>
+      </geometry>
+       <material name="blue">
+        <color rgba="0.2 0.6 1 1"/>
+      </material>
+    </visual>
+    
+    <collision>
+      <origin rpy="0 -1.570796 0" xyz="0 0 0"/>
+      <geometry>
+      <box size="0.005  0.125 0.105"/>
+      </geometry>
+    </collision>
+  </link>
+   <link name="linkA">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value=".3"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.0325 0 0"/>
+      <geometry>
+      <!--
+        <box size="0.07  0.050 0.11"/>
+        <box size="0.005  0.05 0.11"/>
+      -->
+       <mesh filename="cad/Dobot/A1_2.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	   <visual>
+      <origin rpy="0 0 0" xyz="-0.0325 0 0"/>
+      <geometry>
+       <mesh filename="cad/Dobot/A1_2.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	  <visual>
+      <origin rpy="0 0 0" xyz="0.005 -0.047  0.01"/>
+      <geometry>
+       <mesh filename="cad/Dobot/A22.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	   <visual>
+      <origin rpy="0 0 0" xyz="0 -0.0245 -0.045"/>
+             <geometry>
+        <mesh filename="cad/Dobot/A4.stl" scale="1 1 1"/>
+      </geometry>
+       <material name="blue"/>
+    </visual>
+    
+     <collision>
+       <origin rpy="0 0 0" xyz="0 0 0"/>
+       <geometry>
+          <box size="0.07  0.055 0.11"/>
+       </geometry>
+     </collision>
+   </link>
+   <joint name="joint_baseLink_childA" type="continuous">
+    <parent link="baseLink"/>
+    <child link="linkA"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0.0 0.0 0.06"/>
+		<axis xyz="0 0 1"/>
+  </joint>
+  
+   <link name="motorA">
+    <inertial>
+      <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.03" radius="0.02"/>
+      </geometry>
+	   <material name="black">
+	   <color rgba="0.2 0.2 0.2 1"/>
+	   </material>
+	  </visual>
+     <collision>
+       <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.03" radius="0.02"/>
+      </geometry>
+     </collision>
+   </link>
+   
+    <joint name="joint_linkAmotorA" type="continuous">
+    <parent link="linkA"/>
+    <child link="motorA"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0.05 0.0 0.03"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  
+   <link name="motorB">
+    <inertial>
+      <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.03" radius="0.02"/>
+      </geometry>
+	   <material name="black">
+	   <color rgba="0.2 0.2 0.2 1"/>
+	   </material>
+	  </visual>
+     <collision>
+       <origin rpy="0 1.57 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.03" radius="0.02"/>
+      </geometry>
+     </collision>
+   </link>
+   
+    <joint name="joint_linkAmotorB" type="continuous">
+    <parent link="linkA"/>
+    <child link="motorB"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="-0.05 0.0 0.03"/>
+    <axis xyz="-1 0 0"/>
+  </joint>
+  
+   <link name="linkA9">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.075"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.075"/>
+      <geometry>
+        <mesh filename="cad/Dobot/A9.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+     <collision>
+       <origin rpy="0 0 0" xyz="0 0 0.07"/>
+       <geometry>
+          <box size="0.005 0.02 0.18"/>
+       </geometry>
+     </collision>
+   </link>
+   
+   <joint name="joint_linkAlinkA9" type="continuous">
+    <parent link="linkA"/>
+    <child link="linkA9"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0 -0.026 0.054"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+  
+  
+   
+    <link name="linkB">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.075"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.570796 0 0" xyz="0.025 -0.012 0.077"/>
+      <geometry>
+        <!-- <box size="0.036  0.036 0.150"/> -->
+        <!-- <box size="0.005  0.185 0.05"/>-->
+        <mesh filename="cad/Dobot/A12_13.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	  <visual>
+      <origin rpy="1.570796 0 0" xyz="-0.025 -0.012 0.077"/>
+      <geometry>
+        <!-- <box size="0.036  0.036 0.150"/> -->
+        <!-- <box size="0.005  0.185 0.05"/>-->
+        <mesh filename="cad/Dobot/A12_13.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+     <collision>
+       <origin rpy="0 0 0" xyz="0 0 0.075"/>
+       <geometry>
+          <box size="0.036  0.036 0.150"/>
+       </geometry>
+     </collision>
+   </link>
+   
+   <joint name="joint_linkAlinkB" type="continuous">
+    <parent link="linkA"/>
+    <child link="linkB"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0 0.0 0.04"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+  
+    <link name="linkC2">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="cad/Dobot/A11.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	   <collision>
+       <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <geometry>
+          <box size="0.005  0.05 0.031"/>
+       </geometry>
+     </collision>
+   </link>
+   
+    <joint name="joint_linkBlinkC2" type="continuous">
+    <parent link="linkB"/>
+    <child link="linkC2"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0.0 0.0 0.150"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+  
+  <link name="linkC">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="1.570796 0 0" xyz="0.02 -0.005 0.07"/>
+      <geometry>
+        <!-- <box size="0.026  0.026 0.150"/> -->
+        <!-- <box size="0.005  0.22 0.06"/> -->
+        <mesh filename="cad/Dobot/A6_7.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	  <visual>
+      <origin rpy="1.570796 0 0" xyz="-0.02 -0.005 0.07"/>
+      <geometry>
+        <!-- <box size="0.026  0.026 0.150"/> -->
+        <!-- <box size="0.005  0.22 0.06"/> -->
+        <mesh filename="cad/Dobot/A6_7.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+     <collision>
+       <origin rpy="0 0 0" xyz="0 0 0.075"/>
+       <geometry>
+          <box size="0.026  0.026 0.21"/>
+       </geometry>
+     </collision>
+   </link>
+   
+    <joint name="joint_linkBlinkC" type="continuous">
+    <parent link="linkB"/>
+    <child link="linkC"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0.0 0.0 0.150"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+
+  <link name="linkD">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.02"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0.0 0.011 0.0"/>
+      <geometry>
+        <!-- <box size="0.01  0.02 0.08"/> -->
+        <!-- <box size="0.005  0.045 0.037"/> -->
+        <mesh filename="cad/Dobot/A17.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	  <visual>
+      <origin rpy="0 0 0" xyz="0.0 0. 0.0"/>
+      <geometry>
+        <mesh filename="cad/Dobot/A16.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+	 	  
+     <collision>
+       <origin rpy="0 0 0" xyz="0.00 0.045 -0.017"/>
+       <geometry>
+          <box size="0.02  0.08 0.005"/>
+       </geometry>
+     </collision>
+   </link>
+   
+    <joint name="joint_linkClinkD" type="continuous">
+    <parent link="linkC"/>
+    <child link="linkD"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <!-- <origin xyz="0.0 0.00 0.160"/> -->
+    <origin xyz="0.0 0.00 0.160"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+
+<link name="linkA10">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+      <mass value=".1"/>
+      <inertia ixx="0.048966669" ixy="0" ixz="0" iyy="0.046466667" iyz="0" izz="0.0041666669"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.08"/>
+      <geometry>
+        <mesh filename="cad/Dobot/A10.stl" scale="1 1 1"/>
+      </geometry>
+	   <material name="blue"/>
+	  </visual>
+     <collision>
+       <origin rpy="0 0 0" xyz="0 0 0.08"/>
+       <geometry>
+          <box size="0.005 0.02 0.17"/>
+       </geometry>
+     </collision>
+   </link>
+   
+   <joint name="joint_linkC2linkA10" type="continuous">
+    <parent link="linkC2"/>
+    <child link="linkA10"/>
+	<dynamics damping="1.0" friction="0.0001"/>
+    <origin xyz="0 0.026 0.014"/>
+		<axis xyz="1 0 0"/>
+  </joint>
+  
+
+
+  
+</robot>
+

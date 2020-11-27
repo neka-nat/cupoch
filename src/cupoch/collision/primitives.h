@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/trianglemesh.h"
 
 namespace cupoch {
 
@@ -39,12 +40,12 @@ public:
         Box = 1,
         Sphere = 2,
         Capsule = 3,
+        Cylinder = 4,
+        Mesh = 5,
     };
-    __host__ __device__ Primitive()
-        : type_(PrimitiveType::Unspecified),
-          transform_(Eigen::Matrix4f::Identity()){};
+    __host__ __device__ Primitive() {};
     __host__ __device__ Primitive(PrimitiveType type)
-        : type_(type), transform_(Eigen::Matrix4f::Identity()){};
+        : type_(type) {};
     __host__ __device__ Primitive(PrimitiveType type,
                                   const Eigen::Matrix4f& transform)
         : type_(type), transform_(transform){};
@@ -60,15 +61,15 @@ public:
     };
 
     PrimitiveType type_ = PrimitiveType::Unspecified;
-    Eigen::Matrix4f transform_;
+    Eigen::Matrix4f transform_ = Eigen::Matrix4f::Identity();
 };
 
 class Box : public Primitive {
 public:
     __host__ __device__ Box() : Primitive(Primitive::PrimitiveType::Box){};
-    __host__ __device__ Box(const Eigen::Vector3f lengths)
+    __host__ __device__ Box(const Eigen::Vector3f& lengths)
         : Primitive(Primitive::PrimitiveType::Box), lengths_(lengths){};
-    __host__ __device__ Box(const Eigen::Vector3f lengths,
+    __host__ __device__ Box(const Eigen::Vector3f& lengths,
                             const Eigen::Matrix4f& transform)
         : Primitive(Primitive::PrimitiveType::Sphere, transform),
           lengths_(lengths){};
@@ -145,6 +146,58 @@ public:
     float height_;
 };
 
+class Cylinder : public Primitive {
+public:
+    __host__ __device__ Cylinder()
+        : Primitive(Primitive::PrimitiveType::Cylinder),
+          radius_(0),
+          height_(0){};
+    __host__ __device__ Cylinder(float radius, float height)
+        : Primitive(Primitive::PrimitiveType::Cylinder),
+          radius_(radius),
+          height_(height){};
+    __host__ __device__ Cylinder(float radius,
+                                float height,
+                                const Eigen::Matrix4f& transform)
+        : Primitive(Primitive::PrimitiveType::Cylinder, transform),
+          radius_(radius),
+          height_(height){};
+    __host__ __device__ ~Cylinder(){};
+
+    __host__ __device__ geometry::AxisAlignedBoundingBox
+    GetAxisAlignedBoundingBox() const {
+        const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) *
+                                   Eigen::Vector3f(0.0, 0.0, 0.5 * height_);
+        const Eigen::Vector3f pb = -pa;
+        const Eigen::Vector3f a = pb - pa;
+        const Eigen::Vector3f e = radius_ * (Eigen::Vector3f::Ones() - (a.array() * a.array()).matrix() / a.squaredNorm()).array().sqrt();
+        const Eigen::Vector3f min_bound =
+                (pa - e).array().min((pb - e).array()).matrix() + transform_.block<3, 1>(0, 3);
+        const Eigen::Vector3f max_bound =
+                (pa + e).array().min((pb + e).array()).matrix() + transform_.block<3, 1>(0, 3);
+        return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
+    };
+
+    float radius_;
+    float height_;
+};
+
+class Mesh : public Primitive {
+public:
+    __host__ __device__ Mesh()
+        : Primitive(Primitive::PrimitiveType::Mesh) {};
+    __host__ __device__ Mesh(const Eigen::Matrix4f& transform)
+        : Primitive(Primitive::PrimitiveType::Mesh, transform) {};
+    __host__ __device__ ~Mesh() {};
+
+    __host__ __device__ geometry::AxisAlignedBoundingBox
+    GetAxisAlignedBoundingBox() const {
+        utility::LogError("Primitive::Mesh::GetAxisAlignedBoundingBox is not supported");
+        return geometry::AxisAlignedBoundingBox();
+    };
+};
+
+
 union PrimitivePack {
     __host__ __device__ PrimitivePack() : primitive_(){};
     __host__ __device__ PrimitivePack(const PrimitivePack& other) {
@@ -161,6 +214,9 @@ union PrimitivePack {
             case Primitive::PrimitiveType::Capsule:
                 capsule_ = other.capsule_;
                 break;
+            case Primitive::PrimitiveType::Cylinder:
+                cylinder_ = other.cylinder_;
+                break;
             default:
                 primitive_ = other.primitive_;
                 break;
@@ -172,6 +228,7 @@ union PrimitivePack {
     Box box_;
     Sphere sphere_;
     Capsule capsule_;
+    Cylinder cylinder_;
 };
 
 __host__ __device__ inline PrimitivePack operator+(const PrimitivePack& lhs,

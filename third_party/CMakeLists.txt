@@ -260,6 +260,15 @@ set(imgui_LIBRARIES imgui)
 # lbvh
 set(lbvh_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lbvh)
 
+# urdfdom
+file(GLOB_RECURSE URDFDOM_SOURCES urdfdom/urdf_parser/src/*.cpp)
+add_library(urdfdom STATIC ${URDFDOM_SOURCES})
+target_include_directories(urdfdom PRIVATE
+                           ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include
+                           ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include/tinyxml)
+set(urdfdom_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include)
+set(urdfdom_LIBRARIES urdfdom)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
@@ -280,6 +289,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
      ${lbvh_INCLUDE_DIRS}
+     ${urdfdom_INCLUDE_DIR}
 )
 
 # set 3RDPARTY_LIBRARIES
@@ -297,6 +307,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}
      ${imgui_LIBRARIES}
+     ${urdfdom_LIBRARIES}
      ${rmm_LIBRARIES}
      ${CUDA_LIBRARIES}
 )

@@ -379,8 +379,15 @@ std::shared_ptr<geometry::TriangleMesh> CreateTriangleMesh(
         }
         case Primitive::PrimitiveType::Capsule: {
             const Capsule& capsule = (const Capsule&)primitive;
-            auto output = geometry::TriangleMesh::CreateCylinder(
+            auto output = geometry::TriangleMesh::CreateCapsule(
                     capsule.radius_, capsule.height_);
+            output->Transform(primitive.transform_);
+            return output;
+        }
+        case Primitive::PrimitiveType::Cylinder: {
+            const Cylinder& cylinder = (const Cylinder&)primitive;
+            auto output = geometry::TriangleMesh::CreateCylinder(
+                    cylinder.radius_, cylinder.height_);
             output->Transform(primitive.transform_);
             return output;
         }
