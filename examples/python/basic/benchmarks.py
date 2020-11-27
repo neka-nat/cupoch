@@ -54,9 +54,9 @@ tg_cpu.transform(trans_init)
 tg_gpu = pc_gpu
 tg_gpu.transform(trans_init)
 threshold = 0.02
-_, tc = measure_time(o3d.registration, "registration_icp", "CPU",
+_, tc = measure_time(o3d.pipelines.registration, "registration_icp", "CPU",
                      pc_cpu, tg_cpu, threshold, trans_init,
-                     o3d.registration.TransformationEstimationPointToPoint())
+                     o3d.pipelines.registration.TransformationEstimationPointToPoint())
 _, tg = measure_time(cph.registration, "registration_icp", "GPU",
                      pc_gpu, tg_gpu, threshold, trans_init.astype(np.float32),
                      cph.registration.TransformationEstimationPointToPoint())

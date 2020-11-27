@@ -41,37 +41,14 @@ py::class_<Vector, holder_type> bind_vector_without_repr(
     return cl;
 }
 
-template <typename EigenVector>
-cupoch::wrapper::device_vector_wrapper<EigenVector> py_array_to_vectors_float(
-        py::array_t<float, py::array::c_style | py::array::forcecast> array) {
+template <typename EigenVector, typename Scalar>
+cupoch::wrapper::device_vector_wrapper<EigenVector> py_array_to_vectors(
+        py::array_t<Scalar, py::array::c_style | py::array::forcecast> array) {
     size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
     if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
         throw py::cast_error();
     }
-    cupoch::utility::pinned_host_vector<EigenVector> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
-    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        // The EigenVector here must be a float-typed eigen vector, since only
-        // cupoch::Vector3dVector binds to py_array_to_vectors_float.
-        // Therefore, we can use the memory map directly.
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
-    }
-    return cupoch::wrapper::device_vector_wrapper<EigenVector>(eigen_vectors);
-}
-
-template <typename EigenVector>
-cupoch::wrapper::device_vector_wrapper<EigenVector> py_array_to_vectors_int(
-        py::array_t<int, py::array::c_style | py::array::forcecast> array) {
-    size_t eigen_vector_size = EigenVector::SizeAtCompileTime;
-    if (array.ndim() != 2 || array.shape(1) != eigen_vector_size) {
-        throw py::cast_error();
-    }
-    cupoch::utility::pinned_host_vector<EigenVector> eigen_vectors(array.shape(0));
-    auto array_unchecked = array.mutable_unchecked<2>();
-    for (auto i = 0; i < array_unchecked.shape(0); ++i) {
-        eigen_vectors[i] = Eigen::Map<EigenVector>(&array_unchecked(i, 0));
-    }
-    return cupoch::wrapper::device_vector_wrapper<EigenVector>(eigen_vectors);
+    return cupoch::wrapper::device_vector_wrapper<EigenVector>(array.data(), array.shape(0));
 }
 
 }  // namespace pybind11
@@ -263,7 +240,7 @@ void pybind_eigen(py::module &m) {
 
     auto vector3fvector = pybind_eigen_vector_of_vector<Eigen::Vector3f>(
             m, "Vector3fVector", "utility::device_vector<Eigen::Vector3f>",
-            py::py_array_to_vectors_float<Eigen::Vector3f>);
+            py::py_array_to_vectors<Eigen::Vector3f, float>);
     vector3fvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return R"(Convert float32 numpy array of shape ``(n, 3)`` to Cupoch format..
@@ -283,7 +260,7 @@ Example usage
 
     auto vector2fvector = pybind_eigen_vector_of_vector<Eigen::Vector2f>(
             m, "Vector2fVector", "utility::device_vector<Eigen::Vector2f>",
-            py::py_array_to_vectors_float<Eigen::Vector2f>);
+            py::py_array_to_vectors<Eigen::Vector2f, float>);
     vector2fvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return R"(Convert float32 numpy array of shape ``(n, 2)`` to Cupoch format..
@@ -303,7 +280,7 @@ Example usage
 
     auto vector3ivector = pybind_eigen_vector_of_vector<Eigen::Vector3i>(
             m, "Vector3iVector", "utility::device_vector<Eigen::Vector3i>",
-            py::py_array_to_vectors_int<Eigen::Vector3i>);
+            py::py_array_to_vectors<Eigen::Vector3i, int>);
     vector3ivector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return R"(Convert int32 numpy array of shape ``(n, 3)`` to Cupoch format..
@@ -339,7 +316,7 @@ Example usage
 
     auto vector2ivector = pybind_eigen_vector_of_vector<Eigen::Vector2i>(
             m, "Vector2iVector", "utility::device_vector<Eigen::Vector2i>",
-            py::py_array_to_vectors_int<Eigen::Vector2i>);
+            py::py_array_to_vectors<Eigen::Vector2i, int>);
     vector2ivector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
                 return "Convert int32 numpy array of shape ``(n, 2)`` to "

@@ -36,6 +36,7 @@ public:
     device_vector_wrapper();
     device_vector_wrapper(const device_vector_wrapper<Type>& other);
     device_vector_wrapper(const utility::pinned_host_vector<Type>& other);
+    device_vector_wrapper(const void* h_pointer, int size);
     device_vector_wrapper(const utility::device_vector<Type>& other);
     device_vector_wrapper(utility::device_vector<Type>&& other) noexcept;
     ~device_vector_wrapper();

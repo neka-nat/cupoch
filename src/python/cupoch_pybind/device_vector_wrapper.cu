@@ -36,6 +36,12 @@ device_vector_wrapper<Type>::device_vector_wrapper(
     : data_(other) {}
 template <typename Type>
 device_vector_wrapper<Type>::device_vector_wrapper(
+    const void* h_pointer, int size) : data_(size) {
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(data_.data()), h_pointer,
+                 size * sizeof(Type), cudaMemcpyHostToDevice));
+}
+template <typename Type>
+device_vector_wrapper<Type>::device_vector_wrapper(
         const utility::device_vector<Type>& other)
     : data_(other) {}
 template <typename Type>
@@ -104,7 +110,8 @@ void device_vector_wrapper<Type>::push_back(const Type& x) {
 template <typename Type>
 utility::pinned_host_vector<Type> device_vector_wrapper<Type>::cpu() const {
     utility::pinned_host_vector<Type> ans(data_.size());
-    cudaSafeCall(cudaMemcpy(ans.data(), thrust::raw_pointer_cast(data_.data()), sizeof(Type) * data_.size(), cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(ans.data(), thrust::raw_pointer_cast(data_.data()),
+                            sizeof(Type) * data_.size(), cudaMemcpyDeviceToHost));
     return ans;
 }
 
