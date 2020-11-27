@@ -22,6 +22,7 @@
 
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch_pybind/device_map_wrapper.h"
+#include "cupoch/utility/platform.h"
 
 namespace cupoch {
 namespace wrapper {
@@ -35,15 +36,17 @@ device_map_wrapper<KeyType, ValueType, Hash>::device_map_wrapper(
 template <typename KeyType, typename ValueType, typename Hash>
 device_map_wrapper<KeyType, ValueType, Hash>::device_map_wrapper(
         const std::unordered_map<KeyType, ValueType, Hash>& other) {
-    thrust::host_vector<KeyType> keys(other.size());
-    thrust::host_vector<ValueType> values(other.size());
+    utility::pinned_host_vector<KeyType> keys(other.size());
+    utility::pinned_host_vector<ValueType> values(other.size());
     size_t cnt = 0;
     for (const auto& it : other) {
         keys[cnt] = it.first;
         values[cnt] = it.second;
     }
-    keys_ = keys;
-    values_ = values;
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(keys_.data()), keys.data(),
+                            other.size() * sizeof(KeyType), cudaMemcpyHostToDevice));
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(values_.data()), values.data(),
+                            other.size() * sizeof(ValueType), cudaMemcpyHostToDevice));
 }
 
 template <typename KeyType, typename ValueType, typename Hash>
@@ -77,8 +80,12 @@ bool device_map_wrapper<KeyType, ValueType, Hash>::empty() const {
 template <typename KeyType, typename ValueType, typename Hash>
 std::unordered_map<KeyType, ValueType, Hash>
 device_map_wrapper<KeyType, ValueType, Hash>::cpu() const {
-    thrust::host_vector<KeyType> keys = keys_;
-    thrust::host_vector<ValueType> values = values_;
+    utility::pinned_host_vector<KeyType> keys(keys_.size());
+    utility::pinned_host_vector<ValueType> values(values_.size());
+    cudaSafeCall(cudaMemcpy(keys.data(), thrust::raw_pointer_cast(keys_.data()),
+                            keys.size() * sizeof(KeyType), cudaMemcpyDeviceToHost));
+    cudaSafeCall(cudaMemcpy(values.data(), thrust::raw_pointer_cast(values_.data()),
+                            values.size() * sizeof(ValueType), cudaMemcpyDeviceToHost));
     std::unordered_map<KeyType, ValueType, Hash> ans;
     for (int i = 0; i < keys.size(); i++) {
         ans[keys[i]] = values[i];
