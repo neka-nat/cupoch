@@ -22,6 +22,7 @@
 
 #include "cupoch/utility/dl_converter.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/console.h"
 
 namespace cupoch {
 namespace utility {
@@ -103,7 +104,15 @@ void FromDLPack(const DLManagedTensor *src,
     dst.resize(src->dl_tensor.shape[0]);
     auto base_ptr = thrust::device_pointer_cast(
             (Eigen::Matrix<T, Dim, 1> *)src->dl_tensor.data);
-    thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
+    if (src->dl_tensor.ctx.device_type == DLDeviceType::kDLCPU) {
+        cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dst.data()), thrust::raw_pointer_cast(base_ptr),
+                                src->dl_tensor.shape[0] * sizeof(Eigen::Matrix<T, Dim, 1>), cudaMemcpyHostToDevice));
+    } else if (src->dl_tensor.ctx.device_type == DLDeviceType::kDLGPU) {
+        thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
+    } else {
+        utility::LogError(
+                "[FromDLPack] Unsupported device type.");
+    }
 }
 
 template void FromDLPack(
