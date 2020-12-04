@@ -86,9 +86,10 @@ public:
 };
 
 class KinematicChain {
+public:
     typedef std::unordered_map<std::string, float> JointMap;
     typedef std::unordered_map<std::string, Eigen::Matrix4f> LinkPos;
-public:
+
     KinematicChain(const std::string& filename = "") { if (!filename.empty()) BuildFromURDF(filename); };
     ~KinematicChain() {};
     KinematicChain& BuildFromURDF(const std::string& filename);

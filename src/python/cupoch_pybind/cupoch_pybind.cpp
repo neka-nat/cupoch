@@ -27,6 +27,7 @@
 #include "cupoch_pybind/integration/integration.h"
 #include "cupoch_pybind/io/io.h"
 #include "cupoch_pybind/odometry/odometry.h"
+#include "cupoch_pybind/kinematics/kinematics.h"
 #include "cupoch_pybind/planning/planning.h"
 #include "cupoch_pybind/registration/registration.h"
 #include "cupoch_pybind/utility/utility.h"
@@ -64,5 +65,6 @@ PYBIND11_MODULE(cupoch, m) {
     pybind_registration(m);
     pybind_odometry(m);
     pybind_planning(m);
+    pybind_kinematics(m);
     pybind_visualization(m);
 }

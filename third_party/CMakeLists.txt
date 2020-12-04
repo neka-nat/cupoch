@@ -2,6 +2,8 @@ find_package(PkgConfig QUIET)
 find_package(pybind11  QUIET)
 find_package(OpenGL    QUIET)
 
+include(GenerateExportHeader)
+
 if (PKGCONFIG_FOUND)
     pkg_search_module(EIGEN3          eigen3>=3.2.7   QUIET)
     pkg_search_module(GLFW            glfw3           QUIET)
@@ -261,12 +263,30 @@ set(imgui_LIBRARIES imgui)
 set(lbvh_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lbvh)
 
 # urdfdom
+set(CONSOLE_BRIDGE_MAJOR_VERSION 1)
+set(CONSOLE_BRIDGE_MINOR_VERSION 0)
+set(CONSOLE_BRIDGE_PATCH_VERSION 1)
+add_library(console_bridge urdfdom/urdf_parser/src/console.cpp)
+set_target_properties(console_bridge PROPERTIES SOVERSION
+               ${CONSOLE_BRIDGE_MAJOR_VERSION}.${CONSOLE_BRIDGE_MINOR_VERSION})
+target_include_directories(console_bridge PUBLIC
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+	$<INSTALL_INTERFACE:include>)
+generate_export_header(console_bridge
+    EXPORT_MACRO_NAME CONSOLE_BRIDGE_DLLAPI)
+
 file(GLOB_RECURSE URDFDOM_SOURCES urdfdom/urdf_parser/src/*.cpp)
+list(REMOVE_ITEM URDFDOM_SOURCES "urdfdom/urdf_parser/src/console.cpp")
 add_library(urdfdom STATIC ${URDFDOM_SOURCES})
 target_include_directories(urdfdom PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include
                            ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include/tinyxml)
-set(urdfdom_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include)
+target_link_libraries(urdfdom console_bridge)
+set(urdfdom_INCLUDE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/urdfdom/urdf_parser/include/tinyxml
+    ${CMAKE_CURRENT_BINARY_DIR})
 set(urdfdom_LIBRARIES urdfdom)
 
 list(APPEND 3RDPARTY_INCLUDE_DIRS

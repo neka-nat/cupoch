@@ -27,7 +27,7 @@ endif ()
 
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
                       cupoch_visualization cupoch_io cupoch_odometry
-                      cupoch_planning cupoch_collision
+                      cupoch_planning cupoch_kinematics cupoch_collision
                       cupoch_integration cupoch_geometry cupoch_utility
                       cupoch_wrapper
                       ${3RDPARTY_LIBRARIES} ${CUDA_LIBRARIES})
