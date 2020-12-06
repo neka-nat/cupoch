@@ -51,11 +51,11 @@
 
 namespace urdf_export_helpers {
 
-URDFDOM_DLLAPI std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL);
-URDFDOM_DLLAPI std::string values2str(urdf::Vector3 vec);
-URDFDOM_DLLAPI std::string values2str(urdf::Rotation rot);
-URDFDOM_DLLAPI std::string values2str(urdf::Color c);
-URDFDOM_DLLAPI std::string values2str(double d);
+std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL);
+std::string values2str(urdf::Vector3 vec);
+std::string values2str(urdf::Rotation rot);
+std::string values2str(urdf::Color c);
+std::string values2str(double d);
 
 // This lives here (rather than in model.cpp) so we can run tests on it.
 class URDFVersion final
@@ -139,11 +139,11 @@ private:
 
 namespace urdf{
 
-  URDFDOM_DLLAPI ModelInterfaceSharedPtr parseURDF(const std::string &xml_string);
-  URDFDOM_DLLAPI ModelInterfaceSharedPtr parseURDFFile(const std::string &path);
-  URDFDOM_DLLAPI TiXmlDocument*  exportURDF(ModelInterfaceSharedPtr &model);
-  URDFDOM_DLLAPI TiXmlDocument*  exportURDF(const ModelInterface &model);
-  URDFDOM_DLLAPI bool parsePose(Pose&, TiXmlElement*);
+  ModelInterfaceSharedPtr parseURDF(const std::string &xml_string);
+  ModelInterfaceSharedPtr parseURDFFile(const std::string &path);
+  TiXmlDocument*  exportURDF(ModelInterfaceSharedPtr &model);
+  TiXmlDocument*  exportURDF(const ModelInterface &model);
+  bool parsePose(Pose&, TiXmlElement*);
 }
 
 #endif

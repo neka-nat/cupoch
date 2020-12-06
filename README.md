@@ -26,6 +26,9 @@ For example, it has applications in SLAM, collision avoidance, path planning and
     * Point cloud clustering
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling
+    * IO
+        * Several file types(pcd, ply, stl, obj)
+        * ROS message
     * Create Point Cloud from Laser Scan or RGBD Image
     * Visual Odometry
         * [Real-time visual odometry from dense RGB-D images](https://ieeexplore.ieee.org/document/6130321)
