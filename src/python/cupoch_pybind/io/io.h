@@ -24,3 +24,4 @@
 
 void pybind_io(py::module& m);
 void pybind_class_io(py::module& m);
+void pybind_ros_io(py::module& m);
