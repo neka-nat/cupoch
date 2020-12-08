@@ -50,7 +50,7 @@ TEST(LaserScanBuffer, AddRanges) {
     EXPECT_EQ(scan.num_steps_, 100);
     EXPECT_EQ(scan.bottom_, 0);
 
-    thrust::host_vector<float> hvec(100, 1.0);
+    utility::pinned_host_vector<float> hvec(100, 1.0);
     scan.AddRanges(hvec);
     EXPECT_EQ(scan.num_steps_, 100);
     EXPECT_EQ(scan.bottom_, 1);
@@ -70,7 +70,7 @@ TEST(LaserScanBuffer, AddRanges) {
 
 TEST(LaserScanBuffer, RangeFilter) {
     geometry::LaserScanBuffer scan(5);
-    thrust::host_vector<float> hvec;
+    utility::pinned_host_vector<float> hvec;
     hvec.push_back(1.0);
     hvec.push_back(2.0);
     hvec.push_back(3.0);

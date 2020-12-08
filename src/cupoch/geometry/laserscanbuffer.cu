@@ -21,6 +21,7 @@
 #include "cupoch/geometry/laserscanbuffer.h"
 #include "cupoch/geometry/boundingvolume.h"
 
+#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -254,11 +255,15 @@ LaserScanBuffer &LaserScanBuffer::AddRanges(const utility::device_vector<float>&
     return *this;
 }
 
-LaserScanBuffer &LaserScanBuffer::AddRanges(const thrust::host_vector<float>& ranges,
+LaserScanBuffer &LaserScanBuffer::AddRanges(const utility::pinned_host_vector<float>& ranges,
                                             const Eigen::Matrix4f& transformation,
-                                            const thrust::host_vector<float>& intensities) {
-    utility::device_vector<float> d_ranges = ranges;
-    utility::device_vector<float> d_intensities = intensities;
+                                            const utility::pinned_host_vector<float>& intensities) {
+    utility::device_vector<float> d_ranges(ranges.size());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(d_ranges.data()),
+                            ranges.data(), ranges.size() * sizeof(float), cudaMemcpyHostToDevice));
+    utility::device_vector<float> d_intensities(intensities.size());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(d_intensities.data()),
+                            intensities.data(), intensities.size() * sizeof(float), cudaMemcpyHostToDevice));
     return AddRanges(d_ranges, transformation, d_intensities);
 }
 

@@ -443,10 +443,12 @@ OccupancyGrid& OccupancyGrid::Insert(
 }
 
 OccupancyGrid& OccupancyGrid::Insert(
-        const thrust::host_vector<Eigen::Vector3f>& points,
+        const utility::pinned_host_vector<Eigen::Vector3f>& points,
         const Eigen::Vector3f& viewpoint,
         float max_range) {
-    utility::device_vector<Eigen::Vector3f> dev_points = points;
+    utility::device_vector<Eigen::Vector3f> dev_points(points.size());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dev_points.data()), points.data(),
+                            points.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
     return Insert(dev_points, viewpoint, max_range);
 }
 

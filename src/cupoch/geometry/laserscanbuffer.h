@@ -56,9 +56,9 @@ public:
     LaserScanBuffer &AddRanges(const utility::device_vector<float>& ranges,
                                const Eigen::Matrix4f& transformation = Eigen::Matrix4f::Identity(),
                                const utility::device_vector<float>& intensities = utility::device_vector<float>());
-    LaserScanBuffer &AddRanges(const thrust::host_vector<float>& ranges,
+    LaserScanBuffer &AddRanges(const utility::pinned_host_vector<float>& ranges,
                                const Eigen::Matrix4f& transformation = Eigen::Matrix4f::Identity(),
-                               const thrust::host_vector<float>& intensities = thrust::host_vector<float>());
+                               const utility::pinned_host_vector<float>& intensities = utility::pinned_host_vector<float>());
 
     std::shared_ptr<LaserScanBuffer> RangeFilter(float min_range, float max_range) const;
     std::shared_ptr<LaserScanBuffer> ScanShadowsFilter(float min_angle,
