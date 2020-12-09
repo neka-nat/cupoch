@@ -4,6 +4,7 @@ project(cupoch_planning VERSION 0.1.3 LANGUAGES CXX CUDA)
 
 # Check for dependencies
 find_package(Eigen3 3.3.7 CONFIG REQUIRED)
+find_package(CUDA REQUIRED)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --no-host-device-move-forward --expt-relaxed-constexpr --extended-lambda")
 

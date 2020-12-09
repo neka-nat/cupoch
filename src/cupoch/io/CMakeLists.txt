@@ -9,6 +9,7 @@ find_package(jsoncpp CONFIG REQUIRED)
 find_package(tinyobjloader CONFIG REQUIRED)
 find_package(rply CONFIG REQUIRED)
 find_package(libpng CONFIG REQUIRED)
+find_package(CUDA REQUIRED)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --no-host-device-move-forward --expt-relaxed-constexpr --extended-lambda")
 

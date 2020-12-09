@@ -7,6 +7,7 @@ find_package(dlpack CONFIG REQUIRED)
 find_package(Eigen3 3.3.7 CONFIG REQUIRED)
 find_package(fmt 3.0 CONFIG REQUIRED)
 find_package(jsoncpp 1.9 CONFIG REQUIRED)
+find_package(CUDA REQUIRED)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda")
 

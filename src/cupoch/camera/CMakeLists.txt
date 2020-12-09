@@ -5,7 +5,7 @@ project(cupoch_camera VERSION 0.1.3 LANGUAGES CXX CUDA)
 # Check for dependencies
 find_package(Eigen3 3.3.7 CONFIG REQUIRED)
 find_package(jsoncpp 1.9 CONFIG REQUIRED)
-find_path(THRUST_INCLUDE_DIRS "thrust/addressof.h" REQUIRED HINTS ENV "CUDA_PATH")
+find_package(CUDA REQUIRED)
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda")
 
