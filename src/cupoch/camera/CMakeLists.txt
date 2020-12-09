@@ -5,7 +5,7 @@ project(cupoch_camera VERSION 0.1.3 LANGUAGES CXX CUDA)
 # Check for dependencies
 find_package(Eigen3 3.3.7 CONFIG REQUIRED)
 find_package(jsoncpp 1.9 CONFIG REQUIRED)
-find_path(THRUST_INCLUDE_DIRS "thrust/addressof.h")
+find_path(THRUST_INCLUDE_DIRS "thrust/addressof.h" REQUIRED HINTS ENV "CUDA_PATH")
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr --extended-lambda")
 
@@ -26,8 +26,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../>
-    PRIVATE ${THRUST_INCLUDE_DIRS}
+    PUBLIC 
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> 
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../>
+    PRIVATE 
+        ${THRUST_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME} 
