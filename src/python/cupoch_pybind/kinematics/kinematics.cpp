@@ -38,7 +38,7 @@ void pybind_kinematics_classes(py::module &m) {
              "Calculate forward kinematics and get the link poses",
              "jmap"_a = kinematics::KinematicChain::JointMap(),
              "base"_a = Eigen::Matrix4f::Identity())
-        .def("get_transformed_visual_geometries", &kinematics::KinematicChain::GetTransformedVisualGeometries);
+        .def("get_transformed_visual_geometry_map", &kinematics::KinematicChain::GetTransformedVisualGeometryMap);
 }
 
 void pybind_kinematics(py::module &m) {

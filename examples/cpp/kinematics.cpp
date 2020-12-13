@@ -30,7 +30,9 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {utility::LogInfo("Need an argument of point cloud file name."); return 0;}
     auto kin = kinematics::KinematicChain(argv[1]);
     auto poses = kin.ForwardKinematics();
-    auto meshes = kin.GetTransformedVisualGeometries(poses);
-    visualization::DrawGeometries(meshes);
+    auto meshes = kin.GetTransformedVisualGeometryMap(poses);
+    std::vector<std::shared_ptr<const geometry::Geometry>> geoms;
+    for (const auto& m: meshes) { geoms.push_back(m.second); };
+    visualization::DrawGeometries(geoms);
     return 0;
 }

@@ -97,8 +97,8 @@ public:
     LinkPos ForwardKinematics(const JointMap& jmap = JointMap(),
                               const Eigen::Matrix4f& base = Eigen::Matrix4f::Identity()) const;
 
-    std::vector<std::shared_ptr<const geometry::Geometry>>
-    GetTransformedVisualGeometries(const LinkPos& link_pos) const;
+    std::unordered_map<std::string, std::shared_ptr<const geometry::Geometry>>
+    GetTransformedVisualGeometryMap(const LinkPos& link_pos) const;
 private:
     std::vector<std::shared_ptr<Frame>> BuildChainRecurse(
         Frame& frame,

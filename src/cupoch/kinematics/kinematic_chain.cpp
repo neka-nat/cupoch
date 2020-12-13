@@ -90,16 +90,16 @@ KinematicChain::LinkPos KinematicChain::ForwardKinematics(const KinematicChain::
     return ForwardKinematicsRecurse(root_, jmap, base);
 }
 
-std::vector<std::shared_ptr<const geometry::Geometry>>
-KinematicChain::GetTransformedVisualGeometries(const KinematicChain::LinkPos& link_pos) const {
-    std::vector<std::shared_ptr<const geometry::Geometry>> ans;
+std::unordered_map<std::string, std::shared_ptr<const geometry::Geometry>>
+KinematicChain::GetTransformedVisualGeometryMap(const KinematicChain::LinkPos& link_pos) const {
+    std::unordered_map<std::string, std::shared_ptr<const geometry::Geometry>> ans;
     for (const auto& link: link_pos) {
         if (!link_map_.at(link.first)->visual_.mesh_) {
             continue;
         }
         const auto sub = std::make_shared<geometry::TriangleMesh>(*link_map_.at(link.first)->visual_.mesh_);
         sub->Transform(link.second);
-        ans.push_back(sub);
+        ans.emplace(link.first, sub);
     }
     return ans;
 }
@@ -130,11 +130,7 @@ KinematicChain::LinkPos KinematicChain::ForwardKinematicsRecurse(const Frame& fr
                                                                  const Eigen::Matrix4f& base) const {
     KinematicChain::LinkPos ans;
     auto jth = jmap.find(frame.joint_.name_);
-    if (jth != jmap.end()) {
-        ans[frame.link_.name_] = base * frame.GetTransform(jth->second);
-    } else {
-        ans[frame.link_.name_] = base * frame.joint_.offset_;
-    }
+    ans[frame.link_.name_] = base * ((jth != jmap.end()) ? frame.GetTransform(jth->second) : frame.joint_.offset_);
     for (const auto& child: frame.children_) {
         auto sub = ForwardKinematicsRecurse(*child, jmap, ans[frame.link_.name_]);
         for (KinematicChain::LinkPos::const_iterator jtr = sub.begin(); jtr != sub.end(); ++jtr) {
