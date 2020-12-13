@@ -1,6 +1,6 @@
 import cupoch as cph
 
-kin = cph.kinematics.KinematicChain("../../testdata/dobot/dobot.urdf")
+kin = cph.kinematics.KinematicChain("../../testdata/franka_panda/panda.urdf")
 poses = kin.forward_kinematics()
-geoms = kin.get_transformed_visual_geometries(poses)
-cph.visualization.draw_geometries(geoms)
+geoms = kin.get_transformed_visual_geometry_map(poses)
+cph.visualization.draw_geometries(list(geoms.values()))

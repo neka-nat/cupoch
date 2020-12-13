@@ -27,7 +27,7 @@ For example, it has applications in SLAM, collision avoidance, path planning and
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling
     * IO
-        * Several file types(pcd, ply, stl, obj)
+        * Several file types(pcd, ply, stl, obj, urdf)
         * ROS message
     * Create Point Cloud from Laser Scan or RGBD Image
     * Visual Odometry
@@ -147,9 +147,9 @@ python realsense_rgbd_odometry_node.py
 
 ## Visualization
 
-| Point Cloud | Triangle Mesh |
-|-------------|---------------|
-| <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/pointcloud.png" width="640"> |  <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/trianglemesh.png" width="640"> |
+| Point Cloud | Triangle Mesh | Kinematics |
+|-------------|---------------|------------|
+| <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/pointcloud.png" width="640"> |  <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/trianglemesh.png" width="640"> | <img src="https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/kinematics.png" width="640"> |
 
 | Voxel Grid | Occupancy Grid | Distance Transform |
 |------------|----------------|--------------------|

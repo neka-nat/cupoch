@@ -172,7 +172,13 @@ ShapeInfo ConvertGeometry(const urdf::GeometrySharedPtr& geometry, const urdf::P
         }
         case urdf::Geometry::MESH: {
             urdf::MeshSharedPtr mesh = std::dynamic_pointer_cast<urdf::Mesh>(geometry);
-            auto tri = io::CreateMeshFromFile(root_path + mesh->filename);
+            std::string tmp = mesh->filename;
+            const std::string p = "package://";
+            auto r = std::search(tmp.begin(), tmp.end(), p.begin(), p.end());
+            if (r != tmp.end()) {
+                tmp.replace(std::distance(tmp.begin(), r), p.length(), "");
+            }
+            auto tri = io::CreateMeshFromFile(root_path + tmp);
             auto trans = ConvertTransform(pose);
             tri->Transform(trans);
             return ShapeInfo(std::make_shared<collision::Mesh>(trans), tri);
