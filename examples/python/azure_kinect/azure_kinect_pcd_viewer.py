@@ -18,7 +18,7 @@ def main():
                                                   calib.depth_camera_calibration.resolution_height,
                                                   p.param.fx, p.param.fy, p.param.cx, p.param.cy)
 
-	# Start cameras using modified configuration
+    # Start cameras using modified configuration
     pyk4a.device_start_cameras(device_config)
 
     clipping_distance_in_meters = 3

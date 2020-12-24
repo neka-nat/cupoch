@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "cupoch"
+version = "0.1.6"
+description = ""
+authors = ["nekanat <nekanat.stock@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1.19.4"
+open3d = "^0.11.2"
+torch = "^1.7.1"
+opencv-python = "^4.4.0"
+networkx = "^2.5"
+rospkg = "^1.2.9"
+matplotlib = "^3.3.3"
+
+[tool.poetry.dev-dependencies]
+twine = "^3.2.0"
+wheel = "^0.36.2"
+mkdocs = "^1.1.2"
+mkdocs-material = "^6.1.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
