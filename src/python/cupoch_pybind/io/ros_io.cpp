@@ -19,6 +19,7 @@
  * IN THE SOFTWARE.
 **/
 #include "cupoch/io/ros/pointcloud_msg.h"
+#include "cupoch/io/ros/image_msg.h"
 #include "cupoch_pybind/io/io.h"
 
 using namespace cupoch;
@@ -42,6 +43,15 @@ void pybind_ros_io(py::module &m_io) {
                .def_readwrite("is_dense", &io::PointCloud2MsgInfo::is_dense_)
                .def_static("default", &io::PointCloud2MsgInfo::Default);
 
+    py::class_<io::ImageMsgInfo> img_info(m_io, "ImageMsgInfo");
+    img_info.def(py::init<int, int, const std::string, bool, int>())
+               .def_readwrite("width", &io::ImageMsgInfo::width_)
+               .def_readwrite("height", &io::ImageMsgInfo::height_)
+               .def_readwrite("encoding", &io::ImageMsgInfo::encoding_)
+               .def_readwrite("is_bigendian", &io::ImageMsgInfo::is_bigendian_)
+               .def_readwrite("step", &io::ImageMsgInfo::step_)
+               .def_static("default_cv_color", &io::ImageMsgInfo::DefaultCvColor);
+
     m_io.def("create_from_pointcloud2_msg",
              [] (const py::bytes &bytes, const io::PointCloud2MsgInfo& info) {
                  py::buffer_info binfo(py::buffer(bytes).request());
@@ -55,5 +65,21 @@ void pybind_ros_io(py::module &m_io) {
                  char *data = new char[info.row_step_];
                  io::CreateToPointCloud2Msg(reinterpret_cast<uint8_t *>(data), info, pointcloud);
                  return std::make_tuple(py::bytes(data, info.row_step_), info);
+             });
+
+    m_io.def("create_from_image_msg",
+             [] (const py::bytes &bytes, const io::ImageMsgInfo& info) {
+                 py::buffer_info binfo(py::buffer(bytes).request());
+                 const uint8_t *data = reinterpret_cast<const uint8_t *>(binfo.ptr);
+                 size_t length = static_cast<size_t>(binfo.size);
+                 return io::CreateFromImageMsg(data, info);
+             });
+    m_io.def("create_to_image_msg",
+             [] (const geometry::Image& image) {
+                 auto info = io::ImageMsgInfo::DefaultCvColor(image.width_, image.height_);
+                 int total = info.step_ * info.height_;
+                 char *data = new char[total];
+                 io::CreateToImageMsg(reinterpret_cast<uint8_t *>(data), info, image);
+                 return std::make_tuple(py::bytes(data, total), info);
              });
 }
