@@ -34,13 +34,7 @@ struct reverse_color_oder_functor {
     int width_;
     __device__ __host__
     void operator() (size_t idx) {
-        int step = width_ * 3;
-        int i = idx / step;
-        int j = idx % step;
-        uint8_t b = data_[i * step + j];
-        uint8_t r = data_[i * step + j + 2];
-        data_[i * step + j] = r;
-        data_[i * step + j + 2] = b;
+        thrust::swap(data_[3 * idx], data_[3 * idx + 2]);
     }
 };
 
