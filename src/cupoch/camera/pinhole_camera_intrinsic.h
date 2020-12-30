@@ -107,6 +107,8 @@ public:
     bool ConvertToJsonValue(Json::Value &value) const override;
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
+    PinholeCameraIntrinsic CreatePyramidLevel(size_t level) const;
+
 public:
     /// Width of the image.
     int width_ = -1;

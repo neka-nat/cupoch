@@ -65,6 +65,7 @@ void pybind_camera_classes(py::module &m) {
             .def("is_valid", &camera::PinholeCameraIntrinsic::IsValid,
                  "Returns True iff both the width and height are greater than "
                  "0.")
+            .def("create_pyramid_level", &camera::PinholeCameraIntrinsic::CreatePyramidLevel)
             .def_readwrite("width", &camera::PinholeCameraIntrinsic::width_,
                            "int: Width of the image.")
             .def_readwrite("height", &camera::PinholeCameraIntrinsic::height_,

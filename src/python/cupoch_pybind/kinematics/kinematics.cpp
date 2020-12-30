@@ -25,7 +25,7 @@
 using namespace cupoch;
 
 void pybind_kinematics_classes(py::module &m) {
-    // cupoch.registration.ICPConvergenceCriteria
+    // cupoch.kinematics.KinematicChain
     py::class_<kinematics::KinematicChain> kinematic_chain(
             m, "KinematicChain",
             "KinematicChain implements kinematic 3d model from URDF file.");

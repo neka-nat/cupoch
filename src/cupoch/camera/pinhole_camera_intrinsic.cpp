@@ -78,5 +78,17 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     }
     return true;
 }
+
+PinholeCameraIntrinsic PinholeCameraIntrinsic::CreatePyramidLevel(size_t level) const {
+    if (level == 0 || width_ <= 0 || height_ <= 0) return *this;
+    const float scale_factor = powf(0.5f, static_cast<float>(level));
+    auto f = GetFocalLength();
+    auto p = GetPrincipalPoint();
+    return PinholeCameraIntrinsic(width_ >> level, height_ >> level,
+                                  f.first * scale_factor, f.second * scale_factor,
+                                  (p.first + 0.5f) * scale_factor - 0.5f,
+                                  (p.second + 0.5f) * scale_factor - 0.5f);
+}
+
 }  // namespace camera
 }  // namespace cupoch

@@ -16,7 +16,7 @@ if __name__ == "__main__":
                                                                                 data.height))
         rospy.loginfo("%d, %d" % (img.width, img.height))
 
-    rospy.Subscriber("/image_publisher_1609250572664926015/image_raw", Image, callback)
+    rospy.Subscriber("/image_publisher/image_raw", Image, callback)
     r = rospy.Rate(10)
     while not rospy.is_shutdown():
         vis.clear_geometries()
