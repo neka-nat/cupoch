@@ -14,6 +14,7 @@ opencv-python = "^4.4.0"
 networkx = "^2.5"
 rospkg = "^1.2.9"
 matplotlib = "^3.3.3"
+pyrealsense2 = "^2.41.0"
 
 [tool.poetry.dev-dependencies]
 twine = "^3.2.0"

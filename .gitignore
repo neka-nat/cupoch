@@ -4,3 +4,4 @@ cupoch_config.h
 shader.h
 imgui.ini
 site/*
+__pycache__
