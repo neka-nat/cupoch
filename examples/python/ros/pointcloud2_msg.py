@@ -11,16 +11,22 @@ if __name__ == "__main__":
 
     def callback(data):
         global pcd
-        pcd = cph.io.create_from_pointcloud2_msg(data.data,
-                                                 cph.io.PointCloud2MsgInfo.default(data.width,
-                                                                                   data.point_step))
+        temp = cph.io.create_from_pointcloud2_msg(data.data,
+                                                  cph.io.PointCloud2MsgInfo.default(data.width,
+                                                                                    data.point_step))
+        pcd.points = temp.points
+        pcd.colors = temp.colors
         rospy.loginfo("%d" % len(pcd.points))
 
     rospy.Subscriber("/camera/depth/color/points", PointCloud2, callback)
     r = rospy.Rate(10)
+    initialize = False
     while not rospy.is_shutdown():
-        vis.clear_geometries()
-        vis.add_geometry(pcd)
-        vis.poll_events()
-        vis.update_renderer()
+        if len(pcd.points) > 0:
+            if not initialize:
+                vis.add_geometry(pcd)
+                initialize = True
+            vis.update_geometry(pcd)
+            vis.poll_events()
+            vis.update_renderer()
         r.sleep()

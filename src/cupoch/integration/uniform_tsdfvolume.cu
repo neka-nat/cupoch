@@ -486,6 +486,13 @@ struct raycast_tsdf_functor {
         }
         ray_len += voxel_length_;
         Eigen::Vector3i grid_idx = Eigen::device_vectorize<float, 3, ::floor>((t + (ray_dir * ray_len)) / voxel_length_).cast<int>();
+        if (grid_idx[0] < 0 || grid_idx[0] >= resolution_ - 1 ||
+            grid_idx[1] < 0 || grid_idx[1] >= resolution_ - 1 ||
+            grid_idx[2] < 0 || grid_idx[2] >= resolution_ - 1) {
+            return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                                      Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                                      Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()));
+         }
         geometry::TSDFVoxel v = voxels_[IndexOf(grid_idx, resolution_)];
         const float max_search_length = ray_len + length * sqrt(2.0f);
         for (; ray_len < max_search_length; ray_len += sdf_trunc_ * 0.5f) {
@@ -500,7 +507,7 @@ struct raycast_tsdf_functor {
             if (prev_v.tsdf_ > 0.0f && v.tsdf_ < 0.0f) {
                 const float t_star = ray_len - sdf_trunc_ * 0.5f * prev_v.tsdf_ / (v.tsdf_ - prev_v.tsdf_);
                 const Eigen::Vector3f vertex = t + ray_dir * t_star;
-                const Eigen::Vector3f loc_in_grid = Eigen::device_vectorize<float, 3, ::floor>(vertex / voxel_length_);
+                const Eigen::Vector3f loc_in_grid = vertex / voxel_length_;
                 if (loc_in_grid[0] < 1 || loc_in_grid[0] >= resolution_ - 1 ||
                     loc_in_grid[1] < 1 || loc_in_grid[1] >= resolution_ - 1 ||
                     loc_in_grid[2] < 1 || loc_in_grid[2] >= resolution_ - 1)
