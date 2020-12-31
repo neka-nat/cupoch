@@ -138,6 +138,7 @@ In SIGGRAPH, 1996)");
                  "Debug function to extract the voxel data VoxelGrid.")
             .def("raycast",
                  &integration::UniformTSDFVolume::Raycast,
+                 "intrinsic"_a, "extrinsic"_a, "sdf_trunc"_a, "project_valid_depth_only"_a = true,
                  "Predict the surface by raycasting.")
             .def_readwrite("length", &integration::UniformTSDFVolume::length_,
                            "Total length, where ``voxel_length = length / "

@@ -424,19 +424,19 @@ struct raycast_tsdf_functor {
     const float sdf_trunc_;
     const TSDFVolumeColorType color_type_;
     __device__ __forceinline__
-    float InterpolateTrilinearly(const Eigen::Vector3i& point,
+    float InterpolateTrilinearly(const Eigen::Vector3f& point,
                                  const geometry::TSDFVoxel* voxels,
                                  int resolution) const {
-        Eigen::Vector3i point_in_grid = point;
+        Eigen::Vector3i point_in_grid = point.cast<int>();
         const float vx = (float)point_in_grid[0] + 0.5f;
         const float vy = (float)point_in_grid[1] + 0.5f;
         const float vz = (float)point_in_grid[2] + 0.5f;
-        point_in_grid[0] = (point[0] < vx) ? (point[0] - 1) : point[0];
-        point_in_grid[1] = (point[1] < vy) ? (point[1] - 1) : point[1];
-        point_in_grid[2] = (point[2] < vz) ? (point[2] - 1) : point[2];
-        const float a = (float)point[0] - ((float)point_in_grid[0] + 0.5f);
-        const float b = (float)point[1] - ((float)point_in_grid[1] + 0.5f);
-        const float c = (float)point[2] - ((float)point_in_grid[2] + 0.5f);
+        point_in_grid[0] = (point[0] < vx) ? (point_in_grid[0] - 1) : point_in_grid[0];
+        point_in_grid[1] = (point[1] < vy) ? (point_in_grid[1] - 1) : point_in_grid[1];
+        point_in_grid[2] = (point[2] < vz) ? (point_in_grid[2] - 1) : point_in_grid[2];
+        const float a = point[0] - ((float)point_in_grid[0] + 0.5f);
+        const float b = point[1] - ((float)point_in_grid[1] + 0.5f);
+        const float c = point[2] - ((float)point_in_grid[2] + 0.5f);
         geometry::TSDFVoxel v0 = voxels[IndexOf(point_in_grid, resolution)];
         geometry::TSDFVoxel v1 = voxels[IndexOf(point_in_grid + Eigen::Vector3i(0, 0, 1), resolution)];
         geometry::TSDFVoxel v2 = voxels[IndexOf(point_in_grid + Eigen::Vector3i(0, 1, 0), resolution)];
@@ -470,7 +470,13 @@ struct raycast_tsdf_functor {
         const float length = resolution_ * voxel_length_;
         const Eigen::Vector3f pixel_pos((x - cx_) / fx_, (y - cy_) / fy_, 1.0f);
         Eigen::Vector3f ray_dir = campose_.block<3, 3>(0, 0) * pixel_pos;
-        ray_dir.normalize();
+        float ray_dir_norm = ray_dir.norm();
+        if (ray_dir_norm == 0) {
+            return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                                      Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()),
+                                      Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN()));
+        }
+        ray_dir /= ray_dir_norm;
         Eigen::Vector3f t = campose_.block<3, 1>(0, 3) - origin_;
         float ray_len = fmax(GetMinTime(length, t, ray_dir), 0.0f);
         if (ray_len >= GetMaxTime(length, t, ray_dir)) {
@@ -494,13 +500,13 @@ struct raycast_tsdf_functor {
             if (prev_v.tsdf_ > 0.0f && v.tsdf_ < 0.0f) {
                 const float t_star = ray_len - sdf_trunc_ * 0.5f * prev_v.tsdf_ / (v.tsdf_ - prev_v.tsdf_);
                 const Eigen::Vector3f vertex = t + ray_dir * t_star;
-                const Eigen::Vector3i loc_in_grid = Eigen::device_vectorize<float, 3, ::floor>(vertex / voxel_length_).cast<int>();
+                const Eigen::Vector3f loc_in_grid = Eigen::device_vectorize<float, 3, ::floor>(vertex / voxel_length_);
                 if (loc_in_grid[0] < 1 || loc_in_grid[0] >= resolution_ - 1 ||
                     loc_in_grid[1] < 1 || loc_in_grid[1] >= resolution_ - 1 ||
                     loc_in_grid[2] < 1 || loc_in_grid[2] >= resolution_ - 1)
                     break;
                 Eigen::Vector3f normal;
-                Eigen::Vector3i shifted = loc_in_grid;
+                Eigen::Vector3f shifted = loc_in_grid;
                 shifted[0] += 1;
                 if (shifted[0] >= resolution_ - 1) break;
                 const float fx1 = InterpolateTrilinearly(shifted, voxels_, resolution_);
@@ -529,10 +535,10 @@ struct raycast_tsdf_functor {
                 if (shifted[2] < 1) break;
                 const float fz2 = InterpolateTrilinearly(shifted, voxels_, resolution_);
                 normal[2] = fz1 - fz2;
-
-                if (normal.norm() == 0) break;
-                normal.normalize();
-                const geometry::TSDFVoxel v = voxels_[IndexOf(loc_in_grid, resolution_)];
+                const float norm_nml = normal.norm();
+                if (norm_nml == 0) break;
+                normal /= norm_nml;
+                const geometry::TSDFVoxel v = voxels_[IndexOf(loc_in_grid.cast<int>(), resolution_)];
                 Eigen::Vector3f c = Eigen::Vector3f::Zero();
                 if (color_type_ == TSDFVolumeColorType::RGB8) {
                     c = v.color_ / 255.0;
