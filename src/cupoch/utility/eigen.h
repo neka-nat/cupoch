@@ -64,14 +64,16 @@ thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>> SolveLinearSystemPSD(
         const Eigen::Matrix<float, Dim, Dim> &A,
         const Eigen::Matrix<float, Dim, 1> &b,
         bool check_symmetric = false,
-        bool check_det = false);
+        bool check_det = false,
+        float det_thresh = 1.0e-6);
 
 /// Function to solve Jacobian system
 /// Input: 6x6 Jacobian matrix and 6-dim residual vector.
 /// Output: tuple of is_success, 4x4 extrinsic matrices.
 thrust::tuple<bool, Eigen::Matrix4f>
 SolveJacobianSystemAndObtainExtrinsicMatrix(const Eigen::Matrix6f &JTJ,
-                                            const Eigen::Vector6f &JTr);
+                                            const Eigen::Vector6f &JTr,
+                                            float det_thresh = -1.0f);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix

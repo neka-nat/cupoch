@@ -30,6 +30,7 @@
 #include "cupoch_pybind/kinematics/kinematics.h"
 #include "cupoch_pybind/planning/planning.h"
 #include "cupoch_pybind/registration/registration.h"
+#include "cupoch_pybind/kinfu/kinfu.h"
 #include "cupoch_pybind/utility/utility.h"
 #include "cupoch_pybind/visualization/visualization.h"
 
@@ -64,6 +65,7 @@ PYBIND11_MODULE(cupoch, m) {
     pybind_io(m);
     pybind_registration(m);
     pybind_odometry(m);
+    pybind_kinfu(m);
     pybind_planning(m);
     pybind_kinematics(m);
     pybind_visualization(m);

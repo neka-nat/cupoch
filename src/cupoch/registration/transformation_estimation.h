@@ -89,7 +89,7 @@ private:
 /// Estimate a transformation for point to plane distance
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
-    TransformationEstimationPointToPlane() {}
+    TransformationEstimationPointToPlane(float det_thresh = 1.0e-6) : det_thresh_(det_thresh) {}
     ~TransformationEstimationPointToPlane() override {}
 
 public:
@@ -105,6 +105,7 @@ public:
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
 
+    float det_thresh_;
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;

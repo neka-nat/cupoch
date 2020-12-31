@@ -163,7 +163,7 @@ Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
     bool is_success;
     Eigen::Matrix4f extrinsic;
     thrust::tie(is_success, extrinsic) =
-            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr, det_thresh_);
 
     return is_success ? extrinsic : Eigen::Matrix4f::Identity();
 }

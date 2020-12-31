@@ -78,7 +78,8 @@ thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>>
 SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
                      const Eigen::Matrix<float, Dim, 1> &b,
                      bool check_symmetric,
-                     bool check_det) {
+                     bool check_det,
+                     float det_thresh) {
     // PSD implies symmetric
     if (check_symmetric && !A.isApprox(A.transpose())) {
         LogWarning("check_symmetric failed, empty vector will be returned");
@@ -90,7 +91,7 @@ SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
         LogWarning("Cannot use check_det on WIN32.");
 #else
         float det = A.determinant();
-        if (fabs(det) < 1e-6 || std::isnan(det) || std::isinf(det)) {
+        if (fabs(det) < det_thresh || std::isnan(det) || std::isinf(det)) {
             LogWarning("check_det failed, empty vector will be returned");
             return thrust::make_tuple(false,
                                       Eigen::Matrix<float, Dim, 1>::Zero());
@@ -106,11 +107,11 @@ SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
 
 thrust::tuple<bool, Eigen::Matrix4f>
 SolveJacobianSystemAndObtainExtrinsicMatrix(
-        const Eigen::Matrix6f &JTJ, const Eigen::Vector6f &JTr) {
+        const Eigen::Matrix6f &JTJ, const Eigen::Vector6f &JTr, float det_thresh) {
     bool solution_exist;
     Eigen::Vector6f x;
     thrust::tie(solution_exist, x) =
-            SolveLinearSystemPSD<6>(JTJ, Eigen::Vector6f(-JTr));
+            SolveLinearSystemPSD<6>(JTJ, Eigen::Vector6f(-JTr), false, det_thresh > 0, det_thresh);
 
     if (solution_exist) {
         Eigen::Matrix4f extrinsic = TransformVector6fToMatrix4f(x);
@@ -124,7 +125,8 @@ template thrust::tuple<bool, Eigen::Vector6f>
 SolveLinearSystemPSD(const Eigen::Matrix6f &A,
                      const Eigen::Vector6f &b,
                      bool check_symmetric,
-                     bool check_det);
+                     bool check_det,
+                     float det_thresh);
 
 Eigen::Matrix3f RotationMatrixX(float radians) {
     Eigen::Matrix3f rot;

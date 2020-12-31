@@ -24,6 +24,10 @@ jobs:
             cuda: "10.2.89"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.7
+          - os: windows-2019
+            cuda: "10.2.89"
+            visual_studio: "Visual Studio 16 2019"
+            python-version: 3.8
 
     env:
       build_dir: "build"
