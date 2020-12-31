@@ -121,9 +121,18 @@ __host__ __device__ inline bool operator!=(
 }
 
 template <typename ArrayType>
+__host__ __device__ bool device_all(const ArrayType &array) {
+    #pragma unroll
+    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
+        if (!array[i]) return false;
+    }
+    return true;
+}
+
+template <typename ArrayType>
 __host__ __device__ bool device_any(const ArrayType &array) {
     #pragma unroll
-    for (int i = 0; i < array.size(); ++i) {
+    for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
         if (array[i]) return true;
     }
     return false;
@@ -356,7 +365,8 @@ struct hash_eigen {
     __host__ __device__
     std::size_t operator()(T const& matrix) const {
         size_t seed = 0;
-        for (int i = 0; i < (int)matrix.size(); i++) {
+        #pragma unroll
+        for (int i = 0; i < T::SizeAtCompileTime; i++) {
             auto elem = *(matrix.data() + i);
             seed ^= stdgpu::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
                     (seed << 6) + (seed >> 2);

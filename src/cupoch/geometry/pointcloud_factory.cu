@@ -167,19 +167,31 @@ struct compute_normals_from_structured_pointcloud_functor {
             return Eigen::Vector3f(0.0f, 0.0f, 0.0f);
         }
         Eigen::Vector3f left = *(points_ + width_ * i + j - 1);
-        Eigen::Vector3f right = *(points_ + width_ * i + j + 1);
-        Eigen::Vector3f upper = *(points_ + width_ * (i - 1) + j);
-        Eigen::Vector3f lower = *(points_ + width_ * (i + 1) + j);
-        if (isnan(left(2)) || isnan(right(2)) || isnan(upper(2)) || isnan(lower(2))) {
-            return Eigen::Vector3f(0.0f, 0.0f, 0.0f);
-        } else {
-            Eigen::Vector3f hor = left - right;
-            Eigen::Vector3f ver = upper - lower;
-            Eigen::Vector3f normal = hor.cross(ver);
-            normal.normalize();
-            if (normal.z() > 0) normal *= -1.0f;
-            return normal;
+        if (!Eigen::device_all(left.array().isFinite())) {
+            left = Eigen::Vector3f::Zero();
         }
+        Eigen::Vector3f right = *(points_ + width_ * i + j + 1);
+        if (!Eigen::device_all(right.array().isFinite())) {
+            right = Eigen::Vector3f::Zero();
+        }
+        Eigen::Vector3f upper = *(points_ + width_ * (i - 1) + j);
+        if (!Eigen::device_all(upper.array().isFinite())) {
+            upper = Eigen::Vector3f::Zero();
+        }
+        Eigen::Vector3f lower = *(points_ + width_ * (i + 1) + j);
+        if (!Eigen::device_all(lower.array().isFinite())) {
+            lower = Eigen::Vector3f::Zero();
+        }
+        Eigen::Vector3f hor = left - right;
+        Eigen::Vector3f ver = upper - lower;
+        Eigen::Vector3f normal = hor.cross(ver);
+        float norm = normal.norm();
+        if (norm == 0) {
+            return Eigen::Vector3f::Zero();
+        }
+        normal /= norm;
+        if (normal.z() > 0) normal *= -1.0f;
+        return normal;
     }
 };
 

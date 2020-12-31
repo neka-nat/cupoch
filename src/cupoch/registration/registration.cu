@@ -134,11 +134,11 @@ RegistrationResult cupoch::registration::RegistrationICP(
                  TransformationEstimationType::PointToPlane ||
          estimation.GetTransformationEstimationType() ==
                  TransformationEstimationType::ColoredICP) &&
-        (!source.HasNormals() || !target.HasNormals())) {
+        !target.HasNormals()) {
         utility::LogError(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
-                "require pre-computed normal vectors.");
+                "require pre-computed target normal vectors.");
     }
 
     Eigen::Matrix4f transformation = init;
