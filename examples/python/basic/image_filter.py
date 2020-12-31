@@ -1,6 +1,10 @@
 import cupoch as cph
 import numpy as np
 
+img = cph.io.read_image("../../testdata/lena_color.jpg")
+img.downsample()
+cph.visualization.draw_geometries([img])
+
 img = cph.io.read_image("../../testdata/lena_gray.jpg")
 cph.visualization.draw_geometries([img])
 

@@ -203,8 +203,8 @@ template std::shared_ptr<Image> Image::CreateImageFromFloatImage<uint16_t>()
 ImagePyramid Image::CreatePyramid(size_t num_of_levels,
                                   bool with_gaussian_filter /*= true*/) const {
     std::vector<std::shared_ptr<Image>> pyramid_image;
-    pyramid_image.clear();
-    if ((num_of_channels_ != 1) || (bytes_per_channel_ != 4)) {
+    if ((num_of_channels_ != 1 || bytes_per_channel_ != 4) &&
+        (num_of_channels_ != 3 || bytes_per_channel_ != 1)) {
         utility::LogError("[CreateImagePyramid] Unsupported image format.");
     }
 
@@ -214,7 +214,7 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
             *input_copy_ptr = *this;
             pyramid_image.push_back(input_copy_ptr);
         } else {
-            if (with_gaussian_filter) {
+            if (with_gaussian_filter && num_of_channels_ == 1) {
                 // https://en.wikipedia.org/wiki/Pyramid_(image_processing)
                 auto level_b = pyramid_image[i - 1]->Filter(
                         Image::FilterType::Gaussian3);

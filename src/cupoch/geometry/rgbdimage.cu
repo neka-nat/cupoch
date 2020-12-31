@@ -101,7 +101,7 @@ RGBDImagePyramid RGBDImage::BilateralFilterPyramidDepth(const RGBDImagePyramid &
         auto depth_level_filtered = depth_level.BilateralFilter(diameter, sigma_depth, sigma_space);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(rgbd_image_pyramid[level]->color_, *depth_level_filtered));
-        rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
+        rgbd_image_pyramid_filtered.push_back(std::move(rgbd_image_level_filtered));
     }
     return rgbd_image_pyramid_filtered;
 }

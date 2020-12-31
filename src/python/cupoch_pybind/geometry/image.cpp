@@ -116,6 +116,7 @@ void pybind_image(py::module &m) {
                             std::to_string(img.num_of_channels_) +
                             std::string(" channels.");
                  })
+            .def("downsample", &geometry::Image::Downsample)
             .def(
                     "filter",
                     [](const geometry::Image &input,

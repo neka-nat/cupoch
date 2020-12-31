@@ -117,8 +117,8 @@ struct linear_transform_functor {
     }
 };
 
-struct downsample_functor {
-    downsample_functor(const uint8_t *src,
+struct downsample_float_functor {
+    downsample_float_functor(const uint8_t *src,
                        int src_width,
                        uint8_t *dst,
                        int dst_width)
@@ -140,6 +140,40 @@ struct downsample_functor {
                                              sizeof(float));
         float *p = (float *)(dst_ + idx * sizeof(float));
         *p = (*p1 + *p2 + *p3 + *p4) / 4.0f;
+    }
+};
+
+struct downsample_rgb_functor {
+    downsample_rgb_functor(const uint8_t *src,
+                           int src_width,
+                           uint8_t *dst,
+                           int dst_width)
+        : src_(src), src_width_(src_width), dst_(dst), dst_width_(dst_width){};
+    const uint8_t *src_;
+    const int src_width_;
+    uint8_t *dst_;
+    const int dst_width_;
+    __device__ void operator()(size_t idx) {
+        const int y = idx / dst_width_;
+        const int x = idx % dst_width_;
+        int p1_r = (int)(*(src_ + (y * 2 * src_width_ + x * 2) * 3));
+        int p1_g = (int)(*(src_ + (y * 2 * src_width_ + x * 2) * 3 + 1));
+        int p1_b = (int)(*(src_ + (y * 2 * src_width_ + x * 2) * 3 + 2));
+        int p2_r = (int)(*(src_ + (y * 2 * src_width_ + x * 2 + 1) * 3));
+        int p2_g = (int)(*(src_ + (y * 2 * src_width_ + x * 2 + 1) * 3 + 1));
+        int p2_b = (int)(*(src_ + (y * 2 * src_width_ + x * 2 + 1) * 3 + 2));
+        int p3_r = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2) * 3));
+        int p3_g = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2) * 3 + 1));
+        int p3_b = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2) * 3 + 2));
+        int p4_r = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2 + 1) * 3));
+        int p4_g = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2 + 1) * 3 + 1));
+        int p4_b = (int)(*(src_ + ((y * 2 + 1) * src_width_ + x * 2 + 1) * 3 + 2));
+        uint8_t *p_r = dst_ + idx * 3;
+        uint8_t *p_g = dst_ + idx * 3 + 1;
+        uint8_t *p_b = dst_ + idx * 3 + 2;
+        *p_r = (uint8_t)((p1_r + p2_r + p3_r + p4_r) / 4);
+        *p_g = (uint8_t)((p1_g + p2_g + p3_g + p4_g) / 4);
+        *p_b = (uint8_t)((p1_b + p2_b + p3_b + p4_b) / 4);
     }
 };
 
@@ -388,21 +422,32 @@ Image &Image::LinearTransform(float scale, float offset /* = 0.0*/) {
 
 std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
-    if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
+    if ((num_of_channels_ != 1 || bytes_per_channel_ != 4) &&
+        (num_of_channels_ != 3 || bytes_per_channel_ != 1)) {
         utility::LogError("[Downsample] Unsupported image format.");
         return output;
     }
     int half_width = (int)floor((float)width_ / 2.0);
     int half_height = (int)floor((float)height_ / 2.0);
-    output->Prepare(half_width, half_height, 1, 4);
+    output->Prepare(half_width, half_height, num_of_channels_, bytes_per_channel_);
 
-    downsample_functor func(thrust::raw_pointer_cast(data_.data()), width_,
-                            thrust::raw_pointer_cast(output->data_.data()),
-                            output->width_);
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(output->width_ *
-                                                            output->height_),
-                     func);
+    if (num_of_channels_ == 1) {
+        downsample_float_functor func(thrust::raw_pointer_cast(data_.data()), width_,
+                                      thrust::raw_pointer_cast(output->data_.data()),
+                                      output->width_);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(output->width_ *
+                                                                output->height_),
+                         func);
+    } else {
+        downsample_rgb_functor func(thrust::raw_pointer_cast(data_.data()), width_,
+                                    thrust::raw_pointer_cast(output->data_.data()),
+                                    output->width_);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(output->width_ *
+                                                                output->height_),
+                         func);
+    }
     return output;
 }
 
