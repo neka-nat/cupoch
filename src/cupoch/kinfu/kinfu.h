@@ -35,11 +35,11 @@ typedef std::vector<std::shared_ptr<geometry::PointCloud>> PointCloudPyramid;
 class KinfuParameters {
 public:
     KinfuParameters(int num_pyramid_levels = 4,
-                    int diameter = 4,
-                    float sigma_depth = 0.3f,
-                    float sigma_space = 4.0f,
+                    int diameter = 1,
+                    float sigma_depth = 0.2f,
+                    float sigma_space = 1.0f,
                     float depth_cutoff = 3.0f,
-                    float tsdf_length = 6.0f,
+                    float tsdf_length = 8.0f,
                     int tsdf_resolution = 512,
                     float sdf_trunc = 0.05f,
                     integration::TSDFVolumeColorType tsdf_color_type = integration::TSDFVolumeColorType::RGB8,
