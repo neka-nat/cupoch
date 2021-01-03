@@ -75,6 +75,7 @@ public:
             ChangeConsoleColor(TextColor::Red, 1);
             fmt::print("[Cupoc FATAL] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
             ResetConsoleColor();
             exit(-1);
         }
@@ -85,6 +86,7 @@ public:
             ChangeConsoleColor(TextColor::Red, 1);
             fmt::print("[Cupoc ERROR] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
             ResetConsoleColor();
         }
     }
@@ -94,6 +96,7 @@ public:
             ChangeConsoleColor(TextColor::Yellow, 1);
             fmt::print("[Cupoc WARNING] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
             ResetConsoleColor();
         }
     }
@@ -102,6 +105,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Info) {
             fmt::print("[Cupoc INFO] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
     }
 
@@ -109,6 +113,7 @@ public:
         if (verbosity_level_ >= VerbosityLevel::Debug) {
             fmt::print("[Cupoc DEBUG] ");
             fmt::vprint(format, args);
+            fmt::print("\n");
         }
     }
 
