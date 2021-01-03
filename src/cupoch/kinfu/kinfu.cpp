@@ -103,7 +103,7 @@ std::tuple<Eigen::Matrix4f, bool> Pipeline::PoseEstimation(const Eigen::Matrix4f
         registration::ICPConvergenceCriteria criteria;
         criteria.max_iteration_ = params_.icp_iterations_[level];
         auto res = registration::RegistrationICP(*frame_data[level], *target_data[level], params_.distance_threshold_,
-                                                 cur_global_trans, registration::TransformationEstimationPointToPlane(10000),
+                                                 cur_global_trans, registration::TransformationEstimationPointToPlane(100000),
                                                  criteria);
         cur_global_trans =  res.transformation_;
     }

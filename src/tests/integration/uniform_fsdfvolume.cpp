@@ -108,7 +108,7 @@ TEST(UniformTSDFVolume, RealData) {
 
     // TSDF init
     integration::UniformTSDFVolume tsdf_volume(
-            4.0, 100, 0.04, integration::TSDFVolumeColorType::RGB8);
+            8.0, 200, 0.04, integration::TSDFVolumeColorType::RGB8);
 
     // Integrate RGBD frames
     for (size_t i = 0; i < poses.size(); ++i) {

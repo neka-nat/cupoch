@@ -7,7 +7,7 @@ if __name__ == "__main__":
     camera_intrinsics = cph.camera.PinholeCameraIntrinsic(
         cph.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = cph.integration.UniformTSDFVolume(
-        length=4.0,
+        length=8.0,
         resolution=512,
         sdf_trunc=0.04,
         color_type=cph.integration.TSDFVolumeColorType.RGB8,

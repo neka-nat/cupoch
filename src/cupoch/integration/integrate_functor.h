@@ -174,7 +174,8 @@ struct uniform_integrate_functor : public integrate_functor {
         int yz = idx % res2;
         int y = yz / resolution_;
         int z = yz % resolution_;
-        ComputeTSDF(voxels_[idx], origin_, x, y, z);
+        int h_res = resolution_ / 2;
+        ComputeTSDF(voxels_[idx], origin_, x - h_res, y - h_res, z - h_res);
     }
 };
 
