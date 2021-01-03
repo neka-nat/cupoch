@@ -93,8 +93,8 @@ if __name__ == "__main__":
             color_image = cph.geometry.Image(color_temp)
 
             rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(
-                color_image,
-                depth_image,
+                color_image.flip_horizontal(),
+                depth_image.flip_horizontal(),
                 depth_scale=1.0 / depth_scale,
                 depth_trunc=clipping_distance_in_meters,
                 convert_rgb_to_intensity=False)
