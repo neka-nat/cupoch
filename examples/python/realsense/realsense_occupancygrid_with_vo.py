@@ -4,8 +4,8 @@ import numpy as np
 from enum import IntEnum
 
 from datetime import datetime
-import cupoch as x3d
-x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
+import cupoch as cph
+cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 
 
 class Preset(IntEnum):
@@ -19,7 +19,7 @@ class Preset(IntEnum):
 
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
-    out = x3d.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
+    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
                                             intrinsics.fy, intrinsics.ppx,
                                             intrinsics.ppy)
     return out
@@ -50,14 +50,14 @@ if __name__ == "__main__":
     align_to = rs.stream.color
     align = rs.align(align_to)
 
-    vis = x3d.visualization.Visualizer()
+    vis = cph.visualization.Visualizer()
     vis.create_window()
 
-    ocgd = x3d.geometry.OccupancyGrid(0.05, 512)
+    ocgd = cph.geometry.OccupancyGrid(0.05, 512)
     ocgd.visualize_free_area = False
     flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
     prev_rgbd_image = None
-    option = x3d.odometry.OdometryOption()
+    option = cph.odometry.OdometryOption()
     cur_trans = np.identity(4)
 
     # Streaming loop
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             # Get aligned frames
             aligned_depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-            intrinsic = x3d.camera.PinholeCameraIntrinsic(
+            intrinsic = cph.camera.PinholeCameraIntrinsic(
                 get_intrinsic_matrix(color_frame))
 
             # Validate that both frames are valid
@@ -84,22 +84,22 @@ if __name__ == "__main__":
                 continue
 
             depth_temp = np.array(aligned_depth_frame.get_data())
-            depth_image = x3d.geometry.Image(depth_temp)
+            depth_image = cph.geometry.Image(depth_temp)
             color_temp = np.asarray(color_frame.get_data())
-            color_image = x3d.geometry.Image(color_temp)
+            color_image = cph.geometry.Image(color_temp)
 
-            rgbd_image = x3d.geometry.RGBDImage.create_from_color_and_depth(
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(
                 color_image,
                 depth_image)
             if not prev_rgbd_image is None:
-                res, odo_trans, _ = x3d.odometry.compute_rgbd_odometry(
+                res, odo_trans, _ = cph.odometry.compute_rgbd_odometry(
                                 prev_rgbd_image, rgbd_image, intrinsic,
-                                np.identity(4), x3d.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                                np.identity(4), cph.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
                 if res:
                     cur_trans = np.matmul(cur_trans, odo_trans)
 
             prev_rgbd_image = rgbd_image
-            temp = x3d.geometry.PointCloud.create_from_rgbd_image(
+            temp = cph.geometry.PointCloud.create_from_rgbd_image(
                 rgbd_image, intrinsic)
             temp.transform(np.matmul(cur_trans, flip_transform))
             temp = temp.voxel_down_sample(0.05)

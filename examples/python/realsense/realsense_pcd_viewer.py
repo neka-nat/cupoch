@@ -5,11 +5,8 @@ from enum import IntEnum
 
 from datetime import datetime
 
-if len(sys.argv) == 2 and sys.argv[1] == "CPU":
-    import open3d as x3d
-else:
-    import cupoch as x3d
-    x3d.initialize_allocator(x3d.PoolAllocation, 1000000000)
+import cupoch as cph
+cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 
 
 class Preset(IntEnum):
@@ -23,7 +20,7 @@ class Preset(IntEnum):
 
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
-    out = x3d.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
+    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
                                             intrinsics.fy, intrinsics.ppx,
                                             intrinsics.ppy)
     return out
@@ -63,10 +60,10 @@ if __name__ == "__main__":
     align_to = rs.stream.color
     align = rs.align(align_to)
 
-    vis = x3d.visualization.Visualizer()
+    vis = cph.visualization.Visualizer()
     vis.create_window()
 
-    pcd = x3d.geometry.PointCloud()
+    pcd = cph.geometry.PointCloud()
     flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 
     # Streaming loop
@@ -85,7 +82,7 @@ if __name__ == "__main__":
             # Get aligned frames
             aligned_depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-            intrinsic = x3d.camera.PinholeCameraIntrinsic(
+            intrinsic = cph.camera.PinholeCameraIntrinsic(
                 get_intrinsic_matrix(color_frame))
 
             # Validate that both frames are valid
@@ -93,19 +90,19 @@ if __name__ == "__main__":
                 continue
 
             dt1 = datetime.now()
-            depth_image = x3d.geometry.Image(
+            depth_image = cph.geometry.Image(
                 np.array(aligned_depth_frame.get_data()))
             color_temp = np.asarray(color_frame.get_data())
-            color_image = x3d.geometry.Image(color_temp)
+            color_image = cph.geometry.Image(color_temp)
 
             dt2 = datetime.now()
-            rgbd_image = x3d.geometry.RGBDImage.create_from_color_and_depth(
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(
                 color_image,
                 depth_image,
                 depth_scale=1.0 / depth_scale,
                 depth_trunc=clipping_distance_in_meters,
                 convert_rgb_to_intensity=False)
-            temp = x3d.geometry.PointCloud.create_from_rgbd_image(
+            temp = cph.geometry.PointCloud.create_from_rgbd_image(
                 rgbd_image, intrinsic)
             temp.transform(flip_transform)
             pcd.points = temp.points
