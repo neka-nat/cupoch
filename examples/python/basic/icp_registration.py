@@ -16,9 +16,9 @@ if __name__ == "__main__":
                              [0.487, 0.255, 0.835, -1.4],
                              [0.0, 0.0, 0.0, 1.0]])
     start = time.time()
-    reg_p2p = o3d.registration.registration_icp(
+    reg_p2p = o3d.pipelines.registration.registration_icp(
         source_cpu, target_cpu, threshold, trans_init,
-        o3d.registration.TransformationEstimationPointToPlane())
+        o3d.pipelines.registration.TransformationEstimationPointToPlane())
     elapsed_time = time.time() - start
     print(reg_p2p.transformation)
     print("ICP (CPU) [sec]:", elapsed_time)
