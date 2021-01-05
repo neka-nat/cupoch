@@ -395,7 +395,7 @@ void ScalableTSDFVolume::IntegrateWithDepthToCameraDistanceMultiplier(
             impl_->volume_units_);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator<size_t>(
-                             impl_->volume_units_.total_count() * VolumeUnit<>::GetVoxelNum()),
+                             impl_->volume_units_.max_size() * VolumeUnit<>::GetVoxelNum()),
                      func);
 }
 

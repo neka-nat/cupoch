@@ -3,7 +3,7 @@
     url = https://github.com/pybind/pybind11.git
 [submodule "eigen"]
     path = third_party/eigen
-    url = https://github.com/eigenteam/eigen-git-mirror.git
+    url = https://gitlab.com/libeigen/eigen.git
 [submodule "dlpack"]
     path = third_party/dlpack
     url = https://github.com/dmlc/dlpack.git
