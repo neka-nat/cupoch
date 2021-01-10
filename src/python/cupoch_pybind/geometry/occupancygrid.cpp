@@ -75,7 +75,7 @@ void pybind_occupanygrid(py::module &m) {
 
     py::class_<geometry::OccupancyGrid, PyGeometry3D<geometry::OccupancyGrid>,
                std::shared_ptr<geometry::OccupancyGrid>,
-               geometry::GeometryBase<3>>
+               geometry::GeometryBase3D>
             occupancygrid(m, "OccupancyGrid",
                           "Occupancy is a collection of voxels which is a "
                           "special voxel grid "

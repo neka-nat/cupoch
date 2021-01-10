@@ -28,7 +28,7 @@ namespace geometry {
 
 class AxisAlignedBoundingBox;
 
-class LaserScanBuffer : public GeometryBase<3> {
+class LaserScanBuffer : public GeometryBase3D {
 public:
     LaserScanBuffer(int num_steps, int num_max_scans = 10, float min_angle = -M_PI, float max_angle = M_PI);
     ~LaserScanBuffer();

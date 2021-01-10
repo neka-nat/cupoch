@@ -30,7 +30,7 @@ namespace geometry {
 class OrientedBoundingBox;
 
 template <class VoxelType>
-class DenseGrid : public GeometryBase<3> {
+class DenseGrid : public GeometryBase3D {
 public:
     DenseGrid(Geometry::GeometryType type);
     DenseGrid(Geometry::GeometryType type,

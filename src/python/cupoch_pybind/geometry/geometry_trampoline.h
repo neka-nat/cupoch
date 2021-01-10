@@ -39,7 +39,7 @@ public:
     bool IsEmpty() const override { PYBIND11_OVERLOAD_PURE(bool, GeometryT, ); }
 };
 
-template <class Geometry3DBase = geometry::GeometryBase<3>>
+template <class Geometry3DBase = geometry::GeometryBase3D>
 class PyGeometry3D : public PyGeometry<Geometry3DBase> {
 public:
     using PyGeometry<Geometry3DBase>::PyGeometry;
@@ -62,7 +62,7 @@ public:
     }
 };
 
-template <class Geometry2DBase = geometry::GeometryBase<2>>
+template <class Geometry2DBase = geometry::GeometryBase2D>
 class PyGeometry2D : public PyGeometry<Geometry2DBase> {
 public:
     using PyGeometry<Geometry2DBase>::PyGeometry;

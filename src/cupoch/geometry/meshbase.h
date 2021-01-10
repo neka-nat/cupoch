@@ -35,7 +35,7 @@ namespace geometry {
 class PointCloud;
 class TriangleMesh;
 
-class MeshBase : public GeometryBase<3> {
+class MeshBase : public GeometryBase3D {
 public:
     /// Indicates the method that is used for mesh simplification if multiple
     /// vertices are combined to a single one.

@@ -38,11 +38,11 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 /// RGBDImage is for a pair of registered color and depth images,
 /// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
-class RGBDImage : public GeometryBase<2> {
+class RGBDImage : public GeometryBase2D {
 public:
-    RGBDImage() : GeometryBase<2>(Geometry::GeometryType::RGBDImage) {}
+    RGBDImage() : GeometryBase2D(Geometry::GeometryType::RGBDImage) {}
     RGBDImage(const Image &color, const Image &depth)
-        : GeometryBase<2>(Geometry::GeometryType::RGBDImage),
+        : GeometryBase2D(Geometry::GeometryType::RGBDImage),
           color_(color),
           depth_(depth) {}
 

@@ -40,7 +40,7 @@ class TriangleMesh;
 static const Eigen::Vector3f DEFAULT_LINE_COLOR = Eigen::Vector3f::Ones();
 
 template <int Dim>
-class LineSet : public GeometryBase<Dim> {
+class LineSet : public GeometryBaseXD<Dim> {
 public:
     LineSet();
     LineSet(Geometry::GeometryType type);

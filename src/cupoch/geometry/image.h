@@ -41,7 +41,7 @@ typedef std::vector<std::shared_ptr<Image>> ImagePyramid;
 ///
 /// \brief The Image class stores image with customizable width, height, num of
 /// channels and bytes per channel.
-class Image : public GeometryBase<2> {
+class Image : public GeometryBase2D {
 public:
     /// \enum ColorToIntensityConversionType
     ///

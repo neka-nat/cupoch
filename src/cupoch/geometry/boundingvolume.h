@@ -37,13 +37,13 @@ class AxisAlignedBoundingBox;
 ///
 /// The oriented bounding box is defined by its center position, rotation
 /// maxtrix and extent.
-class OrientedBoundingBox : public GeometryBase<3> {
+class OrientedBoundingBox : public GeometryBase3D {
 public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Oriented Bounding Box.
     __host__ __device__ OrientedBoundingBox()
-        : GeometryBase<3>(Geometry::GeometryType::OrientedBoundingBox),
+        : GeometryBase3D(Geometry::GeometryType::OrientedBoundingBox),
           center_(0, 0, 0),
           R_(Eigen::Matrix3f::Identity()),
           extent_(0, 0, 0),
@@ -57,7 +57,7 @@ public:
     __host__ __device__ OrientedBoundingBox(const Eigen::Vector3f &center,
                                             const Eigen::Matrix3f &R,
                                             const Eigen::Vector3f &extent)
-        : GeometryBase<3>(Geometry::GeometryType::OrientedBoundingBox),
+        : GeometryBase3D(Geometry::GeometryType::OrientedBoundingBox),
           center_(center),
           R_(R),
           extent_(extent) {}
@@ -115,13 +115,13 @@ public:
 ///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
 ///  coordinate axes.
-class AxisAlignedBoundingBox : public GeometryBase<3> {
+class AxisAlignedBoundingBox : public GeometryBase3D {
 public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Axis Aligned Bounding Box.
     __host__ __device__ AxisAlignedBoundingBox()
-        : GeometryBase<3>(Geometry::GeometryType::AxisAlignedBoundingBox),
+        : GeometryBase3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
           max_bound_(0, 0, 0),
           color_(0, 0, 0) {}
@@ -131,7 +131,7 @@ public:
     /// \param max_bound Upper bounds of the bounding box for all axes.
     __host__ __device__ AxisAlignedBoundingBox(const Eigen::Vector3f &min_bound,
                                                const Eigen::Vector3f &max_bound)
-        : GeometryBase<3>(Geometry::GeometryType::AxisAlignedBoundingBox),
+        : GeometryBase3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(min_bound),
           max_bound_(max_bound),
           color_(0, 0, 0) {}

@@ -28,7 +28,7 @@ namespace geometry {
 
 class AxisAlignedBoundingBox;
 
-template <int Dim>
+template <typename VectorT, typename MatrixT, typename TransformT>
 class GeometryBase : public Geometry {
 public:
     __host__ __device__ ~GeometryBase(){};  // non-virtual
@@ -37,29 +37,29 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    __host__ __device__ GeometryBase(GeometryType type) : Geometry(type, Dim){};
+    __host__ __device__ GeometryBase(GeometryType type) : Geometry(type, VectorT::SizeAtCompileTime){};
 
 public:
-    GeometryBase<Dim> &Clear() override = 0;
+    GeometryBase<VectorT, MatrixT, TransformT> &Clear() override = 0;
     bool IsEmpty() const override = 0;
     /// Returns min bounds for geometry coordinates.
-    virtual Eigen::Matrix<float, Dim, 1> GetMinBound() const = 0;
+    virtual VectorT GetMinBound() const = 0;
     /// Returns max bounds for geometry coordinates.
-    virtual Eigen::Matrix<float, Dim, 1> GetMaxBound() const = 0;
+    virtual VectorT GetMaxBound() const = 0;
     /// Returns the center of the geometry coordinates.
-    virtual Eigen::Matrix<float, Dim, 1> GetCenter() const = 0;
+    virtual VectorT GetCenter() const = 0;
     /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
-    virtual GeometryBase<Dim> &Transform(
-            const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) = 0;
+    virtual GeometryBase<VectorT, MatrixT, TransformT> &Transform(
+            const TransformT &transformation) = 0;
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D/2D vector to transform the geometry.
     /// \param relative If `true`, the \p translation is directly applied to the
     /// geometry. Otherwise, the geometry center is moved to the \p translation.
-    virtual GeometryBase<Dim> &Translate(
-            const Eigen::Matrix<float, Dim, 1> &translation,
+    virtual GeometryBase<VectorT, MatrixT, TransformT> &Translate(
+            const VectorT &translation,
             bool relative = true) = 0;
     /// \brief Apply scaling to the geometry coordinates.
     ///
@@ -68,7 +68,7 @@ public:
     /// \param center If `true`, the scale is applied relative to the center of
     /// the geometry. Otherwise, the scale is directly applied to the geometry,
     /// i.e. relative to the origin.
-    virtual GeometryBase<Dim> &Scale(const float scale, bool center = true) = 0;
+    virtual GeometryBase<VectorT, MatrixT, TransformT> &Scale(const float scale, bool center = true) = 0;
     /// \brief Apply rotation to the geometry coordinates and normals.
     ///
     /// \param R A 3D/2D vector that either defines the three angles for Euler
@@ -77,9 +77,14 @@ public:
     /// \param center If `true`, the rotation is applied relative to the center
     /// of the geometry. Otherwise, the rotation is directly applied to the
     /// geometry, i.e. relative to the origin.
-    virtual GeometryBase<Dim> &Rotate(const Eigen::Matrix<float, Dim, Dim> &R,
-                                      bool center = true) = 0;
+    virtual GeometryBase<VectorT, MatrixT, TransformT> &Rotate(const MatrixT &R,
+                                                               bool center = true) = 0;
 };
+
+using GeometryBase2D = GeometryBase<Eigen::Vector2f, Eigen::Matrix2f, Eigen::Matrix3f>;
+using GeometryBase3D = GeometryBase<Eigen::Vector3f, Eigen::Matrix3f, Eigen::Matrix4f>;
+template<int Dim>
+using GeometryBaseXD = GeometryBase<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, Dim>, Eigen::Matrix<float, Dim + 1, Dim + 1>>;
 
 }  // namespace geometry
 }  // namespace cupoch

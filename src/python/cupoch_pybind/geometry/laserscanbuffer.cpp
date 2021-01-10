@@ -29,7 +29,7 @@ using namespace cupoch;
 
 void pybind_laserscanbuffer(py::module &m) {
     py::class_<geometry::LaserScanBuffer, PyGeometry3D<geometry::LaserScanBuffer>,
-               std::shared_ptr<geometry::LaserScanBuffer>, geometry::GeometryBase<3>>
+               std::shared_ptr<geometry::LaserScanBuffer>, geometry::GeometryBase3D>
             laserscan(m, "LaserScanBuffer",
                       "LaserScanBuffer define a sets of scan from a planar laser range-finder.");
     py::detail::bind_copy_functions<geometry::LaserScanBuffer>(laserscan);

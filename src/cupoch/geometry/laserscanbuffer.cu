@@ -107,14 +107,14 @@ struct apply_scan_shadow_filter_functor {
 }
 
 LaserScanBuffer::LaserScanBuffer(int num_steps, int num_max_scans, float min_angle, float max_angle)
-: GeometryBase<3>(Geometry::GeometryType::LaserScanBuffer),
+: GeometryBase3D(Geometry::GeometryType::LaserScanBuffer),
 num_steps_(num_steps), num_max_scans_(num_max_scans),
 min_angle_(min_angle), max_angle_(max_angle) {}
 
 LaserScanBuffer::~LaserScanBuffer() {};
 
 LaserScanBuffer::LaserScanBuffer(const LaserScanBuffer& other)
-: GeometryBase<3>(Geometry::GeometryType::LaserScanBuffer),
+: GeometryBase3D(Geometry::GeometryType::LaserScanBuffer),
 ranges_(other.ranges_), intensities_(other.intensities_),
 top_(other.top_), bottom_(other.bottom_),
 num_steps_(other.num_steps_), num_max_scans_(other.num_max_scans_),

@@ -109,7 +109,7 @@ public:
 
     void FitInGeometry(const geometry::Geometry &geometry) {
         if (geometry.Dimension() == 3) {
-            bounding_box_ += ((const geometry::GeometryBase<3> &)geometry)
+            bounding_box_ += ((const geometry::GeometryBase3D &)geometry)
                                      .GetAxisAlignedBoundingBox();
         }
         SetProjectionParameters();

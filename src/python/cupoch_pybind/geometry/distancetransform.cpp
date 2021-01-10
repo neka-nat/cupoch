@@ -54,7 +54,7 @@ void pybind_distancetransform(py::module &m) {
 
     py::class_<geometry::DistanceTransform, PyGeometry3D<geometry::DistanceTransform>,
                std::shared_ptr<geometry::DistanceTransform>,
-               geometry::GeometryBase<3>>
+               geometry::GeometryBase3D>
             distancetransform(m, "DistanceTransform",
                               "Distance transform is a collection of voxels which is a "
                               "special voxel grid "

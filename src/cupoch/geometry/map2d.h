@@ -24,7 +24,7 @@
 namespace cupoch {
 namespace geometry {
 
-class Map2D : public GeometryBase<2> {
+class Map2D : public GeometryBase2D {
 public:
     Map2D();
     ~Map2D() { map_.Clear(); };

@@ -84,31 +84,31 @@ void pybind_geometry_classes(py::module &m) {
             .value("RGBDImage", geometry::Geometry::GeometryType::RGBDImage)
             .export_values();
 
-    py::class_<geometry::GeometryBase<3>,
-               PyGeometry3D<geometry::GeometryBase<3>>,
-               std::shared_ptr<geometry::GeometryBase<3>>, geometry::Geometry>
+    py::class_<geometry::GeometryBase3D,
+               PyGeometry3D<geometry::GeometryBase3D>,
+               std::shared_ptr<geometry::GeometryBase3D>, geometry::Geometry>
             geometry3d(m, "Geometry3D",
                        "The base geometry class for 3D geometries.");
     geometry3d
-            .def("get_min_bound", &geometry::GeometryBase<3>::GetMinBound,
+            .def("get_min_bound", &geometry::GeometryBase3D::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &geometry::GeometryBase<3>::GetMaxBound,
+            .def("get_max_bound", &geometry::GeometryBase3D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.")
-            .def("get_center", &geometry::GeometryBase<3>::GetCenter,
+            .def("get_center", &geometry::GeometryBase3D::GetCenter,
                  "Returns the center of the geometry coordinates.")
             .def("get_axis_aligned_bounding_box",
-                 &geometry::GeometryBase<3>::GetAxisAlignedBoundingBox,
+                 &geometry::GeometryBase3D::GetAxisAlignedBoundingBox,
                  "Returns an axis-aligned bounding box of the geometry.")
-            .def("transform", &geometry::GeometryBase<3>::Transform,
+            .def("transform", &geometry::GeometryBase3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
-            .def("translate", &geometry::GeometryBase<3>::Translate,
+            .def("translate", &geometry::GeometryBase3D::Translate,
                  "Apply translation to the geometry coordinates.",
                  "translation"_a, "relative"_a = true)
-            .def("scale", &geometry::GeometryBase<3>::Scale,
+            .def("scale", &geometry::GeometryBase3D::Scale,
                  "Apply scaling to the geometry coordinates.", "scale"_a,
                  "center"_a = true)
-            .def("rotate", &geometry::GeometryBase<3>::Rotate,
+            .def("rotate", &geometry::GeometryBase3D::Rotate,
                  "Apply rotation to the geometry coordinates and normals.",
                  "R"_a, "center"_a = true);
     docstring::ClassMethodDocInject(m, "Geometry3D", "get_min_bound");
@@ -139,15 +139,15 @@ void pybind_geometry_classes(py::module &m) {
                                       "to the centered geometry"}});
 
     // cupoch.geometry.Geometry2D
-    py::class_<geometry::GeometryBase<2>,
-               PyGeometry2D<geometry::GeometryBase<2>>,
-               std::shared_ptr<geometry::GeometryBase<2>>, geometry::Geometry>
+    py::class_<geometry::GeometryBase2D,
+               PyGeometry2D<geometry::GeometryBase2D>,
+               std::shared_ptr<geometry::GeometryBase2D>, geometry::Geometry>
             geometry2d(m, "Geometry2D",
                        "The base geometry class for 2D geometries.");
     geometry2d
-            .def("get_min_bound", &geometry::GeometryBase<2>::GetMinBound,
+            .def("get_min_bound", &geometry::GeometryBase2D::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
-            .def("get_max_bound", &geometry::GeometryBase<2>::GetMaxBound,
+            .def("get_max_bound", &geometry::GeometryBase2D::GetMaxBound,
                  "Returns max bounds for geometry coordinates.");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_max_bound");

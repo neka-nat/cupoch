@@ -153,7 +153,7 @@ void doc_inject(py::module &m, const std::string& name) {
 
 void pybind_lineset(py::module &m) {
     py::class_<geometry::LineSet<3>, PyGeometry3D<geometry::LineSet<3>>,
-               std::shared_ptr<geometry::LineSet<3>>, geometry::GeometryBase<3>>
+               std::shared_ptr<geometry::LineSet<3>>, geometry::GeometryBase3D>
             lineset(m, "LineSet",
                     "LineSet define a sets of lines in 3D. A typical "
                     "application is to display the point cloud correspondence "
@@ -162,7 +162,7 @@ void pybind_lineset(py::module &m) {
     doc_inject<decltype(lineset)>(m, "LineSet");
 
     py::class_<geometry::LineSet<2>, PyGeometry2D<geometry::LineSet<2>>,
-               std::shared_ptr<geometry::LineSet<2>>, geometry::GeometryBase<2>>
+               std::shared_ptr<geometry::LineSet<2>>, geometry::GeometryBase2D>
             lineset2d(m, "LineSet2D",
                       "LineSet define a sets of lines in 2D. A typical "
                       "application is to display the point cloud correspondence "

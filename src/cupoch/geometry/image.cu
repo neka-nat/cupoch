@@ -344,7 +344,7 @@ struct depth_to_float_functor {
 
 }  // namespace
 
-Image::Image() : GeometryBase<2>(Geometry::GeometryType::Image) {}
+Image::Image() : GeometryBase2D(Geometry::GeometryType::Image) {}
 Image::~Image() {}
 
 Image &Image::Clear() {

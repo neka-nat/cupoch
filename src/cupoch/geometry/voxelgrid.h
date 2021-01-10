@@ -79,7 +79,7 @@ struct devide_voxel_color_functor {
     }
 };
 
-class VoxelGrid : public GeometryBase<3> {
+class VoxelGrid : public GeometryBase3D {
 public:
     VoxelGrid();
     VoxelGrid(const VoxelGrid &src_voxel_grid);

@@ -32,7 +32,7 @@ using namespace cupoch;
 
 void pybind_pointcloud(py::module &m) {
     py::class_<geometry::PointCloud, PyGeometry3D<geometry::PointCloud>,
-               std::shared_ptr<geometry::PointCloud>, geometry::GeometryBase<3>>
+               std::shared_ptr<geometry::PointCloud>, geometry::GeometryBase3D>
             pointcloud(m, "PointCloud",
                        "PointCloud class. A point cloud consists of point "
                        "coordinates, and optionally point colors and point "

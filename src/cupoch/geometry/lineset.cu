@@ -27,23 +27,23 @@ using namespace cupoch;
 using namespace cupoch::geometry;
 
 template <int Dim>
-LineSet<Dim>::LineSet() : GeometryBase<Dim>(Geometry::GeometryType::LineSet) {}
+LineSet<Dim>::LineSet() : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet) {}
 
 template <int Dim>
-LineSet<Dim>::LineSet(Geometry::GeometryType type) : GeometryBase<Dim>(type) {}
+LineSet<Dim>::LineSet(Geometry::GeometryType type) : GeometryBaseXD<Dim>(type) {}
 
 template <int Dim>
 LineSet<Dim>::LineSet(
         Geometry::GeometryType type,
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
         const utility::device_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<Dim>(type), points_(points), lines_(lines) {}
+    : GeometryBaseXD<Dim>(type), points_(points), lines_(lines) {}
 
 template <int Dim>
 LineSet<Dim>::LineSet(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
         const utility::device_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
@@ -51,13 +51,13 @@ template <int Dim>
 LineSet<Dim>::LineSet(
         const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
         const thrust::host_vector<Eigen::Vector2i> &lines)
-    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
 
 template <int Dim>
 LineSet<Dim>::LineSet(const LineSet &other)
-    : GeometryBase<Dim>(Geometry::GeometryType::LineSet),
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
       points_(other.points_),
       lines_(other.lines_),
       colors_(other.colors_) {}

@@ -29,7 +29,7 @@ using namespace cupoch;
 
 void pybind_meshbase(py::module &m) {
     py::class_<geometry::MeshBase, PyGeometry3D<geometry::MeshBase>,
-               std::shared_ptr<geometry::MeshBase>, geometry::GeometryBase<3>>
+               std::shared_ptr<geometry::MeshBase>, geometry::GeometryBase3D>
             meshbase(m, "MeshBase",
                      "MeshBase class. Triangle mesh contains vertices. "
                      "Optionally, the mesh "

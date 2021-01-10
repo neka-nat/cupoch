@@ -40,7 +40,7 @@ class LaserScanBuffer;
 class OccupancyGrid;
 class OrientedBoundingBox;
 
-class PointCloud : public GeometryBase<3> {
+class PointCloud : public GeometryBase3D {
 public:
     PointCloud();
     PointCloud(const thrust::host_vector<Eigen::Vector3f> &points);

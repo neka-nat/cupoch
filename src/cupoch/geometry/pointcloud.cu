@@ -120,13 +120,13 @@ struct pass_through_filter_functor {
 }  // namespace
 
 PointCloud::PointCloud()
-    : GeometryBase<3>(Geometry::GeometryType::PointCloud) {}
+    : GeometryBase3D(Geometry::GeometryType::PointCloud) {}
 PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
-    : GeometryBase<3>(Geometry::GeometryType::PointCloud), points_(points) {}
+    : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const utility::device_vector<Eigen::Vector3f> &points)
-    : GeometryBase<3>(Geometry::GeometryType::PointCloud), points_(points) {}
+    : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const PointCloud &other)
-    : GeometryBase<3>(Geometry::GeometryType::PointCloud),
+    : GeometryBase3D(Geometry::GeometryType::PointCloud),
       points_(other.points_),
       normals_(other.normals_),
       colors_(other.colors_) {}
