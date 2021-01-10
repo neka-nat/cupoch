@@ -60,15 +60,33 @@ struct equal_to<Eigen::Matrix<int, Dim, 1>> {
     // clang-format on
 };
 
+
+namespace is_eigen_matrix_detail {
+    template <typename T>
+    std::true_type test(const Eigen::MatrixBase<T>*);
+    std::false_type test(...);
+}
+
+template <typename T>
+struct is_eigen_matrix
+    : public decltype(is_eigen_matrix_detail::test(std::declval<T*>()))
+{};
+
+template <typename VectorType, typename Enable = void>
+struct elementwise_minimum;
+
+template <typename VectorType, typename Enable = void>
+struct elementwise_maximum;
+
 template <typename VectorType>
-struct elementwise_minimum {
+struct elementwise_minimum<VectorType, typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
     __device__ VectorType operator()(const VectorType &a, const VectorType &b) {
         return a.array().min(b.array()).matrix();
     }
 };
 
 template <typename VectorType>
-struct elementwise_maximum {
+struct elementwise_maximum<VectorType, typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
     __device__ VectorType operator()(const VectorType &a, const VectorType &b) {
         return a.array().max(b.array()).matrix();
     }

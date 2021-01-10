@@ -37,7 +37,8 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    __host__ __device__ GeometryBase(GeometryType type) : Geometry(type, VectorT::SizeAtCompileTime){};
+    __host__ __device__ GeometryBase(GeometryType type, int dimension = VectorT::SizeAtCompileTime)
+    : Geometry(type, dimension){};
 
 public:
     GeometryBase<VectorT, MatrixT, TransformT> &Clear() override = 0;
