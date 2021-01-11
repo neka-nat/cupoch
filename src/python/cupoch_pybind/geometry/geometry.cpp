@@ -148,9 +148,23 @@ void pybind_geometry_classes(py::module &m) {
             .def("get_min_bound", &geometry::GeometryBase2D::GetMinBound,
                  "Returns min bounds for geometry coordinates.")
             .def("get_max_bound", &geometry::GeometryBase2D::GetMaxBound,
-                 "Returns max bounds for geometry coordinates.");
+                 "Returns max bounds for geometry coordinates.")
+            .def("transform", &geometry::GeometryBase2D::Transform,
+                 "Apply transformation (3x3 matrix) to the geometry ");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_min_bound");
     docstring::ClassMethodDocInject(m, "Geometry2D", "get_max_bound");
+
+    // cupoch.geometry.GeometryNoTrans2D
+    py::class_<geometry::GeometryBaseNoTrans2D,
+               PyGeometryNoTrans2D<geometry::GeometryBaseNoTrans2D>,
+               std::shared_ptr<geometry::GeometryBaseNoTrans2D>, geometry::Geometry>
+            geometry_notrans2d(m, "GeometryNoTrans2D",
+                               "The base not transformed class for 2D geometries.");
+    geometry_notrans2d
+            .def("get_min_bound", &geometry::GeometryBaseNoTrans2D::GetMinBound,
+                 "Returns min bounds for geometry coordinates.")
+            .def("get_max_bound", &geometry::GeometryBaseNoTrans2D::GetMaxBound,
+                 "Returns max bounds for geometry coordinates.");
 }
 
 void pybind_geometry(py::module &m) {

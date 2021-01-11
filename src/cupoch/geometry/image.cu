@@ -344,7 +344,7 @@ struct depth_to_float_functor {
 
 }  // namespace
 
-Image::Image() : GeometryBase2D(Geometry::GeometryType::Image) {}
+Image::Image() : GeometryBaseNoTrans2D(Geometry::GeometryType::Image) {}
 Image::~Image() {}
 
 Image &Image::Clear() {
@@ -368,28 +368,8 @@ Eigen::Vector2f Image::GetCenter() const {
     return Eigen::Vector2f(width_ / 2, height_ / 2);
 }
 
-AxisAlignedBoundingBox Image::GetAxisAlignedBoundingBox() const {
-    utility::LogError("Image::GetAxisAlignedBoundingBox is not supported");
-    return AxisAlignedBoundingBox();
-}
-
-Image &Image::Transform(const Eigen::Matrix3f &transformation) {
-    utility::LogError("Image::Transform is not supported");
-    return *this;
-}
-
-Image &Image::Translate(const Eigen::Vector2f &translation, bool relative) {
-    utility::LogError("Image::Translate is not supported");
-    return *this;
-}
-
 Image &Image::Scale(const float scale, bool center) {
     utility::LogError("Image::Scale is not supported");
-    return *this;
-}
-
-Image &Image::Rotate(const Eigen::Matrix2f &R, bool center) {
-    utility::LogError("Image::Rotate is not supported");
     return *this;
 }
 

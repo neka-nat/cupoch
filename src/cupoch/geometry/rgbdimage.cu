@@ -48,29 +48,8 @@ Eigen::Vector2f RGBDImage::GetCenter() const {
                            color_.height_ / 2);
 }
 
-AxisAlignedBoundingBox RGBDImage::GetAxisAlignedBoundingBox() const {
-    utility::LogError("RGBDImage::GetAxisAlignedBoundingBox is not supported");
-    return AxisAlignedBoundingBox();
-}
-
-RGBDImage &RGBDImage::Transform(const Eigen::Matrix3f &transformation) {
-    utility::LogError("RGBDImage::Transform is not supported");
-    return *this;
-}
-
-RGBDImage &RGBDImage::Translate(const Eigen::Vector2f &translation,
-                                bool relative) {
-    utility::LogError("RGBDImage::Translate is not supported");
-    return *this;
-}
-
 RGBDImage &RGBDImage::Scale(const float scale, bool center) {
     utility::LogError("RGBDImage::Scale is not supported");
-    return *this;
-}
-
-RGBDImage &RGBDImage::Rotate(const Eigen::Matrix2f &R, bool center) {
-    utility::LogError("RGBDImage::Rotate is not supported");
     return *this;
 }
 

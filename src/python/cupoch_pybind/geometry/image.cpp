@@ -65,8 +65,8 @@ void pybind_image(py::module &m) {
             }),
             py::none(), py::none(), "");
 
-    py::class_<geometry::Image, PyGeometry2D<geometry::Image>,
-               std::shared_ptr<geometry::Image>, geometry::GeometryBase2D>
+    py::class_<geometry::Image, PyGeometryNoTrans2D<geometry::Image>,
+               std::shared_ptr<geometry::Image>, geometry::GeometryBaseNoTrans2D>
             image(m, "Image", py::buffer_protocol(),
                   "The image class stores image with customizable width, "
                   "height, num of channels and bytes per channel.");
@@ -201,8 +201,8 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "filter_pyramid",
                                     map_shared_argument_docstrings);
 
-    py::class_<geometry::RGBDImage, PyGeometry2D<geometry::RGBDImage>,
-               std::shared_ptr<geometry::RGBDImage>, geometry::GeometryBase2D>
+    py::class_<geometry::RGBDImage, PyGeometryNoTrans2D<geometry::RGBDImage>,
+               std::shared_ptr<geometry::RGBDImage>, geometry::GeometryBaseNoTrans2D>
             rgbd_image(m, "RGBDImage",
                        "RGBDImage is for a pair of registered color and depth "
                        "images, viewed from the same view, of the same "

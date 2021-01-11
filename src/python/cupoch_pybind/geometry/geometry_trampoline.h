@@ -72,4 +72,19 @@ public:
     Eigen::Vector2f GetMaxBound() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector2f, Geometry2DBase, );
     }
+    Geometry2DBase& Transform(const Eigen::Matrix3f& transformation) override {
+        PYBIND11_OVERLOAD_PURE(Geometry2DBase&, Geometry2DBase, transformation);
+    }
+};
+
+template <class GeometryNoTrans2DBase = geometry::GeometryBaseNoTrans2D>
+class PyGeometryNoTrans2D : public PyGeometry<GeometryNoTrans2DBase> {
+public:
+    using PyGeometry<GeometryNoTrans2DBase>::PyGeometry;
+    Eigen::Vector2f GetMinBound() const override {
+        PYBIND11_OVERLOAD_PURE(Eigen::Vector2f, GeometryNoTrans2DBase, );
+    }
+    Eigen::Vector2f GetMaxBound() const override {
+        PYBIND11_OVERLOAD_PURE(Eigen::Vector2f, GeometryNoTrans2DBase, );
+    }
 };

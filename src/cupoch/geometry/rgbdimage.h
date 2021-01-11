@@ -28,8 +28,6 @@
 namespace cupoch {
 namespace geometry {
 
-class AxisAlignedBoundingBox;
-
 class RGBDImage;
 
 /// Typedef and functions for RGBDImagePyramid
@@ -38,11 +36,11 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 /// RGBDImage is for a pair of registered color and depth images,
 /// viewed from the same view, of the same resolution.
 /// If you have other format, convert it first.
-class RGBDImage : public GeometryBase2D {
+class RGBDImage : public GeometryBaseNoTrans2D {
 public:
-    RGBDImage() : GeometryBase2D(Geometry::GeometryType::RGBDImage) {}
+    RGBDImage() : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage) {}
     RGBDImage(const Image &color, const Image &depth)
-        : GeometryBase2D(Geometry::GeometryType::RGBDImage),
+        : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
           color_(color),
           depth_(depth) {}
 
@@ -56,12 +54,7 @@ public:
     Eigen::Vector2f GetMinBound() const override;
     Eigen::Vector2f GetMaxBound() const override;
     Eigen::Vector2f GetCenter() const override;
-    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    RGBDImage &Transform(const Eigen::Matrix3f &transformation) override;
-    RGBDImage &Translate(const Eigen::Vector2f &translation,
-                         bool relative = true) override;
     RGBDImage &Scale(const float scale, bool center = true) override;
-    RGBDImage &Rotate(const Eigen::Matrix2f &R, bool center = true) override;
 
     /// Factory function to create an RGBD Image from color and depth Images
     static std::shared_ptr<RGBDImage> CreateFromColorAndDepth(
