@@ -1,12 +1,12 @@
 // clang-format off
-// Open3D version
+// Cupoch version
 #define CUPOCH_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define CUPOCH_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define CUPOCH_VERSION_PATCH @PROJECT_VERSION_PATCH@
 #define CUPOCH_VERSION_TWEAK @PROJECT_VERSION_TWEAK@
 #define CUPOCH_VERSION       "@PROJECT_VERSION@"
 
-// Open3D info
+// Cupoch info
 #define CUPOCH_HOME          "@PROJECT_HOME@"
 #define CUPOCH_DOCS          "@PROJECT_DOCS@"
 #define CUPOCH_CODE          "@PROJECT_CODE@"

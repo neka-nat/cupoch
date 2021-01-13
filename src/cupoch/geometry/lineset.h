@@ -72,7 +72,7 @@ public:
     Eigen::Matrix<float, Dim, 1> GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     LineSet<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1>
-                                    &transformation) override;
+                            &transformation) override;
     LineSet<Dim> &Translate(const Eigen::Matrix<float, Dim, 1> &translation,
                             bool relative = true) override;
     LineSet<Dim> &Scale(const float scale, bool center = true) override;

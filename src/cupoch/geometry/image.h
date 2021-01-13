@@ -82,7 +82,6 @@ public:
     Eigen::Vector2f GetMinBound() const override;
     Eigen::Vector2f GetMaxBound() const override;
     Eigen::Vector2f GetCenter() const override;
-    Image &Scale(const float scale, bool center = true) override;
 
     thrust::host_vector<uint8_t> GetData() const;
     void SetData(const thrust::host_vector<uint8_t> &data);

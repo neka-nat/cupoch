@@ -368,11 +368,6 @@ Eigen::Vector2f Image::GetCenter() const {
     return Eigen::Vector2f(width_ / 2, height_ / 2);
 }
 
-Image &Image::Scale(const float scale, bool center) {
-    utility::LogError("Image::Scale is not supported");
-    return *this;
-}
-
 thrust::host_vector<uint8_t> Image::GetData() const {
     thrust::host_vector<uint8_t> data = data_;
     return data;

@@ -54,7 +54,6 @@ public:
     Eigen::Vector2f GetMinBound() const override;
     Eigen::Vector2f GetMaxBound() const override;
     Eigen::Vector2f GetCenter() const override;
-    RGBDImage &Scale(const float scale, bool center = true) override;
 
     /// Factory function to create an RGBD Image from color and depth Images
     static std::shared_ptr<RGBDImage> CreateFromColorAndDepth(

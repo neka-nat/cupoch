@@ -23,6 +23,7 @@
 #include "cupoch/io/class_io/voxelgrid_io.h"
 #include "cupoch/io/ros/pointcloud_msg.h"
 #include "cupoch/kinematics/kinematic_chain.h"
+#include "cupoch/kinfu/kinfu.h"
 #include "cupoch/odometry/odometry.h"
 #include "cupoch/registration/feature.h"
 #include "cupoch/registration/registration.h"

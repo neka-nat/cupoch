@@ -48,11 +48,6 @@ Eigen::Vector2f RGBDImage::GetCenter() const {
                            color_.height_ / 2);
 }
 
-RGBDImage &RGBDImage::Scale(const float scale, bool center) {
-    utility::LogError("RGBDImage::Scale is not supported");
-    return *this;
-}
-
 RGBDImagePyramid RGBDImage::FilterPyramid(
         const RGBDImagePyramid &rgbd_image_pyramid, Image::FilterType type) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
