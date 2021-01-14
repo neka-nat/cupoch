@@ -26,6 +26,7 @@
 namespace cupoch {
 namespace geometry {
 
+template <int Dim>
 class AxisAlignedBoundingBox;
 
 class LaserScanBuffer : public GeometryBase3D {
@@ -42,7 +43,7 @@ public:
     Eigen::Vector3f GetMinBound() const override;
     Eigen::Vector3f GetMaxBound() const override;
     Eigen::Vector3f GetCenter() const override;
-    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const override;
     LaserScanBuffer &Transform(const Eigen::Matrix4f &transformation) override;
     LaserScanBuffer &Translate(const Eigen::Vector3f &translation,
                                bool relative = true) override;

@@ -76,7 +76,7 @@ public:
     virtual Eigen::Vector3f GetMinBound() const override;
     virtual Eigen::Vector3f GetMaxBound() const override;
     virtual Eigen::Vector3f GetCenter() const override;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    virtual AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const override;
     virtual MeshBase &Transform(const Eigen::Matrix4f &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3f &translation,
                                 bool relative = true) override;

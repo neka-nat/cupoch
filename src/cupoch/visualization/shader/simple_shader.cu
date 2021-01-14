@@ -698,7 +698,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
         return false;
     }
     auto lineset = geometry::LineSet<3>::CreateFromAxisAlignedBoundingBox(
-            (const geometry::AxisAlignedBoundingBox &)geometry);
+            (const geometry::AxisAlignedBoundingBox<3> &)geometry);
     utility::device_vector<thrust::pair<Eigen::Vector3f, Eigen::Vector3f>>
             line_coords(lineset->lines_.size());
     line_coordinates_functor<3> func_line(
@@ -721,7 +721,7 @@ bool SimpleShaderForAxisAlignedBoundingBox::PrepareBinding(
 size_t SimpleShaderForAxisAlignedBoundingBox::GetDataSize(
         const geometry::Geometry &geometry) const {
     auto lineset = geometry::LineSet<3>::CreateFromAxisAlignedBoundingBox(
-            (const geometry::AxisAlignedBoundingBox &)geometry);
+            (const geometry::AxisAlignedBoundingBox<3> &)geometry);
     return lineset->lines_.size() * 2;
 }
 

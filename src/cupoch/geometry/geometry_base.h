@@ -26,6 +26,7 @@
 namespace cupoch {
 namespace geometry {
 
+template <int Dim>
 class AxisAlignedBoundingBox;
 
 template <typename VectorT, typename MatrixT, typename TransformT>
@@ -37,8 +38,8 @@ protected:
     /// \brief Parameterized Constructor.
     ///
     /// \param type type of object based on GeometryType.
-    __host__ __device__ GeometryBase(GeometryType type, int dimension = VectorT::SizeAtCompileTime)
-    : Geometry(type, dimension){};
+    __host__ __device__ GeometryBase(GeometryType type)
+    : Geometry(type, VectorT::SizeAtCompileTime){};
 
 public:
     GeometryBase<VectorT, MatrixT, TransformT> &Clear() override = 0;
@@ -50,7 +51,7 @@ public:
     /// Returns the center of the geometry coordinates.
     virtual VectorT GetCenter() const = 0;
     /// Returns an axis-aligned bounding box of the geometry.
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
+    virtual AxisAlignedBoundingBox<VectorT::SizeAtCompileTime> GetAxisAlignedBoundingBox() const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual GeometryBase<VectorT, MatrixT, TransformT> &Transform(
             const TransformT &transformation) = 0;

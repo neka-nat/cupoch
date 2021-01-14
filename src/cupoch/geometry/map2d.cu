@@ -48,9 +48,9 @@ Eigen::Vector2f Map2D::GetCenter() const {
     return Eigen::Vector2f(map_.width_, map_.height_) * 0.5 + origin_;
 }
 
-AxisAlignedBoundingBox Map2D::GetAxisAlignedBoundingBox() const {
+AxisAlignedBoundingBox<2> Map2D::GetAxisAlignedBoundingBox() const {
     utility::LogError("Map2D::GetAxisAlignedBoundingBox is not supported");
-    return AxisAlignedBoundingBox();
+    return AxisAlignedBoundingBox<2>();
 }
 
 Map2D &Map2D::Transform(const Eigen::Matrix3f &transformation) {

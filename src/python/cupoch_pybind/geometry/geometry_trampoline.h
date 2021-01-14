@@ -52,9 +52,9 @@ public:
     Eigen::Vector3f GetCenter() const override {
         PYBIND11_OVERLOAD_PURE(Eigen::Vector3f, Geometry3DBase, );
     }
-    geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox()
+    geometry::AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox()
             const override {
-        PYBIND11_OVERLOAD_PURE(geometry::AxisAlignedBoundingBox,
+        PYBIND11_OVERLOAD_PURE(geometry::AxisAlignedBoundingBox<3>,
                                Geometry3DBase, );
     }
     Geometry3DBase& Transform(const Eigen::Matrix4f& transformation) override {

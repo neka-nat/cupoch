@@ -82,8 +82,8 @@ Eigen::Vector3f DenseGrid<VoxelType>::GetCenter() const {
 }
 
 template <class VoxelType>
-AxisAlignedBoundingBox DenseGrid<VoxelType>::GetAxisAlignedBoundingBox() const {
-    AxisAlignedBoundingBox box;
+AxisAlignedBoundingBox<3> DenseGrid<VoxelType>::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox<3> box;
     box.min_bound_ = GetMinBound();
     box.max_bound_ = GetMaxBound();
     return box;

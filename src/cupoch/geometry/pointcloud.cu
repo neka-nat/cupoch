@@ -187,8 +187,8 @@ Eigen::Vector3f PointCloud::GetMaxBound() const {
 
 Eigen::Vector3f PointCloud::GetCenter() const { return ComputeCenter<3>(points_); }
 
-AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(points_);
+AxisAlignedBoundingBox<3> PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox<3>::CreateFromPoints(points_);
 }
 
 PointCloud &PointCloud::Translate(const Eigen::Vector3f &translation,
@@ -259,7 +259,7 @@ PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
 }
 
 std::shared_ptr<PointCloud> PointCloud::Crop(
-        const AxisAlignedBoundingBox &bbox) const {
+        const AxisAlignedBoundingBox<3> &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
                 "[CropPointCloud] AxisAlignedBoundingBox either has zeros "

@@ -190,9 +190,9 @@ Eigen::Vector3f LaserScanBuffer::GetCenter() const {
     return Eigen::Vector3f::Zero();
 }
 
-AxisAlignedBoundingBox LaserScanBuffer::GetAxisAlignedBoundingBox() const {
+AxisAlignedBoundingBox<3> LaserScanBuffer::GetAxisAlignedBoundingBox() const {
     utility::LogError("LaserScanBuffer::GetAxisAlignedBoundingBox is not supported");
-    return AxisAlignedBoundingBox();
+    return AxisAlignedBoundingBox<3>();
 }
 
 LaserScanBuffer &LaserScanBuffer::Transform(const Eigen::Matrix4f &transformation) {

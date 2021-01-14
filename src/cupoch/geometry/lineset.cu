@@ -130,8 +130,8 @@ Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetCenter() const {
 }
 
 template <int Dim>
-AxisAlignedBoundingBox LineSet<Dim>::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(points_);
+AxisAlignedBoundingBox<Dim> LineSet<Dim>::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox<Dim>::CreateFromPoints(points_);
 }
 
 template <int Dim>

@@ -155,7 +155,7 @@ void pybind_pointcloud(py::module &m) {
             .def("crop",
                  (std::shared_ptr<geometry::PointCloud>(
                          geometry::PointCloud::*)(
-                         const geometry::AxisAlignedBoundingBox &) const) &
+                         const geometry::AxisAlignedBoundingBox<3> &) const) &
                          geometry::PointCloud::Crop,
                  "Function to crop input pointcloud into output pointcloud",
                  "bounding_box"_a)

@@ -89,8 +89,8 @@ Eigen::Vector3f MeshBase::GetMaxBound() const {
 
 Eigen::Vector3f MeshBase::GetCenter() const { return ComputeCenter<3>(vertices_); }
 
-AxisAlignedBoundingBox MeshBase::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
+AxisAlignedBoundingBox<3> MeshBase::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox<3>::CreateFromPoints(vertices_);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4f &transformation) {

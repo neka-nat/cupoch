@@ -193,8 +193,8 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     return center;
 }
 
-AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
-    AxisAlignedBoundingBox box;
+AxisAlignedBoundingBox<3> VoxelGrid::GetAxisAlignedBoundingBox() const {
+    AxisAlignedBoundingBox<3> box;
     box.min_bound_ = GetMinBound();
     box.max_bound_ = GetMaxBound();
     return box;

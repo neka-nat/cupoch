@@ -100,7 +100,7 @@ public:
     /// corner of the window client area.
     virtual void Roll(float x);
 
-    __host__ __device__ const geometry::AxisAlignedBoundingBox &GetBoundingBox()
+    __host__ __device__ const geometry::AxisAlignedBoundingBox<3> &GetBoundingBox()
             const {
         return bounding_box_;
     }
@@ -140,7 +140,7 @@ public:
 protected:
     int window_width_ = 0;
     int window_height_ = 0;
-    geometry::AxisAlignedBoundingBox bounding_box_;
+    geometry::AxisAlignedBoundingBox<3> bounding_box_;
     Eigen::Vector3f eye_;
     Eigen::Vector3f lookat_;
     Eigen::Vector3f up_;

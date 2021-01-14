@@ -45,7 +45,7 @@ public:
     virtual Eigen::Vector3f GetMinBound() const;
     virtual Eigen::Vector3f GetMaxBound() const;
     virtual Eigen::Vector3f GetCenter() const;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+    virtual AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const;
     virtual DenseGrid &Transform(const Eigen::Matrix4f &transformation);
     virtual DenseGrid &Translate(const Eigen::Vector3f &translation,

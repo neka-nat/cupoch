@@ -55,9 +55,9 @@ public:
         transform_ = transform_ * transform;
         return *this;
     };
-    __host__ __device__ virtual geometry::AxisAlignedBoundingBox
+    __host__ __device__ virtual geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
-        return geometry::AxisAlignedBoundingBox();
+        return geometry::AxisAlignedBoundingBox<3>();
     };
 
     PrimitiveType type_ = PrimitiveType::Unspecified;
@@ -75,10 +75,10 @@ public:
           lengths_(lengths){};
     __host__ __device__ ~Box(){};
 
-    __host__ __device__ geometry::AxisAlignedBoundingBox
+    __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
         const auto ra = transform_.block<3, 3>(0, 0) * 0.5 * lengths_;
-        return geometry::AxisAlignedBoundingBox(
+        return geometry::AxisAlignedBoundingBox<3>(
                 -ra.array().abs().matrix() + transform_.block<3, 1>(0, 3),
                 ra.array().abs().matrix() + transform_.block<3, 1>(0, 3));
     };
@@ -98,9 +98,9 @@ public:
     };
     __host__ __device__ ~Sphere(){};
 
-    __host__ __device__ geometry::AxisAlignedBoundingBox
+    __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
-        return geometry::AxisAlignedBoundingBox(
+        return geometry::AxisAlignedBoundingBox<3>(
                 -Eigen::Vector3f(radius_, radius_, radius_) +
                         transform_.block<3, 1>(0, 3),
                 Eigen::Vector3f(radius_, radius_, radius_) +
@@ -128,7 +128,7 @@ public:
           height_(height){};
     __host__ __device__ ~Capsule(){};
 
-    __host__ __device__ geometry::AxisAlignedBoundingBox
+    __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
         const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) *
                                    Eigen::Vector3f(0.0, 0.0, 0.5 * height_);
@@ -139,7 +139,7 @@ public:
         const Eigen::Vector3f max_bound =
                 (pa.array().max(pb.array()) + radius_).matrix() +
                 transform_.block<3, 1>(0, 3);
-        return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
+        return geometry::AxisAlignedBoundingBox<3>(min_bound, max_bound);
     };
 
     float radius_;
@@ -164,7 +164,7 @@ public:
           height_(height){};
     __host__ __device__ ~Cylinder(){};
 
-    __host__ __device__ geometry::AxisAlignedBoundingBox
+    __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
         const Eigen::Vector3f pa = transform_.block<3, 3>(0, 0) *
                                    Eigen::Vector3f(0.0, 0.0, 0.5 * height_);
@@ -175,7 +175,7 @@ public:
                 (pa - e).array().min((pb - e).array()).matrix() + transform_.block<3, 1>(0, 3);
         const Eigen::Vector3f max_bound =
                 (pa + e).array().min((pb + e).array()).matrix() + transform_.block<3, 1>(0, 3);
-        return geometry::AxisAlignedBoundingBox(min_bound, max_bound);
+        return geometry::AxisAlignedBoundingBox<3>(min_bound, max_bound);
     };
 
     float radius_;
@@ -190,10 +190,10 @@ public:
         : Primitive(Primitive::PrimitiveType::Mesh, transform) {};
     __host__ __device__ ~Mesh() {};
 
-    __host__ __device__ geometry::AxisAlignedBoundingBox
+    __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
         utility::LogError("Primitive::Mesh::GetAxisAlignedBoundingBox is not supported");
-        return geometry::AxisAlignedBoundingBox();
+        return geometry::AxisAlignedBoundingBox<3>();
     };
 };
 

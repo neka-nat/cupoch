@@ -126,11 +126,12 @@ public:
     std::shared_ptr<thrust::host_vector<int>> DijkstraPath(
             int start_node_index, int end_node_index) const;
 
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
     static std::shared_ptr<Graph<Dim>> CreateFromTriangleMesh(
             const TriangleMesh &input);
     static std::shared_ptr<Graph<Dim>> CreateFromAxisAlignedBoundingBox(
-            const geometry::AxisAlignedBoundingBox &bbox,
-            const Eigen::Vector3i &resolutions);
+            const geometry::AxisAlignedBoundingBox<Dim> &bbox,
+            const Eigen::Matrix<int, Dim, 1> &resolutions);
     static std::shared_ptr<Graph<Dim>> CreateFromAxisAlignedBoundingBox(
             const Eigen::Matrix<float, Dim, 1> &min_bound,
             const Eigen::Matrix<float, Dim, 1> &max_bound,

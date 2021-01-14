@@ -125,7 +125,6 @@ void bind_def(LineSetT& lineset) {
                  });
 }
 
-template <class LineSetT>
 void doc_inject(py::module &m, const std::string& name) {
     docstring::ClassMethodDocInject(m, name, "has_colors");
     docstring::ClassMethodDocInject(m, name, "has_lines");
@@ -159,7 +158,7 @@ void pybind_lineset(py::module &m) {
                     "application is to display the point cloud correspondence "
                     "pairs.");
     bind_def<decltype(lineset), 3>(lineset);
-    doc_inject<decltype(lineset)>(m, "LineSet");
+    doc_inject(m, "LineSet");
 
     py::class_<geometry::LineSet<2>, PyGeometry2D<geometry::LineSet<2>>,
                std::shared_ptr<geometry::LineSet<2>>, geometry::GeometryBase2D>
@@ -168,7 +167,7 @@ void pybind_lineset(py::module &m) {
                       "application is to display the point cloud correspondence "
                       "pairs.");
     bind_def<decltype(lineset2d), 2>(lineset2d);
-    doc_inject<decltype(lineset2d)>(m, "LineSet2D");
+    doc_inject(m, "LineSet2D");
 }
 
 void pybind_lineset_methods(py::module &m) {}

@@ -81,8 +81,8 @@ void bind_def(GraphT& graph) {
                         "Function to make graph from a TriangleMesh", "input"_a)
             .def_static(
                     "create_from_axis_aligned_bounding_box",
-                    py::overload_cast<const geometry::AxisAlignedBoundingBox &,
-                                      const Eigen::Vector3i &>(
+                    py::overload_cast<const geometry::AxisAlignedBoundingBox<Dim> &,
+                                      const Eigen::Matrix<int, Dim, 1> &>(
                             &geometry::Graph<
                                     Dim>::CreateFromAxisAlignedBoundingBox),
                     "Function to make graph from a AlignedBoundingBox",

@@ -29,6 +29,7 @@
 namespace cupoch {
 namespace geometry {
 
+template <int Dim>
 class AxisAlignedBoundingBox;
 
 /// \class OrientedBoundingBox
@@ -69,7 +70,7 @@ public:
     virtual Eigen::Vector3f GetMinBound() const override;
     virtual Eigen::Vector3f GetMaxBound() const override;
     virtual Eigen::Vector3f GetCenter() const override;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+    virtual AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox() const;
     virtual OrientedBoundingBox &Transform(
             const Eigen::Matrix4f &transformation) override;
@@ -94,7 +95,7 @@ public:
     /// \param aabox AxisAlignedBoundingBox object from which
     /// OrientedBoundingBox is created.
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
-            const AxisAlignedBoundingBox &aabox);
+            const AxisAlignedBoundingBox<3> &aabox);
 
 public:
     /// The center point of the bounding box.
@@ -115,96 +116,103 @@ public:
 ///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
 ///  coordinate axes.
-class AxisAlignedBoundingBox : public GeometryBase3D {
+template <int Dim>
+class AxisAlignedBoundingBox : public GeometryBaseXD<Dim> {
 public:
     /// \brief Default constructor.
     ///
     /// Creates an empty Axis Aligned Bounding Box.
     __host__ __device__ AxisAlignedBoundingBox()
-        : GeometryBase3D(Geometry::GeometryType::AxisAlignedBoundingBox),
-          min_bound_(0, 0, 0),
-          max_bound_(0, 0, 0),
+        : GeometryBaseXD<Dim>(Geometry::GeometryType::AxisAlignedBoundingBox),
+          min_bound_(Eigen::Matrix<float, Dim, 1>::Zero()),
+          max_bound_(Eigen::Matrix<float, Dim, 1>::Zero()),
           color_(0, 0, 0) {}
     /// \brief Parameterized constructor.
     ///
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
-    __host__ __device__ AxisAlignedBoundingBox(const Eigen::Vector3f &min_bound,
-                                               const Eigen::Vector3f &max_bound)
-        : GeometryBase3D(Geometry::GeometryType::AxisAlignedBoundingBox),
+    __host__ __device__ AxisAlignedBoundingBox(const Eigen::Matrix<float, Dim, 1> &min_bound,
+                                               const Eigen::Matrix<float, Dim, 1> &max_bound)
+        : GeometryBaseXD<Dim>(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(min_bound),
           max_bound_(max_bound),
           color_(0, 0, 0) {}
     __host__ __device__ ~AxisAlignedBoundingBox() {}
 
 public:
-    AxisAlignedBoundingBox &Clear() override;
+    AxisAlignedBoundingBox<Dim> &Clear() override;
     bool IsEmpty() const override;
-    virtual Eigen::Vector3f GetMinBound() const override;
-    virtual Eigen::Vector3f GetMaxBound() const override;
-    virtual Eigen::Vector3f GetCenter() const override;
-    virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const;
-    virtual AxisAlignedBoundingBox &Transform(
-            const Eigen::Matrix4f &transformation) override;
-    virtual AxisAlignedBoundingBox &Translate(
-            const Eigen::Vector3f &translation, bool relative = true) override;
-    virtual AxisAlignedBoundingBox &Scale(const float scale,
-                                          bool center = true) override;
-    virtual AxisAlignedBoundingBox &Rotate(const Eigen::Matrix3f &R,
-                                           bool center = true) override;
+    virtual Eigen::Matrix<float, Dim, 1> GetMinBound() const override;
+    virtual Eigen::Matrix<float, Dim, 1> GetMaxBound() const override;
+    virtual Eigen::Matrix<float, Dim, 1> GetCenter() const override;
+    virtual AxisAlignedBoundingBox<Dim> GetAxisAlignedBoundingBox() const override;
+    virtual AxisAlignedBoundingBox<Dim> &Transform(
+            const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) override;
+    virtual AxisAlignedBoundingBox<Dim> &Translate(
+            const Eigen::Matrix<float, Dim, 1> &translation, bool relative = true) override;
+    virtual AxisAlignedBoundingBox<Dim> &Scale(const float scale,
+                                               bool center = true) override;
+    virtual AxisAlignedBoundingBox<Dim> &Rotate(const Eigen::Matrix<float, Dim, Dim> &R,
+                                                bool center = true) override;
 
-    AxisAlignedBoundingBox &operator+=(const AxisAlignedBoundingBox &other);
+    AxisAlignedBoundingBox<Dim> &operator+=(const AxisAlignedBoundingBox<Dim> &other);
 
     /// Get the extent/length of the bounding box in x, y, and z dimension.
-    Eigen::Vector3f GetExtent() const { return (max_bound_ - min_bound_); }
+    Eigen::Matrix<float, Dim, 1> GetExtent() const { return (max_bound_ - min_bound_); }
 
     /// Returns the half extent of the bounding box.
-    Eigen::Vector3f GetHalfExtent() const { return GetExtent() * 0.5; }
+    Eigen::Matrix<float, Dim, 1> GetHalfExtent() const { return GetExtent() * 0.5; }
 
     /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
     /// extents.
     float GetMaxExtent() const { return (max_bound_ - min_bound_).maxCoeff(); }
 
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
     __host__ __device__ float GetXPercentage(float x) const {
         return (x - min_bound_(0)) / (max_bound_(0) - min_bound_(0));
     }
 
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
     __host__ __device__ float GetYPercentage(float y) const {
         return (y - min_bound_(1)) / (max_bound_(1) - min_bound_(1));
     }
 
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
     __host__ __device__ float GetZPercentage(float z) const {
         return (z - min_bound_(2)) / (max_bound_(2) - min_bound_(2));
     }
 
     /// Returns the volume of the bounding box.
     float Volume() const;
+
     /// Returns the eight points that define the bounding box.
-    std::array<Eigen::Vector3f, 8> GetBoxPoints() const;
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
+    std::array<Eigen::Matrix<float, Dim, 1>, 8> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
     ///
     /// \param points A list of points.
     utility::device_vector<size_t> GetPointIndicesWithinBoundingBox(
-            const utility::device_vector<Eigen::Vector3f> &points) const;
+            const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) const;
 
     /// Returns the 3D dimensions of the bounding box in string format.
+    template <int D = Dim, std::enable_if_t<(D == 3)>* = nullptr>
     std::string GetPrintInfo() const;
 
     /// Creates the bounding box that encloses the set of points.
     ///
     /// \param points A list of points.
     static AxisAlignedBoundingBox CreateFromPoints(
-            const utility::device_vector<Eigen::Vector2f> &points);
-    static AxisAlignedBoundingBox CreateFromPoints(
-            const utility::device_vector<Eigen::Vector3f> &points);
+            const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
 
 public:
     /// The lower x, y, z bounds of the bounding box.
-    Eigen::Vector3f min_bound_;
+    Eigen::Matrix<float, Dim, 1> min_bound_;
     /// The upper x, y, z bounds of the bounding box.
-    Eigen::Vector3f max_bound_;
+    Eigen::Matrix<float, Dim, 1> max_bound_;
     /// The color of the bounding box in RGB.
     Eigen::Vector3f color_;
 };

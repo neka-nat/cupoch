@@ -129,6 +129,7 @@ Eigen::Vector2i create_dense_grid_lines_functor<2>::operator()(size_t idx) const
 }  // namespace
 
 template <>
+template <>
 std::shared_ptr<Graph<3>> Graph<3>::CreateFromTriangleMesh(
         const TriangleMesh& input) {
     auto out = std::make_shared<Graph<3>>();
@@ -146,27 +147,19 @@ std::shared_ptr<Graph<3>> Graph<3>::CreateFromTriangleMesh(
 }
 
 template <>
+template <>
 std::shared_ptr<Graph<2>> Graph<2>::CreateFromTriangleMesh(
         const TriangleMesh& input) {
     utility::LogError("Graph<2>::CreateFromTriangleMesh is not supported");
     return std::make_shared<Graph<2>>();
 }
 
-template <>
-std::shared_ptr<Graph<3>> Graph<3>::CreateFromAxisAlignedBoundingBox(
-        const geometry::AxisAlignedBoundingBox& bbox,
-        const Eigen::Vector3i& resolutions) {
-    return Graph<3>::CreateFromAxisAlignedBoundingBox(
+template <int Dim>
+std::shared_ptr<Graph<Dim>> Graph<Dim>::CreateFromAxisAlignedBoundingBox(
+        const geometry::AxisAlignedBoundingBox<Dim>& bbox,
+        const Eigen::Matrix<int, Dim, 1>& resolutions) {
+    return Graph<Dim>::CreateFromAxisAlignedBoundingBox(
             bbox.min_bound_, bbox.max_bound_, resolutions);
-}
-
-template <>
-std::shared_ptr<Graph<2>> Graph<2>::CreateFromAxisAlignedBoundingBox(
-        const geometry::AxisAlignedBoundingBox& bbox,
-        const Eigen::Vector3i& resolutions) {
-    utility::LogError(
-            "Graph<2>::CreateFromAxisAlignedBoundingBox is not supported");
-    return std::make_shared<Graph<2>>();
 }
 
 template <int Dim>
@@ -197,6 +190,14 @@ std::shared_ptr<Graph<Dim>> Graph<Dim>::CreateFromAxisAlignedBoundingBox(
     return out;
 }
 
+template std::shared_ptr<Graph<3>> Graph<3>::CreateFromAxisAlignedBoundingBox(
+        const geometry::AxisAlignedBoundingBox<3>& bbox,
+        const Eigen::Vector3i& resolutions);
+
+template std::shared_ptr<Graph<2>> Graph<2>::CreateFromAxisAlignedBoundingBox(
+        const geometry::AxisAlignedBoundingBox<2>& bbox,
+        const Eigen::Vector2i& resolutions);
+    
 template std::shared_ptr<Graph<3>> Graph<3>::CreateFromAxisAlignedBoundingBox(
     const Eigen::Vector3f& min_bound,
     const Eigen::Vector3f& max_bound,

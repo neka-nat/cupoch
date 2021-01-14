@@ -467,7 +467,7 @@ TEST(PointCloud, CropPointCloud) {
     Vector3f minBound(200.0, 200.0, 200.0);
     Vector3f maxBound(800.0, 800.0, 800.0);
     auto output_pc =
-            pc.Crop(geometry::AxisAlignedBoundingBox(minBound, maxBound));
+            pc.Crop(geometry::AxisAlignedBoundingBox<3>(minBound, maxBound));
 
     ExpectLE(minBound, output_pc->GetPoints());
     ExpectGE(maxBound, output_pc->GetPoints());

@@ -54,6 +54,7 @@ struct convert_trianglemesh_line_functor {
 }  // namespace
 
 template <>
+template <>
 std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
@@ -85,6 +86,7 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromPointCloudCorrespondences(
 }
 
 template <>
+template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromPointCloudCorrespondences(
         const PointCloud &cloud0,
         const PointCloud &cloud1,
@@ -94,6 +96,7 @@ std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromPointCloudCorrespondences(
     return std::make_shared<LineSet<2>>();
 }
 
+template <>
 template <>
 std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromTriangleMesh(
         const TriangleMesh &mesh) {
@@ -123,12 +126,14 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromTriangleMesh(
 }
 
 template <>
+template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromTriangleMesh(
         const TriangleMesh &mesh) {
     utility::LogError("LineSet<2>::CreateFromTriangleMesh is not supported");
     return std::make_shared<LineSet<2>>();
 }
 
+template <>
 template <>
 std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromOrientedBoundingBox(
         const OrientedBoundingBox &box) {
@@ -152,6 +157,7 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromOrientedBoundingBox(
 }
 
 template <>
+template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromOrientedBoundingBox(
         const OrientedBoundingBox &box) {
     utility::LogError(
@@ -160,8 +166,9 @@ std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromOrientedBoundingBox(
 }
 
 template <>
+template <>
 std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox &box) {
+        const AxisAlignedBoundingBox<3> &box) {
     auto line_set = std::make_shared<LineSet<3>>();
     const auto points = box.GetBoxPoints();
     for (const auto &pt : points) line_set->points_.push_back(pt);
@@ -182,8 +189,9 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromAxisAlignedBoundingBox(
 }
 
 template <>
+template <>
 std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox &box) {
+        const AxisAlignedBoundingBox<2> &box) {
     utility::LogError(
             "LineSet<2>::CreateFromAxisAlignedBoundingBox is not supported");
     return std::make_shared<LineSet<2>>();

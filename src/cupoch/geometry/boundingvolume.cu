@@ -29,8 +29,8 @@
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
 
-using namespace cupoch;
-using namespace cupoch::geometry;
+namespace cupoch {
+namespace geometry {
 
 namespace {
 
@@ -65,20 +65,25 @@ struct check_within_oriented_bounding_box_functor {
     }
 };
 
+template <int Dim>
 struct check_within_axis_aligned_bounding_box_functor {
     check_within_axis_aligned_bounding_box_functor(
-            const Eigen::Vector3f *points,
-            const Eigen::Vector3f &min_bound,
-            const Eigen::Vector3f &max_bound)
+            const Eigen::Matrix<float, Dim, 1> *points,
+            const Eigen::Matrix<float, Dim, 1> &min_bound,
+            const Eigen::Matrix<float, Dim, 1> &max_bound)
         : points_(points), min_bound_(min_bound), max_bound_(max_bound){};
-    const Eigen::Vector3f *points_;
-    const Eigen::Vector3f min_bound_;
-    const Eigen::Vector3f max_bound_;
+    const Eigen::Matrix<float, Dim, 1> *points_;
+    const Eigen::Matrix<float, Dim, 1> min_bound_;
+    const Eigen::Matrix<float, Dim, 1> max_bound_;
     __device__ bool operator()(size_t idx) const {
-        const Eigen::Vector3f &point = points_[idx];
-        return (point(0) >= min_bound_(0) && point(0) <= max_bound_(0) &&
-                point(1) >= min_bound_(1) && point(1) <= max_bound_(1) &&
-                point(2) >= min_bound_(2) && point(2) <= max_bound_(2));
+        const Eigen::Matrix<float, Dim, 1> &point = points_[idx];
+        #pragma unroll
+        for (int i = 0; i < Dim; ++i) {
+            if (point(i) < min_bound_(i) || point(i) > max_bound_(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 
@@ -106,8 +111,8 @@ Eigen::Vector3f OrientedBoundingBox::GetMaxBound() const {
 
 Eigen::Vector3f OrientedBoundingBox::GetCenter() const { return center_; }
 
-AxisAlignedBoundingBox OrientedBoundingBox::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox(GetMinBound(), GetMaxBound());
+AxisAlignedBoundingBox<3> OrientedBoundingBox::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox<3>(GetMinBound(), GetMaxBound());
 }
 
 OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox() const {
@@ -189,7 +194,7 @@ OrientedBoundingBox::GetPointIndicesWithinBoundingBox(
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
-        const AxisAlignedBoundingBox &aabox) {
+        const AxisAlignedBoundingBox<3> &aabox) {
     OrientedBoundingBox obox;
     obox.center_ = aabox.GetCenter();
     obox.extent_ = aabox.GetExtent();
@@ -197,59 +202,71 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
     return obox;
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::Clear() {
     min_bound_.setZero();
     max_bound_.setZero();
     return *this;
 }
 
-bool AxisAlignedBoundingBox::IsEmpty() const { return Volume() <= 0; }
-Eigen::Vector3f AxisAlignedBoundingBox::GetMinBound() const {
+template <int Dim>
+bool AxisAlignedBoundingBox<Dim>::IsEmpty() const { return Volume() <= 0; }
+
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> AxisAlignedBoundingBox<Dim>::GetMinBound() const {
     return min_bound_;
 }
 
-Eigen::Vector3f AxisAlignedBoundingBox::GetMaxBound() const {
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> AxisAlignedBoundingBox<Dim>::GetMaxBound() const {
     return max_bound_;
 }
 
-Eigen::Vector3f AxisAlignedBoundingBox::GetCenter() const {
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> AxisAlignedBoundingBox<Dim>::GetCenter() const {
     return (min_bound_ + max_bound_) * 0.5;
 }
 
-AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
+template <int Dim>
+AxisAlignedBoundingBox<Dim> AxisAlignedBoundingBox<Dim>::GetAxisAlignedBoundingBox()
         const {
     return *this;
 }
 
-OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox() const {
+template <>
+template <>
+OrientedBoundingBox AxisAlignedBoundingBox<3>::GetOrientedBoundingBox() const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::Transform(
-        const Eigen::Matrix4f &transformation) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::Transform(
+        const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation) {
     utility::LogError(
             "A general transform of a AxisAlignedBoundingBox would not be axis "
             "aligned anymore, convert it to a OrientedBoundingBox first");
     return *this;
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
-        const Eigen::Vector3f &translation, bool relative) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::Translate(
+        const Eigen::Matrix<float, Dim, 1> &translation, bool relative) {
     if (relative) {
         min_bound_ += translation;
         max_bound_ += translation;
     } else {
-        const Eigen::Vector3f half_extent = GetHalfExtent();
+        const Eigen::Matrix<float, Dim, 1> half_extent = GetHalfExtent();
         min_bound_ = translation - half_extent;
         max_bound_ = translation + half_extent;
     }
     return *this;
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(const float scale,
-                                                      bool center) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::Scale(const float scale,
+                                                                bool center) {
     if (center) {
-        Eigen::Vector3f center = GetCenter();
+        Eigen::Matrix<float, Dim, 1> center = GetCenter();
         min_bound_ = center + scale * (min_bound_ - center);
         max_bound_ = center + scale * (max_bound_ - center);
     } else {
@@ -259,22 +276,26 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(const float scale,
     return *this;
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::Rotate(
-        const Eigen::Matrix3f &rotation, bool center) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::Rotate(
+        const Eigen::Matrix<float, Dim, Dim> &rotation, bool center) {
     utility::LogError(
             "A rotation of a AxisAlignedBoundingBox would not be axis aligned "
             "anymore, convert it to an OrientedBoundingBox first");
     return *this;
 }
 
-std::string AxisAlignedBoundingBox::GetPrintInfo() const {
+template <>
+template <>
+std::string AxisAlignedBoundingBox<3>::GetPrintInfo() const {
     return fmt::format("[({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, {:.4f})]",
                        min_bound_(0), min_bound_(1), min_bound_(2),
                        max_bound_(0), max_bound_(1), max_bound_(2));
 }
 
-AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
-        const AxisAlignedBoundingBox &other) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> &AxisAlignedBoundingBox<Dim>::operator+=(
+        const AxisAlignedBoundingBox<Dim> &other) {
     if (IsEmpty()) {
         min_bound_ = other.min_bound_;
         max_bound_ = other.max_bound_;
@@ -285,41 +306,26 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
     return *this;
 }
 
-AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
-        const utility::device_vector<Eigen::Vector2f> &points) {
+template <int Dim>
+AxisAlignedBoundingBox<Dim> AxisAlignedBoundingBox<Dim>::CreateFromPoints(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     AxisAlignedBoundingBox box;
     if (points.empty()) {
-        box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
-        box.max_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
+        box.min_bound_ = Eigen::Matrix<float, Dim, 1>::Zero();
+        box.max_bound_ = Eigen::Matrix<float, Dim, 1>::Zero();
     } else {
-        box.min_bound_ = (Eigen::Vector3f() << ComputeMinBound<2>(
-                                  utility::GetStream(0), points),
-                          0.0)
-                                 .finished();
-        box.max_bound_ = (Eigen::Vector3f() << ComputeMaxBound<2>(
-                                  utility::GetStream(1), points),
-                          0.0)
-                                 .finished();
+        box.min_bound_ = ComputeMinBound<Dim>(utility::GetStream(0), points);
+        box.max_bound_ = ComputeMaxBound<Dim>(utility::GetStream(1), points);
     }
     return box;
 }
 
-AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
-        const utility::device_vector<Eigen::Vector3f> &points) {
-    AxisAlignedBoundingBox box;
-    if (points.empty()) {
-        box.min_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
-        box.max_bound_ = Eigen::Vector3f(0.0, 0.0, 0.0);
-    } else {
-        box.min_bound_ = ComputeMinBound<3>(utility::GetStream(0), points);
-        box.max_bound_ = ComputeMaxBound<3>(utility::GetStream(1), points);
-    }
-    return box;
-}
+template <int Dim>
+float AxisAlignedBoundingBox<Dim>::Volume() const { return GetExtent().prod(); }
 
-float AxisAlignedBoundingBox::Volume() const { return GetExtent().prod(); }
-
-std::array<Eigen::Vector3f, 8> AxisAlignedBoundingBox::GetBoxPoints() const {
+template <>
+template <>
+std::array<Eigen::Vector3f, 8> AxisAlignedBoundingBox<3>::GetBoxPoints() const {
     std::array<Eigen::Vector3f, 8> points;
     Eigen::Vector3f extent = GetExtent();
     points[0] = min_bound_;
@@ -333,15 +339,22 @@ std::array<Eigen::Vector3f, 8> AxisAlignedBoundingBox::GetBoxPoints() const {
     return points;
 }
 
+template <int Dim>
 utility::device_vector<size_t>
-AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
-        const utility::device_vector<Eigen::Vector3f> &points) const {
+AxisAlignedBoundingBox<Dim>::GetPointIndicesWithinBoundingBox(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) const {
     utility::device_vector<size_t> indices(points.size());
-    check_within_axis_aligned_bounding_box_functor func(
+    check_within_axis_aligned_bounding_box_functor<Dim> func(
             thrust::raw_pointer_cast(points.data()), min_bound_, max_bound_);
     auto end = thrust::copy_if(thrust::make_counting_iterator<size_t>(0),
                                thrust::make_counting_iterator(points.size()),
                                indices.begin(), func);
     indices.resize(thrust::distance(indices.begin(), end));
     return indices;
+}
+
+template class AxisAlignedBoundingBox<2>;
+template class AxisAlignedBoundingBox<3>;
+
+}
 }
