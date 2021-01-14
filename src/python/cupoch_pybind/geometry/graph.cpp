@@ -77,7 +77,7 @@ void bind_def(GraphT& graph) {
                      return *res;
                  })
             .def_static("create_from_triangle_mesh",
-                        &geometry::Graph<Dim>::CreateFromTriangleMesh,
+                        &geometry::Graph<Dim>::template CreateFromTriangleMesh<Dim>,
                         "Function to make graph from a TriangleMesh", "input"_a)
             .def_static(
                     "create_from_axis_aligned_bounding_box",

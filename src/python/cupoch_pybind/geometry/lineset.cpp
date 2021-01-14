@@ -69,22 +69,22 @@ void bind_def(LineSetT& lineset) {
                  })
             .def_static(
                     "create_from_point_cloud_correspondences",
-                    &geometry::LineSet<Dim>::CreateFromPointCloudCorrespondences,
+                    &geometry::LineSet<Dim>::template CreateFromPointCloudCorrespondences<Dim>,
                     "Factory function to create a LineSet from two "
                     "pointclouds and a correspondence set.",
                     "cloud0"_a, "cloud1"_a, "correspondences"_a)
             .def_static("create_from_oriented_bounding_box",
-                        &geometry::LineSet<Dim>::CreateFromOrientedBoundingBox,
+                        &geometry::LineSet<Dim>::template CreateFromOrientedBoundingBox<Dim>,
                         "Factory function to create a LineSet from an "
                         "OrientedBoundingBox.",
                         "box"_a)
             .def_static("create_from_axis_aligned_bounding_box",
-                        &geometry::LineSet<Dim>::CreateFromAxisAlignedBoundingBox,
+                        &geometry::LineSet<Dim>::template CreateFromAxisAlignedBoundingBox<Dim>,
                         "Factory function to create a LineSet from an "
                         "AxisAlignedBoundingBox.",
                         "box"_a)
             .def_static("create_from_triangle_mesh",
-                        &geometry::LineSet<Dim>::CreateFromTriangleMesh,
+                        &geometry::LineSet<Dim>::template CreateFromTriangleMesh<Dim>,
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)

@@ -43,9 +43,6 @@ void bind_axis_aligned_bounding_box(AabbT &axis_aligned_bounding_box) {
                  })
             .def("volume", &geometry::AxisAlignedBoundingBox<Dim>::Volume,
                  "Returns the volume of the bounding box.")
-            .def("get_box_points",
-                 &geometry::AxisAlignedBoundingBox<Dim>::GetBoxPoints,
-                 "Returns the eight points that define the bounding box.")
             .def("get_extent", &geometry::AxisAlignedBoundingBox<Dim>::GetExtent,
                  "Get the extent/length of the bounding box in x, y, and z "
                  "dimension.")
@@ -61,10 +58,6 @@ void bind_axis_aligned_bounding_box(AabbT &axis_aligned_bounding_box) {
                          GetPointIndicesWithinBoundingBox,
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
-            .def("get_print_info",
-                 &geometry::AxisAlignedBoundingBox<Dim>::GetPrintInfo,
-                 "Returns the 3D dimensions of the bounding box in string "
-                 "format.")
             .def_static(
                     "create_from_points",
                     py::overload_cast<
@@ -81,6 +74,18 @@ void bind_axis_aligned_bounding_box(AabbT &axis_aligned_bounding_box) {
                            "``float32`` array of shape ``(3, )``")
             .def_readwrite("color", &geometry::AxisAlignedBoundingBox<Dim>::color_,
                            "``float32`` array of shape ``(3, )``");
+}
+
+template <typename AabbT>
+void bind_axis_aligned_bounding_box3D(AabbT &axis_aligned_bounding_box) {
+     axis_aligned_bounding_box
+            .def("get_box_points",
+                 &geometry::AxisAlignedBoundingBox<3>::template GetBoxPoints<3>,
+                 "Returns the eight points that define the bounding box.")
+            .def("get_print_info",
+                 &geometry::AxisAlignedBoundingBox<3>::template GetPrintInfo<3>,
+                 "Returns the 3D dimensions of the bounding box in string "
+                 "format.");
 }
 
 void doc_inject(py::module &m, const std::string& name) {
@@ -170,5 +175,6 @@ void pybind_boundingvolume(py::module &m) {
                                       "box uses the cooridnate axes for "
                                       "bounding box generation.");
      bind_axis_aligned_bounding_box<decltype(axis_aligned_bounding_box), 3>(axis_aligned_bounding_box);
+     bind_axis_aligned_bounding_box3D<decltype(axis_aligned_bounding_box)>(axis_aligned_bounding_box);
      doc_inject(m, "AxisAlignedBoundingBox");
 }
