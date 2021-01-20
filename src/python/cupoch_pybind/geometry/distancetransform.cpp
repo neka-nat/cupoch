@@ -79,7 +79,11 @@ void pybind_distancetransform(py::module &m) {
                          &geometry::DistanceTransform::ComputeEDT),
                  "Function to compute EDT from voxel grid.")
             .def("get_distance", &geometry::DistanceTransform::GetDistance)
-            .def("get_distances", &geometry::DistanceTransform::GetDistances)
+            .def("get_distances",
+                 [] (const geometry::DistanceTransform& self,
+                     const wrapper::device_vector_vector3f& points) {
+                     return wrapper::device_vector_float(self.GetDistances(points.data_));
+                 })
             .def_static(
                     "create_from_occupancy_grid",
                     &geometry::DistanceTransform::CreateFromOccupancyGrid,

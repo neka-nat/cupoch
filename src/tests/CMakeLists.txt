@@ -6,5 +6,5 @@ add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/testdata")
 target_link_libraries(unittests
     cupoch_registration cupoch_integration
     cupoch_io cupoch_camera cupoch_planning
-    cupoch_utility googletest pthread
-    ${CUDA_LIBRARIES})
+    cupoch_utility googletest
+    ${3RDPARTY_LIBRARIES})

@@ -25,6 +25,16 @@
 using namespace cupoch;
 using namespace cupoch::geometry;
 
+RGBDImage::RGBDImage(const Image &color, const Image &depth)
+: GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
+  color_(color),
+  depth_(depth) {}
+
+RGBDImage::RGBDImage(const RGBDImage &other)
+: GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
+  color_(other.color_),
+  depth_(other.depth_) {}
+
 RGBDImage &RGBDImage::Clear() {
     color_.Clear();
     depth_.Clear();

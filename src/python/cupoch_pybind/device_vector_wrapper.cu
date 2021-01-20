@@ -69,7 +69,9 @@ device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
 template <typename Type>
 device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator+=(
         const thrust::host_vector<Type>& other) {
-    utility::device_vector<Type> dvo = other;
+    utility::device_vector<Type> dvo(other.size());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dvo.data()), thrust::raw_pointer_cast(other.data()),
+                            other.size() * sizeof(Type), cudaMemcpyHostToDevice));
     thrust::transform(data_.begin(), data_.end(), dvo.begin(), data_.begin(),
                       thrust::plus<Type>());
     return *this;
@@ -86,7 +88,9 @@ device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator-=(
 template <typename Type>
 device_vector_wrapper<Type>& device_vector_wrapper<Type>::operator-=(
         const thrust::host_vector<Type>& other) {
-    utility::device_vector<Type> dvo = other;
+    utility::device_vector<Type> dvo(other.size());
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dvo.data()), thrust::raw_pointer_cast(other.data()),
+                            other.size() * sizeof(Type), cudaMemcpyHostToDevice));
     thrust::transform(data_.begin(), data_.end(), dvo.begin(), data_.begin(),
                       thrust::minus<Type>());
     return *this;

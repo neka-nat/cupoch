@@ -49,28 +49,27 @@ struct transform_normals_functor {
 };
 }  // namespace
 
-template <int Dim>
-Eigen::Matrix<float, Dim, 1> ComputeMinBound(
-        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
-    return ComputeMinBound<Dim>(0, points);
-}
-
-template <int Dim>
-Eigen::Matrix<float, Dim, 1> ComputeMinBound(
+template <int Dim, typename FuncT>
+Eigen::Matrix<float, Dim, 1> ComputeBound(
         cudaStream_t stream,
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     if (points.empty()) return Eigen::Matrix<float, Dim, 1>::Zero();
     Eigen::Matrix<float, Dim, 1> init = points[0];
     return thrust::reduce(
             utility::exec_policy(stream)->on(stream), points.begin(),
-            points.end(), init,
-            thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>());
+            points.end(), init, FuncT());
+}
+
+template <int Dim>
+Eigen::Matrix<float, Dim, 1> ComputeMinBound(
+        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
+    return ComputeBound<Dim, thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>>(0, points);
 }
 
 template <int Dim>
 Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
         const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
-    return ComputeMaxBound<Dim>(0, points);
+    return ComputeBound<Dim, thrust::elementwise_maximum<Eigen::Matrix<float, Dim, 1>>>(0, points);
 }
 
 template <int Dim>
@@ -96,26 +95,27 @@ Eigen::Matrix<float, Dim, 1> ComputeCenter(
     return sum / points.size();
 }
 
+template Eigen::Matrix<float, 2, 1> ComputeBound<2, thrust::elementwise_minimum<Eigen::Matrix<float, 2, 1>>>(
+    cudaStream_t stream,
+    const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
+template Eigen::Matrix<float, 3, 1> ComputeBound<3, thrust::elementwise_minimum<Eigen::Matrix<float, 3, 1>>>(
+    cudaStream_t stream,
+    const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
+template Eigen::Matrix<float, 2, 1> ComputeBound<2, thrust::elementwise_maximum<Eigen::Matrix<float, 2, 1>>>(
+    cudaStream_t stream,
+    const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
+template Eigen::Matrix<float, 3, 1> ComputeBound<3, thrust::elementwise_maximum<Eigen::Matrix<float, 3, 1>>>(
+    cudaStream_t stream,
+    const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
+
 template Eigen::Matrix<float, 2, 1> ComputeMinBound<2>(
         const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
-template Eigen::Matrix<float, 2, 1> ComputeMinBound<2>(
-        cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMinBound<3>(
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
-template Eigen::Matrix<float, 3, 1> ComputeMinBound<3>(
-        cudaStream_t stream,
         const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 
 template Eigen::Matrix<float, 2, 1> ComputeMaxBound<2>(
         const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
-template Eigen::Matrix<float, 2, 1> ComputeMaxBound<2>(
-        cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, 2, 1>> &points);
 template Eigen::Matrix<float, 3, 1> ComputeMaxBound<3>(
-        const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
-template Eigen::Matrix<float, 3, 1> ComputeMaxBound<3>(
-        cudaStream_t stream,
         const utility::device_vector<Eigen::Matrix<float, 3, 1>> &points);
 
 template Eigen::Matrix<float, 2, 1> ComputeCenter<2>(

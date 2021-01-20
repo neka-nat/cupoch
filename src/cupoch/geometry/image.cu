@@ -346,6 +346,18 @@ struct depth_to_float_functor {
 
 Image::Image() : GeometryBaseNoTrans2D(Geometry::GeometryType::Image) {}
 Image::~Image() {}
+Image::Image(const Image& other)
+: GeometryBaseNoTrans2D(Geometry::GeometryType::Image),
+width_(other.width_), height_(other.height_), num_of_channels_(other.num_of_channels_),
+bytes_per_channel_(other.bytes_per_channel_), data_(other.data_) {}
+
+Image Image::operator=(const Image& other) {
+    width_ = other.width_;
+    height_ = other.height_;
+    num_of_channels_ = other.num_of_channels_;
+    bytes_per_channel_ = other.bytes_per_channel_;
+    data_ = other.data_;
+}
 
 Image &Image::Clear() {
     width_ = 0;

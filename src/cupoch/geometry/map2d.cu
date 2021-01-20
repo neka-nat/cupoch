@@ -26,6 +26,9 @@ namespace cupoch {
 namespace geometry {
 
 Map2D::Map2D() : GeometryBase2D(Geometry::GeometryType::Map2D) {}
+Map2D::Map2D(const Map2D& other)
+ : GeometryBase2D(Geometry::GeometryType::Map2D), map_(other.map_),
+ cell_size_(other.cell_size_), origin_(other.origin_) {}
 
 Map2D &Map2D::Clear() {
     map_.Clear();

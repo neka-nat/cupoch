@@ -39,10 +39,8 @@ typedef std::vector<std::shared_ptr<RGBDImage>> RGBDImagePyramid;
 class RGBDImage : public GeometryBaseNoTrans2D {
 public:
     RGBDImage() : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage) {}
-    RGBDImage(const Image &color, const Image &depth)
-        : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
-          color_(color),
-          depth_(depth) {}
+    RGBDImage(const Image &color, const Image &depth);
+    RGBDImage(const RGBDImage &other);
 
     ~RGBDImage() {
         color_.Clear();

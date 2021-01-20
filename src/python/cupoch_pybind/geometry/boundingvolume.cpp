@@ -54,8 +54,10 @@ void bind_axis_aligned_bounding_box(AabbT &axis_aligned_bounding_box) {
                  "Returns the maximum extent, i.e. the maximum of X, Y and Z "
                  "axis")
             .def("get_point_indices_within_bounding_box",
-                 &geometry::AxisAlignedBoundingBox<Dim>::
-                         GetPointIndicesWithinBoundingBox,
+                 [] (const geometry::AxisAlignedBoundingBox<Dim> &aabb,
+                     const wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>>& points) {
+                         return wrapper::device_vector_size_t(aabb.GetPointIndicesWithinBoundingBox(points.data_));
+                  },
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
             .def_static(
@@ -131,8 +133,10 @@ void pybind_boundingvolume(py::module &m) {
                      return std::string("geometry::OrientedBoundingBox");
                  })
             .def("get_point_indices_within_bounding_box",
-                 &geometry::OrientedBoundingBox::
-                         GetPointIndicesWithinBoundingBox,
+                 [] (const geometry::OrientedBoundingBox &box,
+                     const wrapper::device_vector_vector3f& points) {
+                         return wrapper::device_vector_size_t(box.GetPointIndicesWithinBoundingBox(points.data_));
+                  },
                  "Return indices to points that are within the bounding box.",
                  "points"_a)
             .def_static("create_from_axis_aligned_bounding_box",

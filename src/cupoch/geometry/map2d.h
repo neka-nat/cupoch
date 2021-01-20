@@ -28,6 +28,7 @@ class Map2D : public GeometryBase2D {
 public:
     Map2D();
     ~Map2D() { map_.Clear(); };
+    Map2D(const Map2D& other);
 
     Map2D &Clear() override;
     bool IsEmpty() const override;
