@@ -45,7 +45,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
     - name: make
       run: |
         cd build

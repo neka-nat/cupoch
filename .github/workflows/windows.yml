@@ -73,7 +73,7 @@ jobs:
     - name: Configure CMake
       id: configure
       shell: bash
-      run: cmake . -B ${{ env.build_dir }} -G "${{ matrix.visual_studio }}" -A x64 -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
+      run: cmake . -B ${{ env.build_dir }} -G "${{ matrix.visual_studio }}" -A x64 -DCMAKE_BUILD_TYPE=Release -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON
 
     - name: Configure Error Processing
       if: ${{ (failure() && steps.configure.outcome == 'failure') || success() }}

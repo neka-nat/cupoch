@@ -20,12 +20,13 @@
 **/
 #include <thrust/inner_product.h>
 #include <thrust/iterator/permutation_iterator.h>
-#include <thrust/reduce.h>
+#include <thrust/async/reduce.h>
 
 #include <Eigen/Geometry>
 #include <Eigen/SVD>
 
 #include "cupoch/registration/kabsch.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -35,7 +36,8 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
         const utility::device_vector<Eigen::Vector3f> &target,
         const CorrespondenceSet &corres) {
     // Compute the center
-    Eigen::Vector3f model_center = thrust::reduce(
+    auto res1 = thrust::async::reduce(
+            utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
@@ -47,7 +49,8 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                             corres.end(),
                             extract_element_functor<int, 2, 0>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
-    Eigen::Vector3f target_center = thrust::reduce(
+    auto res2 = thrust::async::reduce(
+            utility::exec_policy(utility::GetStream(1))->on(utility::GetStream(1)),
             thrust::make_permutation_iterator(
                     target.begin(),
                     thrust::make_transform_iterator(
@@ -59,6 +62,8 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                             corres.end(),
                             extract_element_functor<int, 2, 1>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
+    Eigen::Vector3f model_center = res1.get();
+    Eigen::Vector3f target_center = res2.get();
     float divided_by = 1.0f / model.size();
     model_center *= divided_by;
     target_center *= divided_by;
@@ -119,8 +124,10 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
         const utility::device_vector<Eigen::Vector3f> &target,
         const utility::device_vector<float> &weight) {
     // Compute the center
-    const float total_weight =
-            thrust::reduce(weight.begin(), weight.end(), 0.0);
+    auto res_w =
+            thrust::async::reduce(
+                    utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
+                    weight.begin(), weight.end(), 0.0);
     Eigen::Vector3f model_center = thrust::transform_reduce(
             make_tuple_begin(model, weight), make_tuple_end(model, weight),
             [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
@@ -133,6 +140,7 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
                 return thrust::get<0>(x) * thrust::get<1>(x);
             },
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
+    float total_weight = res_w.get();
     float divided_by = 1.0f / total_weight;
     model_center *= divided_by;
     target_center *= divided_by;
