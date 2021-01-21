@@ -127,7 +127,7 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
     auto res_w =
             thrust::async::reduce(
                     utility::exec_policy(utility::GetStream(0))->on(utility::GetStream(0)),
-                    weight.begin(), weight.end(), 0.0);
+                    weight.begin(), weight.end(), 0.0f);
     Eigen::Vector3f model_center = thrust::transform_reduce(
             make_tuple_begin(model, weight), make_tuple_end(model, weight),
             [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
