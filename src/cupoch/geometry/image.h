@@ -77,7 +77,7 @@ public:
     Image();
     ~Image();
     Image(const Image& other);
-    Image operator=(const Image& other);
+    Image& operator=(const Image& other);
 
     Image &Clear() override;
     bool IsEmpty() const override;

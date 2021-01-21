@@ -351,12 +351,13 @@ Image::Image(const Image& other)
 width_(other.width_), height_(other.height_), num_of_channels_(other.num_of_channels_),
 bytes_per_channel_(other.bytes_per_channel_), data_(other.data_) {}
 
-Image Image::operator=(const Image& other) {
+Image& Image::operator=(const Image& other) {
     width_ = other.width_;
     height_ = other.height_;
     num_of_channels_ = other.num_of_channels_;
     bytes_per_channel_ = other.bytes_per_channel_;
     data_ = other.data_;
+    return *this;
 }
 
 Image &Image::Clear() {
