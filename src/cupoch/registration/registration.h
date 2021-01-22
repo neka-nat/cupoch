@@ -90,5 +90,14 @@ RegistrationResult RegistrationICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 
+RegistrationResult RegistrationICPWithNormalRejector(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        float max_correspondence_distance,
+        float max_normal_difference,
+        const Eigen::Matrix4f &init = Eigen::Matrix4f::Identity(),
+        const TransformationEstimation &estimation =
+        TransformationEstimationPointToPoint(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
 }  // namespace registration
 }  // namespace cupoch
