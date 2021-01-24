@@ -15,17 +15,13 @@ jobs:
       # explicit include-based build matrix, of known valid options
       matrix:
         include:
-          # Windows2019 & VS 2019 supports 10.2+
+          # Windows2019 & VS 2019 supports 11.0+
           - os: windows-2019
             cuda: "11.0.167"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.7
           - os: windows-2019
-            cuda: "10.2.89"
-            visual_studio: "Visual Studio 16 2019"
-            python-version: 3.7
-          - os: windows-2019
-            cuda: "10.2.89"
+            cuda: "11.0.167"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.8
 
@@ -99,7 +95,7 @@ jobs:
           python -m pip install -U pip wheel setuptools
           cmake --build . --config ${{ env.config }} --target pip-package --verbose
     - name: Publish package
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.cuda == '10.2.89'
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.cuda == '11.0.167'
       working-directory: ${{ env.build_dir }}/lib/python_package
       env:
         PYPI_USERNAME: ${{ secrets.pypi_username }}
