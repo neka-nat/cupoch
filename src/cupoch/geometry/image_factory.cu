@@ -49,27 +49,31 @@ struct compute_camera_distance_functor {
 __constant__ float grayscale_weights[2][3] = {{1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0},
                                               {0.2990f, 0.5870f, 0.1140f}};
 
-struct make_float_image_functor {
-    make_float_image_functor(const uint8_t *image,
-                             int num_of_channels,
-                             int bytes_per_channel,
-                             Image::ColorToIntensityConversionType type,
-                             uint8_t *fimage)
+template <typename T>
+struct make_gray_image_functor {
+    make_gray_image_functor(const uint8_t *image,
+                            int num_of_channels,
+                            int bytes_per_channel,
+                            Image::ColorToIntensityConversionType type,
+                            uint8_t *fimage,
+                            float denom)
         : image_(image),
           num_of_channels_(num_of_channels),
           bytes_per_channel_(bytes_per_channel),
           type_(type),
-          fimage_(fimage){};
+          fimage_(fimage),
+          denom_(denom) {};
     const uint8_t *image_;
     int num_of_channels_;
     int bytes_per_channel_;
     Image::ColorToIntensityConversionType type_;
     uint8_t *fimage_;
+    float denom_;
     __device__ void operator()(size_t idx) {
         typedef float (*grayfn)(const uint8_t *);
         typedef float (*colorfn)(const uint8_t *, const float *);
         grayfn gf[4] = {[] __device__(const uint8_t *pi) {
-                            return (float)(*pi) / 255.0f;
+                            return (float)(*pi);
                         },
                         [] __device__(const uint8_t *pi) {
                             const uint16_t *pi16 = (const uint16_t *)pi;
@@ -84,8 +88,7 @@ struct make_float_image_functor {
                 [] __device__(const uint8_t *pi, const float *weights) {
                     return (weights[0] * (float)(pi[0]) +
                             weights[1] * (float)(pi[1]) +
-                            weights[2] * (float)(pi[2])) /
-                           255.0f;
+                            weights[2] * (float)(pi[2]));
                 },
                 [] __device__(const uint8_t *pi, const float *weights) {
                     const uint16_t *pi16 = (const uint16_t *)pi;
@@ -101,14 +104,14 @@ struct make_float_image_functor {
                     return weights[0] * pf[0] + weights[1] * pf[1] +
                            weights[2] * pf[2];
                 }};
-        float *p = (float *)(fimage_ + idx * 4);
+        T *p = (T *)(fimage_ + idx * sizeof(T));
         const uint8_t *pi =
                 image_ + idx * num_of_channels_ * bytes_per_channel_;
         if (num_of_channels_ == 1) {
             // grayscale image
-            *p = gf[bytes_per_channel_ - 1](pi);
+            *p = (T)(gf[bytes_per_channel_ - 1](pi) * denom_);
         } else if (num_of_channels_ == 3) {
-            *p = cf[bytes_per_channel_ - 1](pi, grayscale_weights[(int)type_]);
+            *p = (T)(cf[bytes_per_channel_ - 1](pi, grayscale_weights[(int)type_]) * denom_);
         }
     }
 };
@@ -160,6 +163,41 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     return fimage;
 }
 
+std::shared_ptr<Image> Image::CreateGrayImage(
+        Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {
+    auto image = std::make_shared<Image>();
+    if (IsEmpty()) {
+        return image;
+    }
+    image->Prepare(width_, height_, 1, 1);
+    if (bytes_per_channel_ == 1) {
+        make_gray_image_functor<uint8_t> func(
+                thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+                bytes_per_channel_, type,
+                thrust::raw_pointer_cast(image->data_.data()), 1.0f);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(width_ * height_),
+                         func);
+    } else if (bytes_per_channel_ == 2) {
+        make_gray_image_functor<uint8_t> func(
+                thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+                bytes_per_channel_, type,
+                thrust::raw_pointer_cast(image->data_.data()), 255.0 / 65535.0);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(width_ * height_),
+                         func);
+    } else if (bytes_per_channel_ == 4) {
+        make_gray_image_functor<uint8_t> func(
+                thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+                bytes_per_channel_, type,
+                thrust::raw_pointer_cast(image->data_.data()), 255.0f);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(width_ * height_),
+                         func);
+    }
+    return image;
+}
+
 std::shared_ptr<Image> Image::CreateFloatImage(
         Image::ColorToIntensityConversionType type /* = WEIGHTED*/) const {
     auto fimage = std::make_shared<Image>();
@@ -167,13 +205,23 @@ std::shared_ptr<Image> Image::CreateFloatImage(
         return fimage;
     }
     fimage->Prepare(width_, height_, 1, 4);
-    make_float_image_functor func(
-            thrust::raw_pointer_cast(data_.data()), num_of_channels_,
-            bytes_per_channel_, type,
-            thrust::raw_pointer_cast(fimage->data_.data()));
-    thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                     thrust::make_counting_iterator<size_t>(width_ * height_),
-                     func);
+    if (bytes_per_channel_ == 1) {
+        make_gray_image_functor<float> func(
+                thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+                bytes_per_channel_, type,
+                thrust::raw_pointer_cast(fimage->data_.data()), 1.0 / 255.0);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(width_ * height_),
+                         func);
+    } else {
+        make_gray_image_functor<float> func(
+                thrust::raw_pointer_cast(data_.data()), num_of_channels_,
+                bytes_per_channel_, type,
+                thrust::raw_pointer_cast(fimage->data_.data()), 1.0f);
+        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
+                         thrust::make_counting_iterator<size_t>(width_ * height_),
+                         func);
+    }
     return fimage;
 }
 

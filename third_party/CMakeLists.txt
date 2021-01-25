@@ -289,6 +289,20 @@ set(urdfdom_INCLUDE_DIR
     ${CMAKE_CURRENT_BINARY_DIR})
 set(urdfdom_LIBRARIES urdfdom)
 
+# libSGM
+set(libSGM_VERSION_MAJOR 2)
+set(libSGM_VERSION_MINOR 7)
+set(libSGM_VERSION_PATCH 0)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libSGM/include/libsgm_config.h.in
+               ${CMAKE_CURRENT_SOURCE_DIR}/libSGM/include/libsgm_config.h
+)
+file(GLOB STEREOSRCS "libSGM/src/*.cu" "libSGM/src/*.cpp")
+cuda_add_library(sgm ${STEREOSRCS})
+target_include_directories(sgm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/libSGM/include)
+target_link_libraries(sgm ${CUDA_LIBRARIES})
+set(SGM_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/libSGM/include)
+set(SGM_LIBRARIES sgm)
+
 list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${EIGEN3_INCLUDE_DIRS}
      ${flann_INCLUDE_DIRS}
@@ -306,6 +320,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
      ${stdgpu_INCLUDE_DIRS}
+     ${SGM_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
      ${lbvh_INCLUDE_DIRS}
@@ -323,6 +338,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${rply_LIBRARIES}
      ${JSONCPP_LIBRARIES}
      ${stdgpu_LIBRARIES}
+     ${SGM_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
      ${fmt_LIBRARIES}

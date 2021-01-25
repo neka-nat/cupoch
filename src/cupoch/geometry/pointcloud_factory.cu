@@ -305,17 +305,14 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
         bool project_valid_depth_only,
         float depth_cutoff,
         bool compute_normals) {
-    if (image.depth_.num_of_channels_ == 1 &&
-        image.depth_.bytes_per_channel_ == 4) {
-        if (image.color_.bytes_per_channel_ == 1 &&
-            image.color_.num_of_channels_ == 3) {
-            return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
-                    image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
-        } else if (image.color_.bytes_per_channel_ == 4 &&
-                   image.color_.num_of_channels_ == 1) {
-            return CreatePointCloudFromRGBDImageT<float, 1>(
-                    image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
-        }
+    if (image.color_.bytes_per_channel_ == 1 &&
+        image.color_.num_of_channels_ == 3) {
+        return CreatePointCloudFromRGBDImageT<uint8_t, 3>(
+                image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
+    } else if (image.color_.bytes_per_channel_ == 4 &&
+               image.color_.num_of_channels_ == 1) {
+        return CreatePointCloudFromRGBDImageT<float, 1>(
+                image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
     }
     utility::LogError(
             "[CreatePointCloudFromRGBDImage] Unsupported image format.");

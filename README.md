@@ -34,6 +34,7 @@ For example, it has applications in SLAM, collision avoidance, path planning and
         * [Real-time visual odometry from dense RGB-D images](https://ieeexplore.ieee.org/document/6130321)
         * [Robust Odometry Estimation for RGB-D Cameras](https://ieeexplore.ieee.org/document/6631104)
     * Kinect Fusion
+    * Stereo Matching
     * Collision checking
     * Occupancy grid
     * Distance transform

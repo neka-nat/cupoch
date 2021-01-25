@@ -141,6 +141,11 @@ public:
             const camera::PinholeCameraIntrinsic &intrinsic);
 
     /// Return a gray scaled float type image.
+    std::shared_ptr<Image> CreateGrayImage(
+            Image::ColorToIntensityConversionType type =
+                    Image::ColorToIntensityConversionType::Weighted) const;
+
+    /// Return a gray scaled float type image.
     std::shared_ptr<Image> CreateFloatImage(
             Image::ColorToIntensityConversionType type =
                     Image::ColorToIntensityConversionType::Weighted) const;

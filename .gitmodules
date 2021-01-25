@@ -16,6 +16,9 @@
 [submodule "imgui"]
     path = third_party/imgui
     url = https://github.com/ocornut/imgui.git
+[submodule "libSGM"]
+    path = third_party/libSGM
+    url = https://github.com/fixstars/libSGM.git
 [submodule "stdgpu"]
     path = third_party/stdgpu
     url = https://github.com/stotko/stdgpu.git

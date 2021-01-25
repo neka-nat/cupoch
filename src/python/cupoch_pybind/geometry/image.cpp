@@ -64,6 +64,11 @@ void pybind_image(py::module &m) {
                 return "Enum class for Image filter types.";
             }),
             py::none(), py::none(), "");
+    py::enum_<geometry::Image::ColorToIntensityConversionType> c2i_type(m,
+                                                                        "ImageColorToIntensityConversionType");
+    c2i_type.value("Gaussian3", geometry::Image::ColorToIntensityConversionType::Equal)
+            .value("Gaussian5", geometry::Image::ColorToIntensityConversionType::Weighted)
+            .export_values();
 
     py::class_<geometry::Image, PyGeometryNoTrans2D<geometry::Image>,
                std::shared_ptr<geometry::Image>, geometry::GeometryBaseNoTrans2D>
@@ -151,6 +156,10 @@ void pybind_image(py::module &m) {
                         }
                     },
                     "Function to apply bilateral filter to the image")
+            .def("create_gray_image", &geometry::Image::CreateGrayImage,
+                 "Create gray image.", "type"_a = geometry::Image::ColorToIntensityConversionType::Weighted)
+            .def("create_float_image", &geometry::Image::CreateFloatImage,
+                 "Create float gray image.", "type"_a = geometry::Image::ColorToIntensityConversionType::Weighted)
             .def(
                     "create_pyramid",
                     [](const geometry::Image &input, size_t num_of_levels,

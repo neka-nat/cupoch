@@ -26,7 +26,7 @@ using namespace cupoch;
 
 void pybind_kinfu_classes(py::module &m) {
     // cupoch.kinfu.KinfuParameters
-    py::class_<kinfu::KinfuParameters> kp(m, "KinfuParameters", "Parameters for Kinect Fution.");
+    py::class_<kinfu::KinfuParameters> kp(m, "KinfuParameters", "Parameters for Kinect Fusion.");
     py::detail::bind_default_constructor<kinfu::KinfuParameters>(kp);
     py::detail::bind_copy_functions<kinfu::KinfuParameters>(kp);
     kp.def_readwrite("num_pyramid_levels", &kinfu::KinfuParameters::num_pyramid_levels_)
