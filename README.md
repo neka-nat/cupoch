@@ -47,7 +47,7 @@ For example, it has applications in SLAM, collision avoidance, path planning and
 
 ## Installation
 
-This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.0/10.1/10.2.
+This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.1/10.2.
 You can install cupoch using pip.
 
 ```

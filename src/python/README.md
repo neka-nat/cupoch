@@ -35,9 +35,9 @@
 * Ubuntu 18.04
 * Windows 10
 
-With Python version: * 3.6 * 3.7 * 3.8
+With Python version: * 3.6 * 3.7 * 3.8 * 3.9
 
-and CUDA version: * 10.0 * 10.1 * 10.2
+and CUDA version: * 10.1 * 10.2 (Ubuntu) * 11.0 (Windows)
 
 ## Resources
 

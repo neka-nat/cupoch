@@ -71,12 +71,13 @@ Visualizer::~Visualizer() {
 }
 
 bool Visualizer::CreateVisualizerWindow(
-        const std::string &window_name /* = "Open3D"*/,
+        const std::string &window_name /* = "Cupoch"*/,
         const int width /* = 640*/,
         const int height /* = 480*/,
         const int left /* = 50*/,
         const int top /* = 50*/,
         const bool visible /* = true*/) {
+    window_name_ = window_name;
     glfwSetErrorCallback(GLFWEnvironmentSingleton::GLFWErrorCallback);
     if (!GLFWEnvironmentSingleton::InitGLFW()) {
         utility::LogWarning("Failed to initialize GLFW");

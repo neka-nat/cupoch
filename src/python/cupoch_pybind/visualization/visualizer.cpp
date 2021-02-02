@@ -61,7 +61,7 @@ void pybind_visualizer(py::module &m) {
             .def("create_window",
                  &visualization::Visualizer::CreateVisualizerWindow,
                  "Function to create a window and initialize GLFW",
-                 "window_name"_a = "cupoch", "width"_a = 1920,
+                 "window_name"_a = "Cupoch", "width"_a = 1920,
                  "height"_a = 1080, "left"_a = 50, "top"_a = 50,
                  "visible"_a = true)
             .def("destroy_window",
