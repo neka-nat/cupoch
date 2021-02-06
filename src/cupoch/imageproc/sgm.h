@@ -32,6 +32,7 @@ public:
     enum DisparitySizeType {
         DisparitySize64 = 64,
         DisparitySize128 = 128,
+        DisparitySize256 = 256,
     };
     enum PathType {
         ScanPath4 = 0,

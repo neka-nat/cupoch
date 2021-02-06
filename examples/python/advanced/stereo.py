@@ -11,4 +11,5 @@ params.height = limg.height
 
 sgm = cph.imageproc.SemiGlobalMatching(params)
 disp = sgm.process_frame(limg, rimg)
+disp.linear_transform(255.0 / 127.0)
 cph.visualization.draw_geometries([disp])

@@ -121,6 +121,10 @@ void pybind_image(py::module &m) {
                             std::to_string(img.num_of_channels_) +
                             std::string(" channels.");
                  })
+            .def("clip_intensity", &geometry::Image::ClipIntensity,
+                 "Function to clip intensity", "min"_a = 0.0, "max"_a = 1.0)
+            .def("linear_transform", &geometry::Image::LinearTransform,
+                 "Function to transform linearly", "scale"_a = 1.0, "offset"_a = 0.0)
             .def("downsample", &geometry::Image::Downsample)
             .def(
                     "filter",

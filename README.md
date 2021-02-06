@@ -121,6 +121,10 @@ python benchmarks.py
 
 ![kf](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/kinfu.gif)
 
+### Stereo matching
+
+![sm](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/stereo.png)
+
 ### Fast Global Registration
 
 ![fgr](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/fgr.png)

@@ -29,6 +29,7 @@ void pybind_imageproc_classes(py::module &m) {
     py::enum_<imageproc::SGMParameters::DisparitySizeType> disp_size_t(m, "DisparitySizeType");
     disp_size_t.value("DisparitySize64", imageproc::SGMParameters::DisparitySizeType::DisparitySize64)
                .value("DisparitySize128", imageproc::SGMParameters::DisparitySizeType::DisparitySize128)
+               .value("DisparitySize256", imageproc::SGMParameters::DisparitySizeType::DisparitySize256)
                .export_values();
     py::enum_<imageproc::SGMParameters::PathType> path_t(m, "PathType");
     path_t.value("ScanPath4", imageproc::SGMParameters::PathType::ScanPath4)
