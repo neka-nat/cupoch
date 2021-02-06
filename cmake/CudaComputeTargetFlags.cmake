@@ -20,14 +20,14 @@ MACRO(CUDA_COMPUTE_TARGET_FLAGS arch_bin arch_ptx cuda_nvcc_target_flags)
 			set(cuda_computer_target_flags_temp ${cuda_computer_target_flags_temp} -gencode arch=compute_${CMAKE_MATCH_2},code=sm_${CMAKE_MATCH_1})
 		else()
 			# User didn't explicitly specify PTX for the concrete BIN, we assume PTX=BIN
-			set(cuda_computer_target_flags_temp ${cuda_computer_target_flags_temp} -gencode arch=compute_${ARCH},code=sm_${ARCH})					
+			set(cuda_computer_target_flags_temp ${cuda_computer_target_flags_temp} -gencode arch=compute_${ARCH},code=sm_${ARCH})
 		endif()
 	endforeach()
 
 	# Tell NVCC to add PTX intermediate code for the specified architectures
 	string(REGEX MATCHALL "[0-9]+" ARCH_LIST "${ARCH_PTX_WITHOUT_DOTS}")
 	foreach(ARCH IN LISTS ARCH_LIST)
-		set(cuda_computer_target_flags_temp ${cuda_computer_target_flags_temp} -gencode arch=compute_${ARCH},code=compute_${ARCH})				
+		set(cuda_computer_target_flags_temp ${cuda_computer_target_flags_temp} -gencode arch=compute_${ARCH},code=sm_${ARCH})
 	endforeach()
 
 	set(${cuda_nvcc_target_flags} ${cuda_computer_target_flags_temp})

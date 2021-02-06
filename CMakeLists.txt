@@ -162,6 +162,9 @@ endif ()
 find_package(CUDA REQUIRED)
 include(${CMAKE_SOURCE_DIR}/cmake/CudaComputeTargetFlags.cmake)
 APPEND_TARGET_ARCH_FLAGS()
+if (NOT cuda_nvcc_target_flags)
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_52)
+endif ()
 include_directories(${CUDA_INCLUDE_DIRS})
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     --expt-relaxed-constexpr
