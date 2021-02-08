@@ -275,7 +275,11 @@ void pybind_pointcloud(py::module &m) {
             .def_static(
                     "create_from_occupancygrid",
                     &geometry::PointCloud::CreateFromOccupancyGrid,
-                    "Factory function to create a pointcloud from Occupancy Grid.");
+                    "Factory function to create a pointcloud from Occupancy Grid.")
+            .def_static(
+                    "create_from_disparity",
+                    &geometry::PointCloud::CreateFromDisparity,
+                    "Factory function to create a pointcloud from a disparity image.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");

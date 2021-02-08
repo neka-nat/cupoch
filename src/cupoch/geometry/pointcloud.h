@@ -226,6 +226,13 @@ public:
     static std::shared_ptr<PointCloud> CreateFromOccupancyGrid(
             const OccupancyGrid &occgrid);
 
+    static std::shared_ptr<PointCloud> CreateFromDisparity(
+            const Image& disp,
+            const Image& color,
+            const camera::PinholeCameraIntrinsic &left_intrinsic,
+            const camera::PinholeCameraIntrinsic &right_intrinsic,
+            float baseline);
+
 public:
     utility::device_vector<Eigen::Vector3f> points_;
     utility::device_vector<Eigen::Vector3f> normals_;

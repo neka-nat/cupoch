@@ -235,6 +235,33 @@ struct compute_points_from_occvoxels_functor {
     }
 };
 
+template <typename T>
+struct compute_points_from_disparity {
+    compute_points_from_disparity(const uint8_t* disp,
+                                  const uint8_t* color,
+                                  int width,
+                                  const Eigen::Matrix4f& q,
+                                  float k)
+    :disp_(disp), color_(color), width_(width), q_(q), k_(k) {};
+    const uint8_t* disp_;
+    const uint8_t* color_;
+    const int width_;
+    const Eigen::Matrix4f q_;
+    const float k_;
+    __device__ thrust::tuple<Eigen::Vector3f,  Eigen::Vector3f> operator() (size_t idx) const {
+        int v = idx / width_;
+        int u = idx %  width_;
+        float disp = disp_[idx];
+        float r = (float)(*(T*)(color_[(idx * 3) * sizeof(T)])) / k_;
+        float g = (float)(*(T*)(color_[(idx * 3 + 1) * sizeof(T)])) / k_;
+        float b = (float)(*(T*)(color_[(idx * 3 + 2) * sizeof(T)])) / k_;
+        Eigen::Vector3f point(q_(0, 0) * u + q_(0, 3), q_(1, 1) * v + q_(1, 3), q_(2, 3));
+        float w = q_(3, 2) * disp + q_(3, 3);
+        point *= 1.0 / w;
+        return thrust::make_tuple(point, Eigen::Vector3f(r, g, b));
+    }
+};
+
 template <typename TC, int NC>
 std::shared_ptr<PointCloud> CreatePointCloudFromRGBDImageT(
         const RGBDImage &image,
@@ -294,7 +321,7 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromDepthImage(
         }
     }
     utility::LogError(
-            "[CreatePointCloudFromDepthImage] Unsupported image format.");
+            "[PointCloud::CreateFromDepthImage] Unsupported image format.");
     return std::make_shared<PointCloud>();
 }
 
@@ -315,7 +342,7 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
                 image, intrinsic, extrinsic, project_valid_depth_only, depth_cutoff, compute_normals);
     }
     utility::LogError(
-            "[CreatePointCloudFromRGBDImage] Unsupported image format.");
+            "[PointCloud::CreateFromRGBDImage] Unsupported image format.");
     return std::make_shared<PointCloud>();
 }
 
@@ -361,6 +388,55 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromOccupancyGrid(
     thrust::transform(occvoxels->begin(), occvoxels->end(),
                       make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
     return pointcloud;
+}
+
+std::shared_ptr<PointCloud> PointCloud::CreateFromDisparity(
+        const Image& disp,
+        const Image& color,
+        const camera::PinholeCameraIntrinsic &left_intrinsic,
+        const camera::PinholeCameraIntrinsic &right_intrinsic,
+        float baseline) {
+    if (disp.num_of_channels_ == 1 &&
+        disp.bytes_per_channel_ == 1 &&
+        disp.width_ == color.width_ &&
+        disp.height_ == color.height_) {
+        auto pointcloud = std::make_shared<PointCloud>();
+        const size_t n_total = disp.width_ * disp.height_;
+        pointcloud->points_.resize(n_total);
+        pointcloud->colors_.resize(n_total);
+        const float tx = -baseline;
+        Eigen::Matrix4f q = Eigen::Matrix4f::Zero();
+        auto focal_length = left_intrinsic.GetFocalLength();
+        auto principal_l = left_intrinsic.GetPrincipalPoint();
+        auto principal_r = right_intrinsic.GetPrincipalPoint();
+        q(0, 0) = focal_length.second * tx;
+        q(0, 3) = -focal_length.second * principal_l.first * tx;
+        q(1, 1) = focal_length.first * tx;
+        q(1, 3) = -focal_length.first * principal_l.second * tx;
+        q(2, 3) = focal_length.first * focal_length.second * tx;
+        q(3, 2) = -focal_length.second;
+        q(3, 3) = focal_length.second * (principal_l.first - principal_r.first);
+        if (color.bytes_per_channel_ == 1) {
+            compute_points_from_disparity<uint8_t> func(thrust::raw_pointer_cast(disp.data_.data()),
+                                                        thrust::raw_pointer_cast(color.data_.data()),
+                                                        disp.width_,
+                                                        q, 255.0f);
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator(n_total),
+                              make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
+        } else if (color.bytes_per_channel_ == 2) {
+            compute_points_from_disparity<uint16_t> func(thrust::raw_pointer_cast(disp.data_.data()),
+                                                         thrust::raw_pointer_cast(color.data_.data()),
+                                                         disp.width_,
+                                                         q, 65535.0f);
+            thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                              thrust::make_counting_iterator(n_total),
+                              make_tuple_begin(pointcloud->points_, pointcloud->colors_), func);
+        }
+        return pointcloud;
+    }
+    utility::LogError("[PointCloud::CreateFromDisparity] Unsupported image format.");
+    return std::make_shared<PointCloud>();
 }
 
 }
