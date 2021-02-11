@@ -62,8 +62,8 @@ public:
 public:
     Eigen::Matrix4f_u transformation_;
     CorrespondenceSet correspondence_set_;
-    float inlier_rmse_;
-    float fitness_;
+    float inlier_rmse_ = 0.0f;
+    float fitness_ = 0.0f;
 };
 
 /// \brief Function for evaluating registration between point clouds.

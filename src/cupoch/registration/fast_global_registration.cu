@@ -373,6 +373,11 @@ RegistrationResult FastGlobalRegistration(
         const Feature<Dim>& target_feature,
         const FastGlobalRegistrationOption& option /* =
         FastGlobalRegistrationOption()*/) {
+    if (!source.HasPoints() || !target.HasPoints() ||
+        source_feature.IsEmpty() || target_feature.IsEmpty()) {
+        utility::LogError("Invalid source or target pointcloud.");
+        return RegistrationResult();
+    }
     std::vector<geometry::PointCloud> point_cloud_vec;
     geometry::PointCloud source_orig = source;
     geometry::PointCloud target_orig = target;

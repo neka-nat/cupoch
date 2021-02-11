@@ -40,7 +40,7 @@ public:
 
 public:
     Eigen::Matrix4f_u transformation_;
-    float likelihood_;
+    float likelihood_ = 0.0f;
 };
 
 class FilterRegOption {

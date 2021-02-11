@@ -210,6 +210,11 @@ size_t Feature<Dim>::Num() const {
 }
 
 template <int Dim>
+bool Feature<Dim>::IsEmpty() const {
+    return data_.empty();
+}
+
+template <int Dim>
 thrust::host_vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData()
         const {
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> h_data = data_;

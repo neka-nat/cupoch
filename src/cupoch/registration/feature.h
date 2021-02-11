@@ -43,6 +43,7 @@ public:
     void Resize(int n);
     size_t Dimension() const;
     size_t Num() const;
+    bool IsEmpty() const;
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> GetData() const;
     void SetData(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>>& data);
 

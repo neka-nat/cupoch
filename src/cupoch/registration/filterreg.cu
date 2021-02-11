@@ -56,6 +56,10 @@ FilterRegResult RegistrationFilterReg(const geometry::PointCloud &source,
                                       const geometry::PointCloud &target,
                                       const Eigen::Matrix4f &init,
                                       const FilterRegOption &option) {
+    if (!source.HasPoints() || !target.HasPoints()) {
+        utility::LogError("Invalid source or target pointcloud.");
+        return FilterRegResult();
+    }
     Eigen::Matrix4f transform = init;
     geometry::PointCloud model = source;
     if (init.isIdentity() == false) {
