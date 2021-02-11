@@ -19,7 +19,6 @@
  * IN THE SOFTWARE.
 **/
 #include <thrust/gather.h>
-#include <thrust/count.h>
 #include <thrust/sort.h>
 #include <thrust/set_operations.h>
 #include <thrust/iterator/discard_iterator.h>
@@ -359,18 +358,19 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                       [] __device__ (float avg, size_t cnt) {
                           return (cnt > 0) ? avg / (float)cnt : -1.0;
                       });
-    const size_t valid_distances =
-            thrust::count_if(avg_distances.begin(), avg_distances.end(),
-                             [] __device__(float x) { return (x >= 0.0); });
+    auto mean_and_count =
+            thrust::transform_reduce(avg_distances.begin(), avg_distances.end(),
+                                     [] __device__(float const &x) {
+                                         return thrust::make_tuple(max(x, 0.0f), (size_t)(x >= 0.0));
+                                     },
+                                     thrust::make_tuple(0.0f, size_t(0)),
+                                     add_tuple_functor<float, size_t>());
+    const size_t valid_distances = thrust::get<1>(mean_and_count);
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
                                utility::device_vector<size_t>());
     }
-    float cloud_mean =
-            thrust::reduce(avg_distances.begin(), avg_distances.end(), 0.0,
-                           [] __device__(float const &x, float const &y) {
-                               return max(x, 0.0f) + max(y, 0.0f);
-                           });
+    float cloud_mean =  thrust::get<0>(mean_and_count);
     cloud_mean /= valid_distances;
     const float sq_sum = thrust::transform_reduce(
             avg_distances.begin(), avg_distances.end(),
