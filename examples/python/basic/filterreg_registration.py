@@ -1,4 +1,3 @@
-import open3d as o3d
 import cupoch as cph
 import numpy as np
 import time
