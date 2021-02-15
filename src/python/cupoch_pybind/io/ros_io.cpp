@@ -41,7 +41,8 @@ void pybind_ros_io(py::module &m_io) {
                .def_readwrite("point_step", &io::PointCloud2MsgInfo::point_step_)
                .def_readwrite("row_step", &io::PointCloud2MsgInfo::row_step_)
                .def_readwrite("is_dense", &io::PointCloud2MsgInfo::is_dense_)
-               .def_static("default", &io::PointCloud2MsgInfo::Default);
+               .def_static("default", &io::PointCloud2MsgInfo::Default)
+               .def_static("default_dense", &io::PointCloud2MsgInfo::DefaultDense);
 
     py::class_<io::ImageMsgInfo> img_info(m_io, "ImageMsgInfo");
     img_info.def(py::init<int, int, const std::string, bool, int>())

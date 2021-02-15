@@ -51,6 +51,10 @@ struct convert_from_pointcloud2_msg_functor {
         float x = *(float*)(data_ + idx * point_step_ + point_x_offset_);
         float y = *(float*)(data_ + idx * point_step_ + point_y_offset_);
         float z = *(float*)(data_ + idx * point_step_ + point_z_offset_);
+        if (!isfinite(x) || !isfinite(y) || !isfinite(z)) {
+            return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()),
+                                      Eigen::Vector3f::Zero());
+        }
         uint32_t rgb = *(uint32_t*)(data_ + idx * point_step_ + rgb_offset_);
         uint8_t r = (rgb & 0x00FF0000) >> 16;
         uint8_t g = (rgb & 0x0000FF00) >> 8;
@@ -120,15 +124,26 @@ std::shared_ptr<geometry::PointCloud> CreateFromPointCloud2Msg(
     convert_from_pointcloud2_msg_functor func(thrust::raw_pointer_cast(dv_data.data()),
                                               point_x_offset, point_y_offset, point_z_offset, rgb_offset,
                                               info.point_step_);
-    resize_all(info.width_, out->points_, out->colors_);
+    resize_all(info.width_ * info.height_, out->points_, out->colors_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                      thrust::make_counting_iterator<size_t>(info.width_),
+                      thrust::make_counting_iterator<size_t>(info.width_ * info.height_),
                       make_tuple_begin(out->points_, out->colors_), func);
+    if (info.is_dense_) {
+        out->RemoveNoneFinitePoints();
+    }
     return out;
 }
 
 void CreateToPointCloud2Msg(uint8_t* data, const PointCloud2MsgInfo& info, const geometry::PointCloud& pointcloud) {
     if (!pointcloud.HasPoints()) {
+        return;
+    }
+    if (info.width_ > 0 && info.point_step_ > 0 && info.row_step_ > 0) {
+        utility::LogError("[CreateToPointCloud2Msg] Width and Step sizes must be greater than 0.");
+        return;
+    }
+    if (info.height_ != 1) {
+        utility::LogError("[CreateToPointCloud2Msg] Height must be 1.");
         return;
     }
     utility::device_vector<uint8_t> dv_data(info.row_step_);

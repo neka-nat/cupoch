@@ -59,7 +59,7 @@ public:
                        bool is_bigendian,
                        int point_step,
                        int row_step,
-                       bool is_dense)
+                       bool is_dense = false)
     : width_(width), height_(height),
     fields_(fields), is_bigendian_(is_bigendian),
     point_step_(point_step), row_step_(row_step),
@@ -77,6 +77,18 @@ public:
                                   point_step,
                                   point_step * size,
                                   false);
+    };
+
+    static PointCloud2MsgInfo DefaultDense(int width, int height, int point_step = 32) {
+        return PointCloud2MsgInfo(width, height,
+                                  {PointField("x", 0, PointField::Float32, 1),
+                                   PointField("y", 4, PointField::Float32, 1),
+                                   PointField("z", 8, PointField::Float32, 1),
+                                   PointField("rgb", 16, PointField::Float32, 1)},
+                                  false,
+                                  point_step,
+                                  point_step * height,
+                                  true);
     };
 
     int width_;
