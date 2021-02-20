@@ -256,18 +256,12 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
                             voxels_values_.begin());
         utility::device_vector<int> counts(voxels_keys_.size());
         utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
-        auto end1 = thrust::reduce_by_key(
+        auto end = thrust::reduce_by_key(
                 voxels_keys_.begin(), voxels_keys_.end(),
-                thrust::make_constant_iterator(1),
-                thrust::make_discard_iterator(), counts.begin());
-        int n_out = thrust::distance(counts.begin(), end1.second);
-        counts.resize(n_out);
-        auto end2 = thrust::reduce_by_key(
-                voxels_keys_.begin(), voxels_keys_.end(),
-                voxels_values_.begin(), new_keys.begin(),
-                voxels_values_.begin(), thrust::equal_to<Eigen::Vector3i>(),
-                add_voxel_color_functor());
-        resize_all(n_out, new_keys, voxels_values_);
+                make_tuple_iterator(voxels_values_.begin(), thrust::make_constant_iterator(1)),
+                new_keys.begin(), make_tuple_begin(voxels_values_, counts),
+                thrust::equal_to<Eigen::Vector3i>(), add_voxel_color_functor());
+        resize_all(thrust::distance(new_keys.begin(), end.first), new_keys, voxels_values_);
         thrust::swap(voxels_keys_, new_keys);
         thrust::transform(voxels_values_.begin(), voxels_values_.end(),
                           counts.begin(), voxels_values_.begin(),

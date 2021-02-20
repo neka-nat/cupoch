@@ -194,16 +194,14 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                         voxels_values.begin());
 
     utility::device_vector<int> counts(voxels_keys.size());
-    auto end = thrust::reduce_by_key(voxels_keys.begin(), voxels_keys.end(),
-                                     thrust::make_constant_iterator(1),
-                                     thrust::make_discard_iterator(),
-                                     counts.begin());
-    resize_all(thrust::distance(counts.begin(), end.second), counts,
-               output->voxels_keys_, output->voxels_values_);
-    thrust::reduce_by_key(
-            voxels_keys.begin(), voxels_keys.end(), voxels_values.begin(),
-            output->voxels_keys_.begin(), output->voxels_values_.begin(),
+    resize_all(voxels_keys.size(), output->voxels_keys_, output->voxels_values_);
+    auto end = thrust::reduce_by_key(
+            voxels_keys.begin(), voxels_keys.end(),
+            make_tuple_iterator(voxels_values.begin(), thrust::make_constant_iterator(1)),
+            output->voxels_keys_.begin(), make_tuple_begin(output->voxels_values_, counts),
             thrust::equal_to<Eigen::Vector3i>(), add_voxel_color_functor());
+    resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),
+               output->voxels_keys_, output->voxels_values_);
     thrust::transform(output->voxels_values_.begin(),
                       output->voxels_values_.end(), counts.begin(),
                       output->voxels_values_.begin(),

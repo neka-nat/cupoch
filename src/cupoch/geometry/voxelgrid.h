@@ -62,11 +62,11 @@ public:
 };
 
 struct add_voxel_color_functor {
-    __device__ Voxel operator()(const Voxel &x, const Voxel &y) const {
+    __device__ thrust::tuple<Voxel, int> operator()(const thrust::tuple<Voxel, int> &x, const thrust::tuple<Voxel, int> &y) const {
         Voxel ans;
-        ans.grid_index_ = x.grid_index_;
-        ans.color_ = x.color_ + y.color_;
-        return ans;
+        ans.grid_index_ = thrust::get<0>(x).grid_index_;
+        ans.color_ = thrust::get<0>(x).color_ + thrust::get<0>(y).color_;
+        return thrust::make_tuple(ans, thrust::get<1>(x) + thrust::get<1>(y));
     }
 };
 

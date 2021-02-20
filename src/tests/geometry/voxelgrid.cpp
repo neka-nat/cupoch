@@ -20,9 +20,7 @@
 **/
 #include "cupoch/geometry/voxelgrid.h"
 
-#include "cupoch/geometry/lineset.h"
-#include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/visualization/utility/draw_geometry.h"
+#include "cupoch/geometry/pointcloud.h"
 #include "tests/test_utility/unit_test.h"
 
 using namespace cupoch;
@@ -56,15 +54,15 @@ TEST(VoxelGrid, GetVoxel) {
              Eigen::Vector3i(0, 1, 0));
 }
 
-TEST(VoxelGrid, Visualization) {
-    auto voxel_grid = std::make_shared<geometry::VoxelGrid>();
-    voxel_grid->origin_ = Eigen::Vector3f(0, 0, 0);
-    voxel_grid->voxel_size_ = 5;
-    voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(0, 0, 0),
-                                         Eigen::Vector3f(0.9, 0, 0)));
-    voxel_grid->AddVoxel(geometry::Voxel(Eigen::Vector3i(0, 1, 0),
-                                         Eigen::Vector3f(0.9, 0.9, 0)));
+TEST(VoxelGrid, CreateFromPointCloudWithinBounds) {
+    auto pointcloud = std::make_shared<geometry::PointCloud>();
+    thrust::host_vector<Eigen::Vector3f> points;
+    points.push_back(Eigen::Vector3f(0.5, 0.5, 0.5));
+    pointcloud->SetPoints(points);
+    auto voxel_grid = geometry::VoxelGrid::CreateFromPointCloudWithinBounds(
+        *pointcloud, 1.0f,
+        Eigen::Vector3f(-100.0, -100.0, -100.0),
+        Eigen::Vector3f(100.0, 100.0, 100.0));
 
-    // Uncomment the line below for visualization test
-    // visualization::DrawGeometries({voxel_grid});
+    EXPECT_EQ(voxel_grid->voxels_keys_.size(), 1);
 }
