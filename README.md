@@ -71,7 +71,7 @@ Please set up Jetson using [jetpack](https://developer.nvidia.com/embedded/jetpa
 
 ```
 sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
-pip3 install https://github.com/neka-nat/cupoch/releases/download/v0.1.8/cupoch-0.1.8.0-cp36-cp36m-linux_aarch64.whl
+pip3 install cupoch
 ```
 
 Or you can compile it from source.
