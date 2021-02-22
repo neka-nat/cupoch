@@ -73,19 +73,16 @@ struct compute_color_gradient_functor {
                                    const Eigen::Vector3f *normals,
                                    const Eigen::Vector3f *colors,
                                    const int *indices,
-                                   const float *distances2,
                                    int knn)
         : points_(points),
           normals_(normals),
           colors_(colors),
           indices_(indices),
-          distances2_(distances2),
           knn_(knn){};
     const Eigen::Vector3f *points_;
     const Eigen::Vector3f *normals_;
     const Eigen::Vector3f *colors_;
     const int *indices_;
-    const float *distances2_;
     const int knn_;
     __device__ Eigen::Vector3f operator()(size_t idx) const {
         const Eigen::Vector3f vt = points_[idx];
@@ -97,7 +94,7 @@ struct compute_color_gradient_functor {
         Atb.setZero();
         int nn = 0;
         for (size_t i = 1; i < knn_; ++i) {
-            int P_adj_idx = indices_[idx * knn_ + i];
+            const int P_adj_idx = __ldg(&indices_[idx * knn_ + i]);
             if (P_adj_idx < 0) continue;
             const Eigen::Vector3f &vt_adj = points_[P_adj_idx];
             const Eigen::Vector3f vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
@@ -142,7 +139,6 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             thrust::raw_pointer_cast(output->normals_.data()),
             thrust::raw_pointer_cast(output->colors_.data()),
             thrust::raw_pointer_cast(point_idx.data()),
-            thrust::raw_pointer_cast(point_squared_distance.data()),
             search_param.max_nn_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_points),

@@ -88,7 +88,7 @@ struct gaussian_filter_functor {
         Eigen::Vector3f res_c = Eigen::Vector3f::Zero();
         for (int i = 0; i < num_max_search_points_; ++i) {
             const int j = idx * num_max_search_points_ + i;
-            const int idx_j = indices_[j];
+            const int idx_j = __ldg(&indices_[j]);
             if (idx_j >= 0) {
                 float weight = exp(-0.5 * dists_[j] / sigma2_);
                 res_p += weight * points_[idx_j];

@@ -72,9 +72,12 @@ struct bfs_functor {
         if (fa_[idx] == 1) {
             fa_[idx] = 0;
             xa_[idx] = 1;
-            for (int i = 0; i < vertex_degrees_[idx]; i++) {
-                if (xa_[indices_[exscan_vd_[idx] + i]] == 0) {
-                    fa_[indices_[exscan_vd_[idx] + i]] = 1;
+            const int vd = __ldg(&vertex_degrees_[idx]);
+            for (int i = 0; i < vd; i++) {
+                const int ev = __ldg(&exscan_vd_[idx]);
+                const int index = __ldg(&indices_[ev + i]);
+                if (xa_[index] == 0) {
+                    fa_[index] = 1;
                 }
             }
         }

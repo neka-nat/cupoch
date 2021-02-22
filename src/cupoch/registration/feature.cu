@@ -83,7 +83,7 @@ struct compute_spfh_functor {
         }
         float hist_incr = 100.0 / (float)(cnt - 1);
         for (size_t k = 0; k < knn_; k++) {
-            int idx_knn = indices_[idx * knn_ + k];
+            const int idx_knn = __ldg(&indices_[idx * knn_ + k]);
             if (idx_knn < 0 || idx == idx_knn) continue;
             // skip the point itself, compute histogram
             auto pf = ComputePairFeatures(points_[idx], normals_[idx],
