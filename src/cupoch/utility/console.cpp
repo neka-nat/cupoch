@@ -20,8 +20,6 @@
 **/
 #include "cupoch/utility/console.h"
 
-#include <fmt/chrono.h>
-
 #include <cstdio>
 #include <ctime>
 
@@ -32,39 +30,20 @@
 namespace cupoch {
 namespace utility {
 
-void Logger::ChangeConsoleColor(TextColor text_color, int highlight_text) {
-#ifdef _WIN32
-    const WORD EMPHASIS_MASK[2] = {0, FOREGROUND_INTENSITY};
-    const WORD COLOR_MASK[8] = {
-            0,
-            FOREGROUND_RED,
-            FOREGROUND_GREEN,
-            FOREGROUND_GREEN | FOREGROUND_RED,
-            FOREGROUND_BLUE,
-            FOREGROUND_RED | FOREGROUND_BLUE,
-            FOREGROUND_GREEN | FOREGROUND_BLUE,
-            FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED};
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(
-            h, EMPHASIS_MASK[highlight_text] | COLOR_MASK[(int)text_color]);
-#else
-    printf("%c[%d;%dm", 0x1B, highlight_text, (int)text_color + 30);
-#endif
-}
-
-void Logger::ResetConsoleColor() {
-#ifdef _WIN32
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(
-            h, FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_RED);
-#else
-    printf("%c[0;m", 0x1B);
-#endif
-}
-
 std::string GetCurrentTimeStamp() {
     std::time_t t = std::time(nullptr);
-    return fmt::format("{:%Y-%m-%d-%H-%M-%S}", *std::localtime(&t));
+    struct tm *timeinfo;
+    timeinfo = localtime(&t);
+    std::string fmt = "{:%Y-%m-%d-%H-%M-%S}\a";
+    std::string buffer;
+    buffer.resize(fmt.size() + 1);
+    int len = strftime(&buffer[0], buffer.size(), fmt.c_str(), timeinfo);
+    while (len == 0) {
+        buffer.resize(buffer.size()*2);
+        len = strftime(&buffer[0], buffer.size(), fmt.c_str(), timeinfo);
+    } 
+    buffer.resize(len - 1);
+    return buffer;
 }
 
 }  // namespace utility

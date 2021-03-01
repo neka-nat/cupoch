@@ -38,15 +38,15 @@
 PYBIND11_MODULE(cupoch, m) {
     m.doc() = "CUDA-based 3D data processing library";
 
-    py::enum_<rmmAllocationMode_t> rmm_mode(m, "AllocationMode",
-                                            py::arithmetic());
-    rmm_mode.value("CudaDefaultAllocation", CudaDefaultAllocation)
-            .value("PoolAllocation", PoolAllocation)
-            .value("CudaManagedMemory", CudaManagedMemory)
+    py::enum_<cupoch::utility::rmmAllocationMode_t> rmm_mode(m, "AllocationMode",
+                                                             py::arithmetic());
+    rmm_mode.value("CudaDefaultAllocation", cupoch::utility::CudaDefaultAllocation)
+            .value("PoolAllocation", cupoch::utility::PoolAllocation)
+            .value("CudaManagedMemory", cupoch::utility::CudaManagedMemory)
             .export_values();
     m.def("initialize_allocator", &cupoch::utility::InitializeAllocator,
-          py::arg("mode") = CudaDefaultAllocation,
-          py::arg("initial_pool_size") = 0, py::arg("logging") = false,
+          py::arg("mode") = cupoch::utility::CudaDefaultAllocation,
+          py::arg("initial_pool_size") = 0,
           py::arg("devices") = std::vector<int>());
     cupoch::docstring::FunctionDocInject(
             m, "initialize_allocator",

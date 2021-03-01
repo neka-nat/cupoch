@@ -21,19 +21,13 @@
 #pragma once
 
 #ifdef USE_RMM
-#include <rmm/detail/memory_manager.hpp>
 #include <rmm/thrust_rmm_allocator.h>
-#include <rmm/mr/device/cnmem_memory_resource.hpp>
-#include <rmm/mr/device/cnmem_managed_memory_resource.hpp>
+#include <rmm/mr/device/thrust_allocator_adaptor.hpp>
 #include <rmm/mr/device/cuda_memory_resource.hpp>
+#include <rmm/mr/device/pool_memory_resource.hpp>
 #include <rmm/mr/device/managed_memory_resource.hpp>
 #else
 #include <thrust/device_vector.h>
-enum rmmAllocationMode_t {
-    CudaDefaultAllocation = 0,
-    PoolAllocation = 1,
-    CudaManagedMemory = 2,
-};
 #endif
 #include <thrust/host_vector.h>
 #include <thrust/system/cuda/experimental/pinned_allocator.h>
@@ -61,6 +55,12 @@ inline float4_t make_float4_t(float x, float y, float z, float w) {
 namespace cupoch {
 namespace utility {
 
+enum rmmAllocationMode_t {
+    CudaDefaultAllocation = 0,
+    PoolAllocation = 1,
+    CudaManagedMemory = 2,
+};
+
 template <typename T>
 using pinned_host_vector =
         thrust::host_vector<T, thrust::cuda::experimental::pinned_allocator<T>>;
@@ -76,12 +76,26 @@ inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
 inline void InitializeAllocator(
         rmmAllocationMode_t mode = CudaDefaultAllocation,
         size_t initial_pool_size = 0,
-        bool logging = false,
         const std::vector<int> &devices = {}) {
     static bool is_initialized = false;
-    if (is_initialized) rmm::Manager::getInstance().finalize();
-    rmmOptions_t options = {mode, initial_pool_size, logging, devices};
-    rmm::Manager::getInstance().initialize(&options);
+    if (is_initialized) rmm::mr::set_current_device_resource(nullptr);
+    if (mode & CudaManagedMemory) {
+        auto cuda_mr = new rmm::mr::managed_memory_resource();
+        if (mode & PoolAllocation) {
+            auto mr = new rmm::mr::pool_memory_resource<rmm::mr::managed_memory_resource>(cuda_mr, initial_pool_size);
+            rmm::mr::set_current_device_resource(mr);
+        } else {
+            rmm::mr::set_current_device_resource(cuda_mr);
+        }
+    } else {
+        auto cuda_mr = new rmm::mr::cuda_memory_resource();
+        if (mode & PoolAllocation) {
+            auto mr = new rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource>(cuda_mr, initial_pool_size);
+            rmm::mr::set_current_device_resource(mr);
+        } else {
+            rmm::mr::set_current_device_resource(cuda_mr);
+        }
+    }
     is_initialized = true;
 }
 
@@ -96,7 +110,6 @@ inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
 inline void InitializeAllocator(
         rmmAllocationMode_t mode = CudaDefaultAllocation,
         size_t initial_pool_size = 0,
-        bool logging = false,
         const std::vector<int> &devices = {}) {}
 
 #endif

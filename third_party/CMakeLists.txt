@@ -124,10 +124,9 @@ if (BUILD_GLFW)
     list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
 endif ()
 
-cuda_add_library(fmt fmt/src/format.cc fmt/src/posix.cc)
-target_include_directories(fmt PUBLIC fmt/include)
-set(fmt_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/fmt/include)
-set(fmt_LIBRARIES fmt)
+set(SPDLOG_MASTER_PROJECT OFF)
+add_subdirectory(spdlog)
+set(spdlog_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
 
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
@@ -237,11 +236,8 @@ set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
 # rmm
 if (WIN32)
   set(rmm_INCLUDE_DIRS "")
-  set(rmm_LIBRARIES "")
 else ()
-  target_link_libraries(rmm ${CUDA_LIBRARIES})
   set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
-  set(rmm_LIBRARIES rmm)
 endif ()
 
 # imgui
@@ -307,7 +303,6 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${JPEG_TURBO_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${rply_INCLUDE_DIRS}
-     ${fmt_INCLUDE_DIRS}
      ${JSONCPP_INCLUDE_DIRS}
      ${liblzf_INCLUDE_DIRS}
      ${tomasakeninemoeller_INCLUDE_DIRS}
@@ -315,6 +310,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${rmm_INCLUDE_DIRS}
      ${imgui_INCLUDE_DIRS}
      ${stdgpu_INCLUDE_DIRS}
+     ${spdlog_INCLUDE_DIRS}
      ${SGM_INCLUDE_DIRS}
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
@@ -336,10 +332,8 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${SGM_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
-     ${fmt_LIBRARIES}
      ${imgui_LIBRARIES}
      ${urdfdom_LIBRARIES}
-     ${rmm_LIBRARIES}
      ${CUDA_LIBRARIES}
 )
 

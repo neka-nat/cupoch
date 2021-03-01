@@ -10,9 +10,6 @@
 [submodule "googletest"]
     path = third_party/googletest
     url = https://github.com/google/googletest.git
-[submodule "fmt"]
-    path = third_party/fmt
-    url = https://github.com/fmtlib/fmt.git
 [submodule "imgui"]
     path = third_party/imgui
     url = https://github.com/ocornut/imgui.git
@@ -22,6 +19,9 @@
 [submodule "rmm"]
     path = third_party/rmm
     url = https://github.com/rapidsai/rmm.git
+[submodule "spdlog"]
+    path = third_party/spdlog
+    url = https://github.com/gabime/spdlog.git
 [submodule "stdgpu"]
     path = third_party/stdgpu
     url = https://github.com/stotko/stdgpu.git
