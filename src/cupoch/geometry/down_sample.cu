@@ -158,7 +158,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                             keys.begin(), keys.end(), make_tuple_begin(sorted_points));
         add_tuple_functor<Eigen::Vector3f, int> add_func;
         auto begin = make_tuple_begin(output->points_, counts);
-        auto end = thrust::reduce_by_key(keys.begin(), keys.end(),
+        auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                         keys.begin(), keys.end(),
                                          make_tuple_iterator(sorted_points.begin(),
                                                              thrust::make_constant_iterator(1)),
                                          thrust::make_discard_iterator(),
@@ -176,7 +177,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                             keys.begin(), keys.end(), make_tuple_begin(sorted_points, sorted_normals));
         add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, int> add_func;
         auto begin = make_tuple_begin(output->points_, output->normals_, counts);
-        auto end = thrust::reduce_by_key(keys.begin(), keys.end(),
+        auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                         keys.begin(), keys.end(),
                                          make_tuple_iterator(sorted_points.begin(),
                                                              sorted_normals.begin(),
                                                              thrust::make_constant_iterator(1)),
@@ -195,7 +197,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                             keys.begin(), keys.end(), make_tuple_begin(sorted_points, sorted_colors));
         add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, int> add_func;
         auto begin = make_tuple_begin(output->points_, output->colors_, counts);
-        auto end = thrust::reduce_by_key(keys.begin(), keys.end(),
+        auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                         keys.begin(), keys.end(),
                                          make_tuple_iterator(sorted_points.begin(),
                                                              sorted_colors.begin(),
                                                              thrust::make_constant_iterator(1)),
@@ -215,7 +218,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                             keys.begin(), keys.end(), make_tuple_begin(sorted_points, sorted_normals, sorted_colors));
         add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f, int> add_func;
         auto begin = make_tuple_begin(output->points_, output->normals_, output->colors_, counts);
-        auto end = thrust::reduce_by_key(keys.begin(), keys.end(),
+        auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                         keys.begin(), keys.end(),
                                          make_tuple_iterator(sorted_points.begin(),
                                                              sorted_normals.begin(),
                                                              sorted_colors.begin(),
@@ -295,7 +299,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
     utility::device_vector<size_t> indices(n_pt);
     thrust::repeated_range<thrust::counting_iterator<size_t>> range(thrust::make_counting_iterator<size_t>(0),
                                                                     thrust::make_counting_iterator(n_pt), nb_points + 1);
-    thrust::reduce_by_key(range.begin(), range.end(),
+    thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                          range.begin(), range.end(),
                           thrust::make_transform_iterator(tmp_indices.begin(),
                                                           [] __device__ (int idx) { return (int)(idx >= 0); }),
                           thrust::make_discard_iterator(),
@@ -334,7 +339,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     kdtree.SearchKNN(points_, int(nb_neighbors), tmp_indices, dist);
     thrust::repeated_range<thrust::counting_iterator<size_t>> range(thrust::make_counting_iterator<size_t>(0),
                                                                     thrust::make_counting_iterator(n_pt), nb_neighbors);
-    thrust::reduce_by_key(range.begin(), range.end(),
+    thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                          range.begin(), range.end(),
                           make_tuple_iterator(thrust::make_constant_iterator<size_t>(1), dist.begin()),
                           thrust::make_discard_iterator(),
                           make_tuple_iterator(counts.begin(), avg_distances.begin()),
@@ -359,7 +365,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                           return (cnt > 0) ? avg / (float)cnt : -1.0;
                       });
     auto mean_and_count =
-            thrust::transform_reduce(avg_distances.begin(), avg_distances.end(),
+            thrust::transform_reduce(utility::exec_policy(0)->on(0),
+                                     avg_distances.begin(), avg_distances.end(),
                                      [] __device__(float const &x) {
                                          return thrust::make_tuple(max(x, 0.0f), (size_t)(x >= 0.0));
                                      },
@@ -373,6 +380,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     float cloud_mean =  thrust::get<0>(mean_and_count);
     cloud_mean /= valid_distances;
     const float sq_sum = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             avg_distances.begin(), avg_distances.end(),
             [cloud_mean] __device__(const float x) {
                 return (x > 0) ? (x - cloud_mean) * (x - cloud_mean) : 0;

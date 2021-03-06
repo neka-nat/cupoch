@@ -104,7 +104,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
                                    return thrust::get<1>(x) < distance_threshold;
                                });
     resize_all(thrust::distance(begin, end), inliers, errors);
-    error = thrust::reduce(errors.begin(), errors.end(), 0.0);
+    error = thrust::reduce(utility::exec_policy(0)->on(0), errors.begin(), errors.end(), 0.0);
 
     size_t inlier_num = inliers.size();
     if (inlier_num == 0) {
@@ -124,13 +124,15 @@ RANSACResult EvaluateRANSACBasedOnDistance(
 // https://www.ilikebigbits.com/2015_03_04_plane_from_points.html
 Eigen::Vector4f GetPlaneFromPoints(const utility::device_vector<Eigen::Vector3f> &points,
                                    const utility::device_vector<size_t> &inliers) {
-    Eigen::Vector3f centroid = thrust::reduce(thrust::make_permutation_iterator(points.begin(), inliers.begin()),
+    Eigen::Vector3f centroid = thrust::reduce(utility::exec_policy(0)->on(0),
+                                              thrust::make_permutation_iterator(points.begin(), inliers.begin()),
                                               thrust::make_permutation_iterator(points.begin(), inliers.end()),
                                               Eigen::Vector3f(0.0, 0.0, 0.0));
     centroid /= float(inliers.size());
 
     Eigen::Vector6f mul_xyz = Eigen::Vector6f::Zero();
-    mul_xyz = thrust::transform_reduce(thrust::make_permutation_iterator(points.begin(), inliers.begin()),
+    mul_xyz = thrust::transform_reduce(utility::exec_policy(0)->on(0),
+                                       thrust::make_permutation_iterator(points.begin(), inliers.begin()),
                                        thrust::make_permutation_iterator(points.begin(), inliers.end()),
                                        [centroid] __device__ (const Eigen::Vector3f& pt) {
                                            Eigen::Vector3f r = pt - centroid;

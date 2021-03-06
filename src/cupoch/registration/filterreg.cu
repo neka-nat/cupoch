@@ -44,6 +44,7 @@ FilterRegResult GetRegistrationResult(
         const Eigen::Matrix4f &transformation) {
     FilterRegResult result(transformation);
     result.likelihood_ = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             make_tuple_begin(model, target, weights),
             make_tuple_end(model, target, weights), weighted_residual_functor(),
             0.0f, thrust::plus<float>());

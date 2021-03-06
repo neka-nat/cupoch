@@ -196,6 +196,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     utility::device_vector<int> counts(voxels_keys.size());
     resize_all(voxels_keys.size(), output->voxels_keys_, output->voxels_values_);
     auto end = thrust::reduce_by_key(
+            utility::exec_policy(0)->on(0),
             voxels_keys.begin(), voxels_keys.end(),
             make_tuple_iterator(voxels_values.begin(), thrust::make_constant_iterator(1)),
             output->voxels_keys_.begin(), make_tuple_begin(output->voxels_values_, counts),

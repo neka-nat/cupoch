@@ -292,7 +292,8 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
     utility::device_vector<int> counts(n_pt);
     thrust::repeated_range<thrust::counting_iterator<size_t>> range(thrust::make_counting_iterator<size_t>(0),
                                                                     thrust::make_counting_iterator(n_pt), knn);
-    thrust::reduce_by_key(range.begin(), range.end(),
+    thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                          range.begin(), range.end(),
                           thrust::make_transform_iterator(indices.begin(),
                                                           compute_cumulant_functor(thrust::raw_pointer_cast(points_.data()))),
                           thrust::make_discard_iterator(),

@@ -144,7 +144,8 @@ utility::device_vector<thrust::tuple<int, int>> AdvancedMatching(
     utility::LogDebug("\t[cross check] ");
     utility::device_vector<thrust::tuple<int, int>> corres_cross(corres.size());
     utility::device_vector<int> counts(corres.size());
-    auto end1 = thrust::reduce_by_key(corres.begin(), corres.end(),
+    auto end1 = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                      corres.begin(), corres.end(),
                                       thrust::make_constant_iterator<int>(1),
                                       corres_cross.begin(), counts.begin());
     auto end2 =
@@ -200,7 +201,8 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
 
     for (int i = 0; i < num; ++i) {
         Eigen::Vector3f mean =
-                thrust::reduce(point_cloud_vec[i].points_.begin(),
+                thrust::reduce(utility::exec_policy(0)->on(0),
+                               point_cloud_vec[i].points_.begin(),
                                point_cloud_vec[i].points_.end(),
                                Eigen::Vector3f(0.0, 0.0, 0.0),
                                thrust::plus<Eigen::Vector3f>());
@@ -215,6 +217,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
                 [mean] __device__(Eigen::Vector3f & pt) { pt -= mean; });
 
         scale = thrust::transform_reduce(
+                utility::exec_policy(0)->on(0),
                 point_cloud_vec[i].points_.begin(),
                 point_cloud_vec[i].points_.end(),
                 [] __device__(const Eigen::Vector3f& pt) { return pt.norm(); },
@@ -302,6 +305,7 @@ Eigen::Matrix4f OptimizePairwiseRegistration(
         Eigen::Vector6f JTr = Eigen::Vector6f::Zero();
         compute_jacobian_functor func(par);
         thrust::tie(JTJ, JTr) = thrust::transform_reduce(
+                utility::exec_policy(0)->on(0),
                 make_tuple_iterator(
                         thrust::make_permutation_iterator(
                                 point_cloud_vec[i].points_.begin(),

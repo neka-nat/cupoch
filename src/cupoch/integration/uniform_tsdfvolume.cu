@@ -740,7 +740,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
 
     // compute triangles
     utility::device_vector<int> vt_offsets(n_valid_cubes + 1, 0);
-    auto end2 = thrust::reduce_by_key(repeat_keys.begin(), repeat_keys.end(),
+    auto end2 = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                      repeat_keys.begin(), repeat_keys.end(),
                                       thrust::make_constant_iterator<int>(1),
                                       thrust::make_discard_iterator(),
                                       vt_offsets.begin());

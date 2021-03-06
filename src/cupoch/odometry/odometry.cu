@@ -388,6 +388,7 @@ Eigen::Matrix6f CreateInformationMatrix(
                              xyz_t->width_);
     Eigen::Matrix6f init = Eigen::Matrix6f::Identity();
     Eigen::Matrix6f GTG = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             correspondence.begin(), correspondence.end(), func, init,
             thrust::plus<Eigen::Matrix6f>());
     return GTG;
@@ -426,6 +427,7 @@ void NormalizeIntensity(geometry::Image &image_s,
             thrust::raw_pointer_cast(image_s.data_.data()),
             thrust::raw_pointer_cast(image_t.data_.data()), image_s.width_);
     auto means = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             correspondence.begin(), correspondence.end(), func_tf,
             thrust::make_tuple(0.0f, 0.0f), add_tuple_functor<float, float>());
     float mean_s = thrust::get<0>(means) / (float)correspondence.size();

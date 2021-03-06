@@ -90,7 +90,8 @@ Eigen::Matrix<float, Dim, 1> ComputeCenter(
     Eigen::Matrix<float, Dim, 1> init = Eigen::Matrix<float, Dim, 1>::Zero();
     if (points.empty()) return init;
     Eigen::Matrix<float, Dim, 1> sum =
-            thrust::reduce(points.begin(), points.end(), init,
+            thrust::reduce(utility::exec_policy(0)->on(0),
+                           points.begin(), points.end(), init,
                            thrust::plus<Eigen::Matrix<float, Dim, 1>>());
     return sum / points.size();
 }

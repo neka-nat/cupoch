@@ -160,7 +160,8 @@ Eigen::Vector3f VoxelGrid::GetMinBound() const {
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
         Eigen::Vector3i min_grid_index =
-                thrust::reduce(voxels_keys_.begin(), voxels_keys_.end(), init,
+                thrust::reduce(utility::exec_policy(0)->on(0),
+                               voxels_keys_.begin(), voxels_keys_.end(), init,
                                thrust::elementwise_minimum<Eigen::Vector3i>());
         return min_grid_index.cast<float>() * voxel_size_ + origin_;
     }
@@ -172,7 +173,8 @@ Eigen::Vector3f VoxelGrid::GetMaxBound() const {
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
         Eigen::Vector3i max_grid_index =
-                thrust::reduce(voxels_keys_.begin(), voxels_keys_.end(), init,
+                thrust::reduce(utility::exec_policy(0)->on(0),
+                               voxels_keys_.begin(), voxels_keys_.end(), init,
                                thrust::elementwise_maximum<Eigen::Vector3i>());
         return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
                        voxel_size_ +
@@ -187,6 +189,7 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     }
     compute_grid_center_functor func(voxel_size_, origin_);
     Eigen::Vector3f center = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             voxels_keys_.begin(), voxels_keys_.end(), func, init,
             thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
@@ -257,6 +260,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         utility::device_vector<int> counts(voxels_keys_.size());
         utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
         auto end = thrust::reduce_by_key(
+                utility::exec_policy(0)->on(0),
                 voxels_keys_.begin(), voxels_keys_.end(),
                 make_tuple_iterator(voxels_values_.begin(), thrust::make_constant_iterator(1)),
                 new_keys.begin(), make_tuple_begin(voxels_values_, counts),

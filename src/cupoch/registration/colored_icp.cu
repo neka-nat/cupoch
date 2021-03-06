@@ -318,6 +318,7 @@ float TransformationEstimationForColoredICP::ComputeRMSE(
             thrust::raw_pointer_cast(target_c.color_gradient_.data()),
             sqrt_lambda_geometric, sqrt_lambda_photometric);
     const auto err = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             corres.begin(), corres.end(), func, 0.0f, thrust::plus<float>());
     return err;
 };

@@ -98,6 +98,7 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasNormals()) return 0.0;
     const float err = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
             make_tuple_iterator(
                     thrust::make_permutation_iterator(
                             source.points_.begin(),
