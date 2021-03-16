@@ -234,11 +234,7 @@ set(rply_LIBRARIES rply)
 set(dlpack_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dlpack/include)
 
 # rmm
-if (WIN32)
-  set(rmm_INCLUDE_DIRS "")
-else ()
-  set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
-endif ()
+set(rmm_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/rmm/include)
 
 # imgui
 add_library(imgui STATIC imgui/imgui.cpp
