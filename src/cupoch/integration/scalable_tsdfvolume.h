@@ -100,12 +100,12 @@ public:
     int depth_sampling_stride_;
 };
 
-__host__ __device__
+__device__
 inline Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3f &point,
                                         float volume_unit_length) {
-    return Eigen::Vector3i((int)floor(point(0) / volume_unit_length),
-                           (int)floor(point(1) / volume_unit_length),
-                           (int)floor(point(2) / volume_unit_length));
+    return Eigen::Vector3i((int)floorf(point(0) / volume_unit_length),
+                           (int)floorf(point(1) / volume_unit_length),
+                           (int)floorf(point(2) / volume_unit_length));
 }
 
 }  // namespace integration

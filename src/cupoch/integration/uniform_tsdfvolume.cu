@@ -38,7 +38,7 @@ __device__ float GetTSDFAt(const Eigen::Vector3f &p,
     Eigen::Vector3i idx;
     Eigen::Vector3f p_grid = p / voxel_length - Eigen::Vector3f(0.5, 0.5, 0.5);
     for (int i = 0; i < 3; i++) {
-        idx(i) = (int)std::floor(p_grid(i));
+        idx(i) = (int)floorf(p_grid(i));
     }
     Eigen::Vector3f r = p_grid - idx.cast<float>();
 
