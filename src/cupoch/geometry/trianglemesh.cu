@@ -907,7 +907,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
             triangle_areas.begin(), triangle_areas.end(),
             n_points_of_triangle.begin() + 1,
             [number_of_points] __device__(float triangle_area) {
-                return (size_t)round(triangle_area * number_of_points);
+                return static_cast<size_t>(triangle_area * number_of_points);
             });
     int n_pallarel = number_of_points / triangles_.size();
     sample_points_functor func(
