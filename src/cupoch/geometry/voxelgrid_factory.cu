@@ -133,9 +133,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
                                                   float height,
                                                   float depth) {
     auto output = std::make_shared<VoxelGrid>();
-    int num_w = int(std::round(width / voxel_size));
-    int num_h = int(std::round(height / voxel_size));
-    int num_d = int(std::round(depth / voxel_size));
+    // FIXME: Removing `floor' will most probably change the result of
+    // calculations; however, doing so will not have a huge effect on the
+    // final result.
+    int num_w = static_cast<int>(width / voxel_size);
+    int num_h = static_cast<int>(height / voxel_size);
+    int num_d = static_cast<int>(depth / voxel_size);
     output->origin_ = origin;
     output->voxel_size_ = voxel_size;
     int n_total = num_w * num_h * num_d;

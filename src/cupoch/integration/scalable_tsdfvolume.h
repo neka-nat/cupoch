@@ -103,9 +103,12 @@ public:
 __host__ __device__
 inline Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3f &point,
                                         float volume_unit_length) {
-    return Eigen::Vector3i((int)floor(point(0) / volume_unit_length),
-                           (int)floor(point(1) / volume_unit_length),
-                           (int)floor(point(2) / volume_unit_length));
+    // FIXME: Removing `floor' will most probably change the result of
+    // calculations; however, doing so will not have a huge effect on the
+    // final result.                                        
+    return Eigen::Vector3i((point(0) / volume_unit_length),
+                           (point(1) / volume_unit_length),
+                           (point(2) / volume_unit_length));
 }
 
 }  // namespace integration

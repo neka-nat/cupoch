@@ -161,7 +161,10 @@ struct extract_pointcloud_functor {
                 (p_locate - index0.cast<float>() * volume_unit_length_) /
                 voxel_length_;
         for (int i = 0; i < 3; i++) {
-            idx0(i) = (int)floor(p_grid(i));
+            // FIXME: Removing `floor' will most probably change the result of
+            // calculations; however, doing so will not have a huge effect on the
+            // final result.
+            idx0(i) = static_cast<int>(p_grid(i));
             if (idx0(i) < 0) idx0(i) = 0;
             if (idx0(i) >= resolution_)
                 idx0(i) = resolution_ - 1;
