@@ -45,7 +45,7 @@ add_subdirectory(integration)
 add_subdirectory(registration)
 add_subdirectory(odometry)
 add_subdirectory(planning)
-add_subdirectory(io)
+# add_subdirectory(io)
 # add_subdirectory(visualization)
 
 add_library(cupoch INTERFACE)
