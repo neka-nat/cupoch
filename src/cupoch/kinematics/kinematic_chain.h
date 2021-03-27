@@ -49,11 +49,11 @@ public:
     Link(const std::string& name,
          const ShapeInfo& collision,
          const ShapeInfo& visual)
-    : name_(name), collision_(collision), visual_(visual) {};
+    : name_(name), collisions_(1, collision), visuals_(1, visual) {};
 
     std::string name_;
-    ShapeInfo collision_;
-    ShapeInfo visual_;
+    std::vector<ShapeInfo> collisions_;
+    std::vector<ShapeInfo> visuals_;
 };
 
 class Joint {

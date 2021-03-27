@@ -94,10 +94,13 @@ std::unordered_map<std::string, std::shared_ptr<const geometry::Geometry>>
 KinematicChain::GetTransformedVisualGeometryMap(const KinematicChain::LinkPos& link_pos) const {
     std::unordered_map<std::string, std::shared_ptr<const geometry::Geometry>> ans;
     for (const auto& link: link_pos) {
-        if (!link_map_.at(link.first)->visual_.mesh_) {
-            continue;
+        auto sub = std::make_shared<geometry::TriangleMesh>();
+        for (const auto& visual: link_map_.at(link.first)->visuals_) {
+            if (!visual.mesh_) {
+                continue;
+            }
+            *sub += *visual.mesh_;
         }
-        const auto sub = std::make_shared<geometry::TriangleMesh>(*link_map_.at(link.first)->visual_.mesh_);
         sub->Transform(link.second);
         ans.emplace(link.first, sub);
     }
