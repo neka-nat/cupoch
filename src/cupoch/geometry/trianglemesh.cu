@@ -459,6 +459,9 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
         utility::LogError(
                 "[TriangleMesh] copy of uvs and texture is not implemented "
                 "yet");
+    } else if (mesh.HasTriangleUvs() || mesh.HasTexture()) {
+        triangle_uvs_ = mesh.triangle_uvs_;
+        texture_ = mesh.texture_;
     }
     return (*this);
 }
