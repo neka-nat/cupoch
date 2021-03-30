@@ -52,7 +52,7 @@ add_library(cupoch INTERFACE)
 target_link_libraries(cupoch 
     INTERFACE 
         cupoch_utility cupoch_camera cupoch_geometry cupoch_collision 
-        cupoch_integration cupoch_registration cupoch_odometry cupoch_planning cupoch_io
+        cupoch_integration cupoch_registration cupoch_odometry cupoch_planning
     )
 
 target_include_directories(cupoch
