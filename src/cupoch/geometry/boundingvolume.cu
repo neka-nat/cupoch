@@ -19,6 +19,7 @@
  * IN THE SOFTWARE.
 **/
 #include <thrust/iterator/discard_iterator.h>
+#include <thrust/inner_product.h>
 
 #include <Eigen/Eigenvalues>
 #include <numeric>
@@ -199,6 +200,66 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
     obox.center_ = aabox.GetCenter();
     obox.extent_ = aabox.GetExtent();
     obox.R_ = Eigen::Matrix3f::Identity();
+    return obox;
+}
+
+
+OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
+    const utility::device_vector<Eigen::Vector3f>& points) {
+    Eigen::Vector3f mean = thrust::reduce(utility::exec_policy(0)->on(0),
+                                          points.begin(), points.end(),
+                                          Eigen::Vector3f(0.0, 0.0, 0.0),
+                                          thrust::plus<Eigen::Vector3f>());
+    mean /= points.size();
+    const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
+    Eigen::Matrix3f cov = thrust::transform_reduce(
+            utility::exec_policy(0)->on(0),
+            points.begin(), points.end(),
+            [mean] __device__(const Eigen::Vector3f &pt) -> Eigen::Matrix3f {
+                Eigen::Vector3f centered = pt - mean;
+                return centered * centered.transpose();
+            },
+            init, thrust::plus<Eigen::Matrix3f>());
+    cov /= points.size();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> es(cov);
+    Eigen::Vector3f evals = es.eigenvalues();
+    Eigen::Matrix3f R = es.eigenvectors();
+    R.col(0) /= R.col(0).norm();
+    R.col(1) /= R.col(1).norm();
+    R.col(2) /= R.col(2).norm();
+
+    if (evals(1) > evals(0)) {
+        std::swap(evals(1), evals(0));
+        Eigen::Vector3f tmp = R.col(1);
+        R.col(1) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(0)) {
+        std::swap(evals(2), evals(0));
+        Eigen::Vector3f tmp = R.col(2);
+        R.col(2) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(1)) {
+        std::swap(evals(2), evals(1));
+        Eigen::Vector3f tmp = R.col(2);
+        R.col(2) = R.col(1);
+        R.col(1) = tmp;
+    }
+
+    utility::device_vector<Eigen::Vector3f> trans_points = points;
+    Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
+    trans.block<3, 3>(0, 0) = R.transpose();
+    trans.block<3, 1>(0, 2) = -R.transpose() * mean;
+    TransformPoints(0, trans, trans_points);
+    const auto aabox = AxisAlignedBoundingBox<3>::CreateFromPoints(trans_points);
+
+    OrientedBoundingBox obox;
+    obox.center_ = R * aabox.GetCenter() + mean;
+    obox.R_ = R;
+    obox.extent_ = aabox.GetExtent();
+
     return obox;
 }
 

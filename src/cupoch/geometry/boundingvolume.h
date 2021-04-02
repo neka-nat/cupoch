@@ -97,6 +97,14 @@ public:
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox<3> &aabox);
 
+    /// Creates an oriented bounding box using a PCA.
+    /// Note, that this is only an approximation to the minimum oriented
+    /// bounding box that could be computed for example with O'Rourke's
+    /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
+    /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
+    static OrientedBoundingBox CreateFromPoints(
+            const utility::device_vector<Eigen::Vector3f>& points);
+
 public:
     /// The center point of the bounding box.
     Eigen::Vector3f center_;

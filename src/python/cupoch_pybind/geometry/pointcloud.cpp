@@ -116,6 +116,9 @@ void pybind_pointcloud(py::module &m) {
             .def("transform", &geometry::PointCloud::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
+            .def("get_oriented_bounding_box",
+                 &geometry::PointCloud::GetOrientedBoundingBox,
+                 "Returns an oriented bounding box of the pointcloud.")
             .def("paint_uniform_color",
                  &geometry::PointCloud::PaintUniformColor, "color"_a,
                  "Assigns each point in the PointCloud the same color.")

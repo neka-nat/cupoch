@@ -64,6 +64,7 @@ public:
     Eigen::Vector3f GetMaxBound() const override;
     Eigen::Vector3f GetCenter() const override;
     AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox() const;
     PointCloud &Transform(const Eigen::Matrix4f &transformation) override;
     PointCloud &Translate(const Eigen::Vector3f &translation,
                           bool relative = true) override;

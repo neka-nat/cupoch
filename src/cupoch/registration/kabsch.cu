@@ -72,6 +72,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     // Compute the H matrix
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::inner_product(
+            utility::exec_policy(0)->on(0),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(

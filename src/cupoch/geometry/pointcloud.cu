@@ -191,6 +191,10 @@ AxisAlignedBoundingBox<3> PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox<3>::CreateFromPoints(points_);
 }
 
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(points_);
+}
+
 PointCloud &PointCloud::Translate(const Eigen::Vector3f &translation,
                                   bool relative) {
     TranslatePoints<3>(translation, points_, relative);

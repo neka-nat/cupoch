@@ -16,6 +16,7 @@ Cupoch is a library that implements rapid 3D data processing for robotics using 
 
 The goal of this library is to implement fast 3D data computation in robot systems.
 For example, it has applications in SLAM, collision avoidance, path planning and tracking.
+This repository is based on [Open3D](https://github.com/intel-isl/Open3D).
 
 ## Core Features
 
@@ -43,7 +44,6 @@ For example, it has applications in SLAM, collision avoidance, path planning and
         * [Parallel Banding Algorithm to Compute Exact Distance Transform with the GPU](https://www.comp.nus.edu.sg/~tants/pba.html)
     * Path finding on graph structure
     * Path planning for collision avoidance
-* [Open3D](https://github.com/intel-isl/Open3D)-like API
 * Support memory pool and managed allocators
 * Interactive GUI (OpenGL CUDA interop and [imgui](https://github.com/ocornut/imgui))
 * Interoperability between cupoch 3D data and [DLPack](https://github.com/dmlc/dlpack)(Pytorch, Cupy,...) data structure
