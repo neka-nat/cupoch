@@ -231,28 +231,22 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
 
     if (evals(1) > evals(0)) {
         std::swap(evals(1), evals(0));
-        Eigen::Vector3f tmp = R.col(1);
-        R.col(1) = R.col(0);
-        R.col(0) = tmp;
+        R.col(1).swap(R.col(0));
     }
     if (evals(2) > evals(0)) {
         std::swap(evals(2), evals(0));
-        Eigen::Vector3f tmp = R.col(2);
-        R.col(2) = R.col(0);
-        R.col(0) = tmp;
+        R.col(2).swap(R.col(0));
     }
     if (evals(2) > evals(1)) {
         std::swap(evals(2), evals(1));
-        Eigen::Vector3f tmp = R.col(2);
-        R.col(2) = R.col(1);
-        R.col(1) = tmp;
+        R.col(2).swap(R.col(1));
     }
 
     utility::device_vector<Eigen::Vector3f> trans_points = points;
     Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
     trans.block<3, 3>(0, 0) = R.transpose();
     trans.block<3, 1>(0, 2) = -R.transpose() * mean;
-    TransformPoints(0, trans, trans_points);
+    TransformPoints<3>(0, trans, trans_points);
     const auto aabox = AxisAlignedBoundingBox<3>::CreateFromPoints(trans_points);
 
     OrientedBoundingBox obox;
