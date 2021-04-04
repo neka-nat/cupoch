@@ -368,7 +368,7 @@ std::shared_ptr<geometry::TriangleMesh> CreateTriangleMesh(
                     box.lengths_[0], box.lengths_[1], box.lengths_[2]);
             Eigen::Matrix4f tf = primitive.transform_;
             tf.topRightCorner<3, 1>() -= box.lengths_ * 0.5;
-            output->Transform(primitive.transform_);
+            output->Transform(tf);
             return output;
         }
         case Primitive::PrimitiveType::Sphere: {

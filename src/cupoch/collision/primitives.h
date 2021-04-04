@@ -71,7 +71,7 @@ public:
         : Primitive(Primitive::PrimitiveType::Box), lengths_(lengths){};
     __host__ __device__ Box(const Eigen::Vector3f& lengths,
                             const Eigen::Matrix4f& transform)
-        : Primitive(Primitive::PrimitiveType::Sphere, transform),
+        : Primitive(Primitive::PrimitiveType::Box, transform),
           lengths_(lengths){};
     __host__ __device__ ~Box(){};
 

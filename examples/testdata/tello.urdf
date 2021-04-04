@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+
+<!-- Body coordinates are: x forward, y left, z up; rotation is: roll right, pitch forward, yaw left -->
+<!-- See http://www.ros.org/reps/rep-0103.html -->
+
+<robot name="tello">
+
+    <!-- Materials -->
+    <material name="gray">
+        <color rgba="0.5 0.5 0.5 1.0"/>
+    </material>
+    <material name="white">
+        <color rgba="0.9 0.9 0.9 1.0"/>
+    </material>
+    <material name="red">
+        <color rgba="1.0 0 0 1.0"/>
+    </material>
+    <!-- TODO add Gazebo color information -->
+
+    <!-- Base link -->
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0.01"/>
+            <geometry>
+                <box size="0.07 0.02 0.02"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <visual>
+            <origin xyz="0 0 -0.01"/>
+            <geometry>
+                <box size="0.07 0.02 0.02"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <visual>
+            <origin xyz="0.05 -0.05 0"/>
+            <geometry>
+                <cylinder length="0.01" radius="0.045"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <visual>
+            <origin xyz="-0.05 0.05 0"/>
+            <geometry>
+                <cylinder length="0.01" radius="0.045"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <visual>
+            <origin xyz="-0.05 -0.05 0"/>
+            <geometry>
+                <cylinder length="0.01" radius="0.045"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <visual>
+            <origin xyz="0.05 0.05 0"/>
+            <geometry>
+                <cylinder length="0.01" radius="0.045"/>
+            </geometry>
+            <material name="gray"/>
+        </visual>
+        <inertial>
+            <mass value="0.1"/>
+            <!-- Tensor for solid cuboid 18cm x 18cm x 5cm high -->
+            <inertia ixx="0.000290833" ixy="0" ixz="0" iyy="0.00054" iyz="0" izz="0.000290833"/>
+        </inertial>
+        <collision name="collision">
+            <geometry>
+                <box size="0.18 0.18 0.05"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Camera link -->
+    <link name="camera_link">
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <sphere radius="0.01"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.01"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="1e-5"/>
+            <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6"/>
+        </inertial>
+    </link>
+
+    <!-- Fixed joint -->
+    <joint name="camera_joint" type="fixed">
+        <origin xyz="0.035 0 0" rpy="0 0 0"/>  <!-- TODO fix origin -->
+        <parent link="base_link"/>
+        <child link="camera_link"/>
+    </joint>
+
+    <!-- Tello plugin for Gazebo -->
+    <gazebo>
+        <plugin name="TelloPlugin" filename="libTelloPlugin.so">
+            <namespace>${topic_ns}</namespace>
+            <parameter name="use_sim_time" type="bool">1</parameter>
+            <link_name>base_link</link_name>
+            <center_of_mass>0 0 0</center_of_mass>
+        </plugin>
+    </gazebo>
+
+    <!-- Camera plugin for Gazebo -->
+    <!-- TODO use Tello camera specs -->
+    <!-- TODO add another joint and rotate the camera into place -->
+    <gazebo reference="camera_link">
+        <sensor type="camera" name="${topic_ns}">
+            <update_rate>30.0</update_rate>
+            <camera name="head">  <!-- TODO does this name do anything? -->
+                <horizontal_fov>0.96</horizontal_fov>
+                <image>
+                    <width>960</width>
+                    <height>720</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.1</near>
+                    <far>300</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <!-- Noise is sampled independently per pixel on each frame.
+                         That pixel's noise value is added to each of its color
+                         channels, which at that point lie in the range [0,1]. -->
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>this_is_ignored</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_link</frameName>
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+</robot>

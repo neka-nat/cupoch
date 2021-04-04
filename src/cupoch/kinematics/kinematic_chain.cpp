@@ -78,8 +78,15 @@ KinematicChain& KinematicChain::BuildFromURDF(const std::string& filename) {
     }
     root_ = Frame();
     root_.joint_ = Joint("root_joint");
-    root_.link_ = Link(root_link->name, ConvertCollision(root_link->collision, root_path_),
-                       ConvertVisual(root_link->visual, root_path_));
+    std::vector<ShapeInfo> collisions;
+    for (const auto& col: root_link->collision_array) {
+        collisions.push_back(ConvertCollision(col, root_path_));
+    }
+    std::vector<ShapeInfo> visuals;
+    for (const auto& vis: root_link->visual_array) {
+        visuals.push_back(ConvertVisual(vis, root_path_));
+    }
+    root_.link_ = Link(root_link->name, collisions, visuals);
     link_map_[root_.link_.name_] = &(root_.link_);
     root_.children_ = BuildChainRecurse(root_, lmap, joints);
     return *this;
@@ -119,8 +126,15 @@ std::vector<std::shared_ptr<Frame>> KinematicChain::BuildChainRecurse(
                                   ConvertTransform(joint->parent_to_joint_origin_transform),
                                   Eigen::Vector3f(joint->axis.x, joint->axis.y, joint->axis.z));
             auto link = lmap.at(joint->child_link_name);
-            child->link_ = Link(link->name, ConvertCollision(link->collision, root_path_),
-                                ConvertVisual(link->visual, root_path_));
+            std::vector<ShapeInfo> collisions;
+            for (const auto& col: link->collision_array) {
+                collisions.push_back(ConvertCollision(col, root_path_));
+            }
+            std::vector<ShapeInfo> visuals;
+            for (const auto& vis: link->visual_array) {
+                visuals.push_back(ConvertVisual(vis, root_path_));
+            }
+            child->link_ = Link(link->name, collisions, visuals);
             link_map_[child->link_.name_] = &(child->link_);
             child->children_ = BuildChainRecurse(*child, lmap, joints);
             children.push_back(child);
