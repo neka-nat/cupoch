@@ -120,6 +120,8 @@ protected:
              const utility::device_vector<Eigen::Vector3f> &vertex_colors);
     MeshBase(Geometry::GeometryType type,
              const thrust::host_vector<Eigen::Vector3f> &vertices);
+    MeshBase(Geometry::GeometryType type,
+             const std::vector<Eigen::Vector3f> &vertices);
 
 public:
     utility::device_vector<Eigen::Vector3f> vertices_;

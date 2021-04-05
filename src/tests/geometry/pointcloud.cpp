@@ -173,6 +173,44 @@ TEST(PointCloud, Transform) {
     ExpectEQ(ref.GetNormals(), pc.GetNormals(), 5.0 * unit_test::THRESHOLD_1E_4);
 }
 
+TEST(PointCloud, GetOrientedBoundingBox) {
+    geometry::PointCloud pcd;
+    geometry::OrientedBoundingBox obb;
+
+    // Valid 4 points
+    pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}});
+    pcd.GetOrientedBoundingBox();
+
+    // 8 points with known ground truth
+    pcd = geometry::PointCloud({{0, 0, 0},
+                                {0, 0, 1},
+                                {0, 2, 0},
+                                {0, 2, 1},
+                                {3, 0, 0},
+                                {3, 0, 1},
+                                {3, 2, 0},
+                                {3, 2, 1}});
+    obb = pcd.GetOrientedBoundingBox();
+    EXPECT_EQ(obb.center_, Eigen::Vector3f(1.5, 1, 0.5));
+    EXPECT_EQ(obb.extent_, Eigen::Vector3f(3, 2, 1));
+    EXPECT_EQ(obb.color_, Eigen::Vector3f(0, 0, 0));
+    EXPECT_EQ(obb.R_, Eigen::Matrix3f::Identity());
+    const auto obb_pts_arr = obb.GetBoxPoints();
+    thrust::host_vector<Eigen::Vector3f> obb_points(obb_pts_arr.begin(), obb_pts_arr.end());
+    sort::Do(obb_points);
+    thrust::host_vector<Eigen::Vector3f> ref_points;
+    ref_points.push_back({0, 0, 0});
+    ref_points.push_back({0, 0, 1});
+    ref_points.push_back({0, 2, 0});
+    ref_points.push_back({0, 2, 1});
+    ref_points.push_back({3, 0, 0});
+    ref_points.push_back({3, 0, 1});
+    ref_points.push_back({3, 2, 0});
+    ref_points.push_back({3, 2, 1});
+    sort::Do(ref_points);
+    ExpectEQ(obb_points, ref_points);
+}
+
 TEST(PointCloud, HasPoints) {
     int size = 100;
 

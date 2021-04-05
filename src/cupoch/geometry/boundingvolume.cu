@@ -245,7 +245,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
     utility::device_vector<Eigen::Vector3f> trans_points = points;
     Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
     trans.block<3, 3>(0, 0) = R.transpose();
-    trans.block<3, 1>(0, 2) = -R.transpose() * mean;
+    trans.block<3, 1>(0, 3) = -R.transpose() * mean;
     TransformPoints<3>(0, trans, trans_points);
     const auto aabox = AxisAlignedBoundingBox<3>::CreateFromPoints(trans_points);
 

@@ -344,6 +344,12 @@ TriangleMesh::TriangleMesh(
     : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
       triangles_(triangles) {}
 
+TriangleMesh::TriangleMesh(
+        const std::vector<Eigen::Vector3f> &vertices,
+        const std::vector<Eigen::Vector3i> &triangles)
+    : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
+      triangles_(triangles) {}
+
 TriangleMesh::TriangleMesh(const geometry::TriangleMesh &other)
     : MeshBase(Geometry::GeometryType::TriangleMesh,
                other.vertices_,

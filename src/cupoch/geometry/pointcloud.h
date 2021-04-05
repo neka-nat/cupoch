@@ -44,6 +44,7 @@ class PointCloud : public GeometryBase3D {
 public:
     PointCloud();
     PointCloud(const thrust::host_vector<Eigen::Vector3f> &points);
+    PointCloud(const std::vector<Eigen::Vector3f> &points);
     PointCloud(const utility::device_vector<Eigen::Vector3f> &points);
     PointCloud(const PointCloud &other);
     ~PointCloud();

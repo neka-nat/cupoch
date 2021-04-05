@@ -34,6 +34,8 @@ public:
                  const utility::device_vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const thrust::host_vector<Eigen::Vector3f> &vertices,
                  const thrust::host_vector<Eigen::Vector3i> &triangles);
+    TriangleMesh(const std::vector<Eigen::Vector3f> &vertices,
+                 const std::vector<Eigen::Vector3i> &triangles);
     TriangleMesh(const geometry::TriangleMesh &other);
     ~TriangleMesh() override;
     TriangleMesh &operator=(const TriangleMesh &other);

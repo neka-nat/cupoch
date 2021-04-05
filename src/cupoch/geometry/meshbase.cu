@@ -177,3 +177,7 @@ MeshBase::MeshBase(
 MeshBase::MeshBase(Geometry::GeometryType type,
                    const thrust::host_vector<Eigen::Vector3f> &vertices)
     : GeometryBase3D(type), vertices_(vertices) {}
+
+MeshBase::MeshBase(Geometry::GeometryType type,
+        const std::vector<Eigen::Vector3f> &vertices)
+: GeometryBase3D(type), vertices_(vertices) {}

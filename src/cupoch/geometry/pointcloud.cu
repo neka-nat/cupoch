@@ -123,6 +123,8 @@ PointCloud::PointCloud()
     : GeometryBase3D(Geometry::GeometryType::PointCloud) {}
 PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
     : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
+PointCloud::PointCloud(const std::vector<Eigen::Vector3f> &points)
+    : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const utility::device_vector<Eigen::Vector3f> &points)
     : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const PointCloud &other)
