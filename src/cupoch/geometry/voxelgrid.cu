@@ -393,7 +393,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             depth_map.height_, depth_map.num_of_channels_,
             depth_map.bytes_per_channel_, voxel_size_, origin_, intrinsic, rot,
             trans, keep_voxels_outside_image);
-    remove_if_vectors(func, voxels_keys_, voxels_values_);
+    remove_if_vectors(utility::exec_policy(0)->on(0), func, voxels_keys_, voxels_values_);
     return *this;
 }
 

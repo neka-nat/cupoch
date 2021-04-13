@@ -650,7 +650,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geom
     thrust::transform(
         enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     return out;
 }
 
@@ -695,7 +695,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geom
                                 query.lines_.end(),
                                 extract_element_functor<int, 2, 1>()))),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     return out;
 }
 
@@ -715,7 +715,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<geom
     thrust::transform(
         enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     convert_index_functor1 cfunc(query.resolution_);
     thrust::transform(
             make_tuple_iterator(
@@ -751,7 +751,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<
     thrust::transform(
         enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     convert_index_functor2 cfunc(target_.resolution_);
     thrust::transform(
             thrust::device,
@@ -789,7 +789,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::VoxelGrid>::Compute<Prim
     thrust::transform(
         enumerate_begin(query), enumerate_end(query),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     return out;
 }
 
@@ -808,7 +808,7 @@ std::shared_ptr<CollisionResult> Intersection<PrimitiveArray>::Compute<geometry:
     thrust::transform(
         enumerate_begin(query.voxels_keys_), enumerate_end(query.voxels_keys_),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     return out;
 }
 
@@ -829,7 +829,7 @@ std::shared_ptr<CollisionResult> Intersection<geometry::OccupancyGrid>::Compute<
     thrust::transform(
         enumerate_begin(query), enumerate_end(query),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     return out;
 }
 
@@ -849,7 +849,7 @@ std::shared_ptr<CollisionResult> Intersection<PrimitiveArray>::Compute<geometry:
     thrust::transform(
         enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
         out->collision_index_pairs_.begin(), func);
-    remove_negative<2>(out->collision_index_pairs_);
+    remove_negative(utility::exec_policy(0)->on(0), out->collision_index_pairs_);
     convert_index_functor2 cfunc(query.resolution_);
     thrust::transform(
         thrust::device,

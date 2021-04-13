@@ -695,7 +695,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
         int cidx = thrust::get<1>(x);
         return (cidx <= 0 || cidx >= 255);
     };
-    size_t n_result1 = remove_if_vectors(check_fn, keys, cube_indices);
+    size_t n_result1 = remove_if_vectors(utility::exec_policy(0)->on(0), check_fn, keys, cube_indices);
 
     utility::device_vector<float> fs(n_result1 * 8);
     utility::device_vector<Eigen::Vector3f> cs(n_result1 * 8);

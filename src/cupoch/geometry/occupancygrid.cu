@@ -330,7 +330,7 @@ OccupancyGrid::ExtractKnownVoxels() const {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return isnan(v.prob_log_);
     };
-    remove_if_vectors(remove_fn, *out);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
     return out;
 }
 
@@ -342,7 +342,7 @@ OccupancyGrid::ExtractFreeVoxels() const {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return isnan(v.prob_log_) || v.prob_log_ > th;
     };
-    remove_if_vectors(remove_fn, *out);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
     return out;
 }
 

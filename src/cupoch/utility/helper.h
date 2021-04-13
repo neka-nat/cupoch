@@ -296,6 +296,23 @@ void resize_all(size_t new_size, Args &... args) {
     std::initializer_list<int>{((void)resize_fn(new_size, args), 0)...};
 }
 
+template <typename DerivedPolicy, class Func, class... Args>
+size_t remove_if_vectors_without_resize(
+        const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
+        Func fn, utility::device_vector<Args> &... args) {
+    auto begin = make_tuple_begin(args...);
+    auto end = thrust::remove_if(exec, begin, make_tuple_end(args...), fn);
+    return thrust::distance(begin, end);
+}
+
+template <typename DerivedPolicy, class Func, class... Args>
+size_t remove_if_vectors(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
+                         Func fn, utility::device_vector<Args> &... args) {
+    size_t k = remove_if_vectors_without_resize(exec, fn, args...);
+    resize_all(k, args...);
+    return k;
+}
+
 template <class Func, class... Args>
 size_t remove_if_vectors_without_resize(
         Func fn, utility::device_vector<Args> &... args) {
@@ -337,6 +354,30 @@ void remove_negative(utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
 template <typename T>
 void remove_scalar_negative(utility::device_vector<T> &idxs) {
     auto end = thrust::remove_if(
+            idxs.begin(), idxs.end(),
+            [] __device__(const T &idx) {
+                return idx < 0;
+            });
+    idxs.resize(thrust::distance(idxs.begin(), end));
+}
+
+template <typename DerivedPolicy, int Dim>
+void remove_negative(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
+                     utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
+    auto end = thrust::remove_if(
+            exec,
+            idxs.begin(), idxs.end(),
+            [] __device__(const Eigen::Matrix<int, Dim, 1> &idx) {
+                return Eigen::device_any(idx.array() < 0);
+            });
+    idxs.resize(thrust::distance(idxs.begin(), end));
+}
+
+template <typename DerivedPolicy, typename T>
+void remove_scalar_negative(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
+                            utility::device_vector<T> &idxs) {
+    auto end = thrust::remove_if(
+            exec,
             idxs.begin(), idxs.end(),
             [] __device__(const T &idx) {
                 return idx < 0;

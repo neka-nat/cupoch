@@ -273,7 +273,7 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(remove_fn, new_edges, weights);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges, weights);
     thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         new_edges.begin(), new_edges.end(), weights.begin());
     utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
@@ -309,7 +309,7 @@ Graph<Dim> &Graph<Dim>::AddNodeAndConnect(
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(remove_fn, new_edges, new_weights);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges, new_weights);
     this->points_.push_back(point);
     return AddEdges(new_edges, new_weights, lazy_add);
 }
@@ -389,19 +389,23 @@ Graph<Dim> &Graph<Dim>::RemoveEdge(const Eigen::Vector2i &edge) {
     bool has_weights = this->HasWeights();
     if (has_colors && has_weights) {
         remove_if_vectors(
+                utility::exec_policy(0)->on(0),
                 check_edge_functor<Eigen::Vector2i, float, Eigen::Vector3f>(
                         edge, is_directed_),
                 this->lines_, edge_weights_, this->colors_);
     } else if (has_colors && !has_weights) {
-        remove_if_vectors(check_edge_functor<Eigen::Vector2i, Eigen::Vector3f>(
+        remove_if_vectors(utility::exec_policy(0)->on(0),
+                          check_edge_functor<Eigen::Vector2i, Eigen::Vector3f>(
                                   edge, is_directed_),
                           this->lines_, this->colors_);
     } else if (!has_colors && has_weights) {
         remove_if_vectors(
+                utility::exec_policy(0)->on(0),
                 check_edge_functor<Eigen::Vector2i, float>(edge, is_directed_),
                 this->lines_, edge_weights_);
     } else {
         remove_if_vectors(
+                utility::exec_policy(0)->on(0),
                 check_edge_functor<Eigen::Vector2i>(edge, is_directed_),
                 this->lines_);
     }

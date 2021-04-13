@@ -262,7 +262,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX, INVALID_VOXEL_INDEX,
                                        INVALID_VOXEL_INDEX);
     };
-    remove_if_vectors(check_fn, output->voxels_keys_, output->voxels_values_);
+    remove_if_vectors(utility::exec_policy(0)->on(0), check_fn, output->voxels_keys_, output->voxels_values_);
     return output;
 }
 

@@ -1129,22 +1129,26 @@ TriangleMesh &TriangleMesh::RemoveUnreferencedVertices() {
     size_t k = 0;
     if (!has_vert_normal && !has_vert_color) {
         k = remove_if_vectors_without_resize(
+                utility::exec_policy(0)->on(0),
                 check_ref_functor<bool, int, Eigen::Vector3f>(),
                 vertex_has_reference, index_new_to_old, vertices_);
     } else if (has_vert_normal && !has_vert_color) {
         k = remove_if_vectors_without_resize(
+                utility::exec_policy(0)->on(0),
                 check_ref_functor<bool, int, Eigen::Vector3f,
                                   Eigen::Vector3f>(),
                 vertex_has_reference, index_new_to_old, vertices_,
                 vertex_normals_);
     } else if (!has_vert_normal && has_vert_color) {
         k = remove_if_vectors_without_resize(
+                utility::exec_policy(0)->on(0),
                 check_ref_functor<bool, int, Eigen::Vector3f,
                                   Eigen::Vector3f>(),
                 vertex_has_reference, index_new_to_old, vertices_,
                 vertex_colors_);
     } else {
         k = remove_if_vectors_without_resize(
+                utility::exec_policy(0)->on(0),
                 check_ref_functor<bool, int, Eigen::Vector3f, Eigen::Vector3f,
                                   Eigen::Vector3f>(),
                 vertex_has_reference, index_new_to_old, vertices_,
@@ -1203,10 +1207,12 @@ TriangleMesh &TriangleMesh::RemoveDegenerateTriangles() {
                          }
                      });
     if (!has_tri_normal) {
-        remove_if_vectors(check_ref_functor<bool, Eigen::Vector3i>(),
+        remove_if_vectors(utility::exec_policy(0)->on(0),
+                          check_ref_functor<bool, Eigen::Vector3i>(),
                           is_degenerate, triangles_);
     } else {
         remove_if_vectors(
+                utility::exec_policy(0)->on(0),
                 check_ref_functor<bool, Eigen::Vector3i, Eigen::Vector3f>(),
                 is_degenerate, triangles_, triangle_normals_);
     }
