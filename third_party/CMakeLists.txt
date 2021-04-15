@@ -66,7 +66,7 @@ set(flann_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB_RECURSE CU_SOURCES flann/*.cu)
 cuda_add_library(flann_cuda_s STATIC ${CU_SOURCES})
-target_include_directories(flann_cuda_s PRIVATE ${flann_INCLUDE_DIRS})
+target_include_directories(flann_cuda_s PRIVATE ${flann_INCLUDE_DIRS} rmm/include spdlog/include)
 target_compile_definitions(flann_cuda_s PRIVATE -DFLANN_USE_CUDA)
 set(FLANN_LIBRARIES flann_cuda_s)
 

@@ -30,13 +30,13 @@
 #ifndef FLANN_CUDA_KD_TREE_BUILDER_H_
 #define FLANN_CUDA_KD_TREE_BUILDER_H_
 #include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
 #include <thrust/sort.h>
 #include <thrust/partition.h>
 #include <thrust/unique.h>
 #include <thrust/scan.h>
 #include <flann/util/cutil_math.h>
 #include <stdlib.h>
+#include "flann/algorithms/device_vector.h"
 
 // #define PRINT_DEBUG_TIMING
 
@@ -401,7 +401,7 @@ std::ostream& operator <<(std::ostream& stream, const cuda::kd_tree_builder_deta
 class CudaKdTreeBuilder
 {
 public:
-    CudaKdTreeBuilder( const thrust::device_vector<float4>& points, int max_leaf_size ) : /*out_of_space_(1,0),node_count_(1,1),*/ max_leaf_size_(max_leaf_size)
+    CudaKdTreeBuilder( const device_vector<float4>& points, int max_leaf_size ) : /*out_of_space_(1,0),node_count_(1,1),*/ max_leaf_size_(max_leaf_size)
     {
         points_=&points;
         int prealloc = max((int)points.size()/max_leaf_size_*16, 1);
@@ -412,37 +412,37 @@ public:
 
         //              std::cout<<points_->size()<<std::endl;
 
-        child1_=new thrust::device_vector<int>(prealloc,-1);
-        parent_=new thrust::device_vector<int>(prealloc,-1);
+        child1_=new device_vector<int>(prealloc,-1);
+        parent_=new device_vector<int>(prealloc,-1);
         cuda::kd_tree_builder_detail::SplitInfo s;
         s.left=0;
         s.right=0;
-        splits_=new thrust::device_vector<cuda::kd_tree_builder_detail::SplitInfo>(prealloc,s);
+        splits_=new device_vector<cuda::kd_tree_builder_detail::SplitInfo>(prealloc,s);
         s.right=points.size();
         (*splits_)[0]=s;
 
-        aabb_min_=new thrust::device_vector<float4>(prealloc);
-        aabb_max_=new thrust::device_vector<float4>(prealloc);
+        aabb_min_=new device_vector<float4>(prealloc);
+        aabb_max_=new device_vector<float4>(prealloc);
 
-        index_x_=new thrust::device_vector<int>(points_->size());
-        index_y_=new thrust::device_vector<int>(points_->size());
-        index_z_=new thrust::device_vector<int>(points_->size());
+        index_x_=new device_vector<int>(points_->size());
+        index_y_=new device_vector<int>(points_->size());
+        index_z_=new device_vector<int>(points_->size());
 
-        owners_x_=new thrust::device_vector<int>(points_->size(),0);
-        owners_y_=new thrust::device_vector<int>(points_->size(),0);
-        owners_z_=new thrust::device_vector<int>(points_->size(),0);
+        owners_x_=new device_vector<int>(points_->size(),0);
+        owners_y_=new device_vector<int>(points_->size(),0);
+        owners_z_=new device_vector<int>(points_->size(),0);
 
-        leftright_x_ = new thrust::device_vector<int>(points_->size(),0);
-        leftright_y_ = new thrust::device_vector<int>(points_->size(),0);
-        leftright_z_ = new thrust::device_vector<int>(points_->size(),0);
+        leftright_x_ = new device_vector<int>(points_->size(),0);
+        leftright_y_ = new device_vector<int>(points_->size(),0);
+        leftright_z_ = new device_vector<int>(points_->size(),0);
 
-        tmp_index_=new thrust::device_vector<int>(points_->size());
-        tmp_owners_=new thrust::device_vector<int>(points_->size());
-        tmp_misc_=new thrust::device_vector<int>(points_->size());
+        tmp_index_=new device_vector<int>(points_->size());
+        tmp_owners_=new device_vector<int>(points_->size());
+        tmp_misc_=new device_vector<int>(points_->size());
 
-        points_x_=new thrust::device_vector<float>(points_->size());
-        points_y_=new thrust::device_vector<float>(points_->size());
-        points_z_=new thrust::device_vector<float>(points_->size());
+        points_x_=new device_vector<float>(points_->size());
+        points_y_=new device_vector<float>(points_->size());
+        points_z_=new device_vector<float>(points_->size());
         delete_node_info_=false;
     }
 
@@ -498,11 +498,11 @@ public:
 
         // create sorted index list -> can be used to compute AABBs in O(1)
         thrust::copy(points_x_->begin(), points_x_->end(), tmpv.begin());
-        thrust::sort_by_key( tmpv.begin(), tmpv.end(), index_x_->begin() );
+        thrust::sort_by_key( exec_policy(0)->on(0), tmpv.begin(), tmpv.end(), index_x_->begin() );
         thrust::copy(points_y_->begin(), points_y_->end(), tmpv.begin());
-        thrust::sort_by_key( tmpv.begin(), tmpv.end(), index_y_->begin() );
+        thrust::sort_by_key( exec_policy(0)->on(0), tmpv.begin(), tmpv.end(), index_y_->begin() );
         thrust::copy(points_z_->begin(), points_z_->end(), tmpv.begin());
-        thrust::sort_by_key( tmpv.begin(), tmpv.end(), index_z_->begin() );
+        thrust::sort_by_key( exec_policy(0)->on(0), tmpv.begin(), tmpv.end(), index_z_->begin() );
 
 
         (*aabb_min_)[0]=make_float4((*points_x_)[(*index_x_)[0]],(*points_y_)[(*index_y_)[0]],(*points_z_)[(*index_z_)[0]],0);
@@ -607,17 +607,18 @@ protected:
 
     //! takes the partitioned nodes, and sets the left-/right info of leaf nodes, as well as the AABBs
     void
-    update_leftright_and_aabb( const thrust::device_vector<float>& x, const thrust::device_vector<float>& y,const thrust::device_vector<float>& z,
-                               const thrust::device_vector<int>& ix, const thrust::device_vector<int>& iy,const thrust::device_vector<int>& iz,
-                               const thrust::device_vector<int>& owners,
-                               thrust::device_vector<cuda::kd_tree_builder_detail::SplitInfo>& splits, thrust::device_vector<float4>& aabbMin,thrust::device_vector<float4>& aabbMax)
+    update_leftright_and_aabb( const device_vector<float>& x, const device_vector<float>& y,const device_vector<float>& z,
+                               const device_vector<int>& ix, const device_vector<int>& iy,const device_vector<int>& iz,
+                               const device_vector<int>& owners,
+                               device_vector<cuda::kd_tree_builder_detail::SplitInfo>& splits,
+                               device_vector<float4>& aabbMin, device_vector<float4>& aabbMax)
     {
-        thrust::device_vector<int>* labelsUnique=tmp_owners_;
-        thrust::device_vector<int>* countsUnique=tmp_index_;
+        device_vector<int>* labelsUnique=tmp_owners_;
+        device_vector<int>* countsUnique=tmp_index_;
 		// assume: points of each node are continuous in the array
 		
 		// find which nodes are here, and where each node's points begin and end
-        int unique_labels = thrust::unique_by_key_copy( owners.begin(), owners.end(), thrust::counting_iterator<int>(0), labelsUnique->begin(), countsUnique->begin()).first - labelsUnique->begin();
+        int unique_labels = thrust::unique_by_key_copy( exec_policy(0)->on(0), owners.begin(), owners.end(), thrust::counting_iterator<int>(0), labelsUnique->begin(), countsUnique->begin()).first - labelsUnique->begin();
 
 		// update the info
         cuda::kd_tree_builder_detail::SetLeftAndRightAndAABB s;
@@ -646,14 +647,15 @@ protected:
     //! for all the single nodes.
     //! (basically the split primitive according to sengupta et al)
     //! about twice as fast as thrust::partition
-    void separate_left_and_right_children( thrust::device_vector<int>& key_in, thrust::device_vector<int>& val_in, thrust::device_vector<int>& key_out, thrust::device_vector<int>& val_out, thrust::device_vector<int>& left_right_marks, bool scatter_val_out=true )
+    void separate_left_and_right_children( device_vector<int>& key_in, device_vector<int>& val_in, device_vector<int>& key_out, device_vector<int>& val_out, device_vector<int>& left_right_marks, bool scatter_val_out=true )
     {
-        thrust::device_vector<int>* f_tmp = &val_out;
-        thrust::device_vector<int>* addr_tmp = tmp_misc_;
+        device_vector<int>* f_tmp = &val_out;
+        device_vector<int>* addr_tmp = tmp_misc_;
 
-        thrust::exclusive_scan( /*thrust::make_transform_iterator(*/ left_right_marks.begin() /*,cuda::kd_tree_builder_detail::IsEven*/
-                                                                     /*())*/, /*thrust::make_transform_iterator(*/ left_right_marks.end() /*,cuda::kd_tree_builder_detail::IsEven*/
-                                                                     /*())*/,     f_tmp->begin() );
+        thrust::exclusive_scan( exec_policy(0)->on(0),
+                                /*thrust::make_transform_iterator(*/ left_right_marks.begin() /*,cuda::kd_tree_builder_detail::IsEven*/
+                                /*())*/, /*thrust::make_transform_iterator(*/ left_right_marks.end() /*,cuda::kd_tree_builder_detail::IsEven*/
+                                /*())*/,     f_tmp->begin() );
         cuda::kd_tree_builder_detail::set_addr3 sa;
         sa.val_=thrust::raw_pointer_cast(&left_right_marks[0]);
         sa.f_=thrust::raw_pointer_cast(&(*f_tmp)[0]);
@@ -682,21 +684,21 @@ protected:
     }
 
 
-    const thrust::device_vector<float4>* points_;
+    const device_vector<float4>* points_;
 	
 	// tree data, those are stored per-node
 	
 	//! left child of each node. (right child==left child + 1, due to the alloc mechanism)
 	//! child1_[node]==-1 if node is a leaf node
-    thrust::device_vector<int>* child1_;
+    device_vector<int>* child1_;
 	//! parent node of each node
-    thrust::device_vector<int>* parent_;
+    device_vector<int>* parent_;
 	//! split info (dim/value or left/right pointers)
-    thrust::device_vector<cuda::kd_tree_builder_detail::SplitInfo>* splits_;
+    device_vector<cuda::kd_tree_builder_detail::SplitInfo>* splits_;
 	//! min aabb value of each node
-    thrust::device_vector<float4>* aabb_min_;
+    device_vector<float4>* aabb_min_;
 	//! max aabb value of each node
-    thrust::device_vector<float4>* aabb_max_;
+    device_vector<float4>* aabb_max_;
 
     enum AllocationInfo
     {
@@ -708,19 +710,19 @@ protected:
     //  thrust::device_vector<int> out_of_space_;
     //  thrust::device_vector<int> node_count_;
     //  thrust::device_vector<int> nodes_allocated_;
-    thrust::device_vector<int> allocation_info_;
+    device_vector<int> allocation_info_;
 	
     int max_leaf_size_;
 
 	// coordinate values of the points
-    thrust::device_vector<float>* points_x_, * points_y_, * points_z_;
+    device_vector<float>* points_x_, * points_y_, * points_z_;
 	// indices
-    thrust::device_vector<int>* index_x_,  * index_y_,  * index_z_;
+    device_vector<int>* index_x_,  * index_y_,  * index_z_;
 	// owner node
-    thrust::device_vector<int>* owners_x_, * owners_y_, * owners_z_;
+    device_vector<int>* owners_x_, * owners_y_, * owners_z_;
 	// contains info about whether a point was partitioned to the left or right child after a split
-    thrust::device_vector<int>* leftright_x_, * leftright_y_, * leftright_z_;
-    thrust::device_vector<int>* tmp_index_, * tmp_owners_, * tmp_misc_;
+    device_vector<int>* leftright_x_, * leftright_y_, * leftright_z_;
+    device_vector<int>* tmp_index_, * tmp_owners_, * tmp_misc_;
     bool delete_node_info_;
 };
 
