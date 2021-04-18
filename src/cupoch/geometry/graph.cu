@@ -234,14 +234,16 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     utility::device_vector<int> counts(this->lines_.size());
     const auto begin = thrust::make_transform_iterator(
             this->lines_.begin(), extract_element_functor<int, 2, 0>());
-    auto end = thrust::reduce_by_key(begin, begin + this->lines_.size(),
+    auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                                     begin, begin + this->lines_.size(),
                                      thrust::make_constant_iterator<int>(1),
                                      indices.begin(), counts.begin());
     indices.resize(thrust::distance(indices.begin(), end.first));
     counts.resize(thrust::distance(counts.begin(), end.second));
     thrust::gather(indices.begin(), indices.end(), counts.begin(),
                    edge_index_offsets_.begin());
-    thrust::exclusive_scan(edge_index_offsets_.begin(),
+    thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                           edge_index_offsets_.begin(),
                            edge_index_offsets_.end(),
                            edge_index_offsets_.begin());
     if (set_edge_weights_from_distance) {
@@ -727,12 +729,13 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     while (thrust::find(open_flags.begin(), open_flags.end(), 1) !=
            open_flags.end()) {
         if (end_node_index >= 0 &&
-            thrust::count_if(indices.begin(), indices.begin() + nt, func3) == 0)
+            thrust::count_if(utility::exec_policy(0)->on(0), indices.begin(), indices.begin() + nt, func3) == 0)
             break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
         const auto begin = thrust::make_transform_iterator(
                 sorted_lines.begin(), extract_element_functor<int, 2, 1>());
         auto end = thrust::reduce_by_key(
+                utility::exec_policy(0)->on(0),
                 begin, begin + sorted_lines.size(), res_tmp.begin(),
                 indices.begin(), res_tmp_s.begin(), thrust::equal_to<int>(),
                 [] __device__(const SSSPResult &lhs, const SSSPResult &rhs) {
