@@ -151,7 +151,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
                         output->voxels_keys_.begin(),
                         output->voxels_keys_.end(),
                         output->voxels_values_.begin());
-    auto end = thrust::unique_by_key(output->voxels_keys_.begin(),
+    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                     output->voxels_keys_.begin(),
                                      output->voxels_keys_.end(),
                                      output->voxels_values_.begin());
     resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),

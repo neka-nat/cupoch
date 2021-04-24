@@ -286,7 +286,8 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
     thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
-    auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                     voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
     resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
                voxels_values_);
@@ -302,7 +303,8 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
     thrust::sort_by_key(utility::exec_policy(0)->on(0),
                         voxels_keys_.begin(), voxels_keys_.end(),
                         voxels_values_.begin());
-    auto end = thrust::unique_by_key(voxels_keys_.begin(), voxels_keys_.end(),
+    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                     voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
     resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
                voxels_values_);

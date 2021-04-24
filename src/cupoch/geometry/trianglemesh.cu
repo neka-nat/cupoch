@@ -538,7 +538,8 @@ TriangleMesh &TriangleMesh::ComputeEdgeList() {
                      thrust::make_counting_iterator(triangles_.size()), func);
     thrust::sort(utility::exec_policy(0)->on(0),
                  edge_list_.begin(), edge_list_.end());
-    auto end = thrust::unique(edge_list_.begin(), edge_list_.end());
+    auto end = thrust::unique(utility::exec_policy(0)->on(0),
+                              edge_list_.begin(), edge_list_.end());
     size_t n_out = thrust::distance(edge_list_.begin(), end);
     edge_list_.resize(n_out);
     return *this;
@@ -994,7 +995,8 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
         thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(),
                                idx_offsets.begin());
         auto begin = make_tuple_begin(vertex_normals_, vertex_colors_);
-        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(),
+        auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                          vertices_.begin(), vertices_.end(),
                                           begin);
         k = thrust::distance(begin, end1.second);
     } else if (has_vert_normal) {
@@ -1009,9 +1011,11 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
-        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(),
+        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                               idx_offsets.begin(), idx_offsets.end(),
                                idx_offsets.begin());
-        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(),
+        auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                          vertices_.begin(), vertices_.end(),
                                           vertex_normals_.begin());
         k = thrust::distance(vertex_normals_.begin(), end1.second);
     } else if (has_vert_color) {
@@ -1025,9 +1029,11 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
-        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(),
+        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                               idx_offsets.begin(), idx_offsets.end(),
                                idx_offsets.begin());
-        auto end1 = thrust::unique_by_key(vertices_.begin(), vertices_.end(),
+        auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                          vertices_.begin(), vertices_.end(),
                                           vertex_colors_.begin());
         k = thrust::distance(vertex_colors_.begin(), end1.second);
     } else {
@@ -1041,9 +1047,11 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
-        thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(),
+        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                               idx_offsets.begin(), idx_offsets.end(),
                                idx_offsets.begin());
-        auto end1 = thrust::unique(vertices_.begin(), vertices_.end());
+        auto end1 = thrust::unique(utility::exec_policy(0)->on(0),
+                                   vertices_.begin(), vertices_.end());
         k = thrust::distance(vertices_.begin(), end1);
     }
     vertices_.resize(k);
@@ -1092,14 +1100,16 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
         thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             new_triangles.begin(), new_triangles.end(),
                             triangle_normals_.begin());
-        auto end = thrust::unique_by_key(new_triangles.begin(),
+        auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+                                         new_triangles.begin(),
                                          new_triangles.end(),
                                          triangle_normals_.begin());
         k = thrust::distance(new_triangles.begin(), end.first);
     } else {
         thrust::sort(utility::exec_policy(0)->on(0),
                      new_triangles.begin(), new_triangles.end());
-        auto end = thrust::unique(new_triangles.begin(), new_triangles.end());
+        auto end = thrust::unique(utility::exec_policy(0)->on(0),
+                                  new_triangles.begin(), new_triangles.end());
         k = thrust::distance(new_triangles.begin(), end);
     }
     new_triangles.resize(k);

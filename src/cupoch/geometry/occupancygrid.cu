@@ -138,7 +138,7 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     free_voxels.resize(thrust::distance(free_voxels.begin(), end1));
     thrust::sort(utility::exec_policy(0)->on(0),
                  free_voxels.begin(), free_voxels.end());
-    auto end2 = thrust::unique(free_voxels.begin(), free_voxels.end());
+    auto end2 = thrust::unique(utility::exec_policy(0)->on(0), free_voxels.begin(), free_voxels.end());
     free_voxels.resize(thrust::distance(free_voxels.begin(), end2));
 }
 
@@ -192,7 +192,7 @@ void ComputeOccupiedVoxels(
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
     thrust::sort(utility::exec_policy(0)->on(0),
                  occupied_voxels.begin(), occupied_voxels.end());
-    auto end2 = thrust::unique(occupied_voxels.begin(), occupied_voxels.end());
+    auto end2 = thrust::unique(utility::exec_policy(0)->on(0), occupied_voxels.begin(), occupied_voxels.end());
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
 }
 
@@ -354,7 +354,7 @@ OccupancyGrid::ExtractOccupiedVoxels() const {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return isnan(v.prob_log_) || v.prob_log_ <= th;
     };
-    remove_if_vectors(remove_fn, *out);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
     return out;
 }
 
