@@ -38,6 +38,7 @@ using make_index_sequence = std::make_index_sequence<N>;
 #include <vector>
 
 #include "cupoch/utility/device_vector.h"
+#include "cupoch/utility/platform.h"
 
 namespace thrust {
 
@@ -415,6 +416,27 @@ __host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx, int re
     int y = yz / resolution;
     int z = yz % resolution;
     return thrust::make_tuple(x, y, z);
+}
+
+template <typename T>
+inline void copy_device_to_host(const utility::device_vector<T>& src, utility::pinned_host_vector<T>& dist) {
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
+                            thrust::raw_pointer_cast(src.data()),
+                            src.size() * sizeof(T), cudaMemcpyDeviceToHost));
+}
+
+template <typename T>
+inline void copy_host_to_device(const utility::pinned_host_vector<T>& src, utility::device_vector<T>& dist) {
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
+                            thrust::raw_pointer_cast(src.data()),
+                            src.size() * sizeof(T), cudaMemcpyHostToDevice));
+}
+
+template <typename T>
+inline void copy_device_to_device(const utility::device_vector<T>& src, utility::device_vector<T>& dist) {
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
+                            thrust::raw_pointer_cast(src.data()),
+                            src.size() * sizeof(T), cudaMemcpyDeviceToDevice));
 }
 
 namespace utility {

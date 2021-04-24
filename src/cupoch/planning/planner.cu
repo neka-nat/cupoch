@@ -84,7 +84,9 @@ std::shared_ptr<Path> Pos3DPlanner::FindPath(
     ex_graph.AddNodeAndConnect(goal, max_edge_distance_, false);
     ex_graph.ConstructGraph();
     auto path_idxs = ex_graph.DijkstraPath(n_start, n_goal);
-    utility::pinned_host_vector<Eigen::Vector3f> h_points = ex_graph.points_;
+    utility::pinned_host_vector<Eigen::Vector3f> h_points(ex_graph.points_.size());
+    copy_device_to_host(ex_graph.points_, h_points);
+    cudaSafeCall(cudaDeviceSynchronize());
     auto out = std::make_shared<Path>();
     for (const auto& i : *path_idxs) {
         out->push_back(h_points[i]);
