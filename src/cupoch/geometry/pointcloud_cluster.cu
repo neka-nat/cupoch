@@ -125,9 +125,11 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_pt),
                       vertex_degrees.begin(), vd_func);
-    thrust::exclusive_scan(vertex_degrees.begin(), vertex_degrees.end(),
+    thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                           vertex_degrees.begin(), vertex_degrees.end(),
                            exscan_vd.begin(), 0);
-    auto end = thrust::remove_if(indices.begin(), indices.end(),
+    auto end = thrust::remove_if(utility::exec_policy(0)->on(0),
+                                 indices.begin(), indices.end(),
                                  [] __device__(int idx) { return idx < 0; });
     indices.resize(thrust::distance(indices.begin(), end));
 
@@ -164,7 +166,8 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
                                       thrust::raw_pointer_cast(visited.data()));
             thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                              thrust::make_counting_iterator(n_pt), sl_func);
-            h_visited = visited;
+            copy_device_to_host(visited, h_visited);
+            cudaSafeCall(cudaDeviceSynchronize());
             cluster++;
         }
     }
