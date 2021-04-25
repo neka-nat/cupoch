@@ -317,16 +317,12 @@ size_t remove_if_vectors(const thrust::detail::execution_policy_base<DerivedPoli
 template <class Func, class... Args>
 size_t remove_if_vectors_without_resize(
         Func fn, utility::device_vector<Args> &... args) {
-    auto begin = make_tuple_begin(args...);
-    auto end = thrust::remove_if(begin, make_tuple_end(args...), fn);
-    return thrust::distance(begin, end);
+    return remove_if_vectors_without_resize(thrust::device, fn, args...);
 }
 
 template <class Func, class... Args>
 size_t remove_if_vectors(Func fn, utility::device_vector<Args> &... args) {
-    size_t k = remove_if_vectors_without_resize(fn, args...);
-    resize_all(k, args...);
-    return k;
+    return remove_if_vectors(thrust::device, fn, args...);
 }
 
 template <typename T>
@@ -344,22 +340,12 @@ void swap_index(utility::device_vector<Eigen::Matrix<T, 2, 1>> &v) {
 
 template <int Dim>
 void remove_negative(utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
-    auto end = thrust::remove_if(
-            idxs.begin(), idxs.end(),
-            [] __device__(const Eigen::Matrix<int, Dim, 1> &idx) {
-                return Eigen::device_any(idx.array() < 0);
-            });
-    idxs.resize(thrust::distance(idxs.begin(), end));
+    remove_negative(thrust::device, idxs);
 }
 
 template <typename T>
 void remove_scalar_negative(utility::device_vector<T> &idxs) {
-    auto end = thrust::remove_if(
-            idxs.begin(), idxs.end(),
-            [] __device__(const T &idx) {
-                return idx < 0;
-            });
-    idxs.resize(thrust::distance(idxs.begin(), end));
+    remove_scalar_negative(thrust::device, idxs);
 }
 
 template <typename DerivedPolicy, int Dim>
