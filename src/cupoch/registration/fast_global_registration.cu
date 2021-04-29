@@ -19,6 +19,8 @@
  * IN THE SOFTWARE.
 **/
 #include <thrust/random.h>
+#include <thrust/async/for_each.h>
+#include <thrust/async/reduce.h>
 
 #include "cupoch/geometry/bruteforce_nn.h"
 #include "cupoch/geometry/pointcloud.h"
@@ -198,24 +200,31 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
     float scale = 0;
     std::vector<Eigen::Vector3f> pcd_mean_vec;
     float scale_global, scale_start;
+    Eigen::Vector3f means[2];
+    thrust::system::cuda::unique_eager_future<Eigen::Vector3f> reduces[2];
+    thrust::system::cuda::unique_eager_event foreach[2];
 
     for (int i = 0; i < num; ++i) {
-        Eigen::Vector3f mean =
-                thrust::reduce(utility::exec_policy(0)->on(0),
-                               point_cloud_vec[i].points_.begin(),
-                               point_cloud_vec[i].points_.end(),
-                               Eigen::Vector3f(0.0, 0.0, 0.0),
-                               thrust::plus<Eigen::Vector3f>());
-        mean = mean / point_cloud_vec[i].points_.size();
-        pcd_mean_vec.push_back(mean);
-
-        utility::LogDebug("normalize points :: mean = [{:f} {:f} {:f}]",
-                          mean(0), mean(1), mean(2));
-        thrust::for_each(
+        reduces[i] = thrust::async::reduce(
+                utility::exec_policy(utility::GetStream(i))->on(utility::GetStream(i)),
                 point_cloud_vec[i].points_.begin(),
                 point_cloud_vec[i].points_.end(),
-                [mean] __device__(Eigen::Vector3f & pt) { pt -= mean; });
-
+                Eigen::Vector3f(0.0, 0.0, 0.0),
+                thrust::plus<Eigen::Vector3f>());
+    }
+    for (int i = 0; i < num; ++i) {
+        means[i] = reduces[i].get() / point_cloud_vec[i].points_.size();
+        foreach[i] = thrust::async::for_each(
+                utility::exec_policy(utility::GetStream(i))->on(utility::GetStream(i)),
+                point_cloud_vec[i].points_.begin(),
+                point_cloud_vec[i].points_.end(),
+                [mean = means[i]] __device__(Eigen::Vector3f & pt) { pt -= mean; });
+    }
+    for (int i = 0; i < num; ++i) {
+        utility::LogDebug("normalize points :: mean = [{:f} {:f} {:f}]",
+                          means[i](0), means[i](1), means[i](2));
+        pcd_mean_vec.push_back(means[i]);
+        foreach[i].wait();
         scale = thrust::transform_reduce(
                 utility::exec_policy(0)->on(0),
                 point_cloud_vec[i].points_.begin(),
@@ -234,12 +243,16 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
     utility::LogDebug("normalize points :: global scale : {:f}", scale_global);
 
     for (int i = 0; i < num; ++i) {
-        thrust::for_each(point_cloud_vec[i].points_.begin(),
-                         point_cloud_vec[i].points_.end(),
-                         [scale_global] __device__(Eigen::Vector3f & pt) {
-                             pt /= scale_global;
-                         });
+        foreach[i] = thrust::async::for_each(
+                utility::exec_policy(utility::GetStream(i))->on(utility::GetStream(i)),
+                point_cloud_vec[i].points_.begin(),
+                point_cloud_vec[i].points_.end(),
+                [scale_global] __device__(Eigen::Vector3f & pt) {
+                    pt /= scale_global;
+                });
     }
+    foreach[0].wait();
+    foreach[1].wait();
     return std::make_tuple(pcd_mean_vec, scale_global, scale_start);
 }
 
