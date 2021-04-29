@@ -89,8 +89,6 @@ public:
     bool IsUnknown(const Eigen::Vector3f& point) const;
     thrust::tuple<bool, OccupancyVoxel> GetVoxel(
             const Eigen::Vector3f& point) const;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels()
-            const;
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractKnownVoxels()
             const;
     std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractFreeVoxels()
@@ -117,7 +115,10 @@ public:
     OccupancyGrid& AddVoxels(
             const utility::device_vector<Eigen::Vector3i>& voxels,
             bool occupied = false);
-
+private:
+    template <typename Func>
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>>
+    ExtractBoundVoxels(Func func) const;
 public:
     Eigen::Vector3ui16 min_bound_ = Eigen::Vector3ui16::Zero();
     Eigen::Vector3ui16 max_bound_ = Eigen::Vector3ui16::Zero();

@@ -306,56 +306,52 @@ thrust::tuple<bool, OccupancyVoxel> OccupancyGrid::GetVoxel(
     return thrust::make_tuple(!std::isnan(voxel.prob_log_), voxel);
 }
 
+template <typename Func>
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
-OccupancyGrid::ExtractBoundVoxels() const {
+OccupancyGrid::ExtractBoundVoxels(Func check_func) const {
     Eigen::Vector3ui16 diff =
             max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
     auto out = std::make_shared<utility::device_vector<OccupancyVoxel>>();
     out->resize(diff[0] * diff[1] * diff[2]);
     extract_range_voxels_functor func(diff.cast<int>(), resolution_,
                                       min_bound_.cast<int>());
-    thrust::copy(thrust::make_permutation_iterator(voxels_.begin(),
-                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
-                      thrust::make_permutation_iterator(voxels_.begin(),
-                            thrust::make_transform_iterator(thrust::make_counting_iterator(out->size()), func)),
-                      out->begin());
+    auto end = thrust::copy_if(thrust::make_permutation_iterator(voxels_.begin(),
+                                       thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
+                               thrust::make_permutation_iterator(voxels_.begin(),
+                                       thrust::make_transform_iterator(thrust::make_counting_iterator(out->size()), func)),
+                               out->begin(), check_func);
+    out->resize(thrust::distance(out->begin(), end));
     return out;
 }
 
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractKnownVoxels() const {
-    auto out = ExtractBoundVoxels();
-    auto remove_fn = [th = occ_prob_thres_log_] __device__(
+    auto check_fn = [th = occ_prob_thres_log_] __device__(
                              const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
-        return isnan(v.prob_log_);
+        return !isnan(v.prob_log_);
     };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
-    return out;
+    return ExtractBoundVoxels(check_fn);
 }
 
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractFreeVoxels() const {
-    auto out = ExtractBoundVoxels();
-    auto remove_fn = [th = occ_prob_thres_log_] __device__(
+    auto check_fn = [th = occ_prob_thres_log_] __device__(
                              const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
-        return isnan(v.prob_log_) || v.prob_log_ > th;
+        return !isnan(v.prob_log_) && v.prob_log_ <= th;
     };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
-    return out;
+    return ExtractBoundVoxels(check_fn);
 }
 
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractOccupiedVoxels() const {
-    auto out = ExtractBoundVoxels();
-    auto remove_fn = [th = occ_prob_thres_log_] __device__(
+    auto check_fn = [th = occ_prob_thres_log_] __device__(
                              const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
-        return isnan(v.prob_log_) || v.prob_log_ <= th;
+        return !isnan(v.prob_log_) && v.prob_log_ > th;
     };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, *out);
-    return out;
+    return ExtractBoundVoxels(check_fn);
 }
 
 OccupancyGrid& OccupancyGrid::Reconstruct(float voxel_size, int resolution) {
