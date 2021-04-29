@@ -68,10 +68,10 @@ DLManagedTensor *ToDLPack(
     dvdl->tensor.dl_tensor.data = const_cast<void *>(
             (const void *)(thrust::raw_pointer_cast(src.data())));
     int64_t device_id = GetDevice();
-    DLContext ctx;
-    ctx.device_id = device_id;
-    ctx.device_type = DLDeviceType::kDLGPU;
-    dvdl->tensor.dl_tensor.ctx = ctx;
+    DLContext device;
+    device.device_id = device_id;
+    device.device_type = DLDeviceType::kDLGPU;
+    dvdl->tensor.dl_tensor.device = device;
     dvdl->tensor.dl_tensor.ndim = 2;
     DLDataType dtype;
     dtype.lanes = 1;
@@ -104,10 +104,10 @@ void FromDLPack(const DLManagedTensor *src,
     dst.resize(src->dl_tensor.shape[0]);
     auto base_ptr = thrust::device_pointer_cast(
             (Eigen::Matrix<T, Dim, 1> *)src->dl_tensor.data);
-    if (src->dl_tensor.ctx.device_type == DLDeviceType::kDLCPU) {
+    if (src->dl_tensor.device.device_type == DLDeviceType::kDLCPU) {
         cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dst.data()), thrust::raw_pointer_cast(base_ptr),
                                 src->dl_tensor.shape[0] * sizeof(Eigen::Matrix<T, Dim, 1>), cudaMemcpyHostToDevice));
-    } else if (src->dl_tensor.ctx.device_type == DLDeviceType::kDLGPU) {
+    } else if (src->dl_tensor.device.device_type == DLDeviceType::kDLGPU) {
         thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
     } else {
         utility::LogError(
