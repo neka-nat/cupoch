@@ -47,20 +47,20 @@ __device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
 
     int imax;
     d.maxCoeff(&imax);
-    return rxr[imax] / std::sqrt(d[imax]);
+    return rxr[imax] / sqrtf(d[imax]);
 }
 
 __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
                                                const Eigen::Vector3f &evec0,
                                                float eval1) {
     Eigen::Vector3f U, V;
-    if (std::abs(evec0(0)) > std::abs(evec0(1))) {
+    if (fabs(evec0(0)) > fabs(evec0(1))) {
         float inv_length =
                 1 / std::sqrt(evec0(0) * evec0(0) + evec0(2) * evec0(2));
         U << -evec0(2) * inv_length, 0, evec0(0) * inv_length;
     } else {
         float inv_length =
-                1 / std::sqrt(evec0(1) * evec0(1) + evec0(2) * evec0(2));
+                1 / sqrtf(evec0(1) * evec0(1) + evec0(2) * evec0(2));
         U << 0, evec0(2) * inv_length, -evec0(1) * inv_length;
     }
     V = evec0.cross(U);
@@ -77,20 +77,20 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
     float m01 = U(0) * AV(0) + U(1) * AV(1) + U(2) * AV(2);
     float m11 = V(0) * AV(0) + V(1) * AV(1) + V(2) * AV(2) - eval1;
 
-    float absM00 = std::abs(m00);
-    float absM01 = std::abs(m01);
-    float absM11 = std::abs(m11);
+    float absM00 = fabs(m00);
+    float absM01 = fabs(m01);
+    float absM11 = fabs(m11);
     float max_abs_comp;
     if (absM00 >= absM11) {
         max_abs_comp = max(absM00, absM01);
         if (max_abs_comp > 0) {
             if (absM00 >= absM01) {
                 m01 /= m00;
-                m00 = 1 / sqrt(1 + m01 * m01);
+                m00 = 1 / sqrtf(1 + m01 * m01);
                 m01 *= m00;
             } else {
                 m00 /= m01;
-                m01 = 1 / sqrt(1 + m00 * m00);
+                m01 = 1 / sqrtf(1 + m00 * m00);
                 m00 *= m01;
             }
             return m01 * U - m00 * V;
@@ -102,11 +102,11 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
         if (max_abs_comp > 0) {
             if (absM11 >= absM01) {
                 m01 /= m11;
-                m11 = 1 / sqrt(1 + m01 * m01);
+                m11 = 1 / sqrtf(1 + m01 * m01);
                 m01 *= m11;
             } else {
                 m11 /= m01;
-                m01 = 1 / sqrt(1 + m11 * m11);
+                m01 = 1 / sqrtf(1 + m11 * m11);
                 m11 *= m01;
             }
             return m11 * U - m01 * V;
@@ -142,7 +142,7 @@ __device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
         float b11 = A(1, 1) - q;
         float b22 = A(2, 2) - q;
 
-        float p = std::sqrt((b00 * b00 + b11 * b11 + b22 * b22 + norm * 2) / 6);
+        float p = sqrtf((b00 * b00 + b11 * b11 + b22 * b22 + norm * 2) / 6);
 
         float c00 = b11 * b22 - A(1, 2) * A(1, 2);
         float c01 = A(0, 1) * b22 - A(1, 2) * A(0, 2);
@@ -152,10 +152,10 @@ __device__ Eigen::Vector3f FastEigen3x3(Eigen::Matrix3f &A) {
         float half_det = det * 0.5;
         half_det = min(max(half_det, -1.0), 1.0);
 
-        float angle = std::acos(half_det) / (float)3;
+        float angle = acos(half_det) / (float)3;
         float const two_thirds_pi = 2.09439510239319549;
-        float beta2 = std::cos(angle) * 2;
-        float beta0 = std::cos(angle + two_thirds_pi) * 2;
+        float beta2 = cos(angle) * 2;
+        float beta0 = cos(angle + two_thirds_pi) * 2;
         float beta1 = -(beta0 + beta2);
 
         eval(0) = q + p * beta0;

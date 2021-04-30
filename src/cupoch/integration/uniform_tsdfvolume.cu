@@ -747,7 +747,8 @@ UniformTSDFVolume::ExtractTriangleMesh() {
                                       vt_offsets.begin());
     size_t n_result2 = thrust::distance(vt_offsets.begin(), end2.second);
     vt_offsets.resize(n_result2 + 1);
-    thrust::exclusive_scan(vt_offsets.begin(), vt_offsets.end(),
+    thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+                           vt_offsets.begin(), vt_offsets.end(),
                            vt_offsets.begin());
     mesh->triangles_.resize(n_result2 * 4, Eigen::Vector3i(-1, -1, -1));
     extract_mesh_phase3_functor func3(
@@ -758,6 +759,7 @@ UniformTSDFVolume::ExtractTriangleMesh() {
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(n_result2), func3);
     auto end3 = thrust::remove_if(
+            utility::exec_policy(0)->on(0),
             mesh->triangles_.begin(), mesh->triangles_.end(),
             [] __device__(const Eigen::Vector3i &idxs) { return idxs[0] < 0; });
     mesh->triangles_.resize(thrust::distance(mesh->triangles_.begin(), end3));
@@ -797,7 +799,8 @@ std::shared_ptr<geometry::VoxelGrid> UniformTSDFVolume::ExtractVoxelGrid()
     voxel_grid->voxel_size_ = voxel_length_;
     voxel_grid->origin_ = origin_ - Eigen::Vector3f::Constant(resolution_ / 2) * voxel_length_;
     size_t n_valid_voxels =
-            thrust::count_if(voxels_.begin(), voxels_.end(),
+            thrust::count_if(utility::exec_policy(0)->on(0),
+                             voxels_.begin(), voxels_.end(),
                              [] __device__(const geometry::TSDFVoxel &v) {
                                  return (v.weight_ != 0.0f && v.tsdf_ < 0.98f &&
                                          v.tsdf_ >= -0.98f);
