@@ -435,12 +435,12 @@ OccupancyGrid& OccupancyGrid::Insert(
             points.begin(), points.end(),
             make_tuple_begin(ranged_points, ranged_dists, hit_flags),
             [viewpoint, max_range] __device__(const Eigen::Vector3f& pt) {
-                Eigen::Vector3f pt_vp = pt - viewpoint;
-                float dist = pt_vp.norm();
-                bool is_hit = max_range < 0 || dist <= max_range;
+                const Eigen::Vector3f pt_vp = pt - viewpoint;
+                const float dist = pt_vp.norm();
+                const bool is_hit = max_range < 0 || dist <= max_range;
+                const Eigen::Vector3f ranged_pt = (is_hit) ? pt : ((dist == 0) ? viewpoint : viewpoint + pt_vp / dist * max_range);
                 return thrust::make_tuple(
-                        (is_hit) ? pt : viewpoint + pt_vp / dist * max_range,
-                        (is_hit) ? dist : max_range, is_hit);
+                        ranged_pt, (ranged_pt - viewpoint).maxCoeff(), is_hit);
             });
     float max_dist =
             *(thrust::max_element(ranged_dists.begin(), ranged_dists.end()));
