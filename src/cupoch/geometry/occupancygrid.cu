@@ -69,12 +69,12 @@ __device__ int VoxelTraversal(Eigen::Vector3i* voxels,
     }
     ray /= length;
 
-    Eigen::Vector3i current_voxel(floor(start[0] / voxel_size),
-                                  floor(start[1] / voxel_size),
-                                  floor(start[2] / voxel_size));
-    Eigen::Vector3i last_voxel(floor(end[0] / voxel_size),
-                               floor(end[1] / voxel_size),
-                               floor(end[2] / voxel_size));
+    Eigen::Vector3i current_voxel(floorf(start[0] / voxel_size),
+                                  floorf(start[1] / voxel_size),
+                                  floorf(start[2] / voxel_size));
+    Eigen::Vector3i last_voxel(floorf(end[0] / voxel_size),
+                               floorf(end[1] / voxel_size),
+                               floorf(end[2] / voxel_size));
     float stepX = (ray[0] > 0) ? 1 : ((ray[0] < 0) ? -1 : 0);
     float stepY = (ray[1] > 0) ? 1 : ((ray[1] < 0) ? -1 : 0);
     float stepZ = (ray[2] > 0) ? 1 : ((ray[2] < 0) ? -1 : 0);
@@ -155,7 +155,6 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        float voxel_size,
                        int resolution,
                        Eigen::Vector3f& origin,
-                       const utility::device_vector<Eigen::Vector3f>& steps,
                        int n_div,
                        utility::device_vector<Eigen::Vector3i>& free_voxels) {
     if (points.empty()) return;
@@ -450,15 +449,9 @@ OccupancyGrid& OccupancyGrid::Insert(
     utility::device_vector<Eigen::Vector3i> free_voxels;
     utility::device_vector<Eigen::Vector3i> occupied_voxels;
     if (n_div > 0) {
-        utility::device_vector<Eigen::Vector3f> steps(points.size());
-        thrust::transform(
-                ranged_points.begin(), ranged_points.end(), steps.begin(),
-                [viewpoint, n_div] __device__(const Eigen::Vector3f& pt) {
-                    return (pt - viewpoint) / n_div;
-                });
         // comupute free voxels
         ComputeFreeVoxels(ranged_points, viewpoint, voxel_size_, resolution_,
-                          origin_, steps, n_div + 1, free_voxels);
+                          origin_, n_div + 1, free_voxels);
     } else {
         thrust::copy(points.begin(), points.end(), ranged_points.begin());
         thrust::fill(hit_flags.begin(), hit_flags.end(), true);
