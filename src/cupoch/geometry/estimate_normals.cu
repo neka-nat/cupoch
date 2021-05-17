@@ -31,6 +31,10 @@ using namespace cupoch::geometry;
 
 namespace {
 
+__device__ float signf(float x) {
+    return x / fabs(x);
+}
+
 __device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
                                                float eval0) {
     Eigen::Vector3f row0(A(0, 0) - eval0, A(0, 1), A(0, 2));
@@ -53,17 +57,11 @@ __device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
 __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
                                                const Eigen::Vector3f &evec0,
                                                float eval1) {
-    Eigen::Vector3f U, V;
-    if (fabs(evec0(0)) > fabs(evec0(1))) {
-        float inv_length =
-                1 / std::sqrt(evec0(0) * evec0(0) + evec0(2) * evec0(2));
-        U << -evec0(2) * inv_length, 0, evec0(0) * inv_length;
-    } else {
-        float inv_length =
-                1 / sqrtf(evec0(1) * evec0(1) + evec0(2) * evec0(2));
-        U << 0, evec0(2) * inv_length, -evec0(1) * inv_length;
-    }
-    V = evec0.cross(U);
+    float max_evec0_abs = max(fabs(evec0(0)), fabs(evec0(1)));
+    float inv_length = 1 / sqrtf(max_evec0_abs * max_evec0_abs + evec0(2) * evec0(2));
+    Eigen::Vector3f U = (fabs(evec0(0)) > fabs(evec0(1))) ? Eigen::Vector3f(-evec0(2), 0, evec0(0)) : Eigen::Vector3f(0, evec0(2), -evec0(1));
+    U *= inv_length;
+    Eigen::Vector3f V = evec0.cross(U);
 
     Eigen::Vector3f AU(A(0, 0) * U(0) + A(0, 1) * U(1) + A(0, 2) * U(2),
                        A(0, 1) * U(0) + A(1, 1) * U(1) + A(1, 2) * U(2),
@@ -80,39 +78,16 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
     float absM00 = fabs(m00);
     float absM01 = fabs(m01);
     float absM11 = fabs(m11);
-    float max_abs_comp;
+    float max_abs_comp0 = max(absM00, absM11);
+    float max_abs_comp = max(max_abs_comp0, absM01);
+    float coef2 = min(max_abs_comp0, absM01) / max(max_abs_comp, 1.0e-6);
+    float coef1 = 1.0 / sqrtf(1.0 + coef2 * coef2);
     if (absM00 >= absM11) {
-        max_abs_comp = max(absM00, absM01);
-        if (max_abs_comp > 0) {
-            if (absM00 >= absM01) {
-                m01 /= m00;
-                m00 = 1 / sqrtf(1 + m01 * m01);
-                m01 *= m00;
-            } else {
-                m00 /= m01;
-                m01 = 1 / sqrtf(1 + m00 * m00);
-                m00 *= m01;
-            }
-            return m01 * U - m00 * V;
-        } else {
-            return U;
-        }
+        coef2 *= coef1 * signf(m00) * signf(m01);
+        return (max_abs_comp0 >= absM01) ? coef2 * U - coef1 * V : coef1 * U - coef2 * V;
     } else {
-        max_abs_comp = max(absM11, absM01);
-        if (max_abs_comp > 0) {
-            if (absM11 >= absM01) {
-                m01 /= m11;
-                m11 = 1 / sqrtf(1 + m01 * m01);
-                m01 *= m11;
-            } else {
-                m11 /= m01;
-                m01 = 1 / sqrtf(1 + m11 * m11);
-                m11 *= m01;
-            }
-            return m11 * U - m01 * V;
-        } else {
-            return U;
-        }
+        coef2 *= coef1 * signf(m11) * signf(m01);
+        return (max_abs_comp0 >= absM01) ? coef1 * U - coef2 * V : coef2 * U - coef1 * V;
     }
 }
 
