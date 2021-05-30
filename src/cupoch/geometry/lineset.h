@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <thrust/host_vector.h>
@@ -34,7 +34,7 @@ namespace geometry {
 
 class PointCloud;
 class OrientedBoundingBox;
-template<int Dim>
+template <int Dim>
 class AxisAlignedBoundingBox;
 class TriangleMesh;
 
@@ -73,7 +73,7 @@ public:
     Eigen::Matrix<float, Dim, 1> GetCenter() const override;
     AxisAlignedBoundingBox<Dim> GetAxisAlignedBoundingBox() const override;
     LineSet<Dim> &Transform(const Eigen::Matrix<float, Dim + 1, Dim + 1>
-                            &transformation) override;
+                                    &transformation) override;
     LineSet<Dim> &Translate(const Eigen::Matrix<float, Dim, 1> &translation,
                             bool relative = true) override;
     LineSet<Dim> &Scale(const float scale, bool center = true) override;
@@ -97,7 +97,7 @@ public:
         return *this;
     }
 
-    LineSet &PaintIndexedColor(const utility::device_vector<size_t>& indices,
+    LineSet &PaintIndexedColor(const utility::device_vector<size_t> &indices,
                                const Eigen::Vector3f &color);
 
     float GetMaxLineLength() const;
@@ -105,23 +105,23 @@ public:
     /// Factory function to create a LineSet from two PointClouds
     /// (\param cloud0, \param cloud1) and a correspondence set
     /// \param correspondences.
-    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<LineSet<Dim>> CreateFromPointCloudCorrespondences(
             const PointCloud &cloud0,
             const PointCloud &cloud1,
             const utility::device_vector<thrust::pair<int, int>>
                     &correspondences);
 
-    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<LineSet> CreateFromOrientedBoundingBox(
             const OrientedBoundingBox &box);
-    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<LineSet> CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox<Dim> &box);
 
     /// Factory function to create a LineSet from edges of a triangle mesh
     /// \param mesh.
-    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<LineSet<Dim>> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
 

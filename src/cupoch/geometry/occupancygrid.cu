@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/geometry/boundingvolume.h"
@@ -39,9 +39,7 @@ struct extract_range_voxels_functor {
     extract_range_voxels_functor(const Eigen::Vector3i& extents,
                                  int resolution,
                                  const Eigen::Vector3i& min_bound)
-        : extents_(extents),
-          resolution_(resolution),
-          min_bound_(min_bound){};
+        : extents_(extents), resolution_(resolution), min_bound_(min_bound){};
     const Eigen::Vector3i extents_;
     const int resolution_;
     const Eigen::Vector3i min_bound_;
@@ -81,12 +79,18 @@ __device__ int VoxelTraversal(Eigen::Vector3i* voxels,
     float voxel_boundary_x = (current_voxel[0] + 0.5 * stepX) * voxel_size;
     float voxel_boundary_y = (current_voxel[1] + 0.5 * stepY) * voxel_size;
     float voxel_boundary_z = (current_voxel[2] + 0.5 * stepZ) * voxel_size;
-    float tMaxX = (stepX != 0) ? (voxel_boundary_x - start[0]) / ray[0] : std::numeric_limits<float>::infinity();
-    float tMaxY = (stepY != 0) ? (voxel_boundary_y - start[1]) / ray[1] : std::numeric_limits<float>::infinity();
-    float tMaxZ = (stepZ != 0) ? (voxel_boundary_z - start[2]) / ray[2] : std::numeric_limits<float>::infinity();
-    float tDeltaX = (stepX != 0) ? voxel_size / fabs(ray[0]) : std::numeric_limits<float>::infinity();
-    float tDeltaY = (stepY != 0) ? voxel_size / fabs(ray[1]) : std::numeric_limits<float>::infinity();
-    float tDeltaZ = (stepZ != 0) ? voxel_size / fabs(ray[2]) : std::numeric_limits<float>::infinity();
+    float tMaxX = (stepX != 0) ? (voxel_boundary_x - start[0]) / ray[0]
+                               : std::numeric_limits<float>::infinity();
+    float tMaxY = (stepY != 0) ? (voxel_boundary_y - start[1]) / ray[1]
+                               : std::numeric_limits<float>::infinity();
+    float tMaxZ = (stepZ != 0) ? (voxel_boundary_z - start[2]) / ray[2]
+                               : std::numeric_limits<float>::infinity();
+    float tDeltaX = (stepX != 0) ? voxel_size / fabs(ray[0])
+                                 : std::numeric_limits<float>::infinity();
+    float tDeltaY = (stepY != 0) ? voxel_size / fabs(ray[1])
+                                 : std::numeric_limits<float>::infinity();
+    float tDeltaZ = (stepZ != 0) ? voxel_size / fabs(ray[2])
+                                 : std::numeric_limits<float>::infinity();
 
     voxels[n_voxels] = current_voxel + half_resolution;
     ++n_voxels;
@@ -131,22 +135,24 @@ struct compute_voxel_traversal_functor {
                                     const Eigen::Vector3i& half_resolution,
                                     float voxel_size,
                                     const Eigen::Vector3f& origin)
-    : voxels_(voxels), n_step_(n_step), viewpoint_(viewpoint),
-    half_resolution_(half_resolution), voxel_size_(voxel_size),
-    origin_(origin) {};
+        : voxels_(voxels),
+          n_step_(n_step),
+          viewpoint_(viewpoint),
+          half_resolution_(half_resolution),
+          voxel_size_(voxel_size),
+          origin_(origin){};
     Eigen::Vector3i* voxels_;
     const int n_step_;
     const Eigen::Vector3f viewpoint_;
     const Eigen::Vector3i half_resolution_;
     const float voxel_size_;
     const Eigen::Vector3f origin_;
-    __device__ void operator() (const thrust::tuple<size_t, Eigen::Vector3f>& x) {
+    __device__ void operator()(
+            const thrust::tuple<size_t, Eigen::Vector3f>& x) {
         const int idx = thrust::get<0>(x);
         const Eigen::Vector3f end = thrust::get<1>(x);
-        VoxelTraversal(voxels_ + idx * n_step_,
-                       n_step_, half_resolution_,
-                       viewpoint_, end - origin_,
-                       voxel_size_);
+        VoxelTraversal(voxels_ + idx * n_step_, n_step_, half_resolution_,
+                       viewpoint_, end - origin_, voxel_size_);
     }
 };
 
@@ -161,13 +167,12 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
     size_t n_points = points.size();
     size_t max_idx = resolution * resolution * resolution;
     Eigen::Vector3i half_resolution = Eigen::Vector3i::Constant(resolution / 2);
-    free_voxels.resize(n_div * 3 * n_points, Eigen::Vector3i::Constant(geometry::INVALID_VOXEL_INDEX));
-    compute_voxel_traversal_functor func(thrust::raw_pointer_cast(free_voxels.data()),
-                                         n_div * 3,
-                                         viewpoint - origin,
-                                         half_resolution,
-                                         voxel_size,
-                                         origin);
+    free_voxels.resize(
+            n_div * 3 * n_points,
+            Eigen::Vector3i::Constant(geometry::INVALID_VOXEL_INDEX));
+    compute_voxel_traversal_functor func(
+            thrust::raw_pointer_cast(free_voxels.data()), n_div * 3,
+            viewpoint - origin, half_resolution, voxel_size, origin);
     thrust::for_each(enumerate_begin(points), enumerate_end(points), func);
     auto end1 = thrust::remove_if(
             free_voxels.begin(), free_voxels.end(),
@@ -177,9 +182,10 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        idx[2] >= max_idx;
             });
     free_voxels.resize(thrust::distance(free_voxels.begin(), end1));
-    thrust::sort(utility::exec_policy(0)->on(0),
-                 free_voxels.begin(), free_voxels.end());
-    auto end2 = thrust::unique(utility::exec_policy(0)->on(0), free_voxels.begin(), free_voxels.end());
+    thrust::sort(utility::exec_policy(0)->on(0), free_voxels.begin(),
+                 free_voxels.end());
+    auto end2 = thrust::unique(utility::exec_policy(0)->on(0),
+                               free_voxels.begin(), free_voxels.end());
     free_voxels.resize(thrust::distance(free_voxels.begin(), end2));
 }
 
@@ -231,9 +237,10 @@ void ComputeOccupiedVoxels(
                        idx[2] >= max_idx;
             });
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
-    thrust::sort(utility::exec_policy(0)->on(0),
-                 occupied_voxels.begin(), occupied_voxels.end());
-    auto end2 = thrust::unique(utility::exec_policy(0)->on(0), occupied_voxels.begin(), occupied_voxels.end());
+    thrust::sort(utility::exec_policy(0)->on(0), occupied_voxels.begin(),
+                 occupied_voxels.end());
+    auto end2 = thrust::unique(utility::exec_policy(0)->on(0),
+                               occupied_voxels.begin(), occupied_voxels.end());
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
 }
 
@@ -356,11 +363,16 @@ OccupancyGrid::ExtractBoundVoxels(Func check_func) const {
     out->resize(diff[0] * diff[1] * diff[2]);
     extract_range_voxels_functor func(diff.cast<int>(), resolution_,
                                       min_bound_.cast<int>());
-    auto end = thrust::copy_if(thrust::make_permutation_iterator(voxels_.begin(),
-                                       thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
-                               thrust::make_permutation_iterator(voxels_.begin(),
-                                       thrust::make_transform_iterator(thrust::make_counting_iterator(out->size()), func)),
-                               out->begin(), check_func);
+    auto end = thrust::copy_if(
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(
+                            thrust::make_counting_iterator<size_t>(0), func)),
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(
+                            thrust::make_counting_iterator(out->size()), func)),
+            out->begin(), check_func);
     out->resize(thrust::distance(out->begin(), end));
     return out;
 }
@@ -368,7 +380,7 @@ OccupancyGrid::ExtractBoundVoxels(Func check_func) const {
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractKnownVoxels() const {
     auto check_fn = [th = occ_prob_thres_log_] __device__(
-                             const thrust::tuple<OccupancyVoxel>& x) {
+                            const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return !isnan(v.prob_log_);
     };
@@ -378,7 +390,7 @@ OccupancyGrid::ExtractKnownVoxels() const {
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractFreeVoxels() const {
     auto check_fn = [th = occ_prob_thres_log_] __device__(
-                             const thrust::tuple<OccupancyVoxel>& x) {
+                            const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return !isnan(v.prob_log_) && v.prob_log_ <= th;
     };
@@ -388,7 +400,7 @@ OccupancyGrid::ExtractFreeVoxels() const {
 std::shared_ptr<utility::device_vector<OccupancyVoxel>>
 OccupancyGrid::ExtractOccupiedVoxels() const {
     auto check_fn = [th = occ_prob_thres_log_] __device__(
-                             const thrust::tuple<OccupancyVoxel>& x) {
+                            const thrust::tuple<OccupancyVoxel>& x) {
         const OccupancyVoxel& v = thrust::get<0>(x);
         return !isnan(v.prob_log_) && v.prob_log_ > th;
     };
@@ -403,21 +415,46 @@ OccupancyGrid& OccupancyGrid::Reconstruct(float voxel_size, int resolution) {
 OccupancyGrid& OccupancyGrid::SetFreeArea(const Eigen::Vector3f& min_bound,
                                           const Eigen::Vector3f& max_bound) {
     const Eigen::Vector3i half_res = Eigen::Vector3i::Constant(resolution_ / 2);
-    Eigen::Vector3i imin_bound = ((min_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
-    Eigen::Vector3i imax_bound = ((max_bound - origin_) / voxel_size_).array().floor().matrix().cast<int>() + half_res;
-    min_bound_ = imin_bound.array().max(Eigen::Array3i(0, 0, 0)).matrix().cast<unsigned short>();
-    max_bound_ = imax_bound.array().min(Eigen::Array3i(resolution_ - 1, resolution_ - 1, resolution_ - 1)).matrix().cast<unsigned short>();
-    Eigen::Vector3ui16 diff = max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
+    Eigen::Vector3i imin_bound = ((min_bound - origin_) / voxel_size_)
+                                         .array()
+                                         .floor()
+                                         .matrix()
+                                         .cast<int>() +
+                                 half_res;
+    Eigen::Vector3i imax_bound = ((max_bound - origin_) / voxel_size_)
+                                         .array()
+                                         .floor()
+                                         .matrix()
+                                         .cast<int>() +
+                                 half_res;
+    min_bound_ = imin_bound.array()
+                         .max(Eigen::Array3i(0, 0, 0))
+                         .matrix()
+                         .cast<unsigned short>();
+    max_bound_ = imax_bound.array()
+                         .min(Eigen::Array3i(resolution_ - 1, resolution_ - 1,
+                                             resolution_ - 1))
+                         .matrix()
+                         .cast<unsigned short>();
+    Eigen::Vector3ui16 diff =
+            max_bound_ - min_bound_ + Eigen::Vector3ui16::Ones();
     extract_range_voxels_functor func(diff.cast<int>(), resolution_,
                                       min_bound_.cast<int>());
-    thrust::for_each(thrust::make_permutation_iterator(voxels_.begin(),
-                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(0), func)),
-                     thrust::make_permutation_iterator(voxels_.begin(),
-                            thrust::make_transform_iterator(thrust::make_counting_iterator<size_t>(diff[0] * diff[1] * diff[2]), func)),
-                     [pml = prob_miss_log_] __device__ (geometry::OccupancyVoxel& v) {
-                         v.prob_log_ = (isnan(v.prob_log_)) ? 0 : v.prob_log_;
-                         v.prob_log_ += pml;
-                     });
+    thrust::for_each(
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(
+                            thrust::make_counting_iterator<size_t>(0), func)),
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(
+                            thrust::make_counting_iterator<size_t>(
+                                    diff[0] * diff[1] * diff[2]),
+                            func)),
+            [pml = prob_miss_log_] __device__(geometry::OccupancyVoxel & v) {
+                v.prob_log_ = (isnan(v.prob_log_)) ? 0 : v.prob_log_;
+                v.prob_log_ += pml;
+            });
     return *this;
 }
 
@@ -438,9 +475,16 @@ OccupancyGrid& OccupancyGrid::Insert(
                 const Eigen::Vector3f pt_vp = pt - viewpoint;
                 const float dist = pt_vp.norm();
                 const bool is_hit = max_range < 0 || dist <= max_range;
-                const Eigen::Vector3f ranged_pt = (is_hit) ? pt : ((dist == 0) ? viewpoint : viewpoint + pt_vp / dist * max_range);
+                const Eigen::Vector3f ranged_pt =
+                        (is_hit)
+                                ? pt
+                                : ((dist == 0) ? viewpoint
+                                               : viewpoint + pt_vp / dist *
+                                                                     max_range);
                 return thrust::make_tuple(
-                        ranged_pt, (ranged_pt - viewpoint).array().abs().maxCoeff(), is_hit);
+                        ranged_pt,
+                        (ranged_pt - viewpoint).array().abs().maxCoeff(),
+                        is_hit);
             });
     float max_dist =
             *(thrust::max_element(ranged_dists.begin(), ranged_dists.end()));
@@ -478,8 +522,9 @@ OccupancyGrid& OccupancyGrid::Insert(
         const Eigen::Vector3f& viewpoint,
         float max_range) {
     utility::device_vector<Eigen::Vector3f> dev_points(points.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dev_points.data()), points.data(),
-                            points.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
+    cudaSafeCall(cudaMemcpy(
+            thrust::raw_pointer_cast(dev_points.data()), points.data(),
+            points.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
     return Insert(dev_points, viewpoint, max_range);
 }
 

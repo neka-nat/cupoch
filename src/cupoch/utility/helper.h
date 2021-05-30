@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
@@ -33,6 +33,7 @@ using make_index_sequence = std::make_index_sequence<N>;
 #endif
 
 #include <stdgpu/functional.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <vector>
@@ -61,17 +62,15 @@ struct equal_to<Eigen::Matrix<int, Dim, 1>> {
     // clang-format on
 };
 
-
 namespace is_eigen_matrix_detail {
-    template <typename T>
-    std::true_type test(const Eigen::MatrixBase<T>*);
-    std::false_type test(...);
-}
+template <typename T>
+std::true_type test(const Eigen::MatrixBase<T> *);
+std::false_type test(...);
+}  // namespace is_eigen_matrix_detail
 
 template <typename T>
 struct is_eigen_matrix
-    : public decltype(is_eigen_matrix_detail::test(std::declval<T*>()))
-{};
+    : public decltype(is_eigen_matrix_detail::test(std::declval<T *>())) {};
 
 template <typename VectorType, typename Enable = void>
 struct elementwise_minimum;
@@ -80,14 +79,18 @@ template <typename VectorType, typename Enable = void>
 struct elementwise_maximum;
 
 template <typename VectorType>
-struct elementwise_minimum<VectorType, typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
+struct elementwise_minimum<
+        VectorType,
+        typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
     __device__ VectorType operator()(const VectorType &a, const VectorType &b) {
         return a.array().min(b.array()).matrix();
     }
 };
 
 template <typename VectorType>
-struct elementwise_maximum<VectorType, typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
+struct elementwise_maximum<
+        VectorType,
+        typename std::enable_if<is_eigen_matrix<VectorType>::value>::type> {
     __device__ VectorType operator()(const VectorType &a, const VectorType &b) {
         return a.array().max(b.array()).matrix();
     }
@@ -100,7 +103,7 @@ namespace Eigen {
 template <typename T, int Dim>
 __host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
                                    const Eigen::Matrix<T, Dim, 1> &rhs) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return lhs[i] < rhs[i];
     }
@@ -110,7 +113,7 @@ __host__ __device__ bool operator<(const Eigen::Matrix<T, Dim, 1> &lhs,
 template <typename T, int Dim>
 __host__ __device__ bool operator>(const Eigen::Matrix<T, Dim, 1> &lhs,
                                    const Eigen::Matrix<T, Dim, 1> &rhs) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return lhs[i] > rhs[i];
     }
@@ -121,7 +124,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator==(
         const Eigen::Matrix<T, Dim, 1> &lhs,
         const Eigen::Matrix<T, Dim, 1> &rhs) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return false;
     }
@@ -132,7 +135,7 @@ template <typename T, int Dim>
 __host__ __device__ inline bool operator!=(
         const Eigen::Matrix<T, Dim, 1> &lhs,
         const Eigen::Matrix<T, Dim, 1> &rhs) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < Dim; ++i) {
         if (lhs[i] != rhs[i]) return true;
     }
@@ -141,7 +144,7 @@ __host__ __device__ inline bool operator!=(
 
 template <typename ArrayType>
 __host__ __device__ bool device_all(const ArrayType &array) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
         if (!array[i]) return false;
     }
@@ -150,7 +153,7 @@ __host__ __device__ bool device_all(const ArrayType &array) {
 
 template <typename ArrayType>
 __host__ __device__ bool device_any(const ArrayType &array) {
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < ArrayType::SizeAtCompileTime; ++i) {
         if (array[i]) return true;
     }
@@ -161,7 +164,7 @@ template <typename T, int Dim, float (*Func)(float)>
 __host__ __device__ Eigen::Matrix<T, Dim, 1> device_vectorize(
         const Eigen::Matrix<T, Dim, 1> &x) {
     Eigen::Matrix<T, Dim, 1> ans;
-    #pragma unroll
+#pragma unroll
     for (int i = 0; i < Dim; ++i) {
         ans[i] = Func(x[i]);
     }
@@ -257,34 +260,40 @@ auto make_tuple_end(Args &... args) {
     return make_tuple_iterator(std::end(args)...);
 }
 
-template<class... Args>
+template <class... Args>
 auto enumerate_iterator(size_t n, Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n), args...);
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n),
+                               args...);
 }
 
-template<class... Args>
+template <class... Args>
 auto enumerate_iterator(size_t n, const Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n), args...);
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(n),
+                               args...);
 }
 
 template <class... Args>
 auto enumerate_begin(Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), std::begin(args)...);
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
+                               std::begin(args)...);
 }
 
 template <class... Args>
 auto enumerate_begin(const Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0), std::begin(args)...);
+    return make_tuple_iterator(thrust::make_counting_iterator<size_t>(0),
+                               std::begin(args)...);
 }
 
 template <class T, class... Args>
-auto enumerate_end(T& first, Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator(first.size()), std::end(first), std::end(args)...);
+auto enumerate_end(T &first, Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator(first.size()),
+                               std::end(first), std::end(args)...);
 }
 
 template <class T, class... Args>
-auto enumerate_end(const T& first, const Args &... args) {
-    return make_tuple_iterator(thrust::make_counting_iterator(first.size()), std::end(first), std::end(args)...);
+auto enumerate_end(const T &first, const Args &... args) {
+    return make_tuple_iterator(thrust::make_counting_iterator(first.size()),
+                               std::end(first), std::end(args)...);
 }
 
 template <class T>
@@ -299,16 +308,19 @@ void resize_all(size_t new_size, Args &... args) {
 
 template <typename DerivedPolicy, class Func, class... Args>
 size_t remove_if_vectors_without_resize(
-        const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
-        Func fn, utility::device_vector<Args> &... args) {
+        const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
+        Func fn,
+        utility::device_vector<Args> &... args) {
     auto begin = make_tuple_begin(args...);
     auto end = thrust::remove_if(exec, begin, make_tuple_end(args...), fn);
     return thrust::distance(begin, end);
 }
 
 template <typename DerivedPolicy, class Func, class... Args>
-size_t remove_if_vectors(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
-                         Func fn, utility::device_vector<Args> &... args) {
+size_t remove_if_vectors(
+        const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
+        Func fn,
+        utility::device_vector<Args> &... args) {
     size_t k = remove_if_vectors_without_resize(exec, fn, args...);
     resize_all(k, args...);
     return k;
@@ -349,11 +361,11 @@ void remove_scalar_negative(utility::device_vector<T> &idxs) {
 }
 
 template <typename DerivedPolicy, int Dim>
-void remove_negative(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
-                     utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
+void remove_negative(
+        const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
+        utility::device_vector<Eigen::Matrix<int, Dim, 1>> &idxs) {
     auto end = thrust::remove_if(
-            exec,
-            idxs.begin(), idxs.end(),
+            exec, idxs.begin(), idxs.end(),
             [] __device__(const Eigen::Matrix<int, Dim, 1> &idx) {
                 return Eigen::device_any(idx.array() < 0);
             });
@@ -361,14 +373,12 @@ void remove_negative(const thrust::detail::execution_policy_base<DerivedPolicy>&
 }
 
 template <typename DerivedPolicy, typename T>
-void remove_scalar_negative(const thrust::detail::execution_policy_base<DerivedPolicy>& exec,
-                            utility::device_vector<T> &idxs) {
-    auto end = thrust::remove_if(
-            exec,
-            idxs.begin(), idxs.end(),
-            [] __device__(const T &idx) {
-                return idx < 0;
-            });
+void remove_scalar_negative(
+        const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
+        utility::device_vector<T> &idxs) {
+    auto end =
+            thrust::remove_if(exec, idxs.begin(), idxs.end(),
+                              [] __device__(const T &idx) { return idx < 0; });
     idxs.resize(thrust::distance(idxs.begin(), end));
 }
 
@@ -395,7 +405,8 @@ __host__ __device__ inline int IndexOf(const Eigen::Vector3i &xyz,
     return IndexOf(xyz(0), xyz(1), xyz(2), resolution);
 }
 
-__host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx, int resolution) {
+__host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx,
+                                                              int resolution) {
     int res2 = resolution * resolution;
     int x = idx / res2;
     int yz = idx % res2;
@@ -405,21 +416,24 @@ __host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx, int re
 }
 
 template <typename T>
-inline void copy_device_to_host(const utility::device_vector<T>& src, utility::pinned_host_vector<T>& dist) {
+inline void copy_device_to_host(const utility::device_vector<T> &src,
+                                utility::pinned_host_vector<T> &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyDeviceToHost));
 }
 
 template <typename T>
-inline void copy_host_to_device(const utility::pinned_host_vector<T>& src, utility::device_vector<T>& dist) {
+inline void copy_host_to_device(const utility::pinned_host_vector<T> &src,
+                                utility::device_vector<T> &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyHostToDevice));
 }
 
 template <typename T>
-inline void copy_device_to_device(const utility::device_vector<T>& src, utility::device_vector<T>& dist) {
+inline void copy_device_to_device(const utility::device_vector<T> &src,
+                                  utility::device_vector<T> &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyDeviceToDevice));
@@ -429,10 +443,9 @@ namespace utility {
 
 template <typename T>
 struct hash_eigen {
-    __host__ __device__
-    std::size_t operator()(T const& matrix) const {
+    __host__ __device__ std::size_t operator()(T const &matrix) const {
         size_t seed = 0;
-        #pragma unroll
+#pragma unroll
         for (int i = 0; i < T::SizeAtCompileTime; i++) {
             auto elem = *(matrix.data() + i);
             seed ^= stdgpu::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +

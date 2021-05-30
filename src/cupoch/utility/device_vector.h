@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,15 +17,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #ifdef USE_RMM
 #include <rmm/thrust_rmm_allocator.h>
-#include <rmm/mr/device/thrust_allocator_adaptor.hpp>
+
 #include <rmm/mr/device/cuda_memory_resource.hpp>
-#include <rmm/mr/device/pool_memory_resource.hpp>
 #include <rmm/mr/device/managed_memory_resource.hpp>
+#include <rmm/mr/device/pool_memory_resource.hpp>
+#include <rmm/mr/device/thrust_allocator_adaptor.hpp>
 #else
 #include <thrust/device_vector.h>
 #endif
@@ -37,8 +38,10 @@ struct float4_t {
     float x, y, z, w;
 };
 
-__host__ __device__
-inline float4_t make_float4_t(float x, float y, float z, float w) {
+__host__ __device__ inline float4_t make_float4_t(float x,
+                                                  float y,
+                                                  float z,
+                                                  float w) {
     float4_t f4 = {x, y, z, w};
     return f4;
 }
@@ -46,8 +49,10 @@ inline float4_t make_float4_t(float x, float y, float z, float w) {
 #include <cuda_runtime.h>
 using float4_t = float4;
 
-__host__ __device__
-inline float4_t make_float4_t(float x, float y, float z, float w) {
+__host__ __device__ inline float4_t make_float4_t(float x,
+                                                  float y,
+                                                  float z,
+                                                  float w) {
     return make_float4(x, y, z, w);
 }
 #endif
@@ -82,7 +87,9 @@ inline void InitializeAllocator(
     if (mode & CudaManagedMemory) {
         auto cuda_mr = new rmm::mr::managed_memory_resource();
         if (mode & PoolAllocation) {
-            auto mr = new rmm::mr::pool_memory_resource<rmm::mr::managed_memory_resource>(cuda_mr, initial_pool_size);
+            auto mr = new rmm::mr::pool_memory_resource<
+                    rmm::mr::managed_memory_resource>(cuda_mr,
+                                                      initial_pool_size);
             rmm::mr::set_current_device_resource(mr);
         } else {
             rmm::mr::set_current_device_resource(cuda_mr);
@@ -90,7 +97,8 @@ inline void InitializeAllocator(
     } else {
         auto cuda_mr = new rmm::mr::cuda_memory_resource();
         if (mode & PoolAllocation) {
-            auto mr = new rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource>(cuda_mr, initial_pool_size);
+            auto mr = new rmm::mr::pool_memory_resource<
+                    rmm::mr::cuda_memory_resource>(cuda_mr, initial_pool_size);
             rmm::mr::set_current_device_resource(mr);
         } else {
             rmm::mr::set_current_device_resource(cuda_mr);

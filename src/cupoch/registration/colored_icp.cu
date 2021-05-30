@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <Eigen/Geometry>
 #include <iostream>
 
@@ -138,8 +138,7 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             thrust::raw_pointer_cast(output->points_.data()),
             thrust::raw_pointer_cast(output->normals_.data()),
             thrust::raw_pointer_cast(output->colors_.data()),
-            thrust::raw_pointer_cast(point_idx.data()),
-            search_param.max_nn_);
+            thrust::raw_pointer_cast(point_idx.data()), search_param.max_nn_);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_points),
                       output->color_gradient_.begin(), func);
@@ -318,8 +317,8 @@ float TransformationEstimationForColoredICP::ComputeRMSE(
             thrust::raw_pointer_cast(target_c.color_gradient_.data()),
             sqrt_lambda_geometric, sqrt_lambda_photometric);
     const auto err = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
-            corres.begin(), corres.end(), func, 0.0f, thrust::plus<float>());
+            utility::exec_policy(0)->on(0), corres.begin(), corres.end(), func,
+            0.0f, thrust::plus<float>());
     return err;
 };
 

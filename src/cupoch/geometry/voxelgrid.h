@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <thrust/transform_reduce.h>
@@ -62,7 +62,9 @@ public:
 };
 
 struct add_voxel_color_functor {
-    __device__ thrust::tuple<Voxel, int> operator()(const thrust::tuple<Voxel, int> &x, const thrust::tuple<Voxel, int> &y) const {
+    __device__ thrust::tuple<Voxel, int> operator()(
+            const thrust::tuple<Voxel, int> &x,
+            const thrust::tuple<Voxel, int> &y) const {
         Voxel ans;
         ans.grid_index_ = thrust::get<0>(x).grid_index_;
         ans.color_ = thrust::get<0>(x).color_ + thrust::get<0>(y).color_;
@@ -85,8 +87,7 @@ public:
     VoxelGrid(const VoxelGrid &src_voxel_grid);
     ~VoxelGrid();
 
-    std::pair<thrust::host_vector<Eigen::Vector3i>,
-              thrust::host_vector<Voxel>>
+    std::pair<thrust::host_vector<Eigen::Vector3i>, thrust::host_vector<Voxel>>
     GetVoxels() const;
     void SetVoxels(const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
                    const thrust::host_vector<Voxel> &voxels_values);
@@ -124,7 +125,7 @@ public:
     /// Assigns each voxel in the VoxelGrid the same color \param color.
     VoxelGrid &PaintUniformColor(const Eigen::Vector3f &color);
 
-    VoxelGrid &PaintIndexedColor(const utility::device_vector<size_t>& indices,
+    VoxelGrid &PaintIndexedColor(const utility::device_vector<size_t> &indices,
                                  const Eigen::Vector3f &color);
 
     /// Return a vector of 3D coordinates that define the indexed voxel cube.

@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/collision/primitives.h"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/trianglemesh.h"
@@ -155,8 +155,10 @@ struct create_from_swept_primitive_functor {
         Eigen::Vector3f box_center =
                 (dtf * Eigen::Vector4f(voxel_size_ * (widx + 0.5),
                                        voxel_size_ * (hidx + 0.5),
-                                       voxel_size_ * (didx + 0.5), 1.0)).template head<3>();
-        Eigen::Vector3i grid_index = (box_center / voxel_size_).template cast<int>();
+                                       voxel_size_ * (didx + 0.5), 1.0))
+                        .template head<3>();
+        Eigen::Vector3i grid_index =
+                (box_center / voxel_size_).template cast<int>();
         box_center = grid_index.cast<float>() * voxel_size_;
         if (intersect(dtf, box_center)) {
             return thrust::make_tuple(grid_index, geometry::Voxel(grid_index));

@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
 
@@ -71,7 +71,7 @@ struct gaussian_filter_functor {
           sigma2_(sigma2),
           num_max_search_points_(num_max_search_points),
           has_normal_(has_normal),
-          has_color_(has_color) {};
+          has_color_(has_color){};
     const Eigen::Vector3f *points_;
     const Eigen::Vector3f *normals_;
     const Eigen::Vector3f *colors_;
@@ -81,7 +81,8 @@ struct gaussian_filter_functor {
     const int num_max_search_points_;
     const bool has_normal_;
     const bool has_color_;
-    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f> operator()(size_t idx) const {
+    __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>
+    operator()(size_t idx) const {
         float total_weight = 0.0;
         Eigen::Vector3f res_p = Eigen::Vector3f::Zero();
         Eigen::Vector3f res_n = Eigen::Vector3f::Zero();
@@ -107,11 +108,12 @@ struct gaussian_filter_functor {
 template <class... Args>
 struct pass_through_filter_functor {
     pass_through_filter_functor(int axis_no, float min_bound, float max_bound)
-    : axis_no_(axis_no), min_bound_(min_bound), max_bound_(max_bound) {};
+        : axis_no_(axis_no), min_bound_(min_bound), max_bound_(max_bound){};
     const int axis_no_;
     const float min_bound_;
     const float max_bound_;
-    __device__ bool operator() (const thrust::tuple<Eigen::Vector3f, Args...>& x) const {
+    __device__ bool operator()(
+            const thrust::tuple<Eigen::Vector3f, Args...> &x) const {
         float val = thrust::get<0>(x)[axis_no_];
         return val < min_bound_ || max_bound_ < val;
     }
@@ -119,8 +121,7 @@ struct pass_through_filter_functor {
 
 }  // namespace
 
-PointCloud::PointCloud()
-    : GeometryBase3D(Geometry::GeometryType::PointCloud) {}
+PointCloud::PointCloud() : GeometryBase3D(Geometry::GeometryType::PointCloud) {}
 PointCloud::PointCloud(const thrust::host_vector<Eigen::Vector3f> &points)
     : GeometryBase3D(Geometry::GeometryType::PointCloud), points_(points) {}
 PointCloud::PointCloud(const std::vector<Eigen::Vector3f> &points)
@@ -187,7 +188,9 @@ Eigen::Vector3f PointCloud::GetMaxBound() const {
     return ComputeMaxBound<3>(points_);
 }
 
-Eigen::Vector3f PointCloud::GetCenter() const { return ComputeCenter<3>(points_); }
+Eigen::Vector3f PointCloud::GetCenter() const {
+    return ComputeCenter<3>(points_);
+}
 
 AxisAlignedBoundingBox<3> PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox<3>::CreateFromPoints(points_);
@@ -344,25 +347,41 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
                                  thrust::raw_pointer_cast(colors_.data()),
                                  thrust::raw_pointer_cast(indices.data()),
                                  thrust::raw_pointer_cast(dist.data()), sigma2,
-                                 num_max_search_points,
-                                 has_normal, has_color);
+                                 num_max_search_points, has_normal, has_color);
     if (has_normal && has_color) {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
-                          make_tuple_begin(out->points_, out->normals_, out->colors_), func);
+        thrust::transform(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator(points_.size()),
+                make_tuple_begin(out->points_, out->normals_, out->colors_),
+                func);
     } else if (has_normal) {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
-                          make_tuple_iterator(out->points_.begin(), out->normals_.begin(), thrust::make_discard_iterator()), func);
+        thrust::transform(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator(points_.size()),
+                make_tuple_iterator(out->points_.begin(), out->normals_.begin(),
+                                    thrust::make_discard_iterator()),
+                func);
     } else if (has_color) {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
-                          make_tuple_iterator(out->points_.begin(), thrust::make_discard_iterator(), out->colors_.begin()), func);
+        thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                          thrust::make_counting_iterator(points_.size()),
+                          make_tuple_iterator(out->points_.begin(),
+                                              thrust::make_discard_iterator(),
+                                              out->colors_.begin()),
+                          func);
     } else {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0), thrust::make_counting_iterator(points_.size()),
-                          make_tuple_iterator(out->points_.begin(), thrust::make_discard_iterator(), thrust::make_discard_iterator()), func);
+        thrust::transform(thrust::make_counting_iterator<size_t>(0),
+                          thrust::make_counting_iterator(points_.size()),
+                          make_tuple_iterator(out->points_.begin(),
+                                              thrust::make_discard_iterator(),
+                                              thrust::make_discard_iterator()),
+                          func);
     }
     return out;
 }
 
-std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no, float min_bound, float max_bound) {
+std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no,
+                                                          float min_bound,
+                                                          float max_bound) {
     auto out = std::make_shared<PointCloud>();
     if (axis_no < 0 || axis_no >= 3) {
         utility::LogError(
@@ -374,23 +393,29 @@ std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no, float min
     bool has_normal = HasNormals();
     bool has_color = HasColors();
     if (has_normal && has_color) {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<Eigen::Vector3f, Eigen::Vector3f>(axis_no, min_bound, max_bound),
-                          out->points_, out->normals_, out->colors_);
+        remove_if_vectors(
+                utility::exec_policy(0)->on(0),
+                pass_through_filter_functor<Eigen::Vector3f, Eigen::Vector3f>(
+                        axis_no, min_bound, max_bound),
+                out->points_, out->normals_, out->colors_);
     } else if (has_normal) {
         remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<Eigen::Vector3f>(axis_no, min_bound, max_bound),
+                          pass_through_filter_functor<Eigen::Vector3f>(
+                                  axis_no, min_bound, max_bound),
                           out->points_, out->normals_);
     } else if (has_color) {
         remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<Eigen::Vector3f>(axis_no, min_bound, max_bound),
+                          pass_through_filter_functor<Eigen::Vector3f>(
+                                  axis_no, min_bound, max_bound),
                           out->points_, out->colors_);
     } else {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<>(axis_no, min_bound, max_bound), out->points_);
+        remove_if_vectors(
+                utility::exec_policy(0)->on(0),
+                pass_through_filter_functor<>(axis_no, min_bound, max_bound),
+                out->points_);
     }
     return out;
 }
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

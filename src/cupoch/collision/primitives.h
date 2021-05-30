@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include <memory>
 
@@ -43,9 +43,8 @@ public:
         Cylinder = 4,
         Mesh = 5,
     };
-    __host__ __device__ Primitive() {};
-    __host__ __device__ Primitive(PrimitiveType type)
-        : type_(type) {};
+    __host__ __device__ Primitive(){};
+    __host__ __device__ Primitive(PrimitiveType type) : type_(type){};
     __host__ __device__ Primitive(PrimitiveType type,
                                   const Eigen::Matrix4f& transform)
         : type_(type), transform_(transform){};
@@ -157,8 +156,8 @@ public:
           radius_(radius),
           height_(height){};
     __host__ __device__ Cylinder(float radius,
-                                float height,
-                                const Eigen::Matrix4f& transform)
+                                 float height,
+                                 const Eigen::Matrix4f& transform)
         : Primitive(Primitive::PrimitiveType::Cylinder, transform),
           radius_(radius),
           height_(height){};
@@ -170,11 +169,17 @@ public:
                                    Eigen::Vector3f(0.0, 0.0, 0.5 * height_);
         const Eigen::Vector3f pb = -pa;
         const Eigen::Vector3f a = pb - pa;
-        const Eigen::Vector3f e = radius_ * (Eigen::Vector3f::Ones() - (a.array() * a.array()).matrix() / a.squaredNorm()).array().sqrt();
+        const Eigen::Vector3f e =
+                radius_ * (Eigen::Vector3f::Ones() -
+                           (a.array() * a.array()).matrix() / a.squaredNorm())
+                                  .array()
+                                  .sqrt();
         const Eigen::Vector3f min_bound =
-                (pa - e).array().min((pb - e).array()).matrix() + transform_.block<3, 1>(0, 3);
+                (pa - e).array().min((pb - e).array()).matrix() +
+                transform_.block<3, 1>(0, 3);
         const Eigen::Vector3f max_bound =
-                (pa + e).array().min((pb + e).array()).matrix() + transform_.block<3, 1>(0, 3);
+                (pa + e).array().min((pb + e).array()).matrix() +
+                transform_.block<3, 1>(0, 3);
         return geometry::AxisAlignedBoundingBox<3>(min_bound, max_bound);
     };
 
@@ -184,19 +189,18 @@ public:
 
 class Mesh : public Primitive {
 public:
-    __host__ __device__ Mesh()
-        : Primitive(Primitive::PrimitiveType::Mesh) {};
+    __host__ __device__ Mesh() : Primitive(Primitive::PrimitiveType::Mesh){};
     __host__ __device__ Mesh(const Eigen::Matrix4f& transform)
-        : Primitive(Primitive::PrimitiveType::Mesh, transform) {};
-    __host__ __device__ ~Mesh() {};
+        : Primitive(Primitive::PrimitiveType::Mesh, transform){};
+    __host__ __device__ ~Mesh(){};
 
     __host__ __device__ geometry::AxisAlignedBoundingBox<3>
     GetAxisAlignedBoundingBox() const {
-        utility::LogError("Primitive::Mesh::GetAxisAlignedBoundingBox is not supported");
+        utility::LogError(
+                "Primitive::Mesh::GetAxisAlignedBoundingBox is not supported");
         return geometry::AxisAlignedBoundingBox<3>();
     };
 };
-
 
 union PrimitivePack {
     __host__ __device__ PrimitivePack() : primitive_(){};

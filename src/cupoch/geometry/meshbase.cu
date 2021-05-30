@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/meshbase.h"
 #include "cupoch/utility/platform.h"
@@ -87,7 +87,9 @@ Eigen::Vector3f MeshBase::GetMaxBound() const {
     return ComputeMaxBound<3>(vertices_);
 }
 
-Eigen::Vector3f MeshBase::GetCenter() const { return ComputeCenter<3>(vertices_); }
+Eigen::Vector3f MeshBase::GetCenter() const {
+    return ComputeCenter<3>(vertices_);
+}
 
 AxisAlignedBoundingBox<3> MeshBase::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox<3>::CreateFromPoints(vertices_);
@@ -179,5 +181,5 @@ MeshBase::MeshBase(Geometry::GeometryType type,
     : GeometryBase3D(type), vertices_(vertices) {}
 
 MeshBase::MeshBase(Geometry::GeometryType type,
-        const std::vector<Eigen::Vector3f> &vertices)
-: GeometryBase3D(type), vertices_(vertices) {}
+                   const std::vector<Eigen::Vector3f> &vertices)
+    : GeometryBase3D(type), vertices_(vertices) {}

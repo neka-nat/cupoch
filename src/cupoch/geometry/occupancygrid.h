@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include "cupoch/geometry/densegrid.h"
 #include "cupoch/utility/eigen.h"
@@ -26,6 +26,7 @@ namespace cupoch {
 
 namespace geometry {
 class PointCloud;
+class VoxelGrid;
 
 class OccupancyVoxel {
 public:
@@ -103,9 +104,10 @@ public:
     OccupancyGrid& Insert(const utility::device_vector<Eigen::Vector3f>& points,
                           const Eigen::Vector3f& viewpoint,
                           float max_range = -1.0);
-    OccupancyGrid& Insert(const utility::pinned_host_vector<Eigen::Vector3f>& points,
-                          const Eigen::Vector3f& viewpoint,
-                          float max_range = -1.0);
+    OccupancyGrid& Insert(
+            const utility::pinned_host_vector<Eigen::Vector3f>& points,
+            const Eigen::Vector3f& viewpoint,
+            float max_range = -1.0);
     OccupancyGrid& Insert(const PointCloud& pointcloud,
                           const Eigen::Vector3f& viewpoint,
                           float max_range = -1.0);
@@ -115,10 +117,15 @@ public:
     OccupancyGrid& AddVoxels(
             const utility::device_vector<Eigen::Vector3i>& voxels,
             bool occupied = false);
+
+    static std::shared_ptr<OccupancyGrid> CreateFromVoxelGrid(
+            const VoxelGrid& input);
+
 private:
     template <typename Func>
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>>
-    ExtractBoundVoxels(Func func) const;
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> ExtractBoundVoxels(
+            Func func) const;
+
 public:
     Eigen::Vector3ui16 min_bound_ = Eigen::Vector3ui16::Zero();
     Eigen::Vector3ui16 max_bound_ = Eigen::Vector3ui16::Zero();

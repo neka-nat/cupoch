@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,19 +17,19 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/iterator/discard_iterator.h>
 
 #include <numeric>
 
 #include "cupoch/geometry/intersection_test.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/utility/console.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/platform.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -147,14 +147,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
             thrust::make_counting_iterator<size_t>(n_total),
             make_tuple_begin(output->voxels_keys_, output->voxels_values_),
             func);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        output->voxels_keys_.begin(),
-                        output->voxels_keys_.end(),
-                        output->voxels_values_.begin());
-    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
-                                     output->voxels_keys_.begin(),
-                                     output->voxels_keys_.end(),
-                                     output->voxels_values_.begin());
+    thrust::sort_by_key(
+            utility::exec_policy(0)->on(0), output->voxels_keys_.begin(),
+            output->voxels_keys_.end(), output->voxels_values_.begin());
+    auto end = thrust::unique_by_key(
+            utility::exec_policy(0)->on(0), output->voxels_keys_.begin(),
+            output->voxels_keys_.end(), output->voxels_values_.begin());
     resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),
                output->voxels_keys_, output->voxels_values_);
     return output;
@@ -190,17 +188,19 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                           input.colors_.begin(),
                           make_tuple_begin(voxels_keys, voxels_values), func);
     }
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        voxels_keys.begin(), voxels_keys.end(),
-                        voxels_values.begin());
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys.begin(),
+                        voxels_keys.end(), voxels_values.begin());
 
     utility::device_vector<int> counts(voxels_keys.size());
-    resize_all(voxels_keys.size(), output->voxels_keys_, output->voxels_values_);
+    resize_all(voxels_keys.size(), output->voxels_keys_,
+               output->voxels_values_);
     auto end = thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0),
-            voxels_keys.begin(), voxels_keys.end(),
-            make_tuple_iterator(voxels_values.begin(), thrust::make_constant_iterator(1)),
-            output->voxels_keys_.begin(), make_tuple_begin(output->voxels_values_, counts),
+            utility::exec_policy(0)->on(0), voxels_keys.begin(),
+            voxels_keys.end(),
+            make_tuple_iterator(voxels_values.begin(),
+                                thrust::make_constant_iterator(1)),
+            output->voxels_keys_.begin(),
+            make_tuple_begin(output->voxels_values_, counts),
             thrust::equal_to<Eigen::Vector3i>(), add_voxel_color_functor());
     resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),
                output->voxels_keys_, output->voxels_values_);
@@ -263,7 +263,8 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX, INVALID_VOXEL_INDEX,
                                        INVALID_VOXEL_INDEX);
     };
-    remove_if_vectors(utility::exec_policy(0)->on(0), check_fn, output->voxels_keys_, output->voxels_values_);
+    remove_if_vectors(utility::exec_policy(0)->on(0), check_fn,
+                      output->voxels_keys_, output->voxels_values_);
     return output;
 }
 
@@ -277,22 +278,25 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMesh(
 }
 
 std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromOccupancyGrid(
-    const OccupancyGrid &input) {
+        const OccupancyGrid &input) {
     auto output = std::make_shared<VoxelGrid>();
     if (input.voxel_size_ <= 0.0) {
-        utility::LogError("[CreateOccupancyGrid] occupancy grid  voxel_size <= 0.");
+        utility::LogError(
+                "[CreateFromOccupancyGrid] occupancy grid  voxel_size <= 0.");
     }
     output->voxel_size_ = input.voxel_size_;
     output->origin_ = input.origin_;
-    std::shared_ptr<utility::device_vector<OccupancyVoxel>> occvoxels = input.ExtractOccupiedVoxels();
+    std::shared_ptr<utility::device_vector<OccupancyVoxel>> occvoxels =
+            input.ExtractOccupiedVoxels();
     output->voxels_keys_.resize(occvoxels->size());
     output->voxels_values_.resize(occvoxels->size());
-    thrust::transform(occvoxels->begin(), occvoxels->end(),
-                      make_tuple_begin(output->voxels_keys_, output->voxels_values_),
-                      [] __device__ (const OccupancyVoxel& voxel) {
-                          return thrust::make_tuple(voxel.grid_index_.cast<int>(),
-                                                    Voxel(voxel.grid_index_.cast<int>(),
-                                                          voxel.color_));
-                      });
+    thrust::transform(
+            occvoxels->begin(), occvoxels->end(),
+            make_tuple_begin(output->voxels_keys_, output->voxels_values_),
+            [] __device__(const OccupancyVoxel &voxel) {
+                return thrust::make_tuple(
+                        voxel.grid_index_.cast<int>(),
+                        Voxel(voxel.grid_index_.cast<int>(), voxel.color_));
+            });
     return output;
 }

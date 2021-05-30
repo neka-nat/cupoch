@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/iterator/discard_iterator.h>
 
 #include "cupoch/camera/pinhole_camera_parameters.h"
@@ -189,9 +189,8 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     }
     compute_grid_center_functor func(voxel_size_, origin_);
     Eigen::Vector3f center = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
-            voxels_keys_.begin(), voxels_keys_.end(), func, init,
-            thrust::plus<Eigen::Vector3f>());
+            utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+            voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
     return center;
 }
@@ -260,12 +259,14 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         utility::device_vector<int> counts(voxels_keys_.size());
         utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
         auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                voxels_keys_.begin(), voxels_keys_.end(),
-                make_tuple_iterator(voxels_values_.begin(), thrust::make_constant_iterator(1)),
+                utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+                voxels_keys_.end(),
+                make_tuple_iterator(voxels_values_.begin(),
+                                    thrust::make_constant_iterator(1)),
                 new_keys.begin(), make_tuple_begin(voxels_values_, counts),
                 thrust::equal_to<Eigen::Vector3i>(), add_voxel_color_functor());
-        resize_all(thrust::distance(new_keys.begin(), end.first), new_keys, voxels_values_);
+        resize_all(thrust::distance(new_keys.begin(), end.first), new_keys,
+                   voxels_values_);
         thrust::swap(voxels_keys_, new_keys);
         thrust::transform(voxels_values_.begin(), voxels_values_.end(),
                           counts.begin(), voxels_values_.begin(),
@@ -283,9 +284,8 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_keys_.push_back(voxel.grid_index_);
     voxels_values_.push_back(voxel);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        voxels_keys_.begin(), voxels_keys_.end(),
-                        voxels_values_.begin());
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+                        voxels_keys_.end(), voxels_values_.begin());
     auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
                                      voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
@@ -300,9 +300,8 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         thrust::make_transform_iterator(
                                 voxels.end(), extract_grid_index_functor()));
     voxels_values_.insert(voxels_values_.end(), voxels.begin(), voxels.end());
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        voxels_keys_.begin(), voxels_keys_.end(),
-                        voxels_values_.begin());
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+                        voxels_keys_.end(), voxels_values_.begin());
     auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
                                      voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
@@ -317,19 +316,18 @@ void VoxelGrid::AddVoxels(const thrust::host_vector<Voxel> &voxels) {
 
 VoxelGrid &VoxelGrid::PaintUniformColor(const Eigen::Vector3f &color) {
     thrust::for_each(voxels_values_.begin(), voxels_values_.end(),
-                     [c=color] __device__ (Voxel& v) {
-                         v.color_ = c;
-                     });
+                     [c = color] __device__(Voxel & v) { v.color_ = c; });
     return *this;
 }
 
-VoxelGrid &VoxelGrid::PaintIndexedColor(const utility::device_vector<size_t>& indices,
-                                        const Eigen::Vector3f &color) {
-    thrust::for_each(thrust::make_permutation_iterator(voxels_values_.begin(), indices.begin()),
-                     thrust::make_permutation_iterator(voxels_values_.begin(), indices.end()),
-                     [c=color] __device__ (Voxel& v) {
-                         v.color_ = c;
-                     });
+VoxelGrid &VoxelGrid::PaintIndexedColor(
+        const utility::device_vector<size_t> &indices,
+        const Eigen::Vector3f &color) {
+    thrust::for_each(thrust::make_permutation_iterator(voxels_values_.begin(),
+                                                       indices.begin()),
+                     thrust::make_permutation_iterator(voxels_values_.begin(),
+                                                       indices.end()),
+                     [c = color] __device__(Voxel & v) { v.color_ = c; });
     return *this;
 }
 
@@ -395,7 +393,8 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             depth_map.height_, depth_map.num_of_channels_,
             depth_map.bytes_per_channel_, voxel_size_, origin_, intrinsic, rot,
             trans, keep_voxels_outside_image);
-    remove_if_vectors(utility::exec_policy(0)->on(0), func, voxels_keys_, voxels_values_);
+    remove_if_vectors(utility::exec_policy(0)->on(0), func, voxels_keys_,
+                      voxels_values_);
     return *this;
 }
 

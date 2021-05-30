@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include "cupoch/geometry/densegrid.h"
 #include "cupoch/utility/eigen.h"
@@ -54,7 +54,7 @@ public:
     DistanceTransform(float voxel_size,
                       int resolution,
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
-    DistanceTransform(const DistanceTransform& other);
+    DistanceTransform(const DistanceTransform &other);
     ~DistanceTransform();
 
     DistanceTransform &Reconstruct(float voxel_size, int resolution);
@@ -66,10 +66,12 @@ public:
             const utility::device_vector<Eigen::Vector3i> &points);
     DistanceTransform &ComputeVoronoiDiagram(const VoxelGrid &voxelgrid);
 
-    float GetDistance(const Eigen::Vector3f& query) const;
-    utility::device_vector<float> GetDistances(const utility::device_vector<Eigen::Vector3f>& queries) const;
+    float GetDistance(const Eigen::Vector3f &query) const;
+    utility::device_vector<float> GetDistances(
+            const utility::device_vector<Eigen::Vector3f> &queries) const;
 
-    static std::shared_ptr<DistanceTransform> CreateFromOccupancyGrid(const OccupancyGrid &input);
+    static std::shared_ptr<DistanceTransform> CreateFromOccupancyGrid(
+            const OccupancyGrid &input);
 
 private:
     utility::device_vector<DistanceVoxel> buffer_;

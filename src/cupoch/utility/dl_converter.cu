@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,12 +17,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <type_traits>
 
+#include "cupoch/utility/console.h"
 #include "cupoch/utility/dl_converter.h"
 #include "cupoch/utility/platform.h"
-#include "cupoch/utility/console.h"
 
 namespace cupoch {
 namespace utility {
@@ -105,13 +105,15 @@ void FromDLPack(const DLManagedTensor *src,
     auto base_ptr = thrust::device_pointer_cast(
             (Eigen::Matrix<T, Dim, 1> *)src->dl_tensor.data);
     if (src->dl_tensor.device.device_type == DLDeviceType::kDLCPU) {
-        cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dst.data()), thrust::raw_pointer_cast(base_ptr),
-                                src->dl_tensor.shape[0] * sizeof(Eigen::Matrix<T, Dim, 1>), cudaMemcpyHostToDevice));
+        cudaSafeCall(cudaMemcpy(
+                thrust::raw_pointer_cast(dst.data()),
+                thrust::raw_pointer_cast(base_ptr),
+                src->dl_tensor.shape[0] * sizeof(Eigen::Matrix<T, Dim, 1>),
+                cudaMemcpyHostToDevice));
     } else if (src->dl_tensor.device.device_type == DLDeviceType::kDLGPU) {
         thrust::copy(base_ptr, base_ptr + src->dl_tensor.shape[0], dst.begin());
     } else {
-        utility::LogError(
-                "[FromDLPack] Unsupported device type.");
+        utility::LogError("[FromDLPack] Unsupported device type.");
     }
 }
 
@@ -124,12 +126,10 @@ template void FromDLPack(
 template void FromDLPack(
         const DLManagedTensor *src,
         utility::device_vector<Eigen::Matrix<float, 1, 1>> &dst);
-template void FromDLPack(
-        const DLManagedTensor *src,
-        utility::device_vector<Eigen::Matrix<int, 2, 1>> &dst);
-template void FromDLPack(
-        const DLManagedTensor *src,
-        utility::device_vector<Eigen::Matrix<int, 3, 1>> &dst);
+template void FromDLPack(const DLManagedTensor *src,
+                         utility::device_vector<Eigen::Matrix<int, 2, 1>> &dst);
+template void FromDLPack(const DLManagedTensor *src,
+                         utility::device_vector<Eigen::Matrix<int, 3, 1>> &dst);
 
-}
-}
+}  // namespace utility
+}  // namespace cupoch

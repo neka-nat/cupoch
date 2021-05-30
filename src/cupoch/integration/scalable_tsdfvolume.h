@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <memory>
@@ -53,8 +53,9 @@ public:
     template <int Num = 16>
     struct VolumeUnit {
     public:
-        __host__ __device__ VolumeUnit(const Eigen::Vector3f& origin) : origin_(origin), is_initialized_(true) {};
-        __host__ __device__ ~VolumeUnit() {};
+        __host__ __device__ VolumeUnit(const Eigen::Vector3f &origin)
+            : origin_(origin), is_initialized_(true){};
+        __host__ __device__ ~VolumeUnit(){};
 
     public:
         geometry::TSDFVoxel voxels_[Num * Num * Num];
@@ -88,6 +89,7 @@ public:
             const camera::PinholeCameraIntrinsic &intrinsic,
             const Eigen::Matrix4f &extrinsic,
             const geometry::Image &depth_to_camera_distance_multiplier);
+
 public:
     /// Assume the index of the volume key is (x, y, z), then the unit spans
     /// from (x, y, z) * volume_unit_length_
@@ -100,9 +102,8 @@ public:
     int depth_sampling_stride_;
 };
 
-__device__
-inline Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3f &point,
-                                        float volume_unit_length) {
+__device__ inline Eigen::Vector3i LocateVolumeUnit(const Eigen::Vector3f &point,
+                                                   float volume_unit_length) {
     return Eigen::Vector3i((int)floorf(point(0) / volume_unit_length),
                            (int)floorf(point(1) / volume_unit_length),
                            (int)floorf(point(2) / volume_unit_length));

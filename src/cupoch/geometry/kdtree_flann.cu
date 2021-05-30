@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,11 +17,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/geometry/trianglemesh.h"
-
 #include "cupoch/utility/eigen.h"
 #include "cupoch/utility/helper.h"
 
@@ -54,8 +53,9 @@ int KDTreeFlann::Search(const utility::device_vector<T> &query,
                         const KDTreeSearchParam &param,
                         utility::device_vector<int> &indices,
                         utility::device_vector<float> &distance2) const {
-    return Search<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
-            query.begin(), query.end(), param, indices, distance2);
+    return Search<typename utility::device_vector<T>::const_iterator,
+                  T::RowsAtCompileTime>(query.begin(), query.end(), param,
+                                        indices, distance2);
 }
 
 template <typename T>
@@ -71,8 +71,9 @@ int KDTreeFlann::SearchKNN(const utility::device_vector<T> &query,
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    return SearchKNN<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
-            query.begin(), query.end(), knn, indices, distance2);
+    return SearchKNN<typename utility::device_vector<T>::const_iterator,
+                     T::RowsAtCompileTime>(query.begin(), query.end(), knn,
+                                           indices, distance2);
 }
 
 template <typename T>
@@ -89,13 +90,15 @@ int KDTreeFlann::SearchRadius(const utility::device_vector<T> &query,
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    return SearchRadius<typename utility::device_vector<T>::const_iterator, T::RowsAtCompileTime>(
+    return SearchRadius<typename utility::device_vector<T>::const_iterator,
+                        T::RowsAtCompileTime>(
             query.begin(), query.end(), radius, max_nn, indices, distance2);
 }
 
 template <typename T>
 bool KDTreeFlann::SetRawData(const utility::device_vector<T> &data) {
-    return SetRawData<typename utility::device_vector<T>::const_iterator, T::SizeAtCompileTime>(data.begin(), data.end());
+    return SetRawData<typename utility::device_vector<T>::const_iterator,
+                      T::SizeAtCompileTime>(data.begin(), data.end());
 }
 
 template <typename T>

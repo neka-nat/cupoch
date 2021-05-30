@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/utility/console.h"
@@ -62,7 +62,7 @@ struct make_gray_image_functor {
           bytes_per_channel_(bytes_per_channel),
           type_(type),
           fimage_(fimage),
-          denom_(denom) {};
+          denom_(denom){};
     const uint8_t *image_;
     int num_of_channels_;
     int bytes_per_channel_;
@@ -72,18 +72,17 @@ struct make_gray_image_functor {
     __device__ void operator()(size_t idx) {
         typedef float (*grayfn)(const uint8_t *);
         typedef float (*colorfn)(const uint8_t *, const float *);
-        grayfn gf[4] = {[] __device__(const uint8_t *pi) {
-                            return (float)(*pi);
-                        },
-                        [] __device__(const uint8_t *pi) {
-                            const uint16_t *pi16 = (const uint16_t *)pi;
-                            return (float)(*pi16);
-                        },
-                        [] __device__(const uint8_t *pi) { return 0.0f; },
-                        [] __device__(const uint8_t *pi) {
-                            const float *pf = (const float *)pi;
-                            return *pf;
-                        }};
+        grayfn gf[4] = {
+                [] __device__(const uint8_t *pi) { return (float)(*pi); },
+                [] __device__(const uint8_t *pi) {
+                    const uint16_t *pi16 = (const uint16_t *)pi;
+                    return (float)(*pi16);
+                },
+                [] __device__(const uint8_t *pi) { return 0.0f; },
+                [] __device__(const uint8_t *pi) {
+                    const float *pf = (const float *)pi;
+                    return *pf;
+                }};
         colorfn cf[4] = {
                 [] __device__(const uint8_t *pi, const float *weights) {
                     return (weights[0] * (float)(pi[0]) +
@@ -111,7 +110,9 @@ struct make_gray_image_functor {
             // grayscale image
             *p = (T)(gf[bytes_per_channel_ - 1](pi) * denom_);
         } else if (num_of_channels_ == 3) {
-            *p = (T)(cf[bytes_per_channel_ - 1](pi, grayscale_weights[(int)type_]) * denom_);
+            *p = (T)(cf[bytes_per_channel_ - 1](pi,
+                                                grayscale_weights[(int)type_]) *
+                     denom_);
         }
     }
 };
@@ -175,25 +176,25 @@ std::shared_ptr<Image> Image::CreateGrayImage(
                 thrust::raw_pointer_cast(data_.data()), num_of_channels_,
                 bytes_per_channel_, type,
                 thrust::raw_pointer_cast(image->data_.data()), 1.0f);
-        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                         thrust::make_counting_iterator<size_t>(width_ * height_),
-                         func);
+        thrust::for_each(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(width_ * height_), func);
     } else if (bytes_per_channel_ == 2) {
         make_gray_image_functor<uint8_t> func(
                 thrust::raw_pointer_cast(data_.data()), num_of_channels_,
                 bytes_per_channel_, type,
                 thrust::raw_pointer_cast(image->data_.data()), 255.0 / 65535.0);
-        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                         thrust::make_counting_iterator<size_t>(width_ * height_),
-                         func);
+        thrust::for_each(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(width_ * height_), func);
     } else if (bytes_per_channel_ == 4) {
         make_gray_image_functor<uint8_t> func(
                 thrust::raw_pointer_cast(data_.data()), num_of_channels_,
                 bytes_per_channel_, type,
                 thrust::raw_pointer_cast(image->data_.data()), 255.0f);
-        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                         thrust::make_counting_iterator<size_t>(width_ * height_),
-                         func);
+        thrust::for_each(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(width_ * height_), func);
     }
     return image;
 }
@@ -210,17 +211,17 @@ std::shared_ptr<Image> Image::CreateFloatImage(
                 thrust::raw_pointer_cast(data_.data()), num_of_channels_,
                 bytes_per_channel_, type,
                 thrust::raw_pointer_cast(fimage->data_.data()), 1.0 / 255.0);
-        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                         thrust::make_counting_iterator<size_t>(width_ * height_),
-                         func);
+        thrust::for_each(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(width_ * height_), func);
     } else {
         make_gray_image_functor<float> func(
                 thrust::raw_pointer_cast(data_.data()), num_of_channels_,
                 bytes_per_channel_, type,
                 thrust::raw_pointer_cast(fimage->data_.data()), 1.0f);
-        thrust::for_each(thrust::make_counting_iterator<size_t>(0),
-                         thrust::make_counting_iterator<size_t>(width_ * height_),
-                         func);
+        thrust::for_each(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator<size_t>(width_ * height_), func);
     }
     return fimage;
 }

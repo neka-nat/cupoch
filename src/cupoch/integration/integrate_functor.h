@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include "cupoch/integration/uniform_tsdfvolume.h"
 
@@ -80,9 +80,12 @@ struct integrate_functor {
     const int width_;
     const int num_of_channels_;
     const TSDFVolumeColorType color_type_;
-    __device__ virtual ~integrate_functor() {};
-    __device__ void ComputeTSDF(geometry::TSDFVoxel &voxel, const Eigen::Vector3f& origin,
-                                int x, int y, int z) {
+    __device__ virtual ~integrate_functor(){};
+    __device__ void ComputeTSDF(geometry::TSDFVoxel &voxel,
+                                const Eigen::Vector3f &origin,
+                                int x,
+                                int y,
+                                int z) {
         Eigen::Vector4f pt_3d_homo(
                 float(half_voxel_length_ + voxel_length_ * x + origin(0)),
                 float(half_voxel_length_ + voxel_length_ * y + origin(1)),
@@ -118,20 +121,18 @@ struct integrate_functor {
             // integrate
             float tsdf = min(1.0f, sdf * sdf_trunc_inv_);
             const geometry::TSDFVoxel cv = voxel;
-            voxel.tsdf_ = (cv.tsdf_ * cv.weight_ + tsdf) /
-                          (cv.weight_ + 1.0f);
+            voxel.tsdf_ = (cv.tsdf_ * cv.weight_ + tsdf) / (cv.weight_ + 1.0f);
             if (color_type_ == TSDFVolumeColorType::RGB8) {
                 const uint8_t *rgb = geometry::PointerAt<uint8_t>(
                         color_, width_, num_of_channels_, u, v, 0);
                 Eigen::Vector3f rgb_f(rgb[0], rgb[1], rgb[2]);
-                voxel.color_ = (cv.color_ * cv.weight_ + rgb_f) /
-                               (cv.weight_ + 1.0f);
+                voxel.color_ =
+                        (cv.color_ * cv.weight_ + rgb_f) / (cv.weight_ + 1.0f);
             } else if (color_type_ == TSDFVolumeColorType::Gray32) {
                 const float intensity = *geometry::PointerAt<float>(
                         color_, width_, num_of_channels_, u, v, 0);
-                voxel.color_ =
-                        (cv.color_.array() * cv.weight_ + intensity) /
-                        (cv.weight_ + 1.0f);
+                voxel.color_ = (cv.color_.array() * cv.weight_ + intensity) /
+                               (cv.weight_ + 1.0f);
             }
             voxel.weight_ += 1.0f;
         }
@@ -139,36 +140,46 @@ struct integrate_functor {
 };
 
 struct uniform_integrate_functor : public integrate_functor {
-    uniform_integrate_functor(float fx,
-                              float fy,
-                              float cx,
-                              float cy,
-                              const Eigen::Matrix4f &extrinsic,
-                              float voxel_length,
-                              float sdf_trunc,
-                              float safe_width,
-                              float safe_height,
-                              int resolution,
-                              const uint8_t *color,
-                              const uint8_t *depth,
-                              const uint8_t *depth_to_camera_distance_multiplier,
-                              int width,
-                              int num_of_channels,
-                              TSDFVolumeColorType color_type,
-                              const Eigen::Vector3f &origin,
-                              geometry::TSDFVoxel *voxels)
-        : integrate_functor(fx, fy, cx, cy,
-                            extrinsic, voxel_length,
-                            sdf_trunc, safe_width,
-                            safe_height, resolution,
-                            color, depth,
+    uniform_integrate_functor(
+            float fx,
+            float fy,
+            float cx,
+            float cy,
+            const Eigen::Matrix4f &extrinsic,
+            float voxel_length,
+            float sdf_trunc,
+            float safe_width,
+            float safe_height,
+            int resolution,
+            const uint8_t *color,
+            const uint8_t *depth,
+            const uint8_t *depth_to_camera_distance_multiplier,
+            int width,
+            int num_of_channels,
+            TSDFVolumeColorType color_type,
+            const Eigen::Vector3f &origin,
+            geometry::TSDFVoxel *voxels)
+        : integrate_functor(fx,
+                            fy,
+                            cx,
+                            cy,
+                            extrinsic,
+                            voxel_length,
+                            sdf_trunc,
+                            safe_width,
+                            safe_height,
+                            resolution,
+                            color,
+                            depth,
                             depth_to_camera_distance_multiplier,
-                            width, num_of_channels,
+                            width,
+                            num_of_channels,
                             color_type),
-          origin_(origin), voxels_(voxels) {};
+          origin_(origin),
+          voxels_(voxels){};
     const Eigen::Vector3f origin_;
     geometry::TSDFVoxel *voxels_;
-    __device__ void operator() (size_t idx) {
+    __device__ void operator()(size_t idx) {
         int res2 = resolution_ * resolution_;
         int x = idx / res2;
         int yz = idx % res2;
@@ -179,5 +190,5 @@ struct uniform_integrate_functor : public integrate_functor {
     }
 };
 
-}
-}
+}  // namespace integration
+}  // namespace cupoch

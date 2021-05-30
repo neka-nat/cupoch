@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 #include <thrust/host_vector.h>
 
@@ -135,12 +135,15 @@ public:
                                                float sigma2,
                                                int num_max_search_points = 50);
 
-    std::shared_ptr<PointCloud> PassThroughFilter(int axis_no, float min_bound, float max_bound);
+    std::shared_ptr<PointCloud> PassThroughFilter(int axis_no,
+                                                  float min_bound,
+                                                  float max_bound);
 
     /// Function to crop pointcloud into output pointcloud
     /// All points with coordinates outside the bounding box \param bbox are
     /// clipped.
-    std::shared_ptr<PointCloud> Crop(const AxisAlignedBoundingBox<3> &bbox) const;
+    std::shared_ptr<PointCloud> Crop(
+            const AxisAlignedBoundingBox<3> &bbox) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
     ///
@@ -221,16 +224,14 @@ public:
             bool compute_normals = false);
 
     static std::shared_ptr<PointCloud> CreateFromLaserScanBuffer(
-            const LaserScanBuffer &scan,
-            float min_range,
-            float max_range);
+            const LaserScanBuffer &scan, float min_range, float max_range);
 
     static std::shared_ptr<PointCloud> CreateFromOccupancyGrid(
             const OccupancyGrid &occgrid);
 
     static std::shared_ptr<PointCloud> CreateFromDisparity(
-            const Image& disp,
-            const Image& color,
+            const Image &disp,
+            const Image &color,
             const camera::PinholeCameraIntrinsic &left_intrinsic,
             const camera::PinholeCameraIntrinsic &right_intrinsic,
             float baseline);

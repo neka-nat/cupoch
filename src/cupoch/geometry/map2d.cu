@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,31 +17,29 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
-#include "cupoch/geometry/map2d.h"
+ **/
 #include "cupoch/geometry/boundingvolume.h"
+#include "cupoch/geometry/map2d.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
 namespace geometry {
 
 Map2D::Map2D() : GeometryBase2D(Geometry::GeometryType::Map2D) {}
-Map2D::Map2D(const Map2D& other)
- : GeometryBase2D(Geometry::GeometryType::Map2D), map_(other.map_),
- cell_size_(other.cell_size_), origin_(other.origin_) {}
+Map2D::Map2D(const Map2D &other)
+    : GeometryBase2D(Geometry::GeometryType::Map2D),
+      map_(other.map_),
+      cell_size_(other.cell_size_),
+      origin_(other.origin_) {}
 
 Map2D &Map2D::Clear() {
     map_.Clear();
     return *this;
 }
 
-bool Map2D::IsEmpty() const {
-    return !map_.HasData();
-}
+bool Map2D::IsEmpty() const { return !map_.HasData(); }
 
-Eigen::Vector2f Map2D::GetMinBound() const {
-    return Eigen::Vector2f(0.0, 0.0);
-}
+Eigen::Vector2f Map2D::GetMinBound() const { return Eigen::Vector2f(0.0, 0.0); }
 
 Eigen::Vector2f Map2D::GetMaxBound() const {
     return Eigen::Vector2f(map_.width_ + map_.width_, map_.height_);
@@ -61,8 +59,7 @@ Map2D &Map2D::Transform(const Eigen::Matrix3f &transformation) {
     return *this;
 }
 
-Map2D &Map2D::Translate(const Eigen::Vector2f &translation,
-                                bool relative) {
+Map2D &Map2D::Translate(const Eigen::Vector2f &translation, bool relative) {
     origin_ += translation;
     return *this;
 }
@@ -77,5 +74,5 @@ Map2D &Map2D::Rotate(const Eigen::Matrix2f &R, bool center) {
     return *this;
 }
 
-}
-}
+}  // namespace geometry
+}  // namespace cupoch

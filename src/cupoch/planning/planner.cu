@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/gather.h>
 
 #include "cupoch/collision/collision.h"
@@ -29,7 +29,7 @@ namespace cupoch {
 namespace planning {
 
 PlannerBase::PlannerBase(const PlannerBase& other)
-   : obstacles_(other.obstacles_) {}
+    : obstacles_(other.obstacles_) {}
 
 PlannerBase& PlannerBase::AddObstacle(
         const std::shared_ptr<geometry::Geometry>& obstacle) {
@@ -37,13 +37,20 @@ PlannerBase& PlannerBase::AddObstacle(
     return *this;
 }
 
-Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph, float object_radius, float max_edge_distance)
-    : graph_(graph), object_radius_(object_radius), max_edge_distance_(max_edge_distance) {}
+Pos3DPlanner::Pos3DPlanner(const geometry::Graph<3>& graph,
+                           float object_radius,
+                           float max_edge_distance)
+    : graph_(graph),
+      object_radius_(object_radius),
+      max_edge_distance_(max_edge_distance) {}
 
 Pos3DPlanner::~Pos3DPlanner() {}
 
 Pos3DPlanner::Pos3DPlanner(const Pos3DPlanner& other)
-    : PlannerBase(other), graph_(other.graph_), object_radius_(other.object_radius_), max_edge_distance_(other.max_edge_distance_) {}
+    : PlannerBase(other),
+      graph_(other.graph_),
+      object_radius_(other.object_radius_),
+      max_edge_distance_(other.max_edge_distance_) {}
 
 Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
     for (const auto& obstacle : obstacles_) {
@@ -84,7 +91,8 @@ std::shared_ptr<Path> Pos3DPlanner::FindPath(
     ex_graph.AddNodeAndConnect(goal, max_edge_distance_, false);
     ex_graph.ConstructGraph();
     auto path_idxs = ex_graph.DijkstraPath(n_start, n_goal);
-    utility::pinned_host_vector<Eigen::Vector3f> h_points(ex_graph.points_.size());
+    utility::pinned_host_vector<Eigen::Vector3f> h_points(
+            ex_graph.points_.size());
     copy_device_to_host(ex_graph.points_, h_points);
     cudaSafeCall(cudaDeviceSynchronize());
     auto out = std::make_shared<Path>();

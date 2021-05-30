@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/densegrid.h"
 #include "cupoch/utility/console.h"
@@ -82,7 +82,8 @@ Eigen::Vector3f DenseGrid<VoxelType>::GetCenter() const {
 }
 
 template <class VoxelType>
-AxisAlignedBoundingBox<3> DenseGrid<VoxelType>::GetAxisAlignedBoundingBox() const {
+AxisAlignedBoundingBox<3> DenseGrid<VoxelType>::GetAxisAlignedBoundingBox()
+        const {
     AxisAlignedBoundingBox<3> box;
     box.min_bound_ = GetMinBound();
     box.max_bound_ = GetMaxBound();

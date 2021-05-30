@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/functional.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/permutation_iterator.h>
@@ -160,8 +160,7 @@ public:
 
     typedef typename thrust::counting_iterator<difference_type>
             CountingIterator;
-    typedef typename thrust::transform_iterator<tile_functor,
-                                                CountingIterator>
+    typedef typename thrust::transform_iterator<tile_functor, CountingIterator>
             TransformIterator;
     typedef typename thrust::permutation_iterator<Iterator, TransformIterator>
             PermutationIterator;
@@ -174,9 +173,9 @@ public:
         : first(first), last(last), tiles(tiles) {}
 
     iterator begin(void) const {
-        return PermutationIterator(first,
-                                   TransformIterator(CountingIterator(0),
-                                                     tile_functor(last - first)));
+        return PermutationIterator(
+                first, TransformIterator(CountingIterator(0),
+                                         tile_functor(last - first)));
     }
 
     iterator end(void) const { return begin() + tiles * (last - first); }

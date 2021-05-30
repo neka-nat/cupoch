@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <spdlog/spdlog.h>
@@ -46,27 +46,27 @@ inline VerbosityLevel GetVerbosityLevel() {
 }
 
 template <typename... Args>
-inline void LogFatal(const char *format, Args&&... args) {
+inline void LogFatal(const char *format, Args &&... args) {
     spdlog::critical(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void LogError(const char *format, Args&&... args) {
+inline void LogError(const char *format, Args &&... args) {
     spdlog::error(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void LogWarning(const char *format, Args&&... args) {
+inline void LogWarning(const char *format, Args &&... args) {
     spdlog::warn(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void LogInfo(const char *format, Args&&... args) {
+inline void LogInfo(const char *format, Args &&... args) {
     spdlog::info(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void LogDebug(const char *format, Args&&... args) {
+inline void LogDebug(const char *format, Args &&... args) {
     spdlog::debug(format, std::forward<Args>(args)...);
 }
 
@@ -104,9 +104,10 @@ public:
                 progress_pixel_ = new_progress_pixel;
                 int percent = int(current_count_ * 100 / expected_count_);
                 printf("%s[%s>%s] %d%%\r", progress_info_.c_str(),
-                           std::string(progress_pixel_, '=').c_str(),
-                           std::string(resolution_ - 1 - progress_pixel_, ' ').c_str(),
-                           percent);
+                       std::string(progress_pixel_, '=').c_str(),
+                       std::string(resolution_ - 1 - progress_pixel_, ' ')
+                               .c_str(),
+                       percent);
                 fflush(stdout);
             }
         }

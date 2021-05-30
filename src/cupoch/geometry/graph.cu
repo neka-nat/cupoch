@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,16 +17,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
+
 #include <stdgpu/unordered_set.cuh>
 
 #include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/graph.h"
 #include "cupoch/geometry/kdtree_flann.h"
-#include "cupoch/utility/platform.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/utility/platform.h"
 
 namespace cupoch {
 namespace geometry {
@@ -225,8 +226,8 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
                             this->lines_.begin(), this->lines_.end(),
                             this->colors_.begin());
     } else {
-        thrust::sort(utility::exec_policy(0)->on(0),
-                     this->lines_.begin(), this->lines_.end());
+        thrust::sort(utility::exec_policy(0)->on(0), this->lines_.begin(),
+                     this->lines_.end());
         edge_weights_.resize(this->lines_.size(), 1.0);
     }
     edge_index_offsets_.resize(this->points_.size() + 1, 0);
@@ -234,18 +235,17 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     utility::device_vector<int> counts(this->lines_.size());
     const auto begin = thrust::make_transform_iterator(
             this->lines_.begin(), extract_element_functor<int, 2, 0>());
-    auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                     begin, begin + this->lines_.size(),
+    auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0), begin,
+                                     begin + this->lines_.size(),
                                      thrust::make_constant_iterator<int>(1),
                                      indices.begin(), counts.begin());
     indices.resize(thrust::distance(indices.begin(), end.first));
     counts.resize(thrust::distance(counts.begin(), end.second));
     thrust::gather(indices.begin(), indices.end(), counts.begin(),
                    edge_index_offsets_.begin());
-    thrust::exclusive_scan(utility::exec_policy(0)->on(0),
-                           edge_index_offsets_.begin(),
-                           edge_index_offsets_.end(),
-                           edge_index_offsets_.begin());
+    thrust::exclusive_scan(
+            utility::exec_policy(0)->on(0), edge_index_offsets_.begin(),
+            edge_index_offsets_.end(), edge_index_offsets_.begin());
     if (set_edge_weights_from_distance) {
         SetEdgeWeightsFromDistance();
     }
@@ -275,9 +275,10 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges, weights);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        new_edges.begin(), new_edges.end(), weights.begin());
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges,
+                      weights);
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), new_edges.begin(),
+                        new_edges.end(), weights.begin());
     utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
     utility::device_vector<float> res_weights(new_edges.size());
     auto func =
@@ -305,13 +306,15 @@ Graph<Dim> &Graph<Dim>::AddNodeAndConnect(
     utility::device_vector<Eigen::Vector2i> new_edges(n_points);
     utility::device_vector<float> new_weights(n_points);
     extract_near_edges_functor<Dim> func(point, n_points, max_edge_distance);
-    thrust::transform(enumerate_begin(this->points_), enumerate_end(this->points_),
-            make_tuple_begin(new_edges, new_weights), func);
+    thrust::transform(enumerate_begin(this->points_),
+                      enumerate_end(this->points_),
+                      make_tuple_begin(new_edges, new_weights), func);
     auto remove_fn =
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges, new_weights);
+    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges,
+                      new_weights);
     this->points_.push_back(point);
     return AddEdges(new_edges, new_weights, lazy_add);
 }
@@ -423,8 +426,8 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
     utility::device_vector<float> new_weights;
     utility::device_vector<Eigen::Vector3f> new_colors;
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
-    thrust::sort(utility::exec_policy(0)->on(0),
-                 sorted_edges.begin(), sorted_edges.end());
+    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+                 sorted_edges.end());
     auto cnst_w = thrust::make_constant_iterator<float>(1.0);
     auto cnst_c = thrust::make_constant_iterator<Eigen::Vector3f>(
             Eigen::Vector3f::Ones());
@@ -561,8 +564,8 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
         const Eigen::Vector3f &color) {
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     utility::device_vector<size_t> indices(edges.size());
-    thrust::sort(utility::exec_policy(0)->on(0),
-                 sorted_edges.begin(), sorted_edges.end());
+    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+                 sorted_edges.end());
     thrust::set_intersection(
             make_tuple_iterator(this->lines_.begin(),
                                 thrust::make_counting_iterator<size_t>(0)),
@@ -586,8 +589,8 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
                      [color] __device__(Eigen::Vector3f & c) { c = color; });
     if (!is_directed_) {
         swap_index(sorted_edges);
-        thrust::sort(utility::exec_policy(0)->on(0),
-                     sorted_edges.begin(), sorted_edges.end());
+        thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+                     sorted_edges.end());
         thrust::set_intersection(
                 make_tuple_iterator(this->lines_.begin(),
                                     thrust::make_counting_iterator<size_t>(0)),
@@ -692,9 +695,8 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     utility::device_vector<int> old_to_new_edge_table(this->lines_.size());
     thrust::sequence(new_to_old_edge_table.begin(), new_to_old_edge_table.end(),
                      0);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        sorted_lines.begin(), sorted_lines.end(),
-                        new_to_old_edge_table.begin(),
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), sorted_lines.begin(),
+                        sorted_lines.end(), new_to_old_edge_table.begin(),
                         [] __device__(const Eigen::Vector2i &lhs,
                                       const Eigen::Vector2i &rhs) {
                             return lhs[1] < rhs[1];
@@ -729,15 +731,16 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     while (thrust::find(open_flags.begin(), open_flags.end(), 1) !=
            open_flags.end()) {
         if (end_node_index >= 0 &&
-            thrust::count_if(utility::exec_policy(0)->on(0), indices.begin(), indices.begin() + nt, func3) == 0)
+            thrust::count_if(utility::exec_policy(0)->on(0), indices.begin(),
+                             indices.begin() + nt, func3) == 0)
             break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
         const auto begin = thrust::make_transform_iterator(
                 sorted_lines.begin(), extract_element_functor<int, 2, 1>());
         auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                begin, begin + sorted_lines.size(), res_tmp.begin(),
-                indices.begin(), res_tmp_s.begin(), thrust::equal_to<int>(),
+                utility::exec_policy(0)->on(0), begin,
+                begin + sorted_lines.size(), res_tmp.begin(), indices.begin(),
+                res_tmp_s.begin(), thrust::equal_to<int>(),
                 [] __device__(const SSSPResult &lhs, const SSSPResult &rhs) {
                     return (lhs.shortest_distance_ <= rhs.shortest_distance_)
                                    ? lhs

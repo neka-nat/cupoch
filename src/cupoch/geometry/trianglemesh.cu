@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <thrust/gather.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/random.h>
@@ -28,8 +28,8 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
-#include "cupoch/utility/range.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/range.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -153,8 +153,8 @@ void FilterSmoothLaplacianHelper(
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertices.begin(), tritr);
         thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                utility::exec_policy(0)->on(0), mesh->edge_list_.begin(),
+                mesh->edge_list_.end(),
                 thrust::make_transform_iterator(
                         make_tuple_iterator(pmitr, weights.begin()),
                         weighted_vec_functor()),
@@ -171,8 +171,8 @@ void FilterSmoothLaplacianHelper(
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertex_normals.begin(), tritr);
         thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                utility::exec_policy(0)->on(0), mesh->edge_list_.begin(),
+                mesh->edge_list_.end(),
                 thrust::make_transform_iterator(
                         make_tuple_iterator(pmitr, weights.begin()),
                         weighted_vec_functor()),
@@ -190,8 +190,8 @@ void FilterSmoothLaplacianHelper(
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertex_colors.begin(), tritr);
         thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                mesh->edge_list_.begin(), mesh->edge_list_.end(),
+                utility::exec_policy(0)->on(0), mesh->edge_list_.begin(),
+                mesh->edge_list_.end(),
                 thrust::make_transform_iterator(
                         make_tuple_iterator(pmitr, weights.begin()),
                         weighted_vec_functor()),
@@ -344,9 +344,8 @@ TriangleMesh::TriangleMesh(
     : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
       triangles_(triangles) {}
 
-TriangleMesh::TriangleMesh(
-        const std::vector<Eigen::Vector3f> &vertices,
-        const std::vector<Eigen::Vector3i> &triangles)
+TriangleMesh::TriangleMesh(const std::vector<Eigen::Vector3f> &vertices,
+                           const std::vector<Eigen::Vector3i> &triangles)
     : MeshBase(Geometry::GeometryType::TriangleMesh, vertices),
       triangles_(triangles) {}
 
@@ -513,14 +512,12 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
     thrust::copy(range.begin(), range.end(), nm_thrice.begin());
     utility::device_vector<Eigen::Vector3i> copy_tri = triangles_;
     int *tri_ptr = (int *)(thrust::raw_pointer_cast(copy_tri.data()));
-    thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                        tri_ptr, tri_ptr + copy_tri.size() * 3,
-                        nm_thrice.begin());
+    thrust::sort_by_key(utility::exec_policy(0)->on(0), tri_ptr,
+                        tri_ptr + copy_tri.size() * 3, nm_thrice.begin());
     auto end = thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0),
-            tri_ptr, tri_ptr + copy_tri.size() * 3,
-            nm_thrice.begin(), thrust::make_discard_iterator(),
-            vertex_normals_.begin());
+            utility::exec_policy(0)->on(0), tri_ptr,
+            tri_ptr + copy_tri.size() * 3, nm_thrice.begin(),
+            thrust::make_discard_iterator(), vertex_normals_.begin());
     size_t n_out = thrust::distance(vertex_normals_.begin(), end.second);
     vertex_normals_.resize(n_out);
     if (normalized) {
@@ -536,8 +533,8 @@ TriangleMesh &TriangleMesh::ComputeEdgeList() {
                                    thrust::raw_pointer_cast(edge_list_.data()));
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(triangles_.size()), func);
-    thrust::sort(utility::exec_policy(0)->on(0),
-                 edge_list_.begin(), edge_list_.end());
+    thrust::sort(utility::exec_policy(0)->on(0), edge_list_.begin(),
+                 edge_list_.end());
     auto end = thrust::unique(utility::exec_policy(0)->on(0),
                               edge_list_.begin(), edge_list_.end());
     size_t n_out = thrust::distance(edge_list_.begin(), end);
@@ -896,7 +893,8 @@ float TriangleMesh::GetSurfaceArea(
                       [vert_pt, tri_pt] __device__(size_t idx) {
                           return GetTriangleArea(vert_pt, tri_pt, idx);
                       });
-    return thrust::reduce(utility::exec_policy(0)->on(0), triangle_areas.begin(), triangle_areas.end());
+    return thrust::reduce(utility::exec_policy(0)->on(0),
+                          triangle_areas.begin(), triangle_areas.end());
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
@@ -981,14 +979,13 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     bool has_vert_color = HasVertexColors();
     size_t k = 0;
     if (has_vert_normal && has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                            vertices_.begin(), vertices_.end(),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
+                            vertices_.end(),
                             make_tuple_begin(index_new_to_old, vertex_normals_,
                                              vertex_colors_));
         auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                vertices_.begin(), vertices_.end(),
-                thrust::make_constant_iterator<int>(1),
+                utility::exec_policy(0)->on(0), vertices_.begin(),
+                vertices_.end(), thrust::make_constant_iterator<int>(1),
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
@@ -1001,13 +998,12 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
         k = thrust::distance(begin, end1.second);
     } else if (has_vert_normal) {
         thrust::sort_by_key(
-                utility::exec_policy(0)->on(0),
-                vertices_.begin(), vertices_.end(),
+                utility::exec_policy(0)->on(0), vertices_.begin(),
+                vertices_.end(),
                 make_tuple_begin(index_new_to_old, vertex_normals_));
         auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                vertices_.begin(), vertices_.end(),
-                thrust::make_constant_iterator<int>(1),
+                utility::exec_policy(0)->on(0), vertices_.begin(),
+                vertices_.end(), thrust::make_constant_iterator<int>(1),
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
@@ -1019,13 +1015,12 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                                           vertex_normals_.begin());
         k = thrust::distance(vertex_normals_.begin(), end1.second);
     } else if (has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                            vertices_.begin(), vertices_.end(),
+        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
+                            vertices_.end(),
                             make_tuple_begin(index_new_to_old, vertex_colors_));
         auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                vertices_.begin(), vertices_.end(),
-                thrust::make_constant_iterator<int>(1),
+                utility::exec_policy(0)->on(0), vertices_.begin(),
+                vertices_.end(), thrust::make_constant_iterator<int>(1),
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
@@ -1037,13 +1032,11 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
                                           vertex_colors_.begin());
         k = thrust::distance(vertex_colors_.begin(), end1.second);
     } else {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
-                            vertices_.begin(), vertices_.end(),
-                            index_new_to_old.begin());
+        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
+                            vertices_.end(), index_new_to_old.begin());
         auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0),
-                vertices_.begin(), vertices_.end(),
-                thrust::make_constant_iterator<int>(1),
+                utility::exec_policy(0)->on(0), vertices_.begin(),
+                vertices_.end(), thrust::make_constant_iterator<int>(1),
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
@@ -1100,14 +1093,13 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedTriangles() {
         thrust::sort_by_key(utility::exec_policy(0)->on(0),
                             new_triangles.begin(), new_triangles.end(),
                             triangle_normals_.begin());
-        auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
-                                         new_triangles.begin(),
-                                         new_triangles.end(),
-                                         triangle_normals_.begin());
+        auto end = thrust::unique_by_key(
+                utility::exec_policy(0)->on(0), new_triangles.begin(),
+                new_triangles.end(), triangle_normals_.begin());
         k = thrust::distance(new_triangles.begin(), end.first);
     } else {
-        thrust::sort(utility::exec_policy(0)->on(0),
-                     new_triangles.begin(), new_triangles.end());
+        thrust::sort(utility::exec_policy(0)->on(0), new_triangles.begin(),
+                     new_triangles.end());
         auto end = thrust::unique(utility::exec_policy(0)->on(0),
                                   new_triangles.begin(), new_triangles.end());
         k = thrust::distance(new_triangles.begin(), end);

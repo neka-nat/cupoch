@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <Eigen/Core>
@@ -85,15 +85,13 @@ public:
 
     /// Returns the focal length in a tuple of X-axis and Y-axis focal lengths.
     std::pair<float, float> GetFocalLength() const {
-        return std::make_pair(intrinsic_matrix_(0, 0),
-                              intrinsic_matrix_(1, 1));
+        return std::make_pair(intrinsic_matrix_(0, 0), intrinsic_matrix_(1, 1));
     }
 
     /// Returns the principle point in a tuple of X-axis and Y-axis principle
     /// point.
     std::pair<float, float> GetPrincipalPoint() const {
-        return std::make_pair(intrinsic_matrix_(0, 2),
-                              intrinsic_matrix_(1, 2));
+        return std::make_pair(intrinsic_matrix_(0, 2), intrinsic_matrix_(1, 2));
     }
 
     /// Returns the skew.

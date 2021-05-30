@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <numeric>
 
 #include "cupoch/geometry/boundingvolume.h"
@@ -27,10 +27,12 @@ using namespace cupoch;
 using namespace cupoch::geometry;
 
 template <int Dim>
-LineSet<Dim>::LineSet() : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet) {}
+LineSet<Dim>::LineSet()
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet) {}
 
 template <int Dim>
-LineSet<Dim>::LineSet(Geometry::GeometryType type) : GeometryBaseXD<Dim>(type) {}
+LineSet<Dim>::LineSet(Geometry::GeometryType type)
+    : GeometryBaseXD<Dim>(type) {}
 
 template <int Dim>
 LineSet<Dim>::LineSet(
@@ -193,25 +195,26 @@ float LineSet<Dim>::GetMaxLineLength() const {
                             thrust::make_transform_iterator(
                                     lines_.end(),
                                     extract_element_functor<int, 2, 1>()))),
-            [] __device__ (const thrust::tuple<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>>& ppair) {
+            [] __device__(
+                    const thrust::tuple<Eigen::Matrix<float, Dim, 1>,
+                                        Eigen::Matrix<float, Dim, 1>> &ppair) {
                 return (thrust::get<0>(ppair) - thrust::get<1>(ppair)).norm();
             },
             0.0f, thrust::maximum<float>());
 }
 
-
 template <int Dim>
-LineSet<Dim> &LineSet<Dim>::PaintIndexedColor(const utility::device_vector<size_t>& indices,
-                                              const Eigen::Vector3f &color) {
+LineSet<Dim> &LineSet<Dim>::PaintIndexedColor(
+        const utility::device_vector<size_t> &indices,
+        const Eigen::Vector3f &color) {
     if (colors_.empty()) {
         colors_.resize(lines_.size());
         thrust::fill(colors_.begin(), colors_.end(), DEFAULT_LINE_COLOR);
     }
-    thrust::for_each(thrust::make_permutation_iterator(colors_.begin(), indices.begin()),
-                     thrust::make_permutation_iterator(colors_.begin(), indices.end()),
-                     [tc=color] __device__ (Eigen::Vector3f& sc) {
-                         sc = tc;
-                     });
+    thrust::for_each(
+            thrust::make_permutation_iterator(colors_.begin(), indices.begin()),
+            thrust::make_permutation_iterator(colors_.begin(), indices.end()),
+            [tc = color] __device__(Eigen::Vector3f & sc) { sc = tc; });
     return *this;
 }
 

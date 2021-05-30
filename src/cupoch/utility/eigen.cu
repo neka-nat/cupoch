@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <Eigen/Geometry>
 
 #include "cupoch/utility/eigen.h"
@@ -25,8 +25,7 @@
 namespace cupoch {
 namespace utility {
 
-Eigen::Matrix4f TransformVector6fToMatrix4f(
-        const Eigen::Vector6f &input) {
+Eigen::Matrix4f TransformVector6fToMatrix4f(const Eigen::Vector6f &input) {
     Eigen::Matrix4f output = Eigen::Matrix4f::Identity();
     output.topRightCorner<3, 1>() = input.tail<3>();
     const float th = input.head<3>().norm();
@@ -50,8 +49,7 @@ Eigen::Matrix4f TransformVector6fToMatrix4f(
     return output;
 }
 
-Eigen::Vector6f TransformMatrix4fToVector6f(
-        const Eigen::Matrix4f &input) {
+Eigen::Vector6f TransformMatrix4fToVector6f(const Eigen::Matrix4f &input) {
     Eigen::Quaternionf q(input.topLeftCorner<3, 3>());
     float angle = 0;
     Eigen::Vector3f axis(0, 0, 1.0);
@@ -69,17 +67,18 @@ Eigen::Vector6f TransformMatrix4fToVector6f(
 Eigen::Matrix4f InverseTransform(const Eigen::Matrix4f &input) {
     Eigen::Matrix4f inv_in = Eigen::Matrix4f::Identity();
     inv_in.block<3, 3>(0, 0) = input.block<3, 3>(0, 0).transpose();
-    inv_in.block<3, 1>(0, 3) = -inv_in.block<3, 3>(0, 0) * input.block<3, 1>(0, 3);
+    inv_in.block<3, 1>(0, 3) =
+            -inv_in.block<3, 3>(0, 0) * input.block<3, 1>(0, 3);
     return inv_in;
 }
 
 template <int Dim>
-thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>>
-SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
-                     const Eigen::Matrix<float, Dim, 1> &b,
-                     bool check_symmetric,
-                     bool check_det,
-                     float det_thresh) {
+thrust::tuple<bool, Eigen::Matrix<float, Dim, 1>> SolveLinearSystemPSD(
+        const Eigen::Matrix<float, Dim, Dim> &A,
+        const Eigen::Matrix<float, Dim, 1> &b,
+        bool check_symmetric,
+        bool check_det,
+        float det_thresh) {
     // PSD implies symmetric
     if (check_symmetric && !A.isApprox(A.transpose())) {
         LogWarning("check_symmetric failed, empty vector will be returned");
@@ -106,12 +105,13 @@ SolveLinearSystemPSD(const Eigen::Matrix<float, Dim, Dim> &A,
 }
 
 thrust::tuple<bool, Eigen::Matrix4f>
-SolveJacobianSystemAndObtainExtrinsicMatrix(
-        const Eigen::Matrix6f &JTJ, const Eigen::Vector6f &JTr, float det_thresh) {
+SolveJacobianSystemAndObtainExtrinsicMatrix(const Eigen::Matrix6f &JTJ,
+                                            const Eigen::Vector6f &JTr,
+                                            float det_thresh) {
     bool solution_exist;
     Eigen::Vector6f x;
-    thrust::tie(solution_exist, x) =
-            SolveLinearSystemPSD<6>(JTJ, Eigen::Vector6f(-JTr), false, det_thresh > 0, det_thresh);
+    thrust::tie(solution_exist, x) = SolveLinearSystemPSD<6>(
+            JTJ, Eigen::Vector6f(-JTr), false, det_thresh > 0, det_thresh);
 
     if (solution_exist) {
         Eigen::Matrix4f extrinsic = TransformVector6fToMatrix4f(x);
@@ -121,12 +121,12 @@ SolveJacobianSystemAndObtainExtrinsicMatrix(
     }
 }
 
-template thrust::tuple<bool, Eigen::Vector6f>
-SolveLinearSystemPSD(const Eigen::Matrix6f &A,
-                     const Eigen::Vector6f &b,
-                     bool check_symmetric,
-                     bool check_det,
-                     float det_thresh);
+template thrust::tuple<bool, Eigen::Vector6f> SolveLinearSystemPSD(
+        const Eigen::Matrix6f &A,
+        const Eigen::Vector6f &b,
+        bool check_symmetric,
+        bool check_det,
+        float det_thresh);
 
 Eigen::Matrix3f RotationMatrixX(float radians) {
     Eigen::Matrix3f rot;
@@ -149,5 +149,5 @@ Eigen::Matrix3f RotationMatrixZ(float radians) {
     return rot;
 }
 
-}
-}
+}  // namespace utility
+}  // namespace cupoch

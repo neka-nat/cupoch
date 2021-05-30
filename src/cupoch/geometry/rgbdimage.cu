@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/utility/console.h"
@@ -26,14 +26,14 @@ using namespace cupoch;
 using namespace cupoch::geometry;
 
 RGBDImage::RGBDImage(const Image &color, const Image &depth)
-: GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
-  color_(color),
-  depth_(depth) {}
+    : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
+      color_(color),
+      depth_(depth) {}
 
 RGBDImage::RGBDImage(const RGBDImage &other)
-: GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
-  color_(other.color_),
-  depth_(other.depth_) {}
+    : GeometryBaseNoTrans2D(Geometry::GeometryType::RGBDImage),
+      color_(other.color_),
+      depth_(other.depth_) {}
 
 RGBDImage &RGBDImage::Clear() {
     color_.Clear();
@@ -74,18 +74,21 @@ RGBDImagePyramid RGBDImage::FilterPyramid(
     return rgbd_image_pyramid_filtered;
 }
 
-RGBDImagePyramid RGBDImage::BilateralFilterPyramidDepth(const RGBDImagePyramid &rgbd_image_pyramid,
-                                                        int diameter,
-                                                        float sigma_depth,
-                                                        float sigma_space) {
+RGBDImagePyramid RGBDImage::BilateralFilterPyramidDepth(
+        const RGBDImagePyramid &rgbd_image_pyramid,
+        int diameter,
+        float sigma_depth,
+        float sigma_space) {
     RGBDImagePyramid rgbd_image_pyramid_filtered;
     int num_of_levels = (int)rgbd_image_pyramid.size();
     for (int level = 0; level < num_of_levels; level++) {
-        const auto& depth_level = rgbd_image_pyramid[level]->depth_;
-        auto depth_level_filtered = depth_level.BilateralFilter(diameter, sigma_depth, sigma_space);
-        auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
-                RGBDImage(rgbd_image_pyramid[level]->color_, *depth_level_filtered));
-        rgbd_image_pyramid_filtered.push_back(std::move(rgbd_image_level_filtered));
+        const auto &depth_level = rgbd_image_pyramid[level]->depth_;
+        auto depth_level_filtered =
+                depth_level.BilateralFilter(diameter, sigma_depth, sigma_space);
+        auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(RGBDImage(
+                rgbd_image_pyramid[level]->color_, *depth_level_filtered));
+        rgbd_image_pyramid_filtered.push_back(
+                std::move(rgbd_image_level_filtered));
     }
     return rgbd_image_pyramid_filtered;
 }

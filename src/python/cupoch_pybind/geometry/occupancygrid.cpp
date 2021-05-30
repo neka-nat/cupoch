@@ -22,6 +22,7 @@
 
 #include "cupoch/camera/pinhole_camera_parameters.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/voxelgrid.h"
 #include "cupoch_pybind/device_map_wrapper.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/eigen_type_caster.h"
@@ -107,6 +108,10 @@ void pybind_occupanygrid(py::module &m) {
                  "Function to insert occupancy grid from pointcloud.",
                  "pointcloud"_a, "viewpoint"_a, "max_range"_a = -1.0)
             .def("set_free_area", &geometry::OccupancyGrid::SetFreeArea)
+            .def_static(
+                    "create_from_voxel_grid",
+                    &geometry::OccupancyGrid::CreateFromVoxelGrid,
+                    "Function to make occupancy grid from a Voxel Grid")
             .def_readwrite("voxel_size", &geometry::OccupancyGrid::voxel_size_)
             .def_readwrite("resolution", &geometry::OccupancyGrid::resolution_)
             .def_readwrite("origin", &geometry::OccupancyGrid::origin_)

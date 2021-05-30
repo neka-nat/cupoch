@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/densegrid.inl"
 #include "cupoch/geometry/distancetransform.h"
@@ -31,7 +31,8 @@ namespace geometry {
 
 namespace {
 
-__device__ const unsigned short INVALID_DENSE_GRID_INDEX = std::numeric_limits<unsigned short>::max();
+__device__ const unsigned short INVALID_DENSE_GRID_INDEX =
+        std::numeric_limits<unsigned short>::max();
 
 struct flood_z_functor {
     flood_z_functor(const DistanceVoxel* input,
@@ -55,10 +56,12 @@ struct flood_z_functor {
         }
         for (int i = resolution_ - 2; i >= 0; --i) {
             int id = IndexOf(x, y, i, resolution_);
-            unsigned short nz = v1.IsNotSite() ? INVALID_DENSE_GRID_INDEX : v1.nearest_index_[2];
+            unsigned short nz = v1.IsNotSite() ? INVALID_DENSE_GRID_INDEX
+                                               : v1.nearest_index_[2];
             unsigned short dist1 = abs(nz - i);
             DistanceVoxel v2 = output_[id];
-            nz = v2.IsNotSite() ? INVALID_DENSE_GRID_INDEX : v2.nearest_index_[2];
+            nz = v2.IsNotSite() ? INVALID_DENSE_GRID_INDEX
+                                : v2.nearest_index_[2];
             unsigned short dist2 = abs(nz - i);
             if (dist2 < dist1) {
                 v1 = v2;
@@ -217,7 +220,9 @@ struct set_points_functor {
 };
 
 struct compute_distance_functor {
-    compute_distance_functor(DistanceVoxel* voxels, float voxel_size, int resolution)
+    compute_distance_functor(DistanceVoxel* voxels,
+                             float voxel_size,
+                             int resolution)
         : voxels_(voxels), voxel_size_(voxel_size), resolution_(resolution){};
     DistanceVoxel* voxels_;
     const float voxel_size_;
@@ -227,7 +232,8 @@ struct compute_distance_functor {
         int yz = idx % (resolution_ * resolution_);
         int y = yz / resolution_;
         int z = yz % resolution_;
-        auto diff = voxels_[idx].nearest_index_.cast<int>() - Eigen::Vector3i(x, y, z);
+        auto diff = voxels_[idx].nearest_index_.cast<int>() -
+                    Eigen::Vector3i(x, y, z);
         voxels_[idx].distance_ = diff.cast<float>().norm() * voxel_size_;
     }
 };
@@ -297,8 +303,7 @@ DistanceTransform& DistanceTransform::ComputeEDT(
         const utility::device_vector<Eigen::Vector3i>& points) {
     ComputeVoronoiDiagram(points);
     compute_distance_functor func(thrust::raw_pointer_cast(voxels_.data()),
-                                  voxel_size_,
-                                  resolution_);
+                                  voxel_size_, resolution_);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(voxels_.size()), func);
     return *this;
@@ -383,23 +388,38 @@ DistanceTransform& DistanceTransform::ComputeVoronoiDiagram(
 }
 
 float DistanceTransform::GetDistance(const Eigen::Vector3f& query) const {
-    Eigen::Vector3f qv = (query - origin_ + 0.5 * voxel_size_ * Eigen::Vector3f::Constant(resolution_)) / voxel_size_;
+    Eigen::Vector3f qv =
+            (query - origin_ +
+             0.5 * voxel_size_ * Eigen::Vector3f::Constant(resolution_)) /
+            voxel_size_;
     Eigen::Vector3i idx = (Eigen::floor(qv.array())).cast<int>();
     DistanceVoxel v = voxels_[IndexOf(idx, resolution_)];
     return v.distance_;
 }
 
-utility::device_vector<float> DistanceTransform::GetDistances(const utility::device_vector<Eigen::Vector3f>& queries) const {
-    auto func = [voxel_size = voxel_size_, resolution = resolution_, origin = origin_] __device__ (const Eigen::Vector3f& query) {
-        Eigen::Vector3f qv = (query - origin + 0.5 * voxel_size * Eigen::Vector3f::Constant(resolution)) / voxel_size;
-        Eigen::Vector3i idx = Eigen::device_vectorize<float, 3, ::floor>(qv.array()).cast<int>();
+utility::device_vector<float> DistanceTransform::GetDistances(
+        const utility::device_vector<Eigen::Vector3f>& queries) const {
+    auto func = [voxel_size = voxel_size_, resolution = resolution_,
+                 origin = origin_] __device__(const Eigen::Vector3f& query) {
+        Eigen::Vector3f qv =
+                (query - origin +
+                 0.5 * voxel_size * Eigen::Vector3f::Constant(resolution)) /
+                voxel_size;
+        Eigen::Vector3i idx =
+                Eigen::device_vectorize<float, 3, ::floor>(qv.array())
+                        .cast<int>();
         return IndexOf(idx, resolution);
     };
     utility::device_vector<float> dists(queries.size());
-    thrust::transform(thrust::make_permutation_iterator(voxels_.begin(), thrust::make_transform_iterator(queries.begin(), func)),
-                      thrust::make_permutation_iterator(voxels_.begin(), thrust::make_transform_iterator(queries.end(), func)),
-                      dists.begin(),
-                      [] __device__ (const DistanceVoxel& v) { return v.distance_; });
+    thrust::transform(
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(queries.begin(), func)),
+            thrust::make_permutation_iterator(
+                    voxels_.begin(),
+                    thrust::make_transform_iterator(queries.end(), func)),
+            dists.begin(),
+            [] __device__(const DistanceVoxel& v) { return v.distance_; });
     return dists;
 }
 

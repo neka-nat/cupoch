@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include "cupoch/geometry/lineset.h"
@@ -92,10 +92,11 @@ public:
                          const utility::device_vector<float> &weights =
                                  utility::device_vector<float>(),
                          bool lazy_add = false);
-    Graph<Dim> &AddEdges(const utility::pinned_host_vector<Eigen::Vector2i> &edges,
-                         const utility::pinned_host_vector<float> &weights =
-                                 utility::pinned_host_vector<float>(),
-                         bool lazy_add = false);
+    Graph<Dim> &AddEdges(
+            const utility::pinned_host_vector<Eigen::Vector2i> &edges,
+            const utility::pinned_host_vector<float> &weights =
+                    utility::pinned_host_vector<float>(),
+            bool lazy_add = false);
 
     Graph<Dim> &RemoveEdge(const Eigen::Vector2i &edge);
     Graph<Dim> &RemoveEdges(
@@ -126,7 +127,7 @@ public:
     std::shared_ptr<thrust::host_vector<int>> DijkstraPath(
             int start_node_index, int end_node_index) const;
 
-    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)>* = nullptr>
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<Graph<Dim>> CreateFromTriangleMesh(
             const TriangleMesh &input);
     static std::shared_ptr<Graph<Dim>> CreateFromAxisAlignedBoundingBox(

@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #pragma once
 
 #include <Eigen/Core>
@@ -54,25 +54,25 @@ struct tuple_element_compare_functor {
 
 template <typename VoxelType, typename IndexType>
 struct get_grid_index_functor {
-    __device__ IndexType operator() (const VoxelType& v) const {
+    __device__ IndexType operator()(const VoxelType& v) const {
         return v.grid_index_;
     }
 };
 
 template <typename IndexType>
 struct compute_voxel_vertices_functor {
-    compute_voxel_vertices_functor(const Eigen::Vector3f &origin,
+    compute_voxel_vertices_functor(const Eigen::Vector3f& origin,
                                    float voxel_size)
         : origin_(origin), voxel_size_(voxel_size){};
     const Eigen::Vector3f origin_;
     const float voxel_size_;
-    __device__ Eigen::Vector3f operator()(const thrust::tuple<size_t, IndexType>& x) const {
+    __device__ Eigen::Vector3f operator()(
+            const thrust::tuple<size_t, IndexType>& x) const {
         int j = thrust::get<0>(x);
         const IndexType grid_index = thrust::get<1>(x);
         // 8 vertices in a voxel
         Eigen::Vector3f base_vertex =
-                origin_ +
-                grid_index.template cast<float>() * voxel_size_;
+                origin_ + grid_index.template cast<float>() * voxel_size_;
         const auto offset_v = Eigen::Vector3f(cuboid_vertex_offsets[j][0],
                                               cuboid_vertex_offsets[j][1],
                                               cuboid_vertex_offsets[j][2]);

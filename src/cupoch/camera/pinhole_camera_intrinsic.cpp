@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 
 #include <json/json.h>
@@ -79,15 +79,16 @@ bool PinholeCameraIntrinsic::ConvertFromJsonValue(const Json::Value &value) {
     return true;
 }
 
-PinholeCameraIntrinsic PinholeCameraIntrinsic::CreatePyramidLevel(size_t level) const {
+PinholeCameraIntrinsic PinholeCameraIntrinsic::CreatePyramidLevel(
+        size_t level) const {
     if (level == 0 || width_ <= 0 || height_ <= 0) return *this;
     const float scale_factor = powf(0.5f, static_cast<float>(level));
     auto f = GetFocalLength();
     auto p = GetPrincipalPoint();
-    return PinholeCameraIntrinsic(width_ >> level, height_ >> level,
-                                  f.first * scale_factor, f.second * scale_factor,
-                                  (p.first + 0.5f) * scale_factor - 0.5f,
-                                  (p.second + 0.5f) * scale_factor - 0.5f);
+    return PinholeCameraIntrinsic(
+            width_ >> level, height_ >> level, f.first * scale_factor,
+            f.second * scale_factor, (p.first + 0.5f) * scale_factor - 0.5f,
+            (p.second + 0.5f) * scale_factor - 0.5f);
 }
 
 }  // namespace camera

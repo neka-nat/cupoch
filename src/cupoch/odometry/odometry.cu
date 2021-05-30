@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
-**/
+ **/
 #include <Eigen/Dense>
 
 #include "cupoch/geometry/image.h"
@@ -388,9 +388,8 @@ Eigen::Matrix6f CreateInformationMatrix(
                              xyz_t->width_);
     Eigen::Matrix6f init = Eigen::Matrix6f::Identity();
     Eigen::Matrix6f GTG = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
-            correspondence.begin(), correspondence.end(), func, init,
-            thrust::plus<Eigen::Matrix6f>());
+            utility::exec_policy(0)->on(0), correspondence.begin(),
+            correspondence.end(), func, init, thrust::plus<Eigen::Matrix6f>());
     return GTG;
 }
 
@@ -427,9 +426,9 @@ void NormalizeIntensity(geometry::Image &image_s,
             thrust::raw_pointer_cast(image_s.data_.data()),
             thrust::raw_pointer_cast(image_t.data_.data()), image_s.width_);
     auto means = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
-            correspondence.begin(), correspondence.end(), func_tf,
-            thrust::make_tuple(0.0f, 0.0f), add_tuple_functor<float, float>());
+            utility::exec_policy(0)->on(0), correspondence.begin(),
+            correspondence.end(), func_tf, thrust::make_tuple(0.0f, 0.0f),
+            add_tuple_functor<float, float>());
     float mean_s = thrust::get<0>(means) / (float)correspondence.size();
     float mean_t = thrust::get<1>(means) / (float)correspondence.size();
     image_s.LinearTransform(0.5 / mean_s, 0.0);
