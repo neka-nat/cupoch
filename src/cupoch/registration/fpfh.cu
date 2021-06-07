@@ -185,50 +185,6 @@ struct compute_fpfh_functor {
 
 }  // namespace
 
-template <int Dim>
-Feature<Dim>::Feature(){};
-
-template <int Dim>
-Feature<Dim>::Feature(const Feature<Dim> &other) : data_(other.data_) {}
-
-template <int Dim>
-Feature<Dim>::~Feature() {}
-
-template <int Dim>
-void Feature<Dim>::Resize(int n) {
-    data_.resize(n);
-}
-
-template <int Dim>
-size_t Feature<Dim>::Dimension() const {
-    return Dim;
-}
-
-template <int Dim>
-size_t Feature<Dim>::Num() const {
-    return data_.size();
-}
-
-template <int Dim>
-bool Feature<Dim>::IsEmpty() const {
-    return data_.empty();
-}
-
-template <int Dim>
-thrust::host_vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData()
-        const {
-    thrust::host_vector<Eigen::Matrix<float, Dim, 1>> h_data = data_;
-    return h_data;
-}
-
-template <int Dim>
-void Feature<Dim>::SetData(
-        const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &data) {
-    data_ = data;
-}
-
-template class Feature<33>;
-
 std::shared_ptr<Feature<33>> ComputeFPFHFeature(
         const geometry::PointCloud &input,
         const geometry::KDTreeSearchParam
