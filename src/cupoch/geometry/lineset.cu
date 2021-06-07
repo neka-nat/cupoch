@@ -23,6 +23,8 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/lineset.h"
 
+#include "cupoch/utility/helper.h"
+
 using namespace cupoch;
 using namespace cupoch::geometry;
 
@@ -56,6 +58,23 @@ LineSet<Dim>::LineSet(
     : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
       points_(points),
       lines_(lines) {}
+
+template <int Dim>
+LineSet<Dim>::LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &path)
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet) {
+    utility::pinned_host_vector<Eigen::Matrix<float, Dim, 1>> points;
+    utility::pinned_host_vector<Eigen::Vector2i> lines;
+    for (int i = 0; i < path.size() - 1; ++i) {
+        points.push_back(path[i]);
+        lines.push_back(Eigen::Vector2i(i, i + 1));
+    }
+    points.push_back(path.back());
+    points_.resize(points.size());
+    lines_.resize(lines.size());
+    copy_host_to_device(points, points_);
+    copy_host_to_device(lines, lines_);
+    cudaSafeCall(cudaDeviceSynchronize());
+}
 
 template <int Dim>
 LineSet<Dim>::LineSet(const LineSet &other)

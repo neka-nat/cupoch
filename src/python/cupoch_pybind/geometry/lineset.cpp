@@ -46,6 +46,9 @@ void bind_def(LineSetT& lineset) {
                  }),
                  "Create a LineSet from given points and line indices",
                  "points"_a, "lines"_a)
+            .def(py::init<const std::vector<Eigen::Matrix<float, Dim, 1>>>(),
+                 "Create a LineSet from given path",
+                 "path"_a)
             .def("__repr__",
                  [](const geometry::LineSet<Dim> &lineset) {
                      return std::string("geometry::LineSet with ") +

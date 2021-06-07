@@ -52,6 +52,7 @@ public:
             const utility::device_vector<Eigen::Vector2i> &lines);
     LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const thrust::host_vector<Eigen::Vector2i> &lines);
+    LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &path);
     LineSet(const LineSet &other);
     ~LineSet();
 
