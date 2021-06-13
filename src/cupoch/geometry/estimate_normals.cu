@@ -48,7 +48,7 @@ __device__ Eigen::Vector3f ComputeNormal(const Eigen::Matrix<float, 9, 1> &cum,
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
 
-    return utility::FastEigen3x3(covariance);
+    return thrust::get<0>(utility::FastEigen3x3(covariance));
 }
 
 struct compute_normal_functor {
