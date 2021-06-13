@@ -23,8 +23,8 @@ def preprocess_point_cloud(pcd, voxel_size):
 
     radius_feature = voxel_size * 5
     print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
-    pcd_fpfh = cph.registration.compute_fpfh_feature(
-        pcd_down,
+    pcd_fpfh = cph.registration.compute_shot_feature(
+        pcd_down, radius_feature,
         cph.geometry.KDTreeSearchParamRadius(radius=radius_feature, max_nn=100))
     return pcd_down, pcd_fpfh
 

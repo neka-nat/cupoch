@@ -439,5 +439,12 @@ template RegistrationResult FastGlobalRegistration<33>(
         const Feature<33>& target_feature,
         const FastGlobalRegistrationOption& option);
 
+template RegistrationResult FastGlobalRegistration<352>(
+        const geometry::PointCloud& source,
+        const geometry::PointCloud& target,
+        const Feature<352>& source_feature,
+        const Feature<352>& target_feature,
+        const FastGlobalRegistrationOption& option);
+
 }  // namespace registration
 }  // namespace cupoch

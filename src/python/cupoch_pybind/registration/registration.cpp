@@ -385,6 +385,11 @@ void pybind_registration_methods(py::module &m) {
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = registration::FastGlobalRegistrationOption());
+    m.def("registration_fast_based_on_feature_matching",
+          &registration::FastGlobalRegistration<352>,
+          "Function for fast global registration based on feature matching",
+          "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
+          "option"_a = registration::FastGlobalRegistrationOption());
     docstring::FunctionDocInject(m,
                                  "registration_fast_based_on_feature_matching",
                                  map_shared_argument_docstrings);

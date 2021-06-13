@@ -23,6 +23,8 @@
 namespace cupoch {
 namespace utility {
 
+namespace {
+
 __device__ float signf(float x) { return x / fabs(x); }
 
 __device__ Eigen::Vector3f ComputeEigenvector0(const Eigen::Matrix3f &A,
@@ -86,7 +88,9 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
     }
 }
 
-__device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(Eigen::Matrix3f &A) {
+}
+
+__device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(Eigen::Matrix3f &A) {
     // Previous version based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // Current version based on

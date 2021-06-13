@@ -58,7 +58,7 @@ setup(
         "Topic :: Utilities",
     ],
     description=[
-        "Cupoc: Robotics with GPU computing"
+        "Cupoch: Robotics with GPU computing"
     ],
     cmdclass=cmdclass,
     install_requires=install_requires,

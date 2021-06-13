@@ -66,6 +66,7 @@ void Feature<Dim>::SetData(
 }
 
 template class Feature<33>;
+template class Feature<352>;
 
 }
 }

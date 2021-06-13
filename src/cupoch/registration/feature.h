@@ -58,5 +58,12 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
         const geometry::KDTreeSearchParam& search_param =
                 geometry::KDTreeSearchParamKNN());
 
+/// Function to compute SHOT feature for a point cloud
+std::shared_ptr<Feature<352>> ComputeSHOTFeature(
+        const geometry::PointCloud& input,
+        float radius,
+        const geometry::KDTreeSearchParam& search_param =
+                geometry::KDTreeSearchParamKNN());
+
 }  // namespace registration
 }  // namespace cupoch
