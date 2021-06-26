@@ -25,19 +25,19 @@
 namespace cupoch {
 namespace imageproc {
 
-SemiGlobalMatching::SemiGlobalMatching(const SGMParameters& params)
-    : params_(params.p1_,
-              params.p2_,
-              params.uniqueness_,
+SemiGlobalMatching::SemiGlobalMatching(const SGMOption& option)
+    : params_(option.p1_,
+              option.p2_,
+              option.uniqueness_,
               false,
-              params.path_type_ == SGMParameters::PathType::ScanPath8
+              option.path_type_ == SGMOption::PathType::ScanPath8
                       ? sgm::PathType::SCAN_8PATH
                       : sgm::PathType::SCAN_4PATH,
-              params.min_disp_,
-              params.lr_max_diff_),
-      sgm_(params.width_,
-           params.height_,
-           params.disp_size_,
+              option.min_disp_,
+              option.lr_max_diff_),
+      sgm_(option.width_,
+           option.height_,
+           option.disp_size_,
            8,
            8,
            sgm::EXECUTE_INOUT_CUDA2CUDA,

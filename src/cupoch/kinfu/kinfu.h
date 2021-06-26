@@ -32,9 +32,9 @@ namespace kinfu {
 
 typedef std::vector<std::shared_ptr<geometry::PointCloud>> PointCloudPyramid;
 
-class KinfuParameters {
+class KinfuOption {
 public:
-    KinfuParameters(
+    KinfuOption(
             int num_pyramid_levels = 4,
             int diameter = 1,
             float sigma_depth = 0.2f,
@@ -60,7 +60,7 @@ public:
           tsdf_origin_(tsdf_origin),
           distance_threshold_(distance_threshold),
           icp_iterations_(icp_iterations){};
-    ~KinfuParameters(){};
+    ~KinfuOption(){};
     int num_pyramid_levels_;
     int diameter_;
     float sigma_depth_;
@@ -75,11 +75,11 @@ public:
     std::vector<int> icp_iterations_;
 };
 
-class Pipeline {
+class KinfuPipeline {
 public:
-    Pipeline(const camera::PinholeCameraIntrinsic& intrinsic,
-             const KinfuParameters& params = KinfuParameters());
-    ~Pipeline();
+    KinfuPipeline(const camera::PinholeCameraIntrinsic& intrinsic,
+             const KinfuOption& option = KinfuOption());
+    ~KinfuPipeline();
 
     void Reset();
     bool ProcessFrame(const geometry::RGBDImage& image);
@@ -103,7 +103,7 @@ public:
     int frame_id_ = 0;
     integration::UniformTSDFVolume volume_;
     PointCloudPyramid model_pyramid_;
-    KinfuParameters params_;
+    KinfuOption option_;
 };
 
 }  // namespace kinfu

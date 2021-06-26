@@ -111,6 +111,16 @@ std::shared_ptr<CollisionResult> ComputeIntersection(
         float margin = 0.0f);
 
 std::shared_ptr<CollisionResult> ComputeIntersection(
+        const geometry::LineSet<3>& lineset,
+        const geometry::OccupancyGrid& occgrid,
+        float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(
+        const geometry::OccupancyGrid& occgrid,
+        const geometry::LineSet<3>& lineset,
+        float margin = 0.0f);
+
+std::shared_ptr<CollisionResult> ComputeIntersection(
         const PrimitiveArray& primitives,
         const geometry::VoxelGrid& voxelgrid,
         float margin = 0.0f);

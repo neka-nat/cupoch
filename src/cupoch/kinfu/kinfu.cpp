@@ -25,20 +25,20 @@
 namespace cupoch {
 namespace kinfu {
 
-Pipeline::Pipeline(const camera::PinholeCameraIntrinsic& intrinsic,
-                   const KinfuParameters& params)
+KinfuPipeline::KinfuPipeline(const camera::PinholeCameraIntrinsic& intrinsic,
+                   const KinfuOption& option)
     : intrinsic_(intrinsic),
-      volume_(params.tsdf_length_,
-              params.tsdf_resolution_,
-              params.sdf_trunc_,
-              params.tsdf_color_type_,
-              params.tsdf_origin_),
-      model_pyramid_(params.num_pyramid_levels_),
-      params_(params) {}
+      volume_(option.tsdf_length_,
+              option.tsdf_resolution_,
+              option.sdf_trunc_,
+              option.tsdf_color_type_,
+              option.tsdf_origin_),
+      model_pyramid_(option.num_pyramid_levels_),
+      option_(option) {}
 
-Pipeline::~Pipeline() {}
+KinfuPipeline::~KinfuPipeline() {}
 
-void Pipeline::Reset() {
+void KinfuPipeline::Reset() {
     cur_pose_ = Eigen::Matrix4f::Identity();
     volume_.Reset();
     for (auto m : model_pyramid_) {
@@ -47,7 +47,7 @@ void Pipeline::Reset() {
     frame_id_ = 0;
 }
 
-bool Pipeline::ProcessFrame(const geometry::RGBDImage& image) {
+bool KinfuPipeline::ProcessFrame(const geometry::RGBDImage& image) {
     if (!image.color_.HasData() || !image.depth_.HasData()) {
         return false;
     }
@@ -66,53 +66,53 @@ bool Pipeline::ProcessFrame(const geometry::RGBDImage& image) {
         cur_pose_ = utility::InverseTransform(extrinsic);
     }
     volume_.Integrate(*smooth_img_pyramid[0], intrinsic_, extrinsic);
-    for (int i = 0; i < params_.num_pyramid_levels_; ++i) {
+    for (int i = 0; i < option_.num_pyramid_levels_; ++i) {
         model_pyramid_[i] = volume_.Raycast(intrinsic_.CreatePyramidLevel(i),
-                                            extrinsic, params_.sdf_trunc_);
+                                            extrinsic, option_.sdf_trunc_);
     }
     frame_id_++;
     return true;
 }
 
-std::shared_ptr<geometry::PointCloud> Pipeline::ExtractPointCloud() {
+std::shared_ptr<geometry::PointCloud> KinfuPipeline::ExtractPointCloud() {
     return volume_.ExtractPointCloud();
 }
 
-std::shared_ptr<geometry::TriangleMesh> Pipeline::ExtractTriangleMesh() {
+std::shared_ptr<geometry::TriangleMesh> KinfuPipeline::ExtractTriangleMesh() {
     return volume_.ExtractTriangleMesh();
 }
 
 std::tuple<geometry::RGBDImagePyramid,
            geometry::RGBDImagePyramid,
            PointCloudPyramid>
-Pipeline::SurfaceMeasurement(const geometry::RGBDImage& image) const {
-    auto img_pyramid = image.CreatePyramid(params_.num_pyramid_levels_);
+KinfuPipeline::SurfaceMeasurement(const geometry::RGBDImage& image) const {
+    auto img_pyramid = image.CreatePyramid(option_.num_pyramid_levels_);
     auto smooth_img_pyramid = geometry::RGBDImage::BilateralFilterPyramidDepth(
-            img_pyramid, params_.diameter_, params_.sigma_depth_,
-            params_.sigma_space_);
-    PointCloudPyramid pc_pyramid(params_.num_pyramid_levels_);
-    for (int i = 0; i < params_.num_pyramid_levels_; ++i) {
+            img_pyramid, option_.diameter_, option_.sigma_depth_,
+            option_.sigma_space_);
+    PointCloudPyramid pc_pyramid(option_.num_pyramid_levels_);
+    for (int i = 0; i < option_.num_pyramid_levels_; ++i) {
         pc_pyramid[i] = geometry::PointCloud::CreateFromRGBDImage(
                 *smooth_img_pyramid[i], intrinsic_, Eigen::Matrix4f::Identity(),
-                true, params_.depth_cutoff_, true);
+                true, option_.depth_cutoff_, true);
     }
     return std::make_tuple(std::move(img_pyramid),
                            std::move(smooth_img_pyramid),
                            std::move(pc_pyramid));
 }
 
-std::tuple<Eigen::Matrix4f, bool> Pipeline::PoseEstimation(
+std::tuple<Eigen::Matrix4f, bool> KinfuPipeline::PoseEstimation(
         const Eigen::Matrix4f& extrinsic,
         const PointCloudPyramid& frame_data,
         const PointCloudPyramid& target_data) {
     Eigen::Matrix4f cur_global_trans = extrinsic;
 
-    for (int level = params_.num_pyramid_levels_ - 1; level >= 0; --level) {
+    for (int level = option_.num_pyramid_levels_ - 1; level >= 0; --level) {
         registration::ICPConvergenceCriteria criteria;
-        criteria.max_iteration_ = params_.icp_iterations_[level];
+        criteria.max_iteration_ = option_.icp_iterations_[level];
         auto res = registration::RegistrationICP(
                 *frame_data[level], *target_data[level],
-                params_.distance_threshold_, cur_global_trans,
+                option_.distance_threshold_, cur_global_trans,
                 registration::TransformationEstimationPointToPlane(100000),
                 criteria);
         cur_global_trans = res.transformation_;

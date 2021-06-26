@@ -5,7 +5,7 @@ rimg = cph.io.read_image("../../testdata/right.png").create_gray_image()
 print(limg)
 print(rimg)
 cph.visualization.draw_geometries([limg])
-params = cph.imageproc.SGMParameters()
+params = cph.imageproc.SGMOption()
 params.width = limg.width
 params.height = limg.height
 

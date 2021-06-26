@@ -27,7 +27,7 @@
 namespace cupoch {
 namespace imageproc {
 
-class SGMParameters {
+class SGMOption {
 public:
     enum DisparitySizeType {
         DisparitySize64 = 64,
@@ -39,15 +39,15 @@ public:
         ScanPath8 = 1,
     };
 
-    SGMParameters(int width = 0,
-                  int height = 0,
-                  int p1 = 10,
-                  int p2 = 120,
-                  float uniqueness = 0.95f,
-                  DisparitySizeType disp_size = DisparitySize128,
-                  PathType path_type = ScanPath8,
-                  int min_disp = 0,
-                  int lr_max_diff = 1)
+    SGMOption(int width = 0,
+              int height = 0,
+              int p1 = 10,
+              int p2 = 120,
+              float uniqueness = 0.95f,
+              DisparitySizeType disp_size = DisparitySize128,
+              PathType path_type = ScanPath8,
+              int min_disp = 0,
+              int lr_max_diff = 1)
         : width_(width),
           height_(height),
           p1_(p1),
@@ -57,7 +57,7 @@ public:
           path_type_(path_type),
           min_disp_(min_disp),
           lr_max_diff_(lr_max_diff){};
-    ~SGMParameters(){};
+    ~SGMOption(){};
     int width_;
     int height_;
     int p1_;
@@ -71,7 +71,7 @@ public:
 
 class SemiGlobalMatching {
 public:
-    SemiGlobalMatching(const SGMParameters& params);
+    SemiGlobalMatching(const SGMOption& option);
     ~SemiGlobalMatching(){};
     std::shared_ptr<geometry::Image> ProcessFrame(const geometry::Image& left,
                                                   const geometry::Image& right);

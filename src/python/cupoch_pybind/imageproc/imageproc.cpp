@@ -26,34 +26,34 @@
 using namespace cupoch;
 
 void pybind_imageproc_classes(py::module &m) {
-    py::enum_<imageproc::SGMParameters::DisparitySizeType> disp_size_t(m, "DisparitySizeType");
-    disp_size_t.value("DisparitySize64", imageproc::SGMParameters::DisparitySizeType::DisparitySize64)
-               .value("DisparitySize128", imageproc::SGMParameters::DisparitySizeType::DisparitySize128)
-               .value("DisparitySize256", imageproc::SGMParameters::DisparitySizeType::DisparitySize256)
+    py::enum_<imageproc::SGMOption::DisparitySizeType> disp_size_t(m, "DisparitySizeType");
+    disp_size_t.value("DisparitySize64", imageproc::SGMOption::DisparitySizeType::DisparitySize64)
+               .value("DisparitySize128", imageproc::SGMOption::DisparitySizeType::DisparitySize128)
+               .value("DisparitySize256", imageproc::SGMOption::DisparitySizeType::DisparitySize256)
                .export_values();
-    py::enum_<imageproc::SGMParameters::PathType> path_t(m, "PathType");
-    path_t.value("ScanPath4", imageproc::SGMParameters::PathType::ScanPath4)
-          .value("ScanPath8", imageproc::SGMParameters::PathType::ScanPath8)
+    py::enum_<imageproc::SGMOption::PathType> path_t(m, "PathType");
+    path_t.value("ScanPath4", imageproc::SGMOption::PathType::ScanPath4)
+          .value("ScanPath8", imageproc::SGMOption::PathType::ScanPath8)
           .export_values();
-    // cupoch.imageproc.SGMParameters
-    py::class_<imageproc::SGMParameters> sp(m, "SGMParameters", "Parameters for Semi-Global Matching.");
-    py::detail::bind_default_constructor<imageproc::SGMParameters>(sp);
-    py::detail::bind_copy_functions<imageproc::SGMParameters>(sp);
-    sp.def_readwrite("width", &imageproc::SGMParameters::width_)
-      .def_readwrite("height", &imageproc::SGMParameters::height_)
-      .def_readwrite("p1", &imageproc::SGMParameters::p1_)
-      .def_readwrite("p2", &imageproc::SGMParameters::p2_)
-      .def_readwrite("uniqueness", &imageproc::SGMParameters::uniqueness_)
-      .def_readwrite("disp_size", &imageproc::SGMParameters::disp_size_)
-      .def_readwrite("path_type", &imageproc::SGMParameters::path_type_)
-      .def_readwrite("min_disp", &imageproc::SGMParameters::min_disp_)
-      .def_readwrite("lr_max_diff", &imageproc::SGMParameters::lr_max_diff_);
+    // cupoch.imageproc.SGMOption
+    py::class_<imageproc::SGMOption> so(m, "SGMOption", "Parameters for Semi-Global Matching.");
+    py::detail::bind_default_constructor<imageproc::SGMOption>(so);
+    py::detail::bind_copy_functions<imageproc::SGMOption>(so);
+    so.def_readwrite("width", &imageproc::SGMOption::width_)
+      .def_readwrite("height", &imageproc::SGMOption::height_)
+      .def_readwrite("p1", &imageproc::SGMOption::p1_)
+      .def_readwrite("p2", &imageproc::SGMOption::p2_)
+      .def_readwrite("uniqueness", &imageproc::SGMOption::uniqueness_)
+      .def_readwrite("disp_size", &imageproc::SGMOption::disp_size_)
+      .def_readwrite("path_type", &imageproc::SGMOption::path_type_)
+      .def_readwrite("min_disp", &imageproc::SGMOption::min_disp_)
+      .def_readwrite("lr_max_diff", &imageproc::SGMOption::lr_max_diff_);
 
     // cupoch.imageproc.SemiGlobalMatching
     py::class_<imageproc::SemiGlobalMatching> sgm(
             m, "SemiGlobalMatching",
             "This class implements Semi-Global Matching algorithm.");
-    sgm.def(py::init([](const imageproc::SGMParameters& params) {
+    sgm.def(py::init([](const imageproc::SGMOption& params) {
                 return new imageproc::SemiGlobalMatching(params);
             }))
        .def("process_frame", &imageproc::SemiGlobalMatching::ProcessFrame);

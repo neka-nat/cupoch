@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 get_intrinsic_matrix(color_frame))
 
             if frame_count == 0:
-                kinfu = cph.kinfu.Pipeline(intrinsic, cph.kinfu.KinfuParameters())
+                kinfu = cph.kinfu.KinfuPipeline(intrinsic, cph.kinfu.KinfuOption())
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
