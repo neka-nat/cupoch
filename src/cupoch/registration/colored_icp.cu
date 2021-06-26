@@ -44,8 +44,8 @@ public:
             const override {
         return type_;
     };
-    TransformationEstimationForColoredICP(float lambda_geometric = 0.968)
-        : lambda_geometric_(lambda_geometric) {
+    TransformationEstimationForColoredICP(float lambda_geometric = 0.968, float det_thresh = 1.0e-6)
+        : lambda_geometric_(lambda_geometric), det_thresh_(det_thresh) {
         if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0)
             lambda_geometric_ = 0.968;
     }
@@ -62,6 +62,7 @@ public:
 
 public:
     float lambda_geometric_;
+    float det_thresh_;
 
 private:
     const TransformationEstimationType type_ =
@@ -247,7 +248,7 @@ Eigen::Matrix4f TransformationEstimationForColoredICP::ComputeTransformation(
     bool is_success;
     Eigen::Matrix4f extrinsic;
     thrust::tie(is_success, extrinsic) =
-            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr);
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr, det_thresh_);
 
     return is_success ? extrinsic : Eigen::Matrix4f::Identity();
 }
@@ -330,10 +331,11 @@ RegistrationResult cupoch::registration::RegistrationColoredICP(
         float max_distance,
         const Eigen::Matrix4f &init /* = Eigen::Matrix4f::Identity()*/,
         const ICPConvergenceCriteria &criteria /* = ICPConvergenceCriteria()*/,
-        float lambda_geometric /* = 0.968*/) {
+        float lambda_geometric /* = 0.968*/,
+        float det_thresh /* = 1.0e-6 */) {
     auto target_c = InitializePointCloudForColoredICP(
             target, geometry::KDTreeSearchParamRadius(max_distance * 2.0, 30));
     return RegistrationICP(
             source, *target_c, max_distance, init,
-            TransformationEstimationForColoredICP(lambda_geometric), criteria);
+            TransformationEstimationForColoredICP(lambda_geometric, det_thresh), criteria);
 }

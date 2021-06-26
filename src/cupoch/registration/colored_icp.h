@@ -43,7 +43,8 @@ RegistrationResult RegistrationColoredICP(
         float max_distance,
         const Eigen::Matrix4f &init = Eigen::Matrix4f::Identity(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
-        float lambda_geometric = 0.968);
+        float lambda_geometric = 0.968,
+        float det_thresh = 1.0e-6);
 
 }  // namespace registration
 }  // namespace cupoch

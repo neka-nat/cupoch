@@ -376,7 +376,8 @@ void pybind_registration_methods(py::module &m) {
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4f::Identity(),
           "criteria"_a = registration::ICPConvergenceCriteria(),
-          "lambda_geometric"_a = 0.968);
+          "lambda_geometric"_a = 0.968,
+          "det_thresh"_a = 1.0e-6);
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
 
