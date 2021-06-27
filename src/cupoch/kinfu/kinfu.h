@@ -37,8 +37,8 @@ public:
     KinfuOption(
             int num_pyramid_levels = 4,
             int diameter = 1,
-            float sigma_depth = 0.2f,
-            float sigma_space = 1.0f,
+            float sigma_depth = 0.1f,
+            float sigma_space = 5.0f,
             float depth_cutoff = 3.0f,
             float tsdf_length = 8.0f,
             int tsdf_resolution = 512,
@@ -46,7 +46,7 @@ public:
             integration::TSDFVolumeColorType tsdf_color_type =
                     integration::TSDFVolumeColorType::RGB8,
             const Eigen::Vector3f& tsdf_origin = Eigen::Vector3f::Zero(),
-            float distance_threshold = 0.1f,
+            float distance_threshold = 0.3f,
             const std::vector<int>& icp_iterations = {20, 20, 20, 20})
         : num_pyramid_levels_(num_pyramid_levels),
           diameter_(diameter),
