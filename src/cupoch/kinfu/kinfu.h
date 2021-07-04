@@ -24,6 +24,7 @@
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/rgbdimage.h"
 #include "cupoch/integration/uniform_tsdfvolume.h"
+#include "cupoch/registration/transformation_estimation.h"
 
 namespace cupoch {
 
@@ -47,7 +48,8 @@ public:
                     integration::TSDFVolumeColorType::RGB8,
             const Eigen::Vector3f& tsdf_origin = Eigen::Vector3f::Zero(),
             float distance_threshold = 0.3f,
-            const std::vector<int>& icp_iterations = {20, 20, 20, 20})
+            const std::vector<int>& icp_iterations = {20, 20, 20, 20},
+            registration::TransformationEstimationType tf_type = registration::TransformationEstimationType::PointToPlane)
         : num_pyramid_levels_(num_pyramid_levels),
           diameter_(diameter),
           sigma_depth_(sigma_depth),
@@ -59,7 +61,8 @@ public:
           tsdf_color_type_(tsdf_color_type),
           tsdf_origin_(tsdf_origin),
           distance_threshold_(distance_threshold),
-          icp_iterations_(icp_iterations){};
+          icp_iterations_(icp_iterations),
+          tf_type_(tf_type) {};
     ~KinfuOption(){};
     int num_pyramid_levels_;
     int diameter_;
@@ -73,6 +76,7 @@ public:
     Eigen::Vector3f tsdf_origin_;
     float distance_threshold_;
     std::vector<int> icp_iterations_;
+    registration::TransformationEstimationType tf_type_;
 };
 
 class KinfuPipeline {

@@ -106,6 +106,7 @@ void pybind_registration_classes(py::module &m) {
                "Base class that estimates a transformation between two point "
                "clouds. The virtual function ComputeTransformation() must be "
                "implemented in subclasses.");
+    te.def("get_transformation_estimation_type", &registration::TransformationEstimation::GetTransformationEstimationType);
     te.def("compute_rmse", &registration::TransformationEstimation::ComputeRMSE,
            "source"_a, "target"_a, "corres"_a,
            "Compute RMSE between source and target points cloud given "
@@ -115,6 +116,12 @@ void pybind_registration_classes(py::module &m) {
            "source"_a, "target"_a, "corres"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
+
+    py::enum_<registration::TransformationEstimationType> tf_type(m, "TransformationEstimationType");
+    tf_type.value("PointToPoint", registration::TransformationEstimationType::PointToPoint)
+           .value("PointToPlane", registration::TransformationEstimationType::PointToPlane)
+           .value("ColoredICP", registration::TransformationEstimationType::ColoredICP)
+           .export_values();
 
     // cupoch.registration.TransformationEstimationPointToPoint:
     // TransformationEstimation

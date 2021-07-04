@@ -40,7 +40,8 @@ void pybind_kinfu_classes(py::module &m) {
       .def_readwrite("tsdf_color_type", &kinfu::KinfuOption::tsdf_color_type_)
       .def_readwrite("tsdf_origin", &kinfu::KinfuOption::tsdf_origin_)
       .def_readwrite("distance_threshold", &kinfu::KinfuOption::distance_threshold_)
-      .def_readwrite("icp_iterations", &kinfu::KinfuOption::icp_iterations_);
+      .def_readwrite("icp_iterations", &kinfu::KinfuOption::icp_iterations_)
+      .def_readwrite("tf_type", &kinfu::KinfuOption::tf_type_);
 
     // cupoch.kinfu.KinfuPipeline
     py::class_<kinfu::KinfuPipeline> pipline(

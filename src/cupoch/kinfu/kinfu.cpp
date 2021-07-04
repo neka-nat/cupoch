@@ -21,6 +21,7 @@
 #include "cupoch/kinfu/kinfu.h"
 
 #include "cupoch/registration/registration.h"
+#include "cupoch/registration/colored_icp.h"
 
 namespace cupoch {
 namespace kinfu {
@@ -110,12 +111,30 @@ std::tuple<Eigen::Matrix4f, bool> KinfuPipeline::PoseEstimation(
     for (int level = option_.num_pyramid_levels_ - 1; level >= 0; --level) {
         registration::ICPConvergenceCriteria criteria;
         criteria.max_iteration_ = option_.icp_iterations_[level];
-        auto res = registration::RegistrationICP(
-                *frame_data[level], *target_data[level],
-                option_.distance_threshold_, cur_global_trans,
-                registration::TransformationEstimationPointToPlane(100000),
-                criteria);
-        cur_global_trans = res.transformation_;
+        switch (option_.tf_type_) {
+            case registration::TransformationEstimationType::PointToPlane: {
+                auto res = registration::RegistrationICP(
+                        *frame_data[level], *target_data[level],
+                        option_.distance_threshold_, cur_global_trans,
+                        registration::TransformationEstimationPointToPlane(100000),
+                        criteria);
+                cur_global_trans = res.transformation_;
+                break;
+            }
+            case registration::TransformationEstimationType::ColoredICP: {
+                auto res = registration::RegistrationColoredICP(
+                        *frame_data[level], *target_data[level],
+                        option_.distance_threshold_, cur_global_trans,
+                        criteria, 0.968, 100000);
+                cur_global_trans = res.transformation_;
+                break;
+            }
+            default: {
+                utility::LogError(
+                       "[KinfuPipeline::PoseEstimation] Unsupported transformation type.");
+                break;
+            }
+        }
     }
     return std::make_tuple(cur_global_trans, true);
 }
