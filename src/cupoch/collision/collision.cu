@@ -619,7 +619,7 @@ utility::device_vector<size_t> CollisionResult::GetFirstCollisionIndices()
     utility::device_vector<size_t> res(collision_index_pairs_.size());
     thrust::transform(collision_index_pairs_.begin(),
                       collision_index_pairs_.end(), res.begin(),
-                      extract_element_functor<int, 2, 0>());
+                      element_get_functor<Eigen::Vector2i, 0>());
     return res;
 }
 
@@ -628,7 +628,7 @@ utility::device_vector<size_t> CollisionResult::GetSecondCollisionIndices()
     utility::device_vector<size_t> res(collision_index_pairs_.size());
     thrust::transform(collision_index_pairs_.begin(),
                       collision_index_pairs_.end(), res.begin(),
-                      extract_element_functor<int, 2, 1>());
+                      element_get_functor<Eigen::Vector2i, 1>());
     return res;
 }
 
@@ -832,24 +832,24 @@ Intersection<geometry::VoxelGrid>::Compute<geometry::LineSet<3>>(
                             query.points_.begin(),
                             thrust::make_transform_iterator(
                                     query.lines_.begin(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             query.points_.begin(),
                             thrust::make_transform_iterator(
                                     query.lines_.begin(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             make_tuple_iterator(
                     thrust::make_counting_iterator(query.lines_.size()),
                     thrust::make_permutation_iterator(
                             query.points_.begin(),
                             thrust::make_transform_iterator(
                                     query.lines_.end(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             query.points_.begin(),
                             thrust::make_transform_iterator(
                                     query.lines_.end(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             out->collision_index_pairs_.begin(), func);
     remove_negative(utility::exec_policy(0)->on(0),
                     out->collision_index_pairs_);
@@ -886,14 +886,14 @@ Intersection<geometry::VoxelGrid>::Compute<geometry::OccupancyGrid>(
                             occ_voxels->begin(),
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.begin(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             make_tuple_iterator(
                     out->collision_index_pairs_.end(),
                     thrust::make_permutation_iterator(
                             occ_voxels->begin(),
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.end(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             out->collision_index_pairs_.begin(), cfunc);
     return out;
 }
@@ -929,14 +929,14 @@ Intersection<geometry::OccupancyGrid>::Compute<geometry::VoxelGrid>(
                             bvh_dev.objects,
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.begin(),
-                                    extract_element_functor<int, 2, 0>()))),
+                                    element_get_functor<Eigen::Vector2i, 0>()))),
             make_tuple_iterator(
                     out->collision_index_pairs_.end(),
                     thrust::make_permutation_iterator(
                             bvh_dev.objects,
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.end(),
-                                    extract_element_functor<int, 2, 0>()))),
+                                    element_get_functor<Eigen::Vector2i, 0>()))),
             out->collision_index_pairs_.begin(), cfunc);
     return out;
 }
@@ -965,24 +965,24 @@ Intersection<geometry::OccupancyGrid>::Compute<geometry::LineSet<3>>(
                         query.points_.begin(),
                         thrust::make_transform_iterator(
                                 query.lines_.begin(),
-                                extract_element_functor<int, 2, 0>())),
+                                element_get_functor<Eigen::Vector2i, 0>())),
                 thrust::make_permutation_iterator(
                         query.points_.begin(),
                         thrust::make_transform_iterator(
                                 query.lines_.begin(),
-                                extract_element_functor<int, 2, 1>()))),
+                                element_get_functor<Eigen::Vector2i, 1>()))),
         make_tuple_iterator(
                 thrust::make_counting_iterator(query.lines_.size()),
                 thrust::make_permutation_iterator(
                         query.points_.begin(),
                         thrust::make_transform_iterator(
                                 query.lines_.end(),
-                                extract_element_functor<int, 2, 0>())),
+                                element_get_functor<Eigen::Vector2i, 0>())),
                 thrust::make_permutation_iterator(
                         query.points_.begin(),
                         thrust::make_transform_iterator(
                                 query.lines_.end(),
-                                extract_element_functor<int, 2, 1>()))),
+                                element_get_functor<Eigen::Vector2i, 1>()))),
         out->collision_index_pairs_.begin(), func);
     remove_negative(utility::exec_policy(0)->on(0),
                     out->collision_index_pairs_);
@@ -996,14 +996,14 @@ Intersection<geometry::OccupancyGrid>::Compute<geometry::LineSet<3>>(
                             bvh_dev.objects,
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.begin(),
-                                    extract_element_functor<int, 2, 0>()))),
+                                    element_get_functor<Eigen::Vector2i, 0>()))),
             make_tuple_iterator(
                     out->collision_index_pairs_.end(),
                     thrust::make_permutation_iterator(
                             bvh_dev.objects,
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.end(),
-                                    extract_element_functor<int, 2, 0>()))),
+                                    element_get_functor<Eigen::Vector2i, 0>()))),
             out->collision_index_pairs_.begin(), cfunc);
     return out;
 }
@@ -1113,14 +1113,14 @@ Intersection<PrimitiveArray>::Compute<geometry::OccupancyGrid>(
                             occ_voxels->begin(),
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.begin(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             make_tuple_iterator(
                     out->collision_index_pairs_.end(),
                     thrust::make_permutation_iterator(
                             occ_voxels->begin(),
                             thrust::make_transform_iterator(
                                     out->collision_index_pairs_.end(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             out->collision_index_pairs_.begin(), cfunc);
     return out;
 }

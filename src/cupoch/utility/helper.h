@@ -382,9 +382,9 @@ void remove_scalar_negative(
     idxs.resize(thrust::distance(idxs.begin(), end));
 }
 
-template <typename T, int Size, int Index>
-struct extract_element_functor {
-    __device__ T operator()(const Eigen::Matrix<T, Size, 1> &x) {
+template <typename T, int Index>
+struct element_get_functor {
+    __device__ typename T::Scalar operator()(const T &x) {
         return x[Index];
     };
 };

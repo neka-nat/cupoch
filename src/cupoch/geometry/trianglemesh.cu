@@ -149,7 +149,7 @@ void FilterSmoothLaplacianHelper(
     };
     if (filter_vertex) {
         auto tritr = thrust::make_transform_iterator(
-                mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
+                mesh->edge_list_.begin(), element_get_functor<Eigen::Vector2i, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertices.begin(), tritr);
         thrust::reduce_by_key(
@@ -167,7 +167,7 @@ void FilterSmoothLaplacianHelper(
     }
     if (filter_normal) {
         auto tritr = thrust::make_transform_iterator(
-                mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
+                mesh->edge_list_.begin(), element_get_functor<Eigen::Vector2i, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertex_normals.begin(), tritr);
         thrust::reduce_by_key(
@@ -186,7 +186,7 @@ void FilterSmoothLaplacianHelper(
     }
     if (filter_color) {
         auto tritr = thrust::make_transform_iterator(
-                mesh->edge_list_.begin(), extract_element_functor<int, 2, 1>());
+                mesh->edge_list_.begin(), element_get_functor<Eigen::Vector2i, 1>());
         thrust::permutation_iterator<ElementIterator, decltype(tritr)> pmitr(
                 prev_vertex_colors.begin(), tritr);
         thrust::reduce_by_key(
@@ -590,7 +590,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
         if (filter_vertex) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertices.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),
@@ -606,7 +606,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
         if (filter_normal) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertex_normals.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),
@@ -622,7 +622,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
         if (filter_color) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertex_colors.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),
@@ -693,7 +693,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
         if (filter_vertex) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertices.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),
@@ -709,7 +709,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
         if (filter_normal) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertex_normals.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),
@@ -725,7 +725,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
         if (filter_color) {
             auto tritr = thrust::make_transform_iterator(
                     mesh->edge_list_.begin(),
-                    extract_element_functor<int, 2, 1>());
+                    element_get_functor<Eigen::Vector2i, 1>());
             thrust::permutation_iterator<ElementIterator, decltype(tritr)>
                     pmitr(prev_vertex_colors.begin(), tritr);
             thrust::reduce_by_key(utility::exec_policy(0)->on(0),

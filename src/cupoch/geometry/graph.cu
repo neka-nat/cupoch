@@ -234,7 +234,7 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     utility::device_vector<int> indices(this->lines_.size());
     utility::device_vector<int> counts(this->lines_.size());
     const auto begin = thrust::make_transform_iterator(
-            this->lines_.begin(), extract_element_functor<int, 2, 0>());
+            this->lines_.begin(), element_get_functor<Eigen::Vector2i, 0>());
     auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0), begin,
                                      begin + this->lines_.size(),
                                      thrust::make_constant_iterator<int>(1),
@@ -660,17 +660,17 @@ Graph<Dim> &Graph<Dim>::SetEdgeWeightsFromDistance() {
                               this->points_.begin(),
                               thrust::make_transform_iterator(
                                       this->lines_.begin(),
-                                      extract_element_functor<int, 2, 0>())),
+                                      element_get_functor<Eigen::Vector2i, 0>())),
                       thrust::make_permutation_iterator(
                               this->points_.begin(),
                               thrust::make_transform_iterator(
                                       this->lines_.end(),
-                                      extract_element_functor<int, 2, 0>())),
+                                      element_get_functor<Eigen::Vector2i, 0>())),
                       thrust::make_permutation_iterator(
                               this->points_.begin(),
                               thrust::make_transform_iterator(
                                       this->lines_.begin(),
-                                      extract_element_functor<int, 2, 1>())),
+                                      element_get_functor<Eigen::Vector2i, 1>())),
                       edge_weights_.begin(),
                       [] __device__(const Eigen::Matrix<float, Dim, 1> &pt1,
                                     const Eigen::Matrix<float, Dim, 1> &pt2) {
@@ -736,7 +736,7 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
             break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
         const auto begin = thrust::make_transform_iterator(
-                sorted_lines.begin(), extract_element_functor<int, 2, 1>());
+                sorted_lines.begin(), element_get_functor<Eigen::Vector2i, 1>());
         auto end = thrust::reduce_by_key(
                 utility::exec_policy(0)->on(0), begin,
                 begin + sorted_lines.size(), res_tmp.begin(), indices.begin(),

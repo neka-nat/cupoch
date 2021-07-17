@@ -71,10 +71,10 @@ Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
                     res->collision_index_pairs_.size());
             thrust::gather(thrust::make_transform_iterator(
                                    res->collision_index_pairs_.begin(),
-                                   extract_element_functor<int, 2, 1>()),
+                                   element_get_functor<Eigen::Vector2i, 1>()),
                            thrust::make_transform_iterator(
                                    res->collision_index_pairs_.end(),
-                                   extract_element_functor<int, 2, 1>()),
+                                   element_get_functor<Eigen::Vector2i, 1>()),
                            graph_.lines_.begin(), remove_edges.begin());
             graph_.RemoveEdges(remove_edges);
         }

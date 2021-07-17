@@ -43,12 +43,12 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                     model.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
                             corres.end(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     auto res2 = thrust::async::reduce(
             utility::exec_policy(utility::GetStream(1))
@@ -57,12 +57,12 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                     target.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 1>())),
+                            element_get_functor<Eigen::Vector2i, 1>())),
             thrust::make_permutation_iterator(
                     target.begin(),
                     thrust::make_transform_iterator(
                             corres.end(),
-                            extract_element_functor<int, 2, 1>())),
+                            element_get_functor<Eigen::Vector2i, 1>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     Eigen::Vector3f model_center = res1.get();
     Eigen::Vector3f target_center = res2.get();
@@ -79,17 +79,17 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                     model.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
                             corres.end(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             thrust::make_permutation_iterator(
                     target.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 1>())),
+                            element_get_functor<Eigen::Vector2i, 1>())),
             init, thrust::plus<Eigen::Matrix3f>(),
             [model_center, target_center] __device__(
                     const Eigen::Vector3f &lhs, const Eigen::Vector3f &rhs) {

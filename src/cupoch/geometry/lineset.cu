@@ -197,23 +197,23 @@ float LineSet<Dim>::GetMaxLineLength() const {
                             points_.begin(),
                             thrust::make_transform_iterator(
                                     lines_.begin(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             points_.begin(),
                             thrust::make_transform_iterator(
                                     lines_.begin(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             make_tuple_iterator(
                     thrust::make_permutation_iterator(
                             points_.begin(),
                             thrust::make_transform_iterator(
                                     lines_.end(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             points_.begin(),
                             thrust::make_transform_iterator(
                                     lines_.end(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             [] __device__(
                     const thrust::tuple<Eigen::Matrix<float, Dim, 1>,
                                         Eigen::Matrix<float, Dim, 1>> &ppair) {

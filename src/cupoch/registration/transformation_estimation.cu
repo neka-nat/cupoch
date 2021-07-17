@@ -66,17 +66,17 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
                     source.points_.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             thrust::make_permutation_iterator(
                     source.points_.begin(),
                     thrust::make_transform_iterator(
                             corres.end(),
-                            extract_element_functor<int, 2, 0>())),
+                            element_get_functor<Eigen::Vector2i, 0>())),
             thrust::make_permutation_iterator(
                     target.points_.begin(),
                     thrust::make_transform_iterator(
                             corres.begin(),
-                            extract_element_functor<int, 2, 1>())),
+                            element_get_functor<Eigen::Vector2i, 1>())),
             0.0f, thrust::plus<float>(),
             [] __device__(const Eigen::Vector3f &lhs,
                           const Eigen::Vector3f &rhs) {
@@ -104,33 +104,33 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
                             source.points_.begin(),
                             thrust::make_transform_iterator(
                                     corres.begin(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             target.points_.begin(),
                             thrust::make_transform_iterator(
                                     corres.begin(),
-                                    extract_element_functor<int, 2, 1>())),
+                                    element_get_functor<Eigen::Vector2i, 1>())),
                     thrust::make_permutation_iterator(
                             target.normals_.begin(),
                             thrust::make_transform_iterator(
                                     corres.begin(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             make_tuple_iterator(
                     thrust::make_permutation_iterator(
                             source.points_.begin(),
                             thrust::make_transform_iterator(
                                     corres.end(),
-                                    extract_element_functor<int, 2, 0>())),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
                     thrust::make_permutation_iterator(
                             target.points_.begin(),
                             thrust::make_transform_iterator(
                                     corres.end(),
-                                    extract_element_functor<int, 2, 1>())),
+                                    element_get_functor<Eigen::Vector2i, 1>())),
                     thrust::make_permutation_iterator(
                             target.normals_.begin(),
                             thrust::make_transform_iterator(
                                     corres.end(),
-                                    extract_element_functor<int, 2, 1>()))),
+                                    element_get_functor<Eigen::Vector2i, 1>()))),
             [] __device__(const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f,
                                               Eigen::Vector3f> &x) {
                 float r = (thrust::get<0>(x) - thrust::get<1>(x))
