@@ -94,7 +94,8 @@ KinfuPipeline::SurfaceMeasurement(const geometry::RGBDImage& image) const {
     PointCloudPyramid pc_pyramid(option_.num_pyramid_levels_);
     for (int i = 0; i < option_.num_pyramid_levels_; ++i) {
         pc_pyramid[i] = geometry::PointCloud::CreateFromRGBDImage(
-                *smooth_img_pyramid[i], intrinsic_, Eigen::Matrix4f::Identity(),
+                *smooth_img_pyramid[i], intrinsic_.CreatePyramidLevel(i),
+                Eigen::Matrix4f::Identity(),
                 true, option_.depth_cutoff_, true);
     }
     return std::make_tuple(std::move(img_pyramid),
