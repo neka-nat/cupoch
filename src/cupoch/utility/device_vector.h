@@ -64,6 +64,7 @@ enum rmmAllocationMode_t {
     CudaDefaultAllocation = 0,
     PoolAllocation = 1,
     CudaManagedMemory = 2,
+    CudaManagedMemoryPool = 3,
 };
 
 template <typename T>
