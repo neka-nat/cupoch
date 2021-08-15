@@ -207,8 +207,8 @@ std::shared_ptr<geometry::LineSet<3>> LineSet<3>::CreateCameraMarker(
     thrust::host_vector<Eigen::Vector3f> points(5);
     thrust::host_vector<Eigen::Vector2i> lines(8);
     const auto focal_length = intrinsic.GetFocalLength();
-    const auto x = intrinsic.width_ / focal_length.first * marker_size;
-    const auto y = intrinsic.height_ / focal_length.second * marker_size;
+    const auto x = intrinsic.width_ / focal_length.first * marker_size * 0.5;
+    const auto y = intrinsic.height_ / focal_length.second * marker_size * 0.5;
     const Eigen::Vector3f local_pt1(x, y, marker_size);
     const Eigen::Vector3f local_pt2(x, -y, marker_size);
     const Eigen::Vector3f local_pt3(-x, -y, marker_size);
