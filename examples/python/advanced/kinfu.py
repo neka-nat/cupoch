@@ -1,3 +1,4 @@
+import numpy as np
 import cupoch as cph
 
 if __name__ == "__main__":
@@ -7,6 +8,7 @@ if __name__ == "__main__":
     kop.distance_threshold = 5.0
     kinfu = cph.kinfu.KinfuPipeline(camera_intrinsics, kop)
 
+    markers = []
     for i in range(5):
         print("Integrate {:d}-th image into the volume.".format(i))
         color = cph.io.read_image(
@@ -17,8 +19,9 @@ if __name__ == "__main__":
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         res = kinfu.process_frame(rgbd)
         if res:
+            markers.append(cph.geometry.LineSet.create_camera_marker(camera_intrinsics, np.linalg.inv(kinfu.cur_pose)))
             print(kinfu.cur_pose)
 
     print("Extract triangle mesh")
     mesh = kinfu.extract_triangle_mesh()
-    cph.visualization.draw_geometries([mesh])
+    cph.visualization.draw_geometries([mesh] + markers)

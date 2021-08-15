@@ -91,6 +91,10 @@ void bind_def(LineSetT& lineset) {
                         "Factory function to create a LineSet from edges of a "
                         "triangle mesh.",
                         "mesh"_a)
+            .def_static("create_camera_marker",
+                        &geometry::LineSet<Dim>::template CreateCameraMarker<Dim>,
+                        "Factory function to create a LineSet from camera parameter",
+                        "intrinsic"_a, "extrinsic"_a, "marker_size"_a = 0.3)
             .def_property(
                     "points",
                     [](geometry::LineSet<Dim> &line) {

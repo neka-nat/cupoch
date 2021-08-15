@@ -27,9 +27,13 @@
 
 #include "cupoch/geometry/geometry_base.h"
 #include "cupoch/geometry/geometry_utils.h"
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
+namespace camera {
+class PinholeCameraIntrinsic;
+}
 namespace geometry {
 
 class PointCloud;
@@ -125,6 +129,12 @@ public:
     template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
     static std::shared_ptr<LineSet<Dim>> CreateFromTriangleMesh(
             const TriangleMesh &mesh);
+
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
+    static std::shared_ptr<geometry::LineSet<Dim>> CreateCameraMarker(
+            const camera::PinholeCameraIntrinsic& intrinsic,
+            const Eigen::Matrix4f& extrinsic,
+            float marker_size = 0.3);
 
 public:
     utility::device_vector<Eigen::Matrix<float, Dim, 1>> points_;

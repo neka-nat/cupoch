@@ -24,8 +24,8 @@
 
 #include "cupoch/utility/console.h"
 
-using namespace cupoch;
-using namespace cupoch::camera;
+namespace cupoch {
+namespace camera {
 
 PinholeCameraParameters::PinholeCameraParameters() {}
 
@@ -67,4 +67,7 @@ bool PinholeCameraParameters::ConvertFromJsonValue(const Json::Value &value) {
         return false;
     }
     return true;
+}
+
+}
 }

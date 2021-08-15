@@ -196,3 +196,48 @@ std::shared_ptr<LineSet<2>> LineSet<2>::CreateFromAxisAlignedBoundingBox(
             "LineSet<2>::CreateFromAxisAlignedBoundingBox is not supported");
     return std::make_shared<LineSet<2>>();
 }
+
+
+template <>
+template <>
+std::shared_ptr<geometry::LineSet<3>> LineSet<3>::CreateCameraMarker(
+        const camera::PinholeCameraIntrinsic& intrinsic,
+        const Eigen::Matrix4f& extrinsic,
+        float marker_size) {
+    thrust::host_vector<Eigen::Vector3f> points(5);
+    thrust::host_vector<Eigen::Vector2i> lines(8);
+    const auto focal_length = intrinsic.GetFocalLength();
+    const auto x = intrinsic.width_ / focal_length.first * marker_size;
+    const auto y = intrinsic.height_ / focal_length.second * marker_size;
+    const Eigen::Vector3f local_pt1(x, y, marker_size);
+    const Eigen::Vector3f local_pt2(x, -y, marker_size);
+    const Eigen::Vector3f local_pt3(-x, -y, marker_size);
+    const Eigen::Vector3f local_pt4(-x, y, marker_size);
+    const Eigen::Matrix4f inv_ext = utility::InverseTransform(extrinsic);
+    points[0] = inv_ext.block<3, 1>(0, 3);
+    points[1] = inv_ext.block<3, 3>(0, 0) * local_pt1 + inv_ext.block<3, 1>(0, 3);
+    points[2] = inv_ext.block<3, 3>(0, 0) * local_pt2 + inv_ext.block<3, 1>(0, 3);
+    points[3] = inv_ext.block<3, 3>(0, 0) * local_pt3 + inv_ext.block<3, 1>(0, 3);
+    points[4] = inv_ext.block<3, 3>(0, 0) * local_pt4 + inv_ext.block<3, 1>(0, 3);
+    lines[0] = Eigen::Vector2i(0, 1);
+    lines[1] = Eigen::Vector2i(0, 2);
+    lines[2] = Eigen::Vector2i(0, 3);
+    lines[3] = Eigen::Vector2i(0, 4);
+    lines[4] = Eigen::Vector2i(1, 2);
+    lines[5] = Eigen::Vector2i(2, 3);
+    lines[6] = Eigen::Vector2i(3, 4);
+    lines[7] = Eigen::Vector2i(4, 1);
+    auto out = std::make_shared<LineSet<3>>(points, lines);
+    return out;
+}
+
+template <>
+template <>
+std::shared_ptr<geometry::LineSet<2>> LineSet<2>::CreateCameraMarker(
+        const camera::PinholeCameraIntrinsic& intrinsic,
+        const Eigen::Matrix4f& extrinsic,
+        float marker_size) {
+    utility::LogError(
+            "LineSet<2>::CreateCameraMarker is not supported");
+    return std::make_shared<LineSet<2>>();
+}

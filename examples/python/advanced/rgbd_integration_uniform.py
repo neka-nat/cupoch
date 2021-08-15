@@ -13,6 +13,7 @@ if __name__ == "__main__":
         color_type=cph.integration.TSDFVolumeColorType.RGB8,
     )
 
+    markers = []
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
         color = cph.io.read_image(
@@ -26,24 +27,25 @@ if __name__ == "__main__":
             camera_intrinsics,
             np.linalg.inv(camera_poses[i].pose),
         )
+        markers.append(cph.geometry.LineSet.create_camera_marker(camera_intrinsics, np.linalg.inv(camera_poses[i].pose)))
 
     print("Extract triangle mesh")
     mesh = volume.extract_triangle_mesh()
     mesh.compute_vertex_normals()
-    cph.visualization.draw_geometries([mesh])
+    cph.visualization.draw_geometries([mesh] + markers)
 
     print("Extract voxel-aligned debugging point cloud")
     voxel_pcd = volume.extract_voxel_point_cloud()
-    cph.visualization.draw_geometries([voxel_pcd])
+    cph.visualization.draw_geometries([voxel_pcd] + markers)
 
     print("Extract voxel-aligned debugging voxel grid")
     voxel_grid = volume.extract_voxel_grid()
-    cph.visualization.draw_geometries([voxel_grid])
+    cph.visualization.draw_geometries([voxel_grid] + markers)
 
     print("Extract point cloud")
     pcd = volume.extract_point_cloud()
-    cph.visualization.draw_geometries([pcd])
+    cph.visualization.draw_geometries([pcd] + markers)
 
     print("Raycasting")
     pcd = volume.raycast(camera_intrinsics, np.linalg.inv(camera_poses[0].pose), 0.04)
-    cph.visualization.draw_geometries([pcd])
+    cph.visualization.draw_geometries([pcd, markers[0]])
