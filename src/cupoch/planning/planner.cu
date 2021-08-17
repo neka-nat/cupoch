@@ -21,6 +21,7 @@
 #include <thrust/gather.h>
 
 #include "cupoch/collision/collision.h"
+#include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/voxelgrid.h"
 #include "cupoch/planning/planner.h"
 #include "cupoch/utility/console.h"
@@ -61,6 +62,14 @@ Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
                         (const geometry::VoxelGrid&)(*obstacle);
                 res = collision::ComputeIntersection(voxel_grid, graph_,
                                                      object_radius_);
+                break;
+            }
+            case geometry::Geometry::GeometryType::OccupancyGrid: {
+                const geometry::OccupancyGrid& occ_grid =
+                        (const geometry::OccupancyGrid&)(*obstacle);
+                res = collision::ComputeIntersection(occ_grid, graph_,
+                                                     object_radius_);
+                break;
             }
             default: {
                 utility::LogError("Unsupported obstacle type.");
