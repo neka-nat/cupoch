@@ -111,5 +111,9 @@ std::shared_ptr<Path> Pos3DPlanner::FindPath(
     return out;
 }
 
+const geometry::Graph<3>& Pos3DPlanner::GetGraph() const {
+    return graph_;
+}
+
 }  // namespace planning
 }  // namespace cupoch

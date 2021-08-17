@@ -55,6 +55,7 @@ public:
     Pos3DPlanner& UpdateGraph();
     std::shared_ptr<Path> FindPath(const Eigen::Vector3f& start,
                                    const Eigen::Vector3f& goal) const;
+    const geometry::Graph<3>& GetGraph() const;
 
 public:
     geometry::Graph<3> graph_;

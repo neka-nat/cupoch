@@ -45,6 +45,7 @@ void pybind_planning_classes(py::module &m) {
                               const Eigen::Vector3f& goal) {
                 return *self.FindPath(start, goal);
             })
+        .def("get_graph", &planning::Pos3DPlanner::GetGraph)
         .def_readwrite("object_radius", &planning::Pos3DPlanner::object_radius_)
         .def_readwrite("max_edge_distance", &planning::Pos3DPlanner::max_edge_distance_);
 }
