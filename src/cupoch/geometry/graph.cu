@@ -230,19 +230,22 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
                      this->lines_.end());
         edge_weights_.resize(this->lines_.size(), 1.0);
     }
-    edge_index_offsets_.resize(this->points_.size() + 1, 0);
+    edge_index_offsets_.resize(this->points_.size() + 1);
+    thrust::fill(edge_index_offsets_.begin(), edge_index_offsets_.end(), 0);
     utility::device_vector<int> indices(this->lines_.size());
     utility::device_vector<int> counts(this->lines_.size());
     const auto begin = thrust::make_transform_iterator(
             this->lines_.begin(), element_get_functor<Eigen::Vector2i, 0>());
     auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0), begin,
-                                     begin + this->lines_.size(),
+                                     thrust::make_transform_iterator(
+                                            this->lines_.end(),
+                                            element_get_functor<Eigen::Vector2i, 0>()),
                                      thrust::make_constant_iterator<int>(1),
                                      indices.begin(), counts.begin());
     indices.resize(thrust::distance(indices.begin(), end.first));
     counts.resize(thrust::distance(counts.begin(), end.second));
-    thrust::gather(indices.begin(), indices.end(), counts.begin(),
-                   edge_index_offsets_.begin());
+    thrust::scatter(counts.begin(), counts.end(), indices.begin(),
+                    edge_index_offsets_.begin());
     thrust::exclusive_scan(
             utility::exec_policy(0)->on(0), edge_index_offsets_.begin(),
             edge_index_offsets_.end(), edge_index_offsets_.begin());
@@ -422,9 +425,9 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
         const utility::device_vector<Eigen::Vector2i> &edges) {
     bool has_colors = this->HasColors();
     bool has_weights = this->HasWeights();
-    utility::device_vector<Eigen::Vector2i> new_lines;
-    utility::device_vector<float> new_weights;
-    utility::device_vector<Eigen::Vector3f> new_colors;
+    utility::device_vector<Eigen::Vector2i> new_lines(this->lines_.size());
+    utility::device_vector<float> new_weights(edge_weights_.size());
+    utility::device_vector<Eigen::Vector3f> new_colors(this->colors_.size());
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
                  sorted_edges.end());

@@ -54,20 +54,26 @@ Pos3DPlanner::Pos3DPlanner(const Pos3DPlanner& other)
       max_edge_distance_(other.max_edge_distance_) {}
 
 Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
+    RemoveCollisionEdges(graph_);
+    return *this;
+}
+
+void Pos3DPlanner::RemoveCollisionEdges(geometry::Graph<3>& graph) const {
+    graph.SetEdgeWeightsFromDistance();
     for (const auto& obstacle : obstacles_) {
         auto res = std::make_shared<collision::CollisionResult>();
         switch (obstacle->GetGeometryType()) {
             case geometry::Geometry::GeometryType::VoxelGrid: {
                 const geometry::VoxelGrid& voxel_grid =
                         (const geometry::VoxelGrid&)(*obstacle);
-                res = collision::ComputeIntersection(voxel_grid, graph_,
+                res = collision::ComputeIntersection(voxel_grid, graph,
                                                      object_radius_);
                 break;
             }
             case geometry::Geometry::GeometryType::OccupancyGrid: {
                 const geometry::OccupancyGrid& occ_grid =
                         (const geometry::OccupancyGrid&)(*obstacle);
-                res = collision::ComputeIntersection(occ_grid, graph_,
+                res = collision::ComputeIntersection(occ_grid, graph,
                                                      object_radius_);
                 break;
             }
@@ -84,11 +90,10 @@ Pos3DPlanner& Pos3DPlanner::UpdateGraph() {
                            thrust::make_transform_iterator(
                                    res->collision_index_pairs_.end(),
                                    element_get_functor<Eigen::Vector2i, 1>()),
-                           graph_.lines_.begin(), remove_edges.begin());
-            graph_.RemoveEdges(remove_edges);
+                           graph.lines_.begin(), remove_edges.begin());
+            graph.RemoveEdges(remove_edges);
         }
     }
-    return *this;
 }
 
 std::shared_ptr<Path> Pos3DPlanner::FindPath(
@@ -96,9 +101,9 @@ std::shared_ptr<Path> Pos3DPlanner::FindPath(
     auto ex_graph = graph_;
     size_t n_start = ex_graph.points_.size();
     size_t n_goal = n_start + 1;
-    ex_graph.AddNodeAndConnect(start, max_edge_distance_, false);
+    ex_graph.AddNodeAndConnect(start, max_edge_distance_, true);
     ex_graph.AddNodeAndConnect(goal, max_edge_distance_, false);
-    ex_graph.ConstructGraph();
+    RemoveCollisionEdges(ex_graph);
     auto path_idxs = ex_graph.DijkstraPath(n_start, n_goal);
     utility::pinned_host_vector<Eigen::Vector3f> h_points(
             ex_graph.points_.size());

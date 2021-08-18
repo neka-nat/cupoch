@@ -57,6 +57,8 @@ public:
                                    const Eigen::Vector3f& goal) const;
     const geometry::Graph<3>& GetGraph() const;
 
+private:
+    void RemoveCollisionEdges(geometry::Graph<3>& graph) const;
 public:
     geometry::Graph<3> graph_;
 
