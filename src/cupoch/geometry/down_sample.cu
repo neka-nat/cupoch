@@ -22,6 +22,7 @@
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/set_operations.h>
 #include <thrust/sort.h>
+#include <thrust/async/copy.h>
 
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
@@ -261,19 +262,20 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     output->points_.resize(n_out);
     if (has_normals) output->normals_.resize(n_out);
     if (has_colors) output->colors_.resize(n_out);
+    thrust::system::cuda::unique_eager_event copy_e[3];
     thrust::strided_range<
             utility::device_vector<Eigen::Vector3f>::const_iterator>
             range_points(points_.begin(), points_.end(), every_k_points);
-    thrust::copy(utility::exec_policy(utility::GetStream(0))
-                         ->on(utility::GetStream(0)),
+    copy_e[0] = thrust::async::copy(utility::exec_policy(utility::GetStream(0))
+                 ->on(utility::GetStream(0)),
                  range_points.begin(), range_points.end(),
                  output->points_.begin());
     if (has_normals) {
         thrust::strided_range<
                 utility::device_vector<Eigen::Vector3f>::const_iterator>
                 range_normals(normals_.begin(), normals_.end(), every_k_points);
-        thrust::copy(utility::exec_policy(utility::GetStream(1))
-                             ->on(utility::GetStream(1)),
+        copy_e[1] = thrust::async::copy(utility::exec_policy(utility::GetStream(1))
+                     ->on(utility::GetStream(1)),
                      range_normals.begin(), range_normals.end(),
                      output->normals_.begin());
     }
@@ -281,12 +283,14 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
         thrust::strided_range<
                 utility::device_vector<Eigen::Vector3f>::const_iterator>
                 range_colors(colors_.begin(), colors_.end(), every_k_points);
-        thrust::copy(utility::exec_policy(utility::GetStream(2))
-                             ->on(utility::GetStream(2)),
+        copy_e[2] = thrust::async::copy(utility::exec_policy(utility::GetStream(2))
+                     ->on(utility::GetStream(2)),
                      range_colors.begin(), range_colors.end(),
                      output->colors_.begin());
     }
-    cudaSafeCall(cudaDeviceSynchronize());
+    copy_e[0].wait();
+    if (has_normals) { copy_e[1].wait(); }
+    if (has_colors) { copy_e[2].wait(); }
     return output;
 }
 
