@@ -138,7 +138,7 @@ void CreateToPointCloud2Msg(uint8_t* data, const PointCloud2MsgInfo& info, const
     if (!pointcloud.HasPoints()) {
         return;
     }
-    if (info.width_ > 0 && info.point_step_ > 0 && info.row_step_ > 0) {
+    if (info.width_ < 0 && info.point_step_ < 0 && info.row_step_ < 0) {
         utility::LogError("[CreateToPointCloud2Msg] Width and Step sizes must be greater than 0.");
         return;
     }
