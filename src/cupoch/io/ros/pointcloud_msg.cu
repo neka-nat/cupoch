@@ -78,7 +78,7 @@ struct convert_to_pointcloud2_msg_functor {
         uint32_t r = (uint32_t)(color[0] * 255.0);
         uint32_t g = (uint32_t)(color[1] * 255.0);
         uint32_t b = (uint32_t)(color[2] * 255.0);
-        uint32_t c = (r << 16) & (g << 8) & b;
+        uint32_t c = (r << 16) | (g << 8) | b;
         memcpy(data_ + idx * point_step_ + 16, &c, sizeof(uint32_t));
     }
 };
