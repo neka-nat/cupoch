@@ -429,8 +429,14 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
     utility::device_vector<float> new_weights(edge_weights_.size());
     utility::device_vector<Eigen::Vector3f> new_colors(this->colors_.size());
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
+    utility::device_vector<Eigen::Vector2i> sorted_swap_edges = edges;
     thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
                  sorted_edges.end());
+    if (!is_directed_) {
+        swap_index(sorted_swap_edges);
+        thrust::sort(utility::exec_policy(0)->on(0), sorted_swap_edges.begin(),
+                     sorted_swap_edges.end());
+    }
     auto cnst_w = thrust::make_constant_iterator<float>(1.0);
     auto cnst_c = thrust::make_constant_iterator<Eigen::Vector3f>(
             Eigen::Vector3f::Ones());
@@ -451,14 +457,8 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
                     make_tuple_begin(this->lines_, edge_weights_,
                                      this->colors_),
                     make_tuple_end(this->lines_, edge_weights_, this->colors_),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.begin(),
-                                                swap_index_functor<int>()),
-                                        cnst_w, cnst_c),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.end(),
-                                                swap_index_functor<int>()),
-                                        cnst_w, cnst_c),
+                    make_tuple_iterator(sorted_swap_edges.begin(), cnst_w, cnst_c),
+                    make_tuple_iterator(sorted_swap_edges.end(), cnst_w, cnst_c),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_weights,
                        new_colors);
@@ -477,14 +477,8 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
             auto end2 = thrust::set_difference(
                     make_tuple_begin(this->lines_, this->colors_),
                     make_tuple_end(this->lines_, this->colors_),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.begin(),
-                                                swap_index_functor<int>()),
-                                        cnst_c),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.end(),
-                                                swap_index_functor<int>()),
-                                        cnst_c),
+                    make_tuple_iterator(sorted_swap_edges.begin(), cnst_c),
+                    make_tuple_iterator(sorted_swap_edges.end(), cnst_c),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_colors);
         }
@@ -502,14 +496,8 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
             auto end2 = thrust::set_difference(
                     make_tuple_begin(this->lines_, edge_weights_),
                     make_tuple_end(this->lines_, edge_weights_),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.begin(),
-                                                swap_index_functor<int>()),
-                                        cnst_w),
-                    make_tuple_iterator(thrust::make_transform_iterator(
-                                                sorted_edges.end(),
-                                                swap_index_functor<int>()),
-                                        cnst_w),
+                    make_tuple_iterator(sorted_swap_edges.begin(), cnst_w),
+                    make_tuple_iterator(sorted_swap_edges.end(), cnst_w),
                     begin, func);
             resize_all(thrust::distance(begin, end2), new_lines, new_weights);
         }
@@ -521,10 +509,7 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
         if (!is_directed_) {
             auto end2 = thrust::set_difference(
                     this->lines_.begin(), this->lines_.end(),
-                    thrust::make_transform_iterator(sorted_edges.begin(),
-                                                    swap_index_functor<int>()),
-                    thrust::make_transform_iterator(sorted_edges.end(),
-                                                    swap_index_functor<int>()),
+                    sorted_swap_edges.begin(), sorted_swap_edges.end(),
                     new_lines.begin());
             new_lines.resize(thrust::distance(new_lines.begin(), end2));
         }
