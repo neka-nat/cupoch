@@ -286,7 +286,7 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
     utility::device_vector<float> res_weights(new_edges.size());
     auto func =
             tuple_element_compare_functor<EdgeWeight, 0,
-                                          thrust::greater<Eigen::Vector2i>>();
+                                          thrust::less<Eigen::Vector2i>>();
     auto begin = make_tuple_begin(res_edges, res_weights);
     auto end = thrust::set_difference(
             make_tuple_begin(new_edges, weights),
@@ -436,7 +436,7 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
             Eigen::Vector3f::Ones());
     if (has_colors && has_weights) {
         auto func = tuple_element_compare_functor<
-                EdgeWeightColor, 0, thrust::greater<Eigen::Vector2i>>();
+                EdgeWeightColor, 0, thrust::less<Eigen::Vector2i>>();
         auto begin = make_tuple_begin(new_lines, new_weights, new_colors);
         auto end1 = thrust::set_difference(
                 make_tuple_begin(this->lines_, edge_weights_, this->colors_),
@@ -465,7 +465,7 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
         }
     } else if (has_colors && !has_weights) {
         auto func = tuple_element_compare_functor<
-                EdgeColor, 0, thrust::greater<Eigen::Vector2i>>();
+                EdgeColor, 0, thrust::less<Eigen::Vector2i>>();
         auto begin = make_tuple_begin(new_lines, new_colors);
         auto end1 = thrust::set_difference(
                 make_tuple_begin(this->lines_, this->colors_),
@@ -490,7 +490,7 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
         }
     } else if (!has_colors && has_weights) {
         auto func = tuple_element_compare_functor<
-                EdgeWeight, 0, thrust::greater<Eigen::Vector2i>>();
+                EdgeWeight, 0, thrust::less<Eigen::Vector2i>>();
         auto begin = make_tuple_begin(new_lines, new_weights);
         auto end1 = thrust::set_difference(
                 make_tuple_begin(this->lines_, edge_weights_),
@@ -584,7 +584,7 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
                                 indices.begin()),
             tuple_element_compare_functor<
                     thrust::tuple<Eigen::Vector2i, size_t>, 0,
-                    thrust::greater<Eigen::Vector2i>>());
+                    thrust::less<Eigen::Vector2i>>());
     thrust::for_each(thrust::make_permutation_iterator(this->colors_.begin(),
                                                        indices.begin()),
                      thrust::make_permutation_iterator(this->colors_.begin(),
@@ -609,7 +609,7 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
                                     indices.begin()),
                 tuple_element_compare_functor<
                         thrust::tuple<Eigen::Vector2i, size_t>, 0,
-                        thrust::greater<Eigen::Vector2i>>());
+                        thrust::less<Eigen::Vector2i>>());
         thrust::for_each(
                 thrust::make_permutation_iterator(this->colors_.begin(),
                                                   indices.begin()),
