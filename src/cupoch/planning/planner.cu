@@ -91,7 +91,7 @@ void Pos3DPlanner::RemoveCollisionEdges(geometry::Graph<3>& graph) const {
                                    res->collision_index_pairs_.end(),
                                    element_get_functor<Eigen::Vector2i, 1>()),
                            graph.lines_.begin(), remove_edges.begin());
-            graph.RemoveEdges(remove_edges);
+            graph.SetEdgeWeights(remove_edges, std::numeric_limits<float>::infinity());
         }
     }
 }

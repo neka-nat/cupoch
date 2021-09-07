@@ -284,16 +284,11 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
                         new_edges.end(), weights.begin());
     utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
     utility::device_vector<float> res_weights(new_edges.size());
-    auto func =
-            tuple_element_compare_functor<EdgeWeight, 0,
-                                          thrust::less<Eigen::Vector2i>>();
-    auto begin = make_tuple_begin(res_edges, res_weights);
-    auto end = thrust::set_difference(
-            make_tuple_begin(new_edges, weights),
-            make_tuple_end(new_edges, weights),
-            make_tuple_begin(this->lines_, edge_weights_),
-            make_tuple_end(this->lines_, edge_weights_), begin, func);
-    resize_all(thrust::distance(begin, end), res_edges, res_weights);
+    auto end = thrust::set_difference_by_key(new_edges.begin(), new_edges.end(),
+                                             this->lines_.begin(), this->lines_.end(),
+                                             weights.begin(), edge_weights_.begin(),
+                                             res_edges.begin(), res_weights.begin());
+    resize_all(thrust::distance(res_edges.begin(), end.first), res_edges, res_weights);
     this->lines_.insert(this->lines_.end(), res_edges.begin(), res_edges.end());
     edge_weights_.insert(edge_weights_.end(), res_weights.begin(),
                          res_weights.end());
@@ -554,22 +549,11 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
     utility::device_vector<size_t> indices(edges.size());
     thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
                  sorted_edges.end());
-    thrust::set_intersection(
-            make_tuple_iterator(this->lines_.begin(),
-                                thrust::make_counting_iterator<size_t>(0)),
-            make_tuple_iterator(
-                    this->lines_.end(),
-                    thrust::make_counting_iterator(this->lines_.size())),
-            make_tuple_iterator(sorted_edges.begin(),
-                                thrust::make_constant_iterator<size_t>(0)),
-            make_tuple_iterator(
-                    sorted_edges.end(),
-                    thrust::make_constant_iterator(sorted_edges.size())),
-            make_tuple_iterator(thrust::make_discard_iterator(),
-                                indices.begin()),
-            tuple_element_compare_functor<
-                    thrust::tuple<Eigen::Vector2i, size_t>, 0,
-                    thrust::less<Eigen::Vector2i>>());
+    thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
+                                    sorted_edges.begin(), sorted_edges.end(),
+                                    thrust::make_counting_iterator<size_t>(0),
+                                    thrust::make_discard_iterator(),
+                                    indices.begin());
     thrust::for_each(thrust::make_permutation_iterator(this->colors_.begin(),
                                                        indices.begin()),
                      thrust::make_permutation_iterator(this->colors_.begin(),
@@ -579,22 +563,11 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
         swap_index(sorted_edges);
         thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
                      sorted_edges.end());
-        thrust::set_intersection(
-                make_tuple_iterator(this->lines_.begin(),
-                                    thrust::make_counting_iterator<size_t>(0)),
-                make_tuple_iterator(
-                        this->lines_.end(),
-                        thrust::make_counting_iterator(this->lines_.size())),
-                make_tuple_iterator(sorted_edges.begin(),
-                                    thrust::make_constant_iterator<size_t>(0)),
-                make_tuple_iterator(
-                        sorted_edges.end(),
-                        thrust::make_constant_iterator(sorted_edges.size())),
-                make_tuple_iterator(thrust::make_discard_iterator(),
-                                    indices.begin()),
-                tuple_element_compare_functor<
-                        thrust::tuple<Eigen::Vector2i, size_t>, 0,
-                        thrust::less<Eigen::Vector2i>>());
+        thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
+                                        sorted_edges.begin(), sorted_edges.end(),
+                                        thrust::make_counting_iterator<size_t>(0),
+                                        thrust::make_discard_iterator(),
+                                        indices.begin());
         thrust::for_each(
                 thrust::make_permutation_iterator(this->colors_.begin(),
                                                   indices.begin()),
@@ -664,6 +637,42 @@ Graph<Dim> &Graph<Dim>::SetEdgeWeightsFromDistance() {
                                     const Eigen::Matrix<float, Dim, 1> &pt2) {
                           return (pt1 - pt2).norm();
                       });
+    return *this;
+}
+
+template <int Dim>
+Graph<Dim> &Graph<Dim>::SetEdgeWeights(const utility::device_vector<Eigen::Vector2i> &edges, float weight) {
+    utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
+    utility::device_vector<float> new_edge_weights = edge_weights_;
+    new_edge_weights.resize(this->lines_.size(), 1.0);
+    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+                 sorted_edges.end());
+    utility::device_vector<size_t> result_indices(edges.size());
+    auto end = thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
+                                               sorted_edges.begin(), sorted_edges.end(),
+                                               thrust::make_counting_iterator<size_t>(0),
+                                               thrust::make_discard_iterator(),
+                                               result_indices.begin());
+    result_indices.resize(thrust::distance(result_indices.begin(), end.second));
+    auto begin = thrust::make_constant_iterator(weight);
+    thrust::scatter(begin, begin + result_indices.size(),
+                    result_indices.begin(), new_edge_weights.begin());
+    if (!is_directed_) {
+        swap_index(sorted_edges);
+        thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+                     sorted_edges.end());
+        result_indices.resize(edges.size());
+        auto end = thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
+                                                   sorted_edges.begin(), sorted_edges.end(),
+                                                   thrust::make_counting_iterator<size_t>(0),
+                                                   thrust::make_discard_iterator(),
+                                                   result_indices.begin());
+        result_indices.resize(thrust::distance(result_indices.begin(), end.second));
+        auto begin = thrust::make_constant_iterator(weight);
+        thrust::scatter(begin, begin + result_indices.size(),
+                        result_indices.begin(), new_edge_weights.begin());
+    }
+    thrust::swap(edge_weights_, new_edge_weights);
     return *this;
 }
 

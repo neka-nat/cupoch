@@ -119,6 +119,7 @@ public:
                                 const Eigen::Vector3f &color);
 
     Graph<Dim> &SetEdgeWeightsFromDistance();
+    Graph<Dim> &SetEdgeWeights(const utility::device_vector<Eigen::Vector2i> &edges, float weight);
 
     std::shared_ptr<SSSPResultArray> DijkstraPaths(
             int start_node_index, int end_node_index = -1) const;
