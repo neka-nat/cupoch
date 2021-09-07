@@ -8,13 +8,14 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7"
 numpy = "^1.19.4"
-open3d = "^0.11.2"
-torch = "^1.7.1"
-opencv-python = "^4.4.0"
-networkx = "^2.5"
-rospkg = "^1.2.9"
-matplotlib = "^3.3.3"
-pyrealsense2 = "^2.41.0"
+open3d = {version = "^0.11.2", optional = true}
+torch = {version = "^1.7.1", optional = true}
+opencv-python = {version = "^4.4.0", optional = true}
+networkx = {version = "^2.5", optional = true}
+rospkg = {version = "^1.2.9", optional = true}
+matplotlib = {version = "^3.3.3", optional = true}
+pyrealsense2 = {version = "^2.41.0", optional = true}
+depthai = {version = "^2.10.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 twine = "^3.2.0"
@@ -25,3 +26,6 @@ mkdocs-material = "^6.1.7"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.extras]
+examples = ["open3d", "torch", "opencv-python", "networkx", "rospkg", "matplotlib", "pyrealsense2", "depthai"]
