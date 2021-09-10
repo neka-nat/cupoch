@@ -759,12 +759,12 @@ Graph<Dim>::DijkstraPathsHost(int start_node_index, int end_node_index) const {
 }
 
 template <int Dim>
-std::shared_ptr<thrust::host_vector<int>> Graph<Dim>::DijkstraPath(
+std::pair<std::shared_ptr<thrust::host_vector<int>>, float> Graph<Dim>::DijkstraPath(
         int start_node_index, int end_node_index) const {
     auto res = DijkstraPaths(start_node_index, end_node_index);
     SSSPResultHostArray h_res = *res;
     auto path_nodes = std::make_shared<thrust::host_vector<int>>();
-    if (h_res[end_node_index].prev_index_ < 0) return path_nodes;
+    if (h_res[end_node_index].prev_index_ < 0) return std::make_pair(path_nodes, std::numeric_limits<float>::infinity());
     path_nodes->push_back(end_node_index);
     int prev_index = h_res[end_node_index].prev_index_;
     while (prev_index != start_node_index) {
@@ -773,7 +773,7 @@ std::shared_ptr<thrust::host_vector<int>> Graph<Dim>::DijkstraPath(
     }
     path_nodes->push_back(start_node_index);
     thrust::reverse(path_nodes->begin(), path_nodes->end());
-    return path_nodes;
+    return std::make_pair(path_nodes, h_res[end_node_index].shortest_distance_);
 }
 
 template class Graph<2>;

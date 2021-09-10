@@ -125,7 +125,7 @@ public:
             int start_node_index, int end_node_index = -1) const;
     std::shared_ptr<SSSPResultHostArray> DijkstraPathsHost(
             int start_node_index, int end_node_index = -1) const;
-    std::shared_ptr<thrust::host_vector<int>> DijkstraPath(
+    std::pair<std::shared_ptr<thrust::host_vector<int>>, float> DijkstraPath(
             int start_node_index, int end_node_index) const;
 
     template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>

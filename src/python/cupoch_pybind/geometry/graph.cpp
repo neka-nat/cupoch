@@ -74,7 +74,7 @@ void bind_def(GraphT& graph) {
                  [](const geometry::Graph<Dim> &graph, int start_node,
                     int end_node) {
                      auto res = graph.DijkstraPath(start_node, end_node);
-                     return *res;
+                     return std::make_pair(*res.first, res.second);
                  })
             .def_static("create_from_triangle_mesh",
                         &geometry::Graph<Dim>::template CreateFromTriangleMesh<Dim>,

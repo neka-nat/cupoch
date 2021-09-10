@@ -23,7 +23,7 @@ gp.set_edge_weights_from_distance()
 
 gp.remove_edge((0, 30))
 
-path = gp.dijkstra_path(0, 30)
+path, _ = gp.dijkstra_path(0, 30)
 print("Find path: ", path)
 for i in range(len(path[:-1])):
     gp.paint_node_color(path[i], (0.0, 1.0, 0.0))
@@ -42,7 +42,7 @@ mesh = meshes.bunny()
 mesh.remove_unreferenced_vertices()
 gp = cph.geometry.Graph.create_from_triangle_mesh(mesh)
 start = time.time()
-path = gp.dijkstra_path(0, 100)
+path, _ = gp.dijkstra_path(0, 100)
 elapsed_time = time.time() - start
 print("Find path (GPU): ", path, " Time: ", elapsed_time)
 for i in range(len(path[:-1])):
