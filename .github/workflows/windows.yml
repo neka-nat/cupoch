@@ -17,19 +17,19 @@ jobs:
         include:
           # Windows2019 & VS 2019 supports 11.0+
           - os: windows-2019
-            cuda: "11.0.167"
+            cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.6
           - os: windows-2019
-            cuda: "11.0.167"
+            cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.7
           - os: windows-2019
-            cuda: "11.0.167"
+            cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.8
           - os: windows-2019
-            cuda: "11.0.167"
+            cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
             python-version: 3.9
     env:
