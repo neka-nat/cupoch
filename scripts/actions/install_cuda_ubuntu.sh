@@ -109,25 +109,49 @@ echo "CUDA_PACKAGES ${CUDA_PACKAGES}"
 
 PIN_FILENAME="cuda-ubuntu${UBUNTU_VERSION}.pin"
 PIN_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/${PIN_FILENAME}"
-APT_KEY_URL="http://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/7fa2af80.pub"
-REPO_URL="http://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/"
+APT_KEY_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/7fa2af80.pub"
+REPO_URL="https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION}/x86_64/"
 
 echo "PIN_FILENAME ${PIN_FILENAME}"
 echo "PIN_URL ${PIN_URL}"
 echo "APT_KEY_URL ${APT_KEY_URL}"
 
 ## -----------------
+## Check for root/sudo
+## -----------------
+
+# Detect if the script is being run as root, storing true/false in is_root.
+is_root=false
+if (( $EUID == 0)); then
+   is_root=true
+fi
+# Find if sudo is available
+has_sudo=false
+if command -v sudo &> /dev/null ; then
+    has_sudo=true
+fi
+# Decide if we can proceed or not (root or sudo is required) and if so store whether sudo should be used or not.
+if [ "$is_root" = false ] && [ "$has_sudo" = false ]; then
+    echo "Root or sudo is required. Aborting."
+    exit 1
+elif [ "$is_root" = false ] ; then
+    USE_SUDO=sudo
+else
+    USE_SUDO=
+fi
+
+## -----------------
 ## Install
 ## -----------------
 echo "Adding CUDA Repository"
 wget ${PIN_URL}
-sudo mv ${PIN_FILENAME} /etc/apt/preferences.d/cuda-repository-pin-600
-sudo apt-key adv --fetch-keys ${APT_KEY_URL}
-sudo add-apt-repository "deb ${REPO_URL} /"
-sudo apt-get update
+$USE_SUDO mv ${PIN_FILENAME} /etc/apt/preferences.d/cuda-repository-pin-600
+$USE_SUDO apt-key adv --fetch-keys ${APT_KEY_URL}
+$USE_SUDO add-apt-repository "deb ${REPO_URL} /"
+$USE_SUDO apt-get update
 
 echo "Installing CUDA packages ${CUDA_PACKAGES}"
-sudo apt-get -y install ${CUDA_PACKAGES}
+$USE_SUDO apt-get -y install ${CUDA_PACKAGES}
 
 if [[ $? -ne 0 ]]; then
     echo "CUDA Installation Error."
@@ -137,8 +161,7 @@ fi
 ## Set environment vars / vars to be propagated
 ## -----------------
 
-CUDA_PATH=/usr/local/cuda
-sudo ln -s /usr/local/cuda-${CUDA_MAJOR}.${CUDA_MINOR} ${CUDA_PATH}
+CUDA_PATH=/usr/local/cuda-${CUDA_MAJOR}.${CUDA_MINOR}
 echo "CUDA_PATH=${CUDA_PATH}"
 export CUDA_PATH=${CUDA_PATH}
 
@@ -147,3 +170,12 @@ export CUDA_PATH=${CUDA_PATH}
 export PATH="$CUDA_PATH/bin:$PATH"
 export LD_LIBRARY_PATH="$CUDA_PATH/lib:$LD_LIBRARY_PATH"
 nvcc -V
+
+# If executed on github actions, make the appropriate echo statements to update the environment
+if [[ $GITHUB_ACTIONS ]]; then
+    # Set paths for subsequent steps, using ${CUDA_PATH}
+    echo "Adding CUDA to CUDA_PATH, PATH and LD_LIBRARY_PATH"
+    echo "CUDA_PATH=${CUDA_PATH}" >> $GITHUB_ENV
+    echo "${CUDA_PATH}/bin" >> $GITHUB_PATH
+    echo "LD_LIBRARY_PATH=${CUDA_PATH}/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+fi

@@ -53,7 +53,7 @@ This repository is based on [Open3D](https://github.com/intel-isl/Open3D).
 
 ## Installation
 
-This software is tested under 64 Bit Ubuntu Linux 18.04 and CUDA 10.1/10.2.
+This library is packaged under 64 Bit Ubuntu Linux 18.04 and CUDA 11.0.
 You can install cupoch using pip.
 
 ```
