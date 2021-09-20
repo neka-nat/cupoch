@@ -354,6 +354,7 @@ DistanceTransform& DistanceTransform::ComputeVoronoiDiagram(
             thrust::raw_pointer_cast(buffer_.data()),
             thrust::raw_pointer_cast(voxels_.data()), resolution_);
     cudaSafeCall(cudaDeviceSynchronize());
+    cudaSafeCall(cudaGetLastError());
 
     thrust::for_each(
             thrust::make_counting_iterator<size_t>(0),
@@ -366,6 +367,8 @@ DistanceTransform& DistanceTransform::ComputeVoronoiDiagram(
             thrust::raw_pointer_cast(buffer_.data()),
             thrust::raw_pointer_cast(voxels_.data()), resolution_);
     cudaSafeCall(cudaDeviceSynchronize());
+    cudaSafeCall(cudaGetLastError());
+
     return *this;
 }
 

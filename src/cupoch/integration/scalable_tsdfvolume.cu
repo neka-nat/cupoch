@@ -349,6 +349,7 @@ void ScalableTSDFVolume::Integrate(
             thrust::raw_pointer_cast(pointcloud->points_.data()), sdf_trunc_,
             volume_unit_length_, n_points, impl_->volume_units_);
     cudaSafeCall(cudaDeviceSynchronize());
+    cudaSafeCall(cudaGetLastError());
     IntegrateWithDepthToCameraDistanceMultiplier(image, intrinsic, extrinsic,
                                                  *depth2cameradistance);
 }

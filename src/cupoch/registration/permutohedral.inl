@@ -200,6 +200,7 @@ void Permutohedral<Dim>::BuildLatticeIndexNoBlur(
             thrust::raw_pointer_cast(out_keys.data()),
             thrust::raw_pointer_cast(out_values.data()), n_lt, lattice_map_);
     cudaSafeCall(cudaDeviceSynchronize());
+    cudaSafeCall(cudaGetLastError());
 }
 
 template <int Dim>
@@ -233,6 +234,7 @@ void Permutohedral<Dim>::ComputeTarget(
             thrust::raw_pointer_cast(weights.data()),
             thrust::raw_pointer_cast(m2.data()), outlier_constant_);
     cudaSafeCall(cudaDeviceSynchronize());
+    cudaSafeCall(cudaGetLastError());
 }
 
 template <int Dim>
