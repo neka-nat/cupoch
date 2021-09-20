@@ -55,11 +55,14 @@ struct convert_from_pointcloud2_msg_functor {
             return thrust::make_tuple(Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity()),
                                       Eigen::Vector3f::Zero());
         }
-        uint32_t rgb = *(uint32_t*)(data_ + idx * point_step_ + rgb_offset_);
-        uint8_t r = (rgb & 0x00FF0000) >> 16;
-        uint8_t g = (rgb & 0x0000FF00) >> 8;
-        uint8_t b = (rgb & 0x000000FF);
-        Eigen::Vector3f color = Eigen::Vector3f(r / 255.0, g / 255.0, b / 255.0);
+        Eigen::Vector3f color = Eigen::Vector3f::Zero();
+        if (rgb_offset_ > 0) {
+            uint32_t rgb = *(uint32_t*)(data_ + idx * point_step_ + rgb_offset_);
+            uint8_t r = (rgb & 0x00FF0000) >> 16;
+            uint8_t g = (rgb & 0x0000FF00) >> 8;
+            uint8_t b = (rgb & 0x000000FF);
+            color = Eigen::Vector3f(r / 255.0, g / 255.0, b / 255.0);
+        }
         return thrust::make_tuple(Eigen::Vector3f(x, y, z), std::move(color));
     }
 };
@@ -117,10 +120,6 @@ std::shared_ptr<geometry::PointCloud> CreateFromPointCloud2Msg(
         return out;
     }
     int rgb_offset = FindField(info.fields_, "rgb");
-    if (rgb_offset < 0) {
-        utility::LogError("[CreateFromPointCloud2Msg] Field name 'rgb' is necessary.");
-        return out;
-    }
     convert_from_pointcloud2_msg_functor func(thrust::raw_pointer_cast(dv_data.data()),
                                               point_x_offset, point_y_offset, point_z_offset, rgb_offset,
                                               info.point_step_);
