@@ -74,8 +74,7 @@ struct create_from_primitive_functor {
 };
 
 struct create_from_box_functor : create_from_primitive_functor<Box> {
-    using create_from_primitive_functor<Box>::create_from_primitive_functor<
-            Box>;
+    using create_from_primitive_functor<Box>::create_from_primitive_functor;
     __device__ bool intersect(const Eigen::Vector3f& box_center) const {
         return geometry::intersection_test::BoxBox(
                 0.5 * primitive_.lengths_,
@@ -86,8 +85,7 @@ struct create_from_box_functor : create_from_primitive_functor<Box> {
 };
 
 struct create_from_sphere_functor : create_from_primitive_functor<Sphere> {
-    using create_from_primitive_functor<Sphere>::create_from_primitive_functor<
-            Sphere>;
+    using create_from_primitive_functor<Sphere>::create_from_primitive_functor;
     __device__ bool intersect(const Eigen::Vector3f& box_center) const {
         return geometry::intersection_test::SphereAABB(
                 Eigen::Vector3f::Zero(), primitive_.radius_,
@@ -96,8 +94,7 @@ struct create_from_sphere_functor : create_from_primitive_functor<Sphere> {
 };
 
 struct create_from_capsule_functor : create_from_primitive_functor<Capsule> {
-    using create_from_primitive_functor<Capsule>::create_from_primitive_functor<
-            Capsule>;
+    using create_from_primitive_functor<Capsule>::create_from_primitive_functor;
     __device__ bool intersect(const Eigen::Vector3f& box_center) const {
         return geometry::intersection_test::CapsuleAABB(
                 primitive_.radius_,
@@ -174,7 +171,7 @@ struct create_from_swept_primitive_functor {
 struct create_from_swept_box_functor
     : create_from_swept_primitive_functor<Box> {
     using create_from_swept_primitive_functor<
-            Box>::create_from_swept_primitive_functor<Box>;
+            Box>::create_from_swept_primitive_functor;
     __device__ bool intersect(const Eigen::Matrix4f& primitive_trans,
                               const Eigen::Vector3f& box_center) const {
         Eigen::Matrix4f rot_pmtv = primitive_.transform_;
@@ -190,7 +187,7 @@ struct create_from_swept_box_functor
 struct create_from_swept_sphere_functor
     : create_from_swept_primitive_functor<Sphere> {
     using create_from_swept_primitive_functor<
-            Sphere>::create_from_swept_primitive_functor<Sphere>;
+            Sphere>::create_from_swept_primitive_functor;
     __device__ bool intersect(const Eigen::Matrix4f& primitive_trans,
                               const Eigen::Vector3f& box_center) const {
         return geometry::intersection_test::SphereAABB(
@@ -202,7 +199,7 @@ struct create_from_swept_sphere_functor
 struct create_from_swept_capsule_functor
     : create_from_swept_primitive_functor<Capsule> {
     using create_from_swept_primitive_functor<
-            Capsule>::create_from_swept_primitive_functor<Capsule>;
+            Capsule>::create_from_swept_primitive_functor;
     __device__ bool intersect(const Eigen::Matrix4f& primitive_trans,
                               const Eigen::Vector3f& box_center) const {
         Eigen::Matrix4f rot_pmtv = primitive_.transform_;

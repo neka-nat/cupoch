@@ -179,11 +179,11 @@ struct default_color_functor {
     __host__ __device__ default_color_functor(){};
     __host__ __device__ ~default_color_functor(){};
     __host__ __device__
-    default_color_functor(const default_color_functor &other){};
+    default_color_functor(const default_color_functor&){};
     __device__ Eigen::Vector3f color(const geometry::Voxel &voxel) const {
         return voxel.color_;
     }
-    __device__ float alpha(const geometry::Voxel &voxel) const { return 1.0; }
+    __device__ float alpha(const geometry::Voxel&) const { return 1.0; }
 };
 
 struct occupancy_color_functor {
