@@ -108,7 +108,7 @@ struct intersect_voxel_line_functor {
                     ((other.cast<float>() + h3) * voxel_size_) + origin_;
             int coll = geometry::intersection_test::LineSegmentAABB(
                     p1, p2, center - box_half_size_, center + box_half_size_);
-            if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+            if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
         }
         return Eigen::Vector2i(-1, -1);
     }
@@ -154,7 +154,7 @@ struct intersect_occgrid_line_functor {
                     ((other.cast<float>() + h3) * voxel_size_) + origin_;
             int coll = geometry::intersection_test::LineSegmentAABB(
                     p1, p2, center - box_half_size_, center + box_half_size_);
-            if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+            if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
         }
         return Eigen::Vector2i(-1, -1);
     }
@@ -239,7 +239,7 @@ struct intersect_voxel_primitive_functor {
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
                             obox.transform_.block<3, 1>(0, 3), box_half_size_,
                             Eigen::Matrix3f::Identity(), center);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -261,7 +261,7 @@ struct intersect_voxel_primitive_functor {
                     int coll = geometry::intersection_test::SphereAABB(
                             sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -288,7 +288,7 @@ struct intersect_voxel_primitive_functor {
                             capsule.radius_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -336,26 +336,25 @@ struct intersect_primitive_voxel_functor {
         if (num_found == 0) return Eigen::Vector2i(-1, -1);
         for (int j = 0; j < num_found; ++j) {
             const PrimitivePack other = lbvh_.objects[buffer[j]];
+            int coll = 0;
             switch (other.primitive_.type_) {
                 case Primitive::PrimitiveType::Box: {
                     const Box& obox = other.box_;
                     Eigen::Vector3f center =
                             ((key.cast<float>() + h3) * voxel_size_) + origin_;
-                    int coll = geometry::intersection_test::BoxBox(
+                    coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
                             obox.transform_.block<3, 1>(0, 3), box_half_size_,
                             Eigen::Matrix3f::Identity(), center);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 case Primitive::PrimitiveType::Sphere: {
                     const Sphere& sphere = other.sphere_;
                     Eigen::Vector3f center =
                             ((key.cast<float>() + h3) * voxel_size_) + origin_;
-                    int coll = geometry::intersection_test::SphereAABB(
+                    coll = geometry::intersection_test::SphereAABB(
                             sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 case Primitive::PrimitiveType::Capsule: {
@@ -366,17 +365,17 @@ struct intersect_primitive_voxel_functor {
                             capsule.transform_.block<3, 1>(0, 3) -
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
-                    int coll = geometry::intersection_test::CapsuleAABB(
+                    coll = geometry::intersection_test::CapsuleAABB(
                             capsule.radius_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 default: {
                     break;
                 }
             }
+            if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[j]);
         }
         return Eigen::Vector2i(-1, -1);
     }
@@ -427,7 +426,7 @@ struct intersect_occvoxel_primitive_functor {
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
                             obox.transform_.block<3, 1>(0, 3), box_half_size_,
                             Eigen::Matrix3f::Identity(), center);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -451,7 +450,7 @@ struct intersect_occvoxel_primitive_functor {
                     int coll = geometry::intersection_test::SphereAABB(
                             sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -480,7 +479,7 @@ struct intersect_occvoxel_primitive_functor {
                             capsule.radius_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(buffer[0], thrust::get<0>(x));
+                    if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
                 return Eigen::Vector2i(-1, -1);
             }
@@ -529,17 +528,17 @@ struct intersect_primitive_occvoxel_functor {
         if (num_found == 0) return Eigen::Vector2i(-1, -1);
         for (int j = 0; j < num_found; ++j) {
             const PrimitivePack other = lbvh_.objects[buffer[j]];
+            int coll = 0;
             switch (other.primitive_.type_) {
                 case Primitive::PrimitiveType::Box: {
                     const Box& obox = other.box_;
                     Eigen::Vector3f center =
                             ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) +
                             origin_;
-                    int coll = geometry::intersection_test::BoxBox(
+                    coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
                             obox.transform_.block<3, 1>(0, 3), box_half_size_,
                             Eigen::Matrix3f::Identity(), center);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 case Primitive::PrimitiveType::Sphere: {
@@ -547,10 +546,9 @@ struct intersect_primitive_occvoxel_functor {
                     Eigen::Vector3f center =
                             ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) +
                             origin_;
-                    int coll = geometry::intersection_test::SphereAABB(
+                    coll = geometry::intersection_test::SphereAABB(
                             sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 case Primitive::PrimitiveType::Capsule: {
@@ -562,17 +560,17 @@ struct intersect_primitive_occvoxel_functor {
                             capsule.transform_.block<3, 1>(0, 3) -
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
-                    int coll = geometry::intersection_test::CapsuleAABB(
+                    coll = geometry::intersection_test::CapsuleAABB(
                             capsule.radius_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
-                    if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[0]);
                     break;
                 }
                 default: {
                     break;
                 }
             }
+            if (coll == 1) return Eigen::Vector2i(thrust::get<0>(x), buffer[j]);
         }
         return Eigen::Vector2i(-1, -1);
     }
