@@ -107,7 +107,7 @@ struct intersect_voxel_line_functor {
             Eigen::Vector3f center =
                     ((other.cast<float>() + h3) * voxel_size_) + origin_;
             int coll = geometry::intersection_test::LineSegmentAABB(
-                    p1, p2, center - box_half_size_, center + box_half_size_);
+                    p1, p2, center - box_half_size_ - ms, center + box_half_size_ + ms);
             if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
         }
         return Eigen::Vector2i(-1, -1);
@@ -153,7 +153,7 @@ struct intersect_occgrid_line_functor {
             Eigen::Vector3f center =
                     ((other.cast<float>() + h3) * voxel_size_) + origin_;
             int coll = geometry::intersection_test::LineSegmentAABB(
-                    p1, p2, center - box_half_size_, center + box_half_size_);
+                    p1, p2, center - box_half_size_ - ms, center + box_half_size_ + ms);
             if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
         }
         return Eigen::Vector2i(-1, -1);
@@ -237,7 +237,7 @@ struct intersect_voxel_primitive_functor {
                             ((other.cast<float>() + h3) * voxel_size_) + origin_;
                     int coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
-                            obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                            obox.transform_.block<3, 1>(0, 3), box_half_size_ + Eigen::Vector3f::Constant(margin_),
                             Eigen::Matrix3f::Identity(), center);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
@@ -259,7 +259,7 @@ struct intersect_voxel_primitive_functor {
                     Eigen::Vector3f center =
                             ((other.cast<float>() + h3) * voxel_size_) + origin_;
                     int coll = geometry::intersection_test::SphereAABB(
-                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_ + margin_,
                             center - box_half_size_, center + box_half_size_);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
@@ -285,7 +285,7 @@ struct intersect_voxel_primitive_functor {
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
                     int coll = geometry::intersection_test::CapsuleAABB(
-                            capsule.radius_, d,
+                            capsule.radius_ + margin_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
@@ -344,7 +344,7 @@ struct intersect_primitive_voxel_functor {
                             ((key.cast<float>() + h3) * voxel_size_) + origin_;
                     coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
-                            obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                            obox.transform_.block<3, 1>(0, 3), box_half_size_ + Eigen::Vector3f::Constant(margin_),
                             Eigen::Matrix3f::Identity(), center);
                     break;
                 }
@@ -353,7 +353,7 @@ struct intersect_primitive_voxel_functor {
                     Eigen::Vector3f center =
                             ((key.cast<float>() + h3) * voxel_size_) + origin_;
                     coll = geometry::intersection_test::SphereAABB(
-                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_ + margin_,
                             center - box_half_size_, center + box_half_size_);
                     break;
                 }
@@ -366,7 +366,7 @@ struct intersect_primitive_voxel_functor {
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
                     coll = geometry::intersection_test::CapsuleAABB(
-                            capsule.radius_, d,
+                            capsule.radius_ + margin_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
                     break;
@@ -424,7 +424,7 @@ struct intersect_occvoxel_primitive_functor {
                             origin_;
                     int coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
-                            obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                            obox.transform_.block<3, 1>(0, 3), box_half_size_ + Eigen::Vector3f::Constant(margin_),
                             Eigen::Matrix3f::Identity(), center);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
@@ -448,7 +448,7 @@ struct intersect_occvoxel_primitive_functor {
                             ((other.grid_index_.cast<float>() + h3) * voxel_size_) +
                             origin_;
                     int coll = geometry::intersection_test::SphereAABB(
-                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_ + margin_,
                             center - box_half_size_, center + box_half_size_);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
                 }
@@ -476,7 +476,7 @@ struct intersect_occvoxel_primitive_functor {
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
                     int coll = geometry::intersection_test::CapsuleAABB(
-                            capsule.radius_, d,
+                            capsule.radius_ + margin_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
                     if (coll == 1) return Eigen::Vector2i(buffer[j], thrust::get<0>(x));
@@ -537,7 +537,7 @@ struct intersect_primitive_occvoxel_functor {
                             origin_;
                     coll = geometry::intersection_test::BoxBox(
                             obox.lengths_ * 0.5, obox.transform_.block<3, 3>(0, 0),
-                            obox.transform_.block<3, 1>(0, 3), box_half_size_,
+                            obox.transform_.block<3, 1>(0, 3), box_half_size_ + Eigen::Vector3f::Constant(margin_),
                             Eigen::Matrix3f::Identity(), center);
                     break;
                 }
@@ -547,7 +547,7 @@ struct intersect_primitive_occvoxel_functor {
                             ((voxel.grid_index_.cast<float>() + h3) * voxel_size_) +
                             origin_;
                     coll = geometry::intersection_test::SphereAABB(
-                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_,
+                            sphere.transform_.block<3, 1>(0, 3), sphere.radius_ + margin_,
                             center - box_half_size_, center + box_half_size_);
                     break;
                 }
@@ -561,7 +561,7 @@ struct intersect_primitive_occvoxel_functor {
                             0.5 * capsule.height_ *
                                     capsule.transform_.block<3, 1>(0, 2);
                     coll = geometry::intersection_test::CapsuleAABB(
-                            capsule.radius_, d,
+                            capsule.radius_ + margin_, d,
                             capsule.height_ * capsule.transform_.block<3, 1>(0, 2),
                             center - box_half_size_, center + box_half_size_);
                     break;
