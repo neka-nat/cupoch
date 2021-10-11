@@ -24,7 +24,11 @@
 namespace cupoch {
 namespace utility {
 
-__device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(Eigen::Matrix3f &A);
+__device__ thrust::tuple<Eigen::Vector3f, Eigen::Matrix3f> FastEigen3x3(Eigen::Matrix3f &A);
+
+__device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3MinMaxVec(Eigen::Matrix3f &A);
+
+__device__ Eigen::Vector3f FastEigen3x3Val(Eigen::Matrix3f &A);
 
 }
 }

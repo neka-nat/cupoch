@@ -22,6 +22,7 @@
 
 #include <Eigen/Geometry>
 
+#include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
@@ -48,7 +49,7 @@ __device__ Eigen::Vector3f ComputeNormal(const Eigen::Matrix<float, 9, 1> &cum,
     covariance(1, 2) = cumulants(7) - cumulants(1) * cumulants(2);
     covariance(2, 1) = covariance(1, 2);
 
-    return thrust::get<0>(utility::FastEigen3x3(covariance));
+    return thrust::get<0>(utility::FastEigen3x3MinMaxVec(covariance));
 }
 
 struct compute_normal_functor {
@@ -58,28 +59,6 @@ struct compute_normal_functor {
         Eigen::Vector3f normal =
                 ComputeNormal(thrust::get<0>(x), thrust::get<1>(x));
         return (normal.norm() == 0.0) ? Eigen::Vector3f(0.0, 0.0, 1.0) : normal;
-    }
-};
-
-struct compute_cumulant_functor {
-    compute_cumulant_functor(const Eigen::Vector3f *points) : points_(points){};
-    const Eigen::Vector3f *points_;
-    __device__ thrust::tuple<Eigen::Matrix<float, 9, 1>, int> operator()(
-            int idx) const {
-        Eigen::Matrix<float, 9, 1> cm;
-        cm.setZero();
-        if (idx < 0) return thrust::make_tuple(cm, 0);
-        const Eigen::Vector3f point = points_[idx];
-        cm(0) = point(0);
-        cm(1) = point(1);
-        cm(2) = point(2);
-        cm(3) = point(0) * point(0);
-        cm(4) = point(0) * point(1);
-        cm(5) = point(0) * point(2);
-        cm(6) = point(1) * point(1);
-        cm(7) = point(1) * point(2);
-        cm(8) = point(2) * point(2);
-        return thrust::make_tuple(cm, 1);
     }
 };
 
@@ -135,7 +114,7 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
             utility::exec_policy(0)->on(0), range.begin(), range.end(),
             thrust::make_transform_iterator(
                     indices.begin(),
-                    compute_cumulant_functor(
+                    geometry::compute_cumulant_functor(
                             thrust::raw_pointer_cast(points_.data()))),
             thrust::make_discard_iterator(),
             make_tuple_begin(cumulants, counts), thrust::equal_to<size_t>(),

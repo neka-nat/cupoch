@@ -90,7 +90,7 @@ __device__ Eigen::Vector3f ComputeEigenvector1(const Eigen::Matrix3f &A,
 
 }
 
-__device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(Eigen::Matrix3f &A) {
+__device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Matrix3f> FastEigen3x3(Eigen::Matrix3f &A) {
     // Previous version based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // Current version based on
@@ -99,7 +99,7 @@ __device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(E
 
     float max_coeff = A.maxCoeff();
     if (max_coeff == 0) {
-        return thrust::make_tuple(Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
+        return thrust::make_tuple(Eigen::Vector3f::Zero(), Eigen::Matrix3f::Identity());
     }
     A /= max_coeff;
 
@@ -138,29 +138,35 @@ __device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3(E
             evec.col(2) = ComputeEigenvector0(A, eval(2));
             evec.col(1) = ComputeEigenvector1(A, evec.col(2), eval(1));
             evec.col(0) = evec.col(1).cross(evec.col(2));
-            int min_id, max_id;
-            eval.minCoeff(&min_id);
-            eval.maxCoeff(&max_id);
             A *= max_coeff;
-            return thrust::make_tuple(evec.col(min_id), evec.col(max_id));
+            return thrust::make_tuple(eval, evec);
         } else {
             evec.col(0) = ComputeEigenvector0(A, eval(0));
             evec.col(1) = ComputeEigenvector1(A, evec.col(0), eval(1));
             evec.col(2) = evec.col(0).cross(evec.col(1));
             A *= max_coeff;
-            int min_id, max_id;
-            eval.minCoeff(&min_id);
-            eval.maxCoeff(&max_id);
-            A *= max_coeff;
-            return thrust::make_tuple(evec.col(min_id), evec.col(max_id));
+            return thrust::make_tuple(eval, evec);
         }
     } else {
         A *= max_coeff;
-        int min_id, max_id;
-        A.diagonal().minCoeff(&min_id);
-        A.diagonal().maxCoeff(&max_id);
-        return thrust::make_tuple(Eigen::Vector3f::Unit(min_id), Eigen::Vector3f::Unit(max_id));
+        return thrust::make_tuple(A.diagonal(), Eigen::Matrix3f::Identity());
     }
+}
+
+__device__ inline thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3MinMaxVec(Eigen::Matrix3f &A) {
+    auto eig_val_vec = FastEigen3x3(A);
+    int min_id, max_id;
+    thrust::get<0>(eig_val_vec).minCoeff(&min_id);
+    thrust::get<0>(eig_val_vec).maxCoeff(&max_id);
+    return thrust::make_tuple(thrust::get<1>(eig_val_vec).col(min_id), thrust::get<1>(eig_val_vec).col(max_id));
+}
+
+__device__ inline Eigen::Vector3f FastEigen3x3Val(Eigen::Matrix3f &A) {
+    auto eig_val_vec = FastEigen3x3(A);
+    int min_id, max_id;
+    float minv = thrust::get<0>(eig_val_vec).minCoeff(&min_id);
+    float maxv = thrust::get<0>(eig_val_vec).maxCoeff(&max_id);
+    return Eigen::Vector3f(minv, thrust::get<0>(eig_val_vec).sum() - minv - maxv, maxv);
 }
 
 }
