@@ -6,10 +6,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,54 +20,58 @@
 **/
 #include "cupoch/cupoch.h"
 
-int main(int argc, char *argv[]) {
-    using namespace cupoch;
-    utility::InitializeAllocator();
+int main(int argc, char * argv[])
+{
+  using namespace cupoch;
+  utility::InitializeAllocator();
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc < 3) {utility::LogInfo("Need two arguments of point cloud file name."); return 0;}
+  utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+  if (argc < 3) {utility::LogInfo("Need two arguments of point cloud file name."); return 0;}
 
-    using std::chrono::high_resolution_clock;
-    using std::chrono::duration_cast;
-    using std::chrono::duration;
-    using std::chrono::milliseconds;
+  using std::chrono::high_resolution_clock;
+  using std::chrono::duration_cast;
+  using std::chrono::duration;
+  using std::chrono::milliseconds;
 
-    auto t1 = high_resolution_clock::now();
- 
+  auto t1 = high_resolution_clock::now();
 
-    auto source = std::make_shared<geometry::PointCloud>();
-    auto target = std::make_shared<geometry::PointCloud>();
-    auto result = std::make_shared<geometry::PointCloud>();
-    if (io::ReadPointCloud(argv[1], *source)) {
-        utility::LogInfo("Successfully read {}", argv[1]);
-    } else {
-        utility::LogWarning("Failed to read {}", argv[1]);
-    }
-    if (io::ReadPointCloud(argv[2], *target)) {
-        utility::LogInfo("Successfully read {}", argv[2]);
-    } else {
-        utility::LogWarning("Failed to read {}", argv[2]);
-    }
-    Eigen::Matrix4f eye = Eigen::Matrix4f::Identity();
-    Eigen::Matrix4f init = (Eigen::Matrix4f() << 0.862, 0.011, -0.507, 0.5,
-				                 -0.139, 0.967, -0.215, 0.7,
-				                  0.487, 0.255,  0.835, -1.4,
-				                  0.0,   0.0,    0.0,    1.0).finished();
-    auto res = registration::RegistrationICP(*source, *target, 0.1, eye);
-    std::cout << res.transformation_ << std::endl;
-    *result = *source;
-    result->Transform(res.transformation_);
-        auto t2 = high_resolution_clock::now();
 
-    /* Getting number of milliseconds as an integer. */
-    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+  auto source = std::make_shared<geometry::PointCloud>();
+  auto target = std::make_shared<geometry::PointCloud>();
+  auto result = std::make_shared<geometry::PointCloud>();
+  if (io::ReadPointCloud(argv[1], *source)) {
+    utility::LogInfo("Successfully read {}", argv[1]);
+  } else {
+    utility::LogWarning("Failed to read {}", argv[1]);
+  }
+  if (io::ReadPointCloud(argv[2], *target)) {
+    utility::LogInfo("Successfully read {}", argv[2]);
+  } else {
+    utility::LogWarning("Failed to read {}", argv[2]);
+  }
+  Eigen::Matrix4f eye = Eigen::Matrix4f::Identity();
 
-    /* Getting number of milliseconds as a double. */
-    duration<double, std::milli> ms_double = t2 - t1;
+  cupoch::registration::ICPConvergenceCriteria criteria;
+  criteria.max_iteration_ = 2000;
 
-    std::cout << ms_int.count() << "ms\n";
-    std::cout << ms_double.count() << "ms";
+  auto res = registration::RegistrationICP(
+    *source, *target, 5.0, eye,
+    cupoch::registration::TransformationEstimationPointToPoint(),
+    criteria);
     
-    visualization::DrawGeometries({source, target, result});
-    return 0;
+  source->Transform(res.transformation_);
+
+  auto t2 = high_resolution_clock::now();
+
+  /* Getting number of milliseconds as an integer. */
+  auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+  /* Getting number of milliseconds as a double. */
+  duration<double, std::milli> ms_double = t2 - t1;
+
+  std::cout << ms_int.count() << "ms\n";
+  std::cout << ms_double.count() << "ms";
+
+  visualization::DrawGeometries({source, target});
+  return 0;
 }
