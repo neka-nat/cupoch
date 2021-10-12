@@ -21,6 +21,7 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <thrust/tuple.h>
 
 namespace cupoch {
 namespace geometry {
@@ -29,6 +30,28 @@ namespace geometry {
 __constant__ int cuboid_vertex_offsets[8][3] = {
         {0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
         {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1},
+};
+
+struct compute_cumulant_functor {
+    compute_cumulant_functor(const Eigen::Vector3f *points) : points_(points){};
+    const Eigen::Vector3f *points_;
+    __device__ thrust::tuple<Eigen::Matrix<float, 9, 1>, int> operator()(
+            int idx) const {
+        Eigen::Matrix<float, 9, 1> cm;
+        cm.setZero();
+        if (idx < 0) return thrust::make_tuple(cm, 0);
+        const Eigen::Vector3f point = points_[idx];
+        cm(0) = point(0);
+        cm(1) = point(1);
+        cm(2) = point(2);
+        cm(3) = point(0) * point(0);
+        cm(4) = point(0) * point(1);
+        cm(5) = point(0) * point(2);
+        cm(6) = point(1) * point(1);
+        cm(7) = point(1) * point(2);
+        cm(8) = point(2) * point(2);
+        return thrust::make_tuple(cm, 1);
+    }
 };
 
 struct compute_grid_center_functor {

@@ -74,7 +74,7 @@ namespace {
                 n_nb += 1;
             }
             cov /= w_total;
-            auto evecs = utility::FastEigen3x3(cov);
+            auto evecs = utility::FastEigen3x3MinMaxVec(cov);
             Eigen::Vector3f zaxis = thrust::get<0>(evecs);
             Eigen::Vector3f xaxis = thrust::get<1>(evecs);
             int n_px = 0;
