@@ -27,6 +27,14 @@ int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     if (argc < 3) {utility::LogInfo("Need two arguments of point cloud file name."); return 0;}
 
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
+    auto t1 = high_resolution_clock::now();
+ 
+
     auto source = std::make_shared<geometry::PointCloud>();
     auto target = std::make_shared<geometry::PointCloud>();
     auto result = std::make_shared<geometry::PointCloud>();
@@ -40,14 +48,26 @@ int main(int argc, char *argv[]) {
     } else {
         utility::LogWarning("Failed to read {}", argv[2]);
     }
+    Eigen::Matrix4f eye = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f init = (Eigen::Matrix4f() << 0.862, 0.011, -0.507, 0.5,
-                                -0.139, 0.967, -0.215, 0.7,
-                                0.487, 0.255, 0.835, -1.4,
-                                0.0, 0.0, 0.0, 1.0).finished();
-    auto res = registration::RegistrationICP(*source, *target, 0.02, init);
+				                 -0.139, 0.967, -0.215, 0.7,
+				                  0.487, 0.255,  0.835, -1.4,
+				                  0.0,   0.0,    0.0,    1.0).finished();
+    auto res = registration::RegistrationICP(*source, *target, 0.1, eye);
     std::cout << res.transformation_ << std::endl;
     *result = *source;
     result->Transform(res.transformation_);
+        auto t2 = high_resolution_clock::now();
+
+    /* Getting number of milliseconds as an integer. */
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+    /* Getting number of milliseconds as a double. */
+    duration<double, std::milli> ms_double = t2 - t1;
+
+    std::cout << ms_int.count() << "ms\n";
+    std::cout << ms_double.count() << "ms";
+    
     visualization::DrawGeometries({source, target, result});
     return 0;
 }

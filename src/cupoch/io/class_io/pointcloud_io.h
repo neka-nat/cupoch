@@ -57,8 +57,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 bool ReadPointCloud(const std::string &filename,
                     geometry::PointCloud &pointcloud,
                     const std::string &format = "auto",
-                    bool remove_nan_points = true,
-                    bool remove_infinite_points = true,
+                    bool remove_nan_points = false,
+                    bool remove_infinite_points = false,
                     bool print_progress = false);
 
 /// The general entrance for writing a PointCloud to a file
