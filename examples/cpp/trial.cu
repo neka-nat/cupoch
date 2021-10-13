@@ -49,18 +49,6 @@ int main(int argc, char* argv[]) {
     source->EstimateNormals();
     target->EstimateNormals();
 
-    // compute fast point feature histograms
-    auto fpfh_source = cupoch::registration::ComputeFPFHFeature(*source);
-    auto shot_source = cupoch::registration::ComputeSHOTFeature(*source, 0.8);
-
-    auto fpfh_target = cupoch::registration::ComputeFPFHFeature(*target);
-    auto shot_target = cupoch::registration::ComputeSHOTFeature(*target, 0.8);
-
-    std::cout << fpfh_source->GetData()[0] << std::endl;
-    std::cout << shot_source->GetData()[0] << std::endl;
-    std::cout << fpfh_target->GetData()[0] << std::endl;
-    std::cout << shot_target->GetData()[0] << std::endl;
-
     // ICP
     Eigen::Matrix4f eye = Eigen::Matrix4f::Identity();
     auto point_to_point =
@@ -71,25 +59,21 @@ int main(int argc, char* argv[]) {
                                                      point_to_point, criteria);
     source->Transform(res.transformation_);
 
-    auto t2 = high_resolution_clock::now();
+    *result = *source + *target;
 
-    /* Getting number of milliseconds as a double. */
-    duration<double, std::milli> ms_double = t2 - t1;
+    // Sampling to mimic keypoints
+    auto uniformSampled = result->UniformDownSample(12);
+    uniformSampled->PaintUniformColor(Eigen::Vector3f(0, 0, 1));
 
-    // Sampling
-    auto uniformSampled = result->UniformDownSample(10);
-    uniformSampled->PaintUniformColor(Eigen::Vector3f(0, 0, 255));
-
-    // Feature extraction
+    // Feature extraction of Keypoints, keypoints mimiced by uniform sampling
     int max_nn = 8;
     float radius = 1.0;
     cupoch::utility::device_vector<Eigen::Vector3f> key_points;
-    key_points.push_back(Eigen::Vector3f(0, 0, 0));
-    key_points.push_back(Eigen::Vector3f(0, 0, 0));
-
+    for (auto&& i : uniformSampled->points_) {
+        key_points.push_back(i);
+    }
     cupoch::geometry::KDTreeFlann kdtree_source(*source);
     cupoch::geometry::KDTreeFlann kdtree_target(*target);
-
     cupoch::utility::device_vector<int> indices_source, indices_target;
     cupoch::utility::device_vector<float> distance2_source, distance2_target;
 
@@ -98,9 +82,72 @@ int main(int argc, char* argv[]) {
     int result_target = kdtree_target.SearchRadius<Eigen::Vector3f>(
             key_points, radius, max_nn, indices_target, distance2_target);
 
-    cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
+    // Lets log some information about keypoints
+    cupoch::utility::LogDebug(
+            "We have selected {:d} keypoints by uniform sampling",
+            key_points.size());
 
-    *result = *source + *target;
+    cupoch::utility::LogDebug(
+            "Found source {:d} indices for key point neigbour search",
+            indices_source.size());
+
+    cupoch::geometry::KDTreeSearchParamRadius feature_search_param(2 * radius,
+                                                                   3 * max_nn);
+
+    // compute fast point feature histograms
+    auto fpfh_source = cupoch::registration::ComputeFPFHFeature(*source);
+    // auto shot_source = cupoch::registration::ComputeSHOTFeature(*source,
+    // 0.8);
+
+    auto fpfh_target = cupoch::registration::ComputeFPFHFeature(*target);
+    // auto shot_target = cupoch::registration::ComputeSHOTFeature(*target,
+    // 0.8);
+
+    cupoch::utility::LogDebug("Final source cloud has points : {:d}",
+                              source->points_.size());
+    cupoch::utility::LogDebug("Final target cloud has points : {:d}",
+                              target->points_.size());
+
+    for (size_t i = 0; i < indices_source.size() / max_nn; i++) {
+      
+        cupoch::utility::device_vector<Eigen::Matrix<float, 33, 1>>
+                source_keypoint_feature_vector(
+                        max_nn, Eigen::Matrix<float, 33, 1>::Zero()),
+                target_keypoint_feature_vector(
+                        max_nn, Eigen::Matrix<float, 33, 1>::Zero());
+
+        for (size_t j = 0; j < max_nn; j++) {
+            int key = i * max_nn + j;
+
+            const int crr_keypoint_nn_source = indices_source[key];
+            const int crr_keypoint_nn_target = indices_target[key];
+
+            if (crr_keypoint_nn_source < 0 || crr_keypoint_nn_target < 0) {
+                continue;
+            }
+
+            thrust::fill(source_keypoint_feature_vector.begin() + j,
+                         source_keypoint_feature_vector.begin() + j + 1,
+                         fpfh_source->data_[crr_keypoint_nn_source]);
+
+            thrust::fill(target_keypoint_feature_vector.begin() + j,
+                         target_keypoint_feature_vector.begin() + j + 1,
+                         fpfh_target->data_[crr_keypoint_nn_target]);
+        }
+
+        // TODO, use histogram matching to assess similarities of both
+        // pointclouds(target, source)
+        // TODO, use this similarity value to decide whether there is movement
+        // in this region(defined by the keypoint)
+
+        for (size_t f = 0; f < source_keypoint_feature_vector.size(); f++) {
+        }
+    }
+
+    // Visualize some result and log
+    auto t2 = high_resolution_clock::now();
+    duration<double, std::milli> ms_double = t2 - t1;
+    cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
 
     cupoch::visualization::DrawGeometries({result, uniformSampled}, "Copoch",
                                           640, 480, 50, 50, true, true, false);
