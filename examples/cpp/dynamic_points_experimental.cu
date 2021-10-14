@@ -2,18 +2,7 @@
 
 #include "cupoch/cupoch.h"
 
-struct saxpy_functor {
-    const float a;
-    saxpy_functor(float _a) : a(_a) {}
-    __device__ float operator()(const float& x, const float& y) const {
-        return x / a;
-    }
-};
-
-struct compare_value {
-    __device__ bool operator()(float lhs, float rhs) { return lhs < rhs; }
-};
-
+ 
 int main(int argc, char* argv[]) {
     using std::chrono::duration;
     using std::chrono::duration_cast;
@@ -190,32 +179,6 @@ int main(int argc, char* argv[]) {
     }
     auto correspondance_mesh =
             std::make_shared<cupoch::geometry::LineSet<3>>(points, new_pairs);
-
-
-    // correspondence set is a utility::device_vector<Eigen::Vector2i>
-    /*cupoch::utility::device_vector<float>
-    likelihood_of_movement_vector_norm(
-            likelihood_of_movement_vector.size());
-    float ted = curr_max_likelehood;
-    thrust::transform(likelihood_of_movement_vector.begin(),
-                      likelihood_of_movement_vector.end(),
-                      likelihood_of_movement_vector_norm.begin(),
-                      likelihood_of_movement_vector_norm.begin(),
-                      saxpy_functor(curr_max_likelehood));
-    cupoch::utility::device_vector<Eigen::Vector3f>
-            likelihood_of_movement_vector_colors(
-                    likelihood_of_movement_vector.size());
-    for (size_t i = 0; i < likelihood_of_movement_vector_norm.size();
-    i++) { thrust::fill( likelihood_of_movement_vector_colors.begin() +
-    i, likelihood_of_movement_vector_colors.begin() + i + 1,
-                Eigen::Vector3f(
-                        0, 0,
-                        (likelihood_of_movement_vector_norm[i] > 0.4) ?
-    1 : 0)); std::cout << likelihood_of_movement_vector_norm[i] << "\n
-    \n";
-    }
-    std::cout << ted << " tes \n \n";
-    uniform_sampled_cloud->SetColors(likelihood_of_movement_vector_colors);*/
 
     // Visualize some result and log
     auto t2 = high_resolution_clock::now();
