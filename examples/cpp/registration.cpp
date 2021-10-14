@@ -32,9 +32,7 @@ int main(int argc, char * argv[])
   using std::chrono::duration_cast;
   using std::chrono::duration;
   using std::chrono::milliseconds;
-
   auto t1 = high_resolution_clock::now();
-
 
   auto source = std::make_shared<geometry::PointCloud>();
   auto target = std::make_shared<geometry::PointCloud>();
@@ -49,29 +47,24 @@ int main(int argc, char * argv[])
   } else {
     utility::LogWarning("Failed to read {}", argv[2]);
   }
+  
   Eigen::Matrix4f eye = Eigen::Matrix4f::Identity();
-
   cupoch::registration::ICPConvergenceCriteria criteria;
-  criteria.max_iteration_ = 2000;
+  criteria.max_iteration_ = 100;
+  auto estimation =
+    cupoch::registration::TransformationEstimationPointToPoint();
 
   auto res = registration::RegistrationICP(
-    *source, *target, 5.0, eye,
-    cupoch::registration::TransformationEstimationPointToPoint(),
-    criteria);
-    
+    *source, *target, 0.2, eye, estimation, criteria);
+
   source->Transform(res.transformation_);
 
   auto t2 = high_resolution_clock::now();
 
-  /* Getting number of milliseconds as an integer. */
-  auto ms_int = duration_cast<milliseconds>(t2 - t1);
-
-  /* Getting number of milliseconds as a double. */
   duration<double, std::milli> ms_double = t2 - t1;
 
-  std::cout << ms_int.count() << "ms\n";
-  std::cout << ms_double.count() << "ms";
+  cupoch::utility::LogDebug("Registration of given clouds took {:f} ms", ms_double.count());
 
-  visualization::DrawGeometries({source, target});
+  visualization::DrawGeometries({source, target, result});
   return 0;
 }

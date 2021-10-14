@@ -1,3 +1,5 @@
+// NOTE, This code is experimental!, not ready to use
+
 #include "cupoch/cupoch.h"
 
 struct saxpy_functor {
@@ -52,38 +54,40 @@ int main(int argc, char* argv[]) {
                                                      point_to_point, criteria);
     source->Transform(res.transformation_);
 
-    // remove the ground
+    // REMOVE THE GROUND
     auto segmented_source = source->SegmentPlane(0.3, 3, 50);
     auto segmented_target = target->SegmentPlane(0.3, 3, 50);
     source = source->SelectByIndex(std::get<1>(segmented_source), true);
     target = target->SelectByIndex(std::get<1>(segmented_target), true);
 
-    // remove noise
-    /*auto denoised_source = source->RemoveStatisticalOutliers(10, 0.2);
-    auto denoised_target = target->RemoveStatisticalOutliers(10, 0.2);
+    // REMOVE THE NOISE
+    // auto denoised_source = source->RemoveStatisticalOutliers(10, 0.2);
+    // auto denoised_target = target->RemoveStatisticalOutliers(10, 0.2);
     // auto denoised_source = source->RemoveRadiusOutliers(2, 0.2);
     // auto denoised_target = target->RemoveRadiusOutliers(2, 0.2);
+    // source = std::get<0>(denoised_source);
+    // target = std::get<0>(denoised_target);
 
-    source = std::get<0>(denoised_source);
-    target = std::get<0>(denoised_target);*/
-
-    // estimate normals
+    // NORMAL ESTIMATION
     source->EstimateNormals();
     target->EstimateNormals();
 
+    // MERGE THE SEQUENTIAL CLOUD INTO ONE
     *result = *source + *target;
 
-    // Sampling to mimic keypoints
-    auto uniformSampled = result->UniformDownSample(12);
-    uniformSampled->PaintUniformColor(Eigen::Vector3f(0, 0, 1));
+    // UNIFORM SAMPLE TOP MIMIC KEYPOINTS
+    auto uniform_sampled_cloud = result->UniformDownSample(12);
 
-    // Feature extraction of Keypoints, keypoints mimiced by uniform sampling
+    // EXTRCAT FETAURES OF BOTH CLOUDS(SOURCE TARGET)
     int max_nn = 12;
     float radius = 0.6;
-    cupoch::utility::device_vector<Eigen::Vector3f> key_points;
-    for (auto&& i : uniformSampled->points_) {
-        key_points.push_back(i);
-    }
+
+    cupoch::utility::device_vector<Eigen::Vector3f> key_points(
+            uniform_sampled_cloud->points_.size());
+
+    thrust::copy(uniform_sampled_cloud->points_.begin(),
+                 uniform_sampled_cloud->points_.end(), key_points.begin());
+
     cupoch::geometry::KDTreeFlann kdtree_source(*source);
     cupoch::geometry::KDTreeFlann kdtree_target(*target);
     cupoch::utility::device_vector<int> indices_source, indices_target;
@@ -211,14 +215,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << ted << " tes \n \n";
 
-    uniformSampled->SetColors(likelihood_of_movement_vector_colors);
+    uniform_sampled_cloud->SetColors(likelihood_of_movement_vector_colors);
 
     // Visualize some result and log
     auto t2 = high_resolution_clock::now();
     duration<double, std::milli> ms_double = t2 - t1;
     cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
 
-    cupoch::visualization::DrawGeometries({result, uniformSampled}, "Copoch",
-                                          640, 480, 50, 50, true, true, false);
+    cupoch::visualization::DrawGeometries({result, uniform_sampled_cloud},
+                                          "Copoch", 640, 480, 50, 50, true,
+                                          true, false);
     return 0;
 }

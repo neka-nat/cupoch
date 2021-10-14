@@ -30,4 +30,4 @@ EXAMPLE_CPP(trianglemesh cupoch_visualization cupoch_geometry cupoch_io ${3RDPAR
 EXAMPLE_CPP(registration cupoch_visualization cupoch_registration cupoch_io ${3RDPARTY_LIBRARIES})
 EXAMPLE_CPP(voxelization cupoch_visualization cupoch_geometry cupoch_io ${3RDPARTY_LIBRARIES})
 EXAMPLE_CPP(kinematics cupoch_visualization cupoch_kinematics cupoch_io ${3RDPARTY_LIBRARIES})
-EXAMPLE_CU(trial cupoch_visualization cupoch_kinematics cupoch_io cupoch_registration ${3RDPARTY_LIBRARIES})
+EXAMPLE_CU(dynamic_points_experimental cupoch_visualization cupoch_kinematics cupoch_io cupoch_registration ${3RDPARTY_LIBRARIES})
