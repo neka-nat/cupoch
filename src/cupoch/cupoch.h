@@ -26,6 +26,7 @@
 #include "cupoch/kinfu/kinfu.h"
 #include "cupoch/odometry/odometry.h"
 #include "cupoch/registration/feature.h"
+#include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/registration/registration.h"
 #include "cupoch/registration/transformation_estimation.h"
 #include "cupoch/utility/console.h"

@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
 
     // EXTRACT FETAURES OF BOTH CLOUDS(SOURCE TARGET)
     int max_nn = 5;
-    float radius = 0.6;
+    float radius = 0.4;
     int uniform_downsample_rate = 5;
 
     // UNIFORM SAMPLE TO MIMIC KEYPOINTS
@@ -155,11 +155,11 @@ int main(int argc, char* argv[]) {
 
             thrust::fill(source_keypoint_feature_vector.begin() + j,
                          source_keypoint_feature_vector.begin() + j + 1,
-                         &fpfh_source->data_[crr_keypoint_nn_source]);
+                         fpfh_source->data_[crr_keypoint_nn_source]);
 
             thrust::fill(target_keypoint_feature_vector.begin() + j,
                          target_keypoint_feature_vector.begin() + j + 1,
-                         &fpfh_target->data_[crr_keypoint_nn_target]);
+                         fpfh_target->data_[crr_keypoint_nn_target]);
         }
 
         // TODO, use histogram matching to assess similarities of both
@@ -168,34 +168,53 @@ int main(int argc, char* argv[]) {
         // movement in this region(defined by the keypoint)
     }
 
-    /*cupoch::utility::device_vector<float> likelihood_of_movement_vector_norm(
+    cupoch::registration::FastGlobalRegistrationOption option;
+    option.use_absolute_scale_ = true;
+    option.maximum_correspondence_distance_ = 1.5;
+    auto registration_result = cupoch::registration::FastGlobalRegistration<352>(
+            *source, *target, *shot_source, *shot_target, option);
+
+    thrust::host_vector<Eigen::Vector3f> points(
+            registration_result.correspondence_set_.size() * 2,
+            Eigen::Vector3f(0, 0, 0));
+
+    auto pairs = registration_result.GetCorrespondenceSet();
+
+    thrust::host_vector<Eigen::Vector2i> new_pairs(pairs.size(),
+                                                   Eigen::Vector2i(0, 0));
+    for (size_t i = 0; i < registration_result.correspondence_set_.size();
+         i++) {
+        points[2 * i] = source->points_[pairs[i].x()];
+        points[2 * i + 1] = target->points_[pairs[i].y()];
+        new_pairs[i] = Eigen::Vector2i(2 * i, 2 * i + 1);
+    }
+    auto correspondance_mesh =
+            std::make_shared<cupoch::geometry::LineSet<3>>(points, new_pairs);
+
+
+    // correspondence set is a utility::device_vector<Eigen::Vector2i>
+    /*cupoch::utility::device_vector<float>
+    likelihood_of_movement_vector_norm(
             likelihood_of_movement_vector.size());
-
     float ted = curr_max_likelehood;
-
     thrust::transform(likelihood_of_movement_vector.begin(),
                       likelihood_of_movement_vector.end(),
                       likelihood_of_movement_vector_norm.begin(),
                       likelihood_of_movement_vector_norm.begin(),
                       saxpy_functor(curr_max_likelehood));
-
     cupoch::utility::device_vector<Eigen::Vector3f>
             likelihood_of_movement_vector_colors(
                     likelihood_of_movement_vector.size());
-
-    for (size_t i = 0; i < likelihood_of_movement_vector_norm.size(); i++) {
-        thrust::fill(
-                likelihood_of_movement_vector_colors.begin() + i,
-                likelihood_of_movement_vector_colors.begin() + i + 1,
+    for (size_t i = 0; i < likelihood_of_movement_vector_norm.size();
+    i++) { thrust::fill( likelihood_of_movement_vector_colors.begin() +
+    i, likelihood_of_movement_vector_colors.begin() + i + 1,
                 Eigen::Vector3f(
                         0, 0,
-                        (likelihood_of_movement_vector_norm[i] > 0.4) ? 1 : 0));
-
-        std::cout << likelihood_of_movement_vector_norm[i] << "\n \n";
+                        (likelihood_of_movement_vector_norm[i] > 0.4) ?
+    1 : 0)); std::cout << likelihood_of_movement_vector_norm[i] << "\n
+    \n";
     }
-
     std::cout << ted << " tes \n \n";
-
     uniform_sampled_cloud->SetColors(likelihood_of_movement_vector_colors);*/
 
     // Visualize some result and log
@@ -203,8 +222,8 @@ int main(int argc, char* argv[]) {
     duration<double, std::milli> ms_double = t2 - t1;
     cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
 
-    cupoch::visualization::DrawGeometries({result, uniform_sampled_cloud},
-                                          "Copoch", 640, 480, 50, 50, true,
-                                          true, false);
+    cupoch::visualization::DrawGeometries(
+            {result, uniform_sampled_cloud, correspondance_mesh}, "Copoch", 640,
+            480, 50, 50, true, true, false);
     return 0;
 }
