@@ -82,6 +82,7 @@ using device_vector_vector352f =
 using device_vector_int = device_vector_wrapper<int>;
 using device_vector_size_t = device_vector_wrapper<size_t>;
 using device_vector_float = device_vector_wrapper<float>;
+using device_vector_bool = device_vector_wrapper<bool>;
 using device_vector_occupancyvoxel =
         device_vector_wrapper<geometry::OccupancyVoxel>;
 using device_vector_primitives =

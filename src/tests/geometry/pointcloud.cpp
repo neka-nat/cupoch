@@ -294,32 +294,17 @@ TEST(PointCloud, NormalizeNormals) {
 }
 
 TEST(PointCloud, SelectByIndex) {
-    thrust::host_vector<Vector3f> ref;
-    ref.push_back(Vector3f(796.078431, 909.803922, 196.078431));
-    ref.push_back(Vector3f(768.627451, 525.490196, 768.627451));
-    ref.push_back(Vector3f(400.000000, 890.196078, 282.352941));
-    ref.push_back(Vector3f(349.019608, 803.921569, 917.647059));
-    ref.push_back(Vector3f(19.607843, 454.901961, 62.745098));
-    ref.push_back(Vector3f(666.666667, 529.411765, 39.215686));
-    ref.push_back(Vector3f(164.705882, 439.215686, 878.431373));
-    ref.push_back(Vector3f(909.803922, 482.352941, 215.686275));
-    ref.push_back(Vector3f(615.686275, 278.431373, 784.313725));
-    ref.push_back(Vector3f(415.686275, 168.627451, 905.882353));
-    ref.push_back(Vector3f(949.019608, 50.980392, 517.647059));
-    ref.push_back(Vector3f(639.215686, 756.862745, 90.196078));
-    ref.push_back(Vector3f(203.921569, 886.274510, 121.568627));
-    ref.push_back(Vector3f(356.862745, 549.019608, 576.470588));
-    ref.push_back(Vector3f(529.411765, 756.862745, 301.960784));
-    ref.push_back(Vector3f(992.156863, 576.470588, 874.509804));
-    ref.push_back(Vector3f(227.450980, 698.039216, 313.725490));
-    ref.push_back(Vector3f(470.588235, 592.156863, 941.176471));
-    ref.push_back(Vector3f(431.372549, 0.000000, 341.176471));
-    ref.push_back(Vector3f(596.078431, 831.372549, 231.372549));
-    ref.push_back(Vector3f(674.509804, 482.352941, 478.431373));
-    ref.push_back(Vector3f(694.117647, 670.588235, 635.294118));
-    ref.push_back(Vector3f(109.803922, 360.784314, 576.470588));
-    ref.push_back(Vector3f(592.156863, 662.745098, 286.274510));
-    ref.push_back(Vector3f(823.529412, 329.411765, 184.313725));
+    thrust::host_vector<size_t> ref_idx;
+    ref_idx.push_back(3);
+    ref_idx.push_back(10);
+    ref_idx.push_back(24);
+    ref_idx.push_back(32);
+    ref_idx.push_back(47);
+    ref_idx.push_back(51);
+    ref_idx.push_back(66);
+    ref_idx.push_back(79);
+    ref_idx.push_back(85);
+    ref_idx.push_back(98);
 
     size_t size = 100;
     geometry::PointCloud pc;
@@ -328,23 +313,52 @@ TEST(PointCloud, SelectByIndex) {
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
     thrust::host_vector<Vector3f> points(size);
+    thrust::host_vector<Vector3f> ref_pt;
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
+    for (auto i: ref_idx) ref_pt.push_back(points[i]);
 
-    thrust::host_vector<size_t> indices(size / 4);
-    Rand(indices, 0, size, 0);
-
-    // remove duplicates
-    thrust::host_vector<size_t>::iterator it;
-    it = thrust::unique(indices.begin(), indices.end());
-    indices.resize(thrust::distance(indices.begin(), it));
-
-    auto output_pc = pc.SelectByIndex(indices);
+    auto output_pc = pc.SelectByIndex(ref_idx);
     auto output_pt = output_pc->GetPoints();
 
-    sort::Do(ref);
+    sort::Do(ref_pt);
     sort::Do(output_pt);
-    ExpectEQ(ref, output_pt);
+    ExpectEQ(ref_pt, output_pt);
+}
+
+TEST(PointCloud, SelectByMask) {
+    thrust::host_vector<size_t> ref_idx;
+    ref_idx.push_back(3);
+    ref_idx.push_back(10);
+    ref_idx.push_back(24);
+    ref_idx.push_back(32);
+    ref_idx.push_back(47);
+    ref_idx.push_back(51);
+    ref_idx.push_back(66);
+    ref_idx.push_back(79);
+    ref_idx.push_back(85);
+    ref_idx.push_back(98);
+
+    size_t size = 100;
+    geometry::PointCloud pc;
+
+    Vector3f vmin(0.0, 0.0, 0.0);
+    Vector3f vmax(1000.0, 1000.0, 1000.0);
+
+    thrust::host_vector<Vector3f> points(size);
+    thrust::host_vector<Vector3f> ref_pt;
+    thrust::host_vector<bool> ref_mask(size, false);
+    Rand(points, vmin, vmax, 0);
+    pc.SetPoints(points);
+    for (auto i: ref_idx) ref_pt.push_back(points[i]);
+    for (auto i: ref_idx) ref_mask[i] = true;
+
+    auto output_pc = pc.SelectByMask(ref_mask);
+    auto output_pt = output_pc->GetPoints();
+
+    sort::Do(ref_pt);
+    sort::Do(output_pt);
+    ExpectEQ(ref_pt, output_pt);
 }
 
 TEST(PointCloud, VoxelDownSample) {

@@ -24,6 +24,7 @@
 void pybind_geometry(py::module &m);
 
 void pybind_pointcloud(py::module &m);
+void pybind_keypoint(py::module &m);
 void pybind_voxelgrid(py::module &m);
 void pybind_occupanygrid(py::module &m);
 void pybind_distancetransform(py::module &m);

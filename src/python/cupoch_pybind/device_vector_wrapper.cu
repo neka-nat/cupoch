@@ -125,6 +125,7 @@ template class device_vector_wrapper<Eigen::Vector3i>;
 template class device_vector_wrapper<Eigen::Vector2i>;
 template class device_vector_wrapper<Eigen::Matrix<float, 33, 1>>;
 template class device_vector_wrapper<Eigen::Matrix<float, 352, 1>>;
+template class device_vector_wrapper<bool>;
 template class device_vector_wrapper<float>;
 template class device_vector_wrapper<int>;
 template class device_vector_wrapper<size_t>;
@@ -155,6 +156,8 @@ template void FromWrapper<Eigen::Matrix<float, 33, 1>>(
 template void FromWrapper<Eigen::Matrix<float, 352, 1>>(
         utility::device_vector<Eigen::Matrix<float, 352, 1>>& dv,
         const device_vector_wrapper<Eigen::Matrix<float, 352, 1>>& vec);
+template void FromWrapper<bool>(utility::device_vector<bool>& dv,
+                                const device_vector_wrapper<bool>& vec);
 template void FromWrapper<float>(utility::device_vector<float>& dv,
                                  const device_vector_wrapper<float>& vec);
 template void FromWrapper<int>(utility::device_vector<int>& dv,

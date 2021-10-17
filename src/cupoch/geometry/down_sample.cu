@@ -124,6 +124,45 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     return output;
 }
 
+std::shared_ptr<PointCloud> PointCloud::SelectByMask(
+        const utility::device_vector<bool> &mask, bool invert) const {
+    auto output = std::make_shared<PointCloud>();
+    if (points_.size() != mask.size()) {
+        utility::LogError("[SelectByMask] The point size should be equal to the mask size.\n");
+        return output;
+    }
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    if (has_normals) output->normals_.resize(mask.size());
+    if (has_colors) output->colors_.resize(mask.size());
+    output->points_.resize(mask.size());
+    auto fn = [invert] __device__ (bool flag) { return invert ? !flag : flag;};
+    if (has_normals && has_colors) {
+        auto begin = make_tuple_begin(output->points_, output->normals_, output->colors_);
+        auto end = thrust::copy_if(make_tuple_begin(points_, normals_, colors_),
+                make_tuple_end(points_, normals_, colors_),
+                mask.begin(), begin, fn);
+        resize_all(thrust::distance(begin, end), output->points_, output->normals_, output->colors_);
+    } else if (has_colors) {
+        auto begin = make_tuple_begin(output->points_, output->colors_);
+        auto end = thrust::copy_if(make_tuple_begin(points_, colors_),
+                make_tuple_end(points_, colors_),
+                mask.begin(), begin, fn);
+        resize_all(thrust::distance(begin, end), output->points_, output->colors_);
+    } else if (has_normals) {
+        auto begin = make_tuple_begin(output->points_, output->normals_);
+        auto end = thrust::copy_if(make_tuple_begin(points_, normals_),
+                make_tuple_end(points_, normals_),
+                mask.begin(), begin, fn);
+        resize_all(thrust::distance(begin, end), output->points_, output->normals_);
+    } else {
+        auto end = thrust::copy_if(points_.begin(), points_.end(),
+                mask.begin(), output->points_.begin(), fn);
+        output->points_.resize(thrust::distance(output->points_.begin(), end));
+    }
+    return output;
+}
+
 std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         float voxel_size) const {
     auto output = std::make_shared<PointCloud>();

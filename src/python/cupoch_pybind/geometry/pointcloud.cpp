@@ -136,6 +136,20 @@ void pybind_pointcloud(py::module &m) {
                     "``True`` to "
                     "invert the selection of indices.",
                     "indices"_a, "invert"_a = false)
+            .def(
+                    "select_by_mask",
+                    [](const geometry::PointCloud &pcd,
+                       const wrapper::device_vector_bool &mask,
+                       bool invert) {
+                        return pcd.SelectByMask(mask.data_, invert);
+                    },
+                    "Function to select points from input pointcloud into "
+                    "output "
+                    "pointcloud. ``mask``: "
+                    "Masks of points to be selected. ``invert``: Set to "
+                    "``True`` to "
+                    "invert the selection of masks.",
+                    "mask"_a, "invert"_a = false)
             .def("voxel_down_sample", &geometry::PointCloud::VoxelDownSample,
                  "Function to downsample input pointcloud into output "
                  "pointcloud with "

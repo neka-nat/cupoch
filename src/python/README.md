@@ -11,6 +11,8 @@
     * Point cloud features
         * FPFH
         * SHOT
+    * Point cloud keypoints
+        * ISS
     * Point cloud clustering
         * [G-DBSCAN: A GPU Accelerated Algorithm for Density-based Clustering](https://www.sciencedirect.com/science/article/pii/S1877050913003438)
     * Point cloud/Triangle mesh filtering, down sampling

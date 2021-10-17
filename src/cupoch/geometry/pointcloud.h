@@ -115,6 +115,10 @@ public:
             const utility::device_vector<size_t> &indices,
             bool invert = false) const;
 
+    std::shared_ptr<PointCloud> SelectByMask(
+            const utility::device_vector<bool> &mask,
+            bool invert = false) const;
+
     /// Function to downsample \param input pointcloud into output pointcloud
     /// with a voxel \param voxel_size defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud. Normals and colors are
