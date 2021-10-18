@@ -21,6 +21,7 @@
 #pragma once
 
 #include <thrust/transform_reduce.h>
+#include <thrust/gather.h>
 
 #include <Eigen/Core>
 #include <memory>
@@ -155,6 +156,14 @@ public:
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter,
             bool keep_voxels_outside_image);
+    
+    /// Selects all voxels from src by given indices and copies them to dst.
+    /// if invert is set to true, deselects all voxels given by indices, copies remaing voxels
+    /// from src to dst
+    void SelectByIndex(const geometry::VoxelGrid &src,
+                       geometry::VoxelGrid &dst,
+                       const utility::device_vector<size_t> &indices, 
+                       bool invert);        
 
     // Creates a voxel grid where every voxel is set (hence dense). This is a
     // useful starting point for voxel carving.
