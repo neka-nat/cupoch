@@ -207,6 +207,41 @@ int main(int argc, char* argv[]) {
     auto cld1_source = source->SelectByIndex(indic_0);
     auto cld2_target = target->SelectByIndex(indic_1);
 
+    double voxel_size = 0.25;
+
+    auto voxel_source = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
+            *source, voxel_size);
+    auto voxel_target = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
+            *target, voxel_size);
+
+    voxel_source->PaintUniformColor(getColorByIndex(0));
+    voxel_target->PaintUniformColor(getColorByIndex(1));
+
+    auto collision_result = cupoch::collision::ComputeIntersection(
+            *voxel_target, *voxel_source, 0.0);
+
+    auto target_collision_indices =
+            collision_result->GetFirstCollisionIndices();
+    auto source_collision_indices =
+            collision_result->GetSecondCollisionIndices();
+
+    voxel_source->PaintIndexedColor(source_collision_indices,
+                                    getColorByIndex(2));
+    voxel_target->PaintIndexedColor(target_collision_indices,
+                                    getColorByIndex(2));
+
+    auto voxel_target_collisions =
+            std::make_shared<cupoch::geometry::VoxelGrid>();
+    voxel_target_collisions->voxel_size_ = voxel_size;
+    auto voxel_source_collisions =
+            std::make_shared<cupoch::geometry::VoxelGrid>();
+    voxel_source_collisions->voxel_size_ = voxel_size;
+
+    voxel_target->SelectByIndexImpl(*voxel_target, *voxel_target_collisions,
+                                    target_collision_indices, true);
+    voxel_source->SelectByIndexImpl(*voxel_source, *voxel_source_collisions,
+                                    source_collision_indices, true);
+    
     // Visualize some result and log
     auto t2 = high_resolution_clock::now();
     duration<double, std::milli> ms_double = t2 - t1;
