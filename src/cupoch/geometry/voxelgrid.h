@@ -155,6 +155,13 @@ public:
             const Image &silhouette_mask,
             const camera::PinholeCameraParameters &camera_parameter,
             bool keep_voxels_outside_image);
+    
+    /// Selects all voxels from src by given \param indices and copies them to temp grid.
+    /// if \param invert is set to true, deselects all voxels given by \param indices, copies remaing voxels
+    /// from this to temp grid and returns it.
+    std::shared_ptr<VoxelGrid> SelectByIndex(
+                                              const utility::device_vector<size_t> &indices, 
+                                              bool invert);        
 
     // Creates a voxel grid where every voxel is set (hence dense). This is a
     // useful starting point for voxel carving.
