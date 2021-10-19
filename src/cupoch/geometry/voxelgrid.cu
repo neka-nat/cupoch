@@ -320,6 +320,54 @@ VoxelGrid &VoxelGrid::PaintUniformColor(const Eigen::Vector3f &color) {
     return *this;
 }
 
+void VoxelGrid::SelectByIndexImpl(const geometry::VoxelGrid &src,
+                       geometry::VoxelGrid &dst,
+                       const utility::device_vector<size_t> &indices, bool invert) {
+
+    if (invert) {
+    size_t n_out = src.voxels_values_.size() - indices.size();
+    utility::device_vector<size_t> sorted_indices = indices;
+    thrust::sort(utility::exec_policy(0)->on(0), sorted_indices.begin(),
+                    sorted_indices.end());
+    utility::device_vector<size_t> inv_indices(n_out);
+    thrust::set_difference(thrust::make_counting_iterator<size_t>(0),
+                            thrust::make_counting_iterator(src.voxels_values_.size()),
+                            sorted_indices.begin(), sorted_indices.end(),
+                            inv_indices.begin());
+
+    dst.voxels_values_.resize(inv_indices.size());
+    dst.voxels_keys_.resize(inv_indices.size());
+    dst.voxel_size_ = src.voxel_size_;
+    dst.origin_ = src.origin_;
+
+    thrust::gather(utility::exec_policy(utility::GetStream(0))
+                           ->on(utility::GetStream(0)),
+                   inv_indices.begin(), inv_indices.end(), src.voxels_values_.begin(),
+                   dst.voxels_values_.begin());
+    thrust::gather(utility::exec_policy(utility::GetStream(0))
+                           ->on(utility::GetStream(0)),
+                   inv_indices.begin(), inv_indices.end(), src.voxels_keys_.begin(),
+                   dst.voxels_keys_.begin());
+    cudaSafeCall(cudaDeviceSynchronize());                        
+
+    } else {
+    dst.voxels_values_.resize(indices.size());
+    dst.voxels_keys_.resize(indices.size());
+    dst.voxel_size_ = src.voxel_size_;
+    dst.origin_ = src.origin_;
+
+    thrust::gather(utility::exec_policy(utility::GetStream(0))
+                           ->on(utility::GetStream(0)),
+                   indices.begin(), indices.end(), src.voxels_values_.begin(),
+                   dst.voxels_values_.begin());
+    thrust::gather(utility::exec_policy(utility::GetStream(0))
+                           ->on(utility::GetStream(0)),
+                   indices.begin(), indices.end(), src.voxels_keys_.begin(),
+                   dst.voxels_keys_.begin());
+    cudaSafeCall(cudaDeviceSynchronize());
+    }
+}
+
 VoxelGrid &VoxelGrid::PaintIndexedColor(
         const utility::device_vector<size_t> &indices,
         const Eigen::Vector3f &color) {

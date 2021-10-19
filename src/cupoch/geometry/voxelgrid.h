@@ -21,6 +21,8 @@
 #pragma once
 
 #include <thrust/transform_reduce.h>
+#include <thrust/gather.h>
+
 
 #include <Eigen/Core>
 #include <memory>
@@ -122,8 +124,14 @@ public:
     void AddVoxels(const utility::device_vector<Voxel> &voxels);
     void AddVoxels(const thrust::host_vector<Voxel> &voxels);
 
-    /// Assigns each voxel in the VoxelGrid the same color \param color.
-    VoxelGrid &PaintUniformColor(const Eigen::Vector3f &color);
+    void SelectByIndexImpl(const geometry::VoxelGrid &src,
+                           geometry::VoxelGrid &dst,
+                           const utility::device_vector<size_t> &indices, bool invert);
+
+
+/// Assigns each voxel in the VoxelGrid the same color \param color.
+VoxelGrid &
+PaintUniformColor(const Eigen::Vector3f &color);
 
     VoxelGrid &PaintIndexedColor(const utility::device_vector<size_t> &indices,
                                  const Eigen::Vector3f &color);

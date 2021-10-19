@@ -1,8 +1,97 @@
 // NOTE, This code is experimental!, not ready to use
-
 #include "cupoch/cupoch.h"
 
- 
+Eigen::Vector3f getColorByIndex(int index) {
+    Eigen::Vector3f result;
+    switch (index) {
+        case 0:  // RED:
+            result[0] = 0.8;
+            result[1] = 0.1;
+            result[2] = 0.1;
+            break;
+        case 1:  // GREEN:
+            result[0] = 0.1;
+            result[1] = 0.8;
+            result[2] = 0.1;
+            break;
+        case 2:  // GREY:
+            result[0] = 0.9;
+            result[1] = 0.9;
+            result[2] = 0.9;
+            break;
+        case 3:  // DARK_GREY:
+            result[0] = 0.6;
+            result[1] = 0.6;
+            result[2] = 0.6;
+            break;
+        case 4:  // WHITE:
+            result[0] = 1.0;
+            result[1] = 1.0;
+            result[2] = 1.0;
+            break;
+        case 5:  // ORANGE:
+            result[0] = 1.0;
+            result[1] = 0.5;
+            result[2] = 0.0;
+            break;
+        case 6:  // Maroon:
+            result[0] = 0.5;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            break;
+        case 7:  // Olive:
+            result[0] = 0.5;
+            result[1] = 0.5;
+            result[2] = 0.0;
+            break;
+        case 8:  // Navy:
+            result[0] = 0.0;
+            result[1] = 0.0;
+            result[2] = 0.5;
+            break;
+        case 9:  // BLACK:
+            result[0] = 0.0;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            break;
+        case 10:  // YELLOW:
+            result[0] = 1.0;
+            result[1] = 1.0;
+            result[2] = 0.0;
+            break;
+        case 11:  // BROWN:
+            result[0] = 0.597;
+            result[1] = 0.296;
+            result[2] = 0.0;
+            break;
+        case 12:  // PINK:
+            result[0] = 1.0;
+            result[1] = 0.4;
+            result[2] = 1;
+            break;
+        case 13:  // LIME_GREEN:
+            result[0] = 0.6;
+            result[1] = 1.0;
+            result[2] = 0.2;
+            break;
+        case 14:  // PURPLE:
+            result[0] = 0.597;
+            result[1] = 0.0;
+            result[2] = 0.597;
+            break;
+        case 15:  // CYAN:
+            result[0] = 0.0;
+            result[1] = 1.0;
+            result[2] = 1.0;
+            break;
+        case 16:  // MAGENTA:
+            result[0] = 1.0;
+            result[1] = 0.0;
+            result[2] = 1.0;
+    }
+    return result;
+}
+
 int main(int argc, char* argv[]) {
     using std::chrono::duration;
     using std::chrono::duration_cast;
@@ -44,18 +133,20 @@ int main(int argc, char* argv[]) {
     source->Transform(res.transformation_);
 
     // REMOVE THE GROUND
-    auto segmented_source = source->SegmentPlane(0.3, 3, 50);
-    auto segmented_target = target->SegmentPlane(0.3, 3, 50);
+    auto segmented_source = source->SegmentPlane(0.4, 3, 50);
+    auto segmented_target = target->SegmentPlane(0.4, 3, 50);
     source = source->SelectByIndex(std::get<1>(segmented_source), true);
     target = target->SelectByIndex(std::get<1>(segmented_target), true);
 
     // REMOVE THE NOISE
-    // auto denoised_source = source->RemoveStatisticalOutliers(10, 0.2);
-    // auto denoised_target = target->RemoveStatisticalOutliers(10, 0.2);
-    // auto denoised_source = source->RemoveRadiusOutliers(2, 0.2);
-    // auto denoised_target = target->RemoveRadiusOutliers(2, 0.2);
-    // source = std::get<0>(denoised_source);
-    // target = std::get<0>(denoised_target);
+    auto denoised_source = source->RemoveStatisticalOutliers(10, 0.1);
+    auto denoised_target = target->RemoveStatisticalOutliers(10, 0.1);
+    denoised_source =
+            std::get<0>(denoised_source)->RemoveRadiusOutliers(2, 0.2);
+    denoised_target =
+            std::get<0>(denoised_target)->RemoveRadiusOutliers(2, 0.2);
+    source = std::get<0>(denoised_source);
+    target = std::get<0>(denoised_target);
 
     cupoch::utility::LogDebug("Pre-processed source cloud has points : {:d}",
                               source->points_.size());
@@ -65,13 +156,17 @@ int main(int argc, char* argv[]) {
     // NORMAL ESTIMATION
     source->EstimateNormals();
     target->EstimateNormals();
-
     // MERGE THE SEQUENTIAL CLOUD INTO ONE
     *result = *source + *target;
 
+    // DBS CLUSTERING ?
+    auto source_cluster_labels = source->ClusterDBSCAN(0.9, 10, false, 100);
+    auto target_cluster_labels = target->ClusterDBSCAN(0.9, 10, false, 100);
+    auto result_cluster_labels = result->ClusterDBSCAN(1.0, 10, false, 100);
+
     // EXTRACT FETAURES OF BOTH CLOUDS(SOURCE TARGET)
     int max_nn = 5;
-    float radius = 0.4;
+    float radius = 0.5;
     int uniform_downsample_rate = 5;
 
     // UNIFORM SAMPLE TO MIMIC KEYPOINTS
@@ -121,7 +216,7 @@ int main(int argc, char* argv[]) {
     // ACTUALLY,
     // indices_source.size() IS EQUAL TO key_points->points_.size() *  max_nn
 
-    for (size_t i = 0; i < indices_source.size() / max_nn; i++) {
+    /*for (size_t i = 0; i < indices_source.size() / max_nn; i++) {
         // STORE THE FEATURES OF ALL max_nn KEYPOINT NEIGBOURS FROM SOURCE AND
         // TARGET INTO VECTOR
         cupoch::utility::device_vector<Eigen::Matrix<float, 33, 1>>
@@ -155,13 +250,15 @@ int main(int argc, char* argv[]) {
         // pointclouds(target, source)
         // TODO, use this similarity value to decide whether there is
         // movement in this region(defined by the keypoint)
-    }
+    }*/
 
     cupoch::registration::FastGlobalRegistrationOption option;
     option.use_absolute_scale_ = true;
-    option.maximum_correspondence_distance_ = 1.5;
-    auto registration_result = cupoch::registration::FastGlobalRegistration<352>(
-            *source, *target, *shot_source, *shot_target, option);
+    option.maximum_correspondence_distance_ = 0.5;
+    option.tuple_scale_ = 0.9;
+
+    auto registration_result = cupoch::registration::FastGlobalRegistration<33>(
+            *source, *target, *fpfh_source, *fpfh_target, option);
 
     thrust::host_vector<Eigen::Vector3f> points(
             registration_result.correspondence_set_.size() * 2,
@@ -180,13 +277,57 @@ int main(int argc, char* argv[]) {
     auto correspondance_mesh =
             std::make_shared<cupoch::geometry::LineSet<3>>(points, new_pairs);
 
+    for (size_t i = 0; i < result->colors_.size(); i++) {
+        if (result_cluster_labels[i] < 0) {
+            result->colors_[i] = Eigen::Vector3f(0, 0, 0);
+        } else {
+            result->colors_[i] = getColorByIndex(result_cluster_labels[i] % 16);
+        }
+    }
+
+    double voxel_size = 0.25;
+
+    auto voxel_source = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
+            *source, voxel_size);
+    auto voxel_target = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
+            *target, voxel_size);
+
+    voxel_source->PaintUniformColor(getColorByIndex(0));
+    voxel_target->PaintUniformColor(getColorByIndex(1));
+
+    auto collision_result = cupoch::collision::ComputeIntersection(
+            *voxel_target, *voxel_source, 0.0);
+
+    auto target_collision_indices =
+            collision_result->GetFirstCollisionIndices();
+    auto source_collision_indices =
+            collision_result->GetSecondCollisionIndices();
+
+    voxel_source->PaintIndexedColor(source_collision_indices,
+                                    getColorByIndex(2));
+    voxel_target->PaintIndexedColor(target_collision_indices,
+                                    getColorByIndex(2));
+
+    auto voxel_target_collisions =
+            std::make_shared<cupoch::geometry::VoxelGrid>();
+    voxel_target_collisions->voxel_size_ = voxel_size;
+    auto voxel_source_collisions =
+            std::make_shared<cupoch::geometry::VoxelGrid>();
+    voxel_source_collisions->voxel_size_ = voxel_size;
+
+    voxel_target->SelectByIndexImpl(*voxel_target, *voxel_target_collisions,
+                                    target_collision_indices, true);
+    voxel_source->SelectByIndexImpl(*voxel_source, *voxel_source_collisions,
+                                    source_collision_indices, true);
+    
     // Visualize some result and log
     auto t2 = high_resolution_clock::now();
     duration<double, std::milli> ms_double = t2 - t1;
     cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
 
     cupoch::visualization::DrawGeometries(
-            {result, uniform_sampled_cloud, correspondance_mesh}, "Copoch", 640,
-            480, 50, 50, true, true, false);
+            {voxel_target_collisions, voxel_source_collisions},
+            /*{voxel_target, voxel_source},*/ "Copoch", 640, 480, 50, 50, true,
+            true, false);
     return 0;
 }
