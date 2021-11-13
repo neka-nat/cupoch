@@ -336,3 +336,29 @@ list(APPEND 3RDPARTY_LIBRARIES
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
 set(3RDPARTY_LIBRARIES ${3RDPARTY_LIBRARIES} PARENT_SCOPE)
+
+install(TARGETS ${FLANN_LIBRARIES}
+                ${GLEW_LIBRARIES}
+                ${glfw_LIBRARIES}
+                ${JPEG_TURBO_LIBRARIES}
+                ${PNG_LIBRARIES}
+                ${liblzf_LIBRARIES}
+                ${rply_LIBRARIES}
+                ${JSONCPP_LIBRARIES}
+                ${stdgpu_LIBRARIES}
+                ${SGM_LIBRARIES}
+                ${tinyobjloader_LIBRARIES}
+                ${googletest_LIBRARIES}
+                ${imgui_LIBRARIES}
+                ${urdfdom_LIBRARIES}
+    EXPORT ${PROJECT_NAME}3rdTargets
+    RUNTIME DESTINATION ${CUPOCH_INSTALL_BIN_DIR}
+    LIBRARY DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+    ARCHIVE DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+)
+
+install(DIRECTORY ${rmm_INCLUDE_DIRS}
+                ${stdgpu_INCLUDE_DIRS}
+                ${SGM_INCLUDE_DIRS}
+    DESTINATION ${CUPOCH_INSTALL_INCLUDE_DIR}/../
+)

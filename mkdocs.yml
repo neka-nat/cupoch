@@ -1,4 +1,4 @@
-site_name: Cupoch - CUDA-based 3D processing library
+site_name: Cupoch - Robotics with GPU computing
 
 theme:
   name: 'material'
