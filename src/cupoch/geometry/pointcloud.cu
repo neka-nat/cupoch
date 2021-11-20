@@ -293,27 +293,20 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     bool has_color = HasColors();
     size_t old_point_num = points_.size();
     size_t k = 0;
+    auto runs = [=] (auto&... params) {
+        remove_if_vectors(
+                utility::exec_policy(0)->on(0),
+                check_nan_functor<typename std::remove_reference_t<decltype(params)>::value_type...>(remove_nan, remove_infinite),
+                params...);
+    };
     if (!has_normal && !has_color) {
-        remove_if_vectors(
-                utility::exec_policy(0)->on(0),
-                check_nan_functor<Eigen::Vector3f>(remove_nan, remove_infinite),
-                points_);
+        runs(points_);
     } else if (has_normal && !has_color) {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          check_nan_functor<Eigen::Vector3f, Eigen::Vector3f>(
-                                  remove_nan, remove_infinite),
-                          points_, normals_);
+        runs(points_, normals_);
     } else if (!has_normal && has_color) {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          check_nan_functor<Eigen::Vector3f, Eigen::Vector3f>(
-                                  remove_nan, remove_infinite),
-                          points_, colors_);
+        runs(points_, colors_);
     } else {
-        remove_if_vectors(
-                utility::exec_policy(0)->on(0),
-                check_nan_functor<Eigen::Vector3f, Eigen::Vector3f,
-                                  Eigen::Vector3f>(remove_nan, remove_infinite),
-                points_, normals_, colors_);
+        runs(points_, normals_, colors_);
     }
     utility::LogDebug(
             "[RemoveNoneFinitePoints] {:d} nan points have been removed.",
@@ -348,33 +341,24 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
                                  thrust::raw_pointer_cast(indices.data()),
                                  thrust::raw_pointer_cast(dist.data()), sigma2,
                                  num_max_search_points, has_normal, has_color);
+    auto runs = [size = points_.size(), &func] (auto&&... params) {
+        thrust::transform(
+                thrust::make_counting_iterator<size_t>(0),
+                thrust::make_counting_iterator(size),
+                make_tuple_iterator(params...), func);
+    };
     if (has_normal && has_color) {
-        thrust::transform(
-                thrust::make_counting_iterator<size_t>(0),
-                thrust::make_counting_iterator(points_.size()),
-                make_tuple_begin(out->points_, out->normals_, out->colors_),
-                func);
+        runs(out->points_.begin(), out->normals_.begin(), out->colors_.begin());
     } else if (has_normal) {
-        thrust::transform(
-                thrust::make_counting_iterator<size_t>(0),
-                thrust::make_counting_iterator(points_.size()),
-                make_tuple_iterator(out->points_.begin(), out->normals_.begin(),
-                                    thrust::make_discard_iterator()),
-                func);
+        runs(out->points_.begin(), out->normals_.begin(),
+             thrust::make_discard_iterator());
     } else if (has_color) {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                          thrust::make_counting_iterator(points_.size()),
-                          make_tuple_iterator(out->points_.begin(),
-                                              thrust::make_discard_iterator(),
-                                              out->colors_.begin()),
-                          func);
+        runs(out->points_.begin(), thrust::make_discard_iterator(),
+             out->colors_.begin());
     } else {
-        thrust::transform(thrust::make_counting_iterator<size_t>(0),
-                          thrust::make_counting_iterator(points_.size()),
-                          make_tuple_iterator(out->points_.begin(),
-                                              thrust::make_discard_iterator(),
-                                              thrust::make_discard_iterator()),
-                          func);
+        runs(out->points_.begin(),
+             thrust::make_discard_iterator(),
+             thrust::make_discard_iterator());
     }
     return out;
 }
@@ -392,27 +376,21 @@ std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no,
     *out = *this;
     bool has_normal = HasNormals();
     bool has_color = HasColors();
-    if (has_normal && has_color) {
+    auto runs = [=, &points = out->points_] (auto&... params) {
         remove_if_vectors(
                 utility::exec_policy(0)->on(0),
-                pass_through_filter_functor<Eigen::Vector3f, Eigen::Vector3f>(
+                pass_through_filter_functor<typename std::remove_reference_t<decltype(params)>::value_type...>(
                         axis_no, min_bound, max_bound),
-                out->points_, out->normals_, out->colors_);
+                points, params...);
+    };
+    if (has_normal && has_color) {
+        runs(out->normals_, out->colors_);
     } else if (has_normal) {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<Eigen::Vector3f>(
-                                  axis_no, min_bound, max_bound),
-                          out->points_, out->normals_);
+        runs(out->normals_);
     } else if (has_color) {
-        remove_if_vectors(utility::exec_policy(0)->on(0),
-                          pass_through_filter_functor<Eigen::Vector3f>(
-                                  axis_no, min_bound, max_bound),
-                          out->points_, out->colors_);
+        runs(out->colors_);
     } else {
-        remove_if_vectors(
-                utility::exec_policy(0)->on(0),
-                pass_through_filter_functor<>(axis_no, min_bound, max_bound),
-                out->points_);
+        runs();
     }
     return out;
 }
