@@ -586,54 +586,31 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSharpen(
                           thrust::make_constant_iterator(1),
                           thrust::make_discard_iterator(), counts.begin(),
                           edge_first_eq_functor());
+    auto runs = [&mesh, &filter_fn, &counts] (auto& prev, auto& sums, auto& res) {
+        auto tritr = thrust::make_transform_iterator(
+                mesh->edge_list_.begin(),
+                element_get_functor<Eigen::Vector2i, 1>());
+        thrust::permutation_iterator<ElementIterator, decltype(tritr)>
+                pmitr(prev.begin(), tritr);
+        thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                              mesh->edge_list_.begin(),
+                              mesh->edge_list_.end(), pmitr,
+                              thrust::make_discard_iterator(),
+                              sums.begin(), edge_first_eq_functor());
+        thrust::transform(
+                make_tuple_begin(prev, counts, sums),
+                make_tuple_end(prev, counts, sums),
+                res.begin(), filter_fn);
+    };
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         if (filter_vertex) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertices.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  vertex_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertices, counts, vertex_sums),
-                    make_tuple_end(prev_vertices, counts, vertex_sums),
-                    mesh->vertices_.begin(), filter_fn);
+            runs(prev_vertices, vertex_sums, mesh->vertices_);
         }
         if (filter_normal) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertex_normals.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  normal_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertex_normals, counts, normal_sums),
-                    make_tuple_end(prev_vertex_normals, counts, normal_sums),
-                    mesh->vertex_normals_.begin(), filter_fn);
+            runs(prev_vertex_normals, normal_sums, mesh->vertex_normals_);
         }
         if (filter_color) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertex_colors.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  color_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertex_colors, counts, color_sums),
-                    make_tuple_end(prev_vertex_colors, counts, color_sums),
-                    mesh->vertex_colors_.begin(), filter_fn);
+            runs(prev_vertex_colors, color_sums, mesh->vertex_colors_);
         }
         if (iter < number_of_iterations - 1) {
             thrust::swap(mesh->vertices_, prev_vertices);
@@ -689,54 +666,31 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothSimple(
                           thrust::make_constant_iterator(1),
                           thrust::make_discard_iterator(), counts.begin(),
                           edge_first_eq_functor());
+    auto runs = [&mesh, &counts, &filter_fn] (auto& prev, auto& sums, auto& res) {
+        auto tritr = thrust::make_transform_iterator(
+                mesh->edge_list_.begin(),
+                element_get_functor<Eigen::Vector2i, 1>());
+        thrust::permutation_iterator<ElementIterator, decltype(tritr)>
+                pmitr(prev.begin(), tritr);
+        thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+                              mesh->edge_list_.begin(),
+                              mesh->edge_list_.end(), pmitr,
+                              thrust::make_discard_iterator(),
+                              sums.begin(), edge_first_eq_functor());
+        thrust::transform(
+                make_tuple_begin(prev, counts, sums),
+                make_tuple_end(prev, counts, sums),
+                res.begin(), filter_fn);
+    };
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         if (filter_vertex) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertices.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  vertex_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertices, counts, vertex_sums),
-                    make_tuple_end(prev_vertices, counts, vertex_sums),
-                    mesh->vertices_.begin(), filter_fn);
+            runs(prev_vertices, vertex_sums, mesh->vertices_);
         }
         if (filter_normal) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertex_normals.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  normal_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertex_normals, counts, normal_sums),
-                    make_tuple_end(prev_vertex_normals, counts, normal_sums),
-                    mesh->vertex_normals_.begin(), filter_fn);
+            runs(prev_vertex_normals, normal_sums, mesh->vertex_normals_);
         }
         if (filter_color) {
-            auto tritr = thrust::make_transform_iterator(
-                    mesh->edge_list_.begin(),
-                    element_get_functor<Eigen::Vector2i, 1>());
-            thrust::permutation_iterator<ElementIterator, decltype(tritr)>
-                    pmitr(prev_vertex_colors.begin(), tritr);
-            thrust::reduce_by_key(utility::exec_policy(0)->on(0),
-                                  mesh->edge_list_.begin(),
-                                  mesh->edge_list_.end(), pmitr,
-                                  thrust::make_discard_iterator(),
-                                  color_sums.begin(), edge_first_eq_functor());
-            thrust::transform(
-                    make_tuple_begin(prev_vertex_colors, counts, color_sums),
-                    make_tuple_end(prev_vertex_colors, counts, color_sums),
-                    mesh->vertex_colors_.begin(), filter_fn);
+            runs(prev_vertex_colors, color_sums, mesh->vertex_colors_);
         }
         if (iter < number_of_iterations - 1) {
             thrust::swap(mesh->vertices_, prev_vertices);
