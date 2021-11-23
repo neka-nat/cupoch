@@ -932,74 +932,33 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
     size_t k = 0;
-    if (has_vert_normal && has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
-                            vertices_.end(),
-                            make_tuple_begin(index_new_to_old, vertex_normals_,
-                                             vertex_colors_));
+    auto runs = [&vertices = vertices_, &index_new_to_old, &idx_offsets] (auto&... params) -> size_t {
+        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices.begin(),
+                            vertices.end(),
+                            make_tuple_begin(index_new_to_old, params...));
         auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), vertices_.begin(),
-                vertices_.end(), thrust::make_constant_iterator<int>(1),
+                utility::exec_policy(0)->on(0), vertices.begin(),
+                vertices.end(), thrust::make_constant_iterator<int>(1),
                 thrust::make_discard_iterator(), idx_offsets.begin());
         idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
                            1);
         thrust::exclusive_scan(idx_offsets.begin(), idx_offsets.end(),
                                idx_offsets.begin());
-        auto begin = make_tuple_begin(vertex_normals_, vertex_colors_);
+        auto begin = make_tuple_begin(params...);
         auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
-                                          vertices_.begin(), vertices_.end(),
+                                          vertices.begin(), vertices.end(),
                                           begin);
-        k = thrust::distance(begin, end1.second);
+        return thrust::distance(vertices.begin(), end1.first);
+    };
+    if (has_vert_normal && has_vert_color) {
+        k = runs(vertex_normals_, vertex_colors_);
     } else if (has_vert_normal) {
-        thrust::sort_by_key(
-                utility::exec_policy(0)->on(0), vertices_.begin(),
-                vertices_.end(),
-                make_tuple_begin(index_new_to_old, vertex_normals_));
-        auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), vertices_.begin(),
-                vertices_.end(), thrust::make_constant_iterator<int>(1),
-                thrust::make_discard_iterator(), idx_offsets.begin());
-        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
-                           1);
-        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
-                               idx_offsets.begin(), idx_offsets.end(),
-                               idx_offsets.begin());
-        auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
-                                          vertices_.begin(), vertices_.end(),
-                                          vertex_normals_.begin());
-        k = thrust::distance(vertex_normals_.begin(), end1.second);
+        k = runs(vertex_normals_);
     } else if (has_vert_color) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
-                            vertices_.end(),
-                            make_tuple_begin(index_new_to_old, vertex_colors_));
-        auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), vertices_.begin(),
-                vertices_.end(), thrust::make_constant_iterator<int>(1),
-                thrust::make_discard_iterator(), idx_offsets.begin());
-        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
-                           1);
-        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
-                               idx_offsets.begin(), idx_offsets.end(),
-                               idx_offsets.begin());
-        auto end1 = thrust::unique_by_key(utility::exec_policy(0)->on(0),
-                                          vertices_.begin(), vertices_.end(),
-                                          vertex_colors_.begin());
-        k = thrust::distance(vertex_colors_.begin(), end1.second);
+        k = runs(vertex_colors_);
     } else {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), vertices_.begin(),
-                            vertices_.end(), index_new_to_old.begin());
-        auto end0 = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), vertices_.begin(),
-                vertices_.end(), thrust::make_constant_iterator<int>(1),
-                thrust::make_discard_iterator(), idx_offsets.begin());
-        idx_offsets.resize(thrust::distance(idx_offsets.begin(), end0.second) +
-                           1);
-        thrust::exclusive_scan(utility::exec_policy(0)->on(0),
-                               idx_offsets.begin(), idx_offsets.end(),
-                               idx_offsets.begin());
-        auto end1 = thrust::unique(utility::exec_policy(0)->on(0),
-                                   vertices_.begin(), vertices_.end());
-        k = thrust::distance(vertices_.begin(), end1);
+        thrust::discard_iterable dummy;
+        k = runs(dummy);
     }
     vertices_.resize(k);
     if (has_vert_normal) vertex_normals_.resize(k);

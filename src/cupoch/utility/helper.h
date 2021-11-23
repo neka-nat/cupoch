@@ -21,6 +21,7 @@
 #pragma once
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
+#include <thrust/iterator/discard_iterator.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/remove.h>
 #if THRUST_VERSION >= 100905 && !defined(_WIN32)
@@ -94,6 +95,15 @@ struct elementwise_maximum<
     __device__ VectorType operator()(const VectorType &a, const VectorType &b) {
         return a.array().max(b.array()).matrix();
     }
+};
+
+struct discard_iterable {
+    thrust::discard_iterator<> begin() { return thrust::make_discard_iterator(); };
+    thrust::discard_iterator<> end() { return thrust::make_discard_iterator(); };
+    thrust::discard_iterator<> begin() const { return thrust::make_discard_iterator(); };
+    thrust::discard_iterator<> end() const { return thrust::make_discard_iterator(); };
+    discard_iterable& operator++() { return *this; };
+    discard_iterable operator++(int) { return *this; };
 };
 
 }  // namespace thrust
