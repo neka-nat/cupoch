@@ -193,17 +193,21 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     output->points_.resize(n);
     utility::device_vector<int> counts(n);
     thrust::equal_to<Eigen::Vector3i> binary_pred;
-    if (!has_normals && !has_colors) {
+    auto runs = [&keys, &binary_pred] (auto&& out_begins, auto&... params) {
         thrust::sort_by_key(utility::exec_policy(0)->on(0), keys.begin(),
-                            keys.end(), make_tuple_begin(sorted_points));
-        add_tuple_functor<Eigen::Vector3f, int> add_func;
-        auto begin = make_tuple_begin(output->points_, counts);
+                            keys.end(),
+                            make_tuple_begin(params...));
+        add_tuple_functor<typename std::remove_reference_t<decltype(params)>::value_type..., int> add_func;
         auto end = thrust::reduce_by_key(
                 utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
-                make_tuple_iterator(sorted_points.begin(),
+                make_tuple_iterator(std::begin(params)...,
                                     thrust::make_constant_iterator(1)),
-                thrust::make_discard_iterator(), begin, binary_pred, add_func);
-        int n_out = thrust::distance(begin, end.second);
+                thrust::make_discard_iterator(), out_begins, binary_pred, add_func);
+        return thrust::distance(out_begins, end.second);
+    };
+    if (!has_normals && !has_colors) {
+        auto begin = make_tuple_begin(output->points_, counts);
+        int n_out = runs(begin, sorted_points);
         devide_tuple_functor<Eigen::Vector3f> dv_func;
         auto output_begins = make_tuple_begin(output->points_);
         thrust::transform(output_begins, output_begins + n_out, counts.begin(),
@@ -212,19 +216,9 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     } else if (has_normals && !has_colors) {
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         output->normals_.resize(n);
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), keys.begin(),
-                            keys.end(),
-                            make_tuple_begin(sorted_points, sorted_normals));
-        add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, int> add_func;
         auto begin =
                 make_tuple_begin(output->points_, output->normals_, counts);
-        auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
-                make_tuple_iterator(sorted_points.begin(),
-                                    sorted_normals.begin(),
-                                    thrust::make_constant_iterator(1)),
-                thrust::make_discard_iterator(), begin, binary_pred, add_func);
-        int n_out = thrust::distance(begin, end.second);
+        int n_out = runs(begin, sorted_points, sorted_normals);
         normalize_and_devide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f>
                 dv_func;
         auto output_begins =
@@ -235,18 +229,8 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     } else if (!has_normals && has_colors) {
         utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         resize_all(n, output->colors_);
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), keys.begin(),
-                            keys.end(),
-                            make_tuple_begin(sorted_points, sorted_colors));
-        add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, int> add_func;
         auto begin = make_tuple_begin(output->points_, output->colors_, counts);
-        auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
-                make_tuple_iterator(sorted_points.begin(),
-                                    sorted_colors.begin(),
-                                    thrust::make_constant_iterator(1)),
-                thrust::make_discard_iterator(), begin, binary_pred, add_func);
-        int n_out = thrust::distance(begin, end.second);
+        int n_out = runs(begin, sorted_points, sorted_colors);
         devide_tuple_functor<Eigen::Vector3f, Eigen::Vector3f> dv_func;
         auto output_begins = make_tuple_begin(output->points_, output->colors_);
         thrust::transform(output_begins, output_begins + n_out, counts.begin(),
@@ -256,22 +240,9 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         utility::device_vector<Eigen::Vector3f> sorted_normals = normals_;
         utility::device_vector<Eigen::Vector3f> sorted_colors = colors_;
         resize_all(n, output->normals_, output->colors_);
-        thrust::sort_by_key(
-                utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
-                make_tuple_begin(sorted_points, sorted_normals, sorted_colors));
-        add_tuple_functor<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f,
-                          int>
-                add_func;
         auto begin = make_tuple_begin(output->points_, output->normals_,
                                       output->colors_, counts);
-        auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
-                make_tuple_iterator(sorted_points.begin(),
-                                    sorted_normals.begin(),
-                                    sorted_colors.begin(),
-                                    thrust::make_constant_iterator(1)),
-                thrust::make_discard_iterator(), begin, binary_pred, add_func);
-        int n_out = thrust::distance(begin, end.second);
+        int n_out = runs(begin, sorted_points, sorted_normals, sorted_colors);
         normalize_and_devide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f,
                                            Eigen::Vector3f>
                 dv_func;
