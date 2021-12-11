@@ -88,12 +88,6 @@ void ViewControl::SetViewMatrices(
     model_matrix_ = model_matrix.cast<GLfloat>();
     MVP_matrix_ = projection_matrix_ * view_matrix_ * model_matrix_;
 
-    // uncomment to use the deprecated functions of legacy OpenGL
-    // glMatrixMode(GL_PROJECTION);
-    // glLoadIdentity();
-    // glMatrixMode(GL_MODELVIEW);
-    // glLoadIdentity();
-    // glMultMatrixf(MVP_matrix_.data());
 }
 
 bool ViewControl::ConvertToViewParameters(ViewParameters &status) const {

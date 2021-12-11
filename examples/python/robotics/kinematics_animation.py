@@ -21,8 +21,8 @@ for i in range(15):
     geoms = kin.get_transformed_visual_geometry_map(poses)
     vis.clear_geometries()
     for v in geoms.values():
-        vis.add_geometry(v)
+        vis.add_geometry(v, False)
     vis.poll_events()
     vis.update_renderer()
     time.sleep(0.1)
-vis.destroy_window()
+vis.run()

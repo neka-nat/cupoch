@@ -144,9 +144,9 @@ python benchmarks.py
 
 ![col](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/collision_voxels.gif)
 
-### Path finding
+### Drone Path planning
 
-![pf](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/path_finding.png)
+![dp](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/drone_pathplanning.gif)
 
 ### Visual odometry with ROS + D435
 
