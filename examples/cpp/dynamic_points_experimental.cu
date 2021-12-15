@@ -109,13 +109,13 @@ int main(int argc, char* argv[]) {
 
     auto source = std::make_shared<cupoch::geometry::PointCloud>();
     auto target = std::make_shared<cupoch::geometry::PointCloud>();
-    auto result = std::make_shared<cupoch::geometry::PointCloud>();
 
     if (cupoch::io::ReadPointCloud(argv[1], *source)) {
         cupoch::utility::LogInfo("Successfully read {}", argv[1]);
     } else {
         cupoch::utility::LogWarning("Failed to read {}", argv[1]);
     }
+
     if (cupoch::io::ReadPointCloud(argv[2], *target)) {
         cupoch::utility::LogInfo("Successfully read {}", argv[2]);
     } else {
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
             cupoch::registration::TransformationEstimationPointToPoint();
     cupoch::registration::ICPConvergenceCriteria criteria;
     criteria.max_iteration_ = 1000;
-    auto res = cupoch::registration::RegistrationICP(*source, *target, 5.0, eye,
+    auto res = cupoch::registration::RegistrationICP(*source, *target, 3.0, eye,
                                                      point_to_point, criteria);
     source->Transform(res.transformation_);
 
@@ -141,10 +141,12 @@ int main(int argc, char* argv[]) {
     // REMOVE THE NOISE
     auto denoised_source = source->RemoveStatisticalOutliers(10, 0.1);
     auto denoised_target = target->RemoveStatisticalOutliers(10, 0.1);
+
     denoised_source =
             std::get<0>(denoised_source)->RemoveRadiusOutliers(2, 0.2);
     denoised_target =
             std::get<0>(denoised_target)->RemoveRadiusOutliers(2, 0.2);
+
     source = std::get<0>(denoised_source);
     target = std::get<0>(denoised_target);
 
@@ -153,44 +155,39 @@ int main(int argc, char* argv[]) {
     cupoch::utility::LogDebug("Pre-processed target cloud has points : {:d}",
                               target->points_.size());
 
-    double voxel_size = 0.25;
+    // START VOXEL STUFF
+    double voxel_size = 0.32;
     auto voxel_source = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
             *source, voxel_size);
     auto voxel_target = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
             *target, voxel_size);
 
     voxel_source->PaintUniformColor(getColorByIndex(0));
-    voxel_target->PaintUniformColor(getColorByIndex(1));
+    voxel_target->PaintUniformColor(getColorByIndex(2));
 
-    auto collision_result = cupoch::collision::ComputeIntersection(
+    // COMPUTE COLLISIONS
+    auto collision_result_st = cupoch::collision::ComputeIntersection(
             *voxel_target, *voxel_source, 0.0);
 
-    auto target_collision_indices =
-            collision_result->GetFirstCollisionIndices();
-    auto source_collision_indices =
-            collision_result->GetSecondCollisionIndices();
-
-    voxel_source->PaintIndexedColor(source_collision_indices,
-                                    getColorByIndex(2));
-    voxel_target->PaintIndexedColor(target_collision_indices,
-                                    getColorByIndex(2));
-
-    auto voxel_target_collisions =
+    // EXTRACT ONLY VOXELS THAT ARE COLLISION FREE
+    auto voxel_target_collision_free =
             std::make_shared<cupoch::geometry::VoxelGrid>();
-    voxel_target_collisions->voxel_size_ = voxel_size;
-    auto voxel_source_collisions =
+    auto voxel_source_collision_free =
             std::make_shared<cupoch::geometry::VoxelGrid>();
-    voxel_source_collisions->voxel_size_ = voxel_size;
 
-    voxel_target->SelectByIndexImpl(*voxel_target, *voxel_target_collisions,
-                                    target_collision_indices, true);
-    voxel_source->SelectByIndexImpl(*voxel_source, *voxel_source_collisions,
-                                    source_collision_indices, true);
+    voxel_target->SelectByIndexImpl(
+            *voxel_target, *voxel_target_collision_free,
+            collision_result_st->GetSecondCollisionIndices(), true);
 
-    auto included_points_source =
-            voxel_source_collisions->CheckIfIncluded(source->points_);
+    voxel_source->SelectByIndexImpl(
+            *voxel_source, *voxel_source_collision_free,
+            collision_result_st->GetFirstCollisionIndices(), true);
+
+    // EXTRACT POINTS OF COLLISION FREE VOXELS
     auto included_points_target =
-            voxel_target_collisions->CheckIfIncluded(target->points_);
+            voxel_target_collision_free->CheckIfIncluded(target->points_);
+    auto included_points_source =
+            voxel_source_collision_free->CheckIfIncluded(source->points_);
 
     cupoch::utility::device_vector<size_t> indic_0, indic_1;
     for (size_t i = 0; i < source->points_.size(); i++) {
@@ -204,53 +201,17 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    auto cld1_source = source->SelectByIndex(indic_0);
-    auto cld2_target = target->SelectByIndex(indic_1);
+    auto source_collision_free_cloud = source->SelectByIndex(indic_0);
+    auto target_collision_free_cloud = target->SelectByIndex(indic_1);
 
-    double voxel_size = 0.25;
-
-    auto voxel_source = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
-            *source, voxel_size);
-    auto voxel_target = cupoch::geometry::VoxelGrid::CreateFromPointCloud(
-            *target, voxel_size);
-
-    voxel_source->PaintUniformColor(getColorByIndex(0));
-    voxel_target->PaintUniformColor(getColorByIndex(1));
-
-    auto collision_result = cupoch::collision::ComputeIntersection(
-            *voxel_target, *voxel_source, 0.0);
-
-    auto target_collision_indices =
-            collision_result->GetFirstCollisionIndices();
-    auto source_collision_indices =
-            collision_result->GetSecondCollisionIndices();
-
-    voxel_source->PaintIndexedColor(source_collision_indices,
-                                    getColorByIndex(2));
-    voxel_target->PaintIndexedColor(target_collision_indices,
-                                    getColorByIndex(2));
-
-    auto voxel_target_collisions =
-            std::make_shared<cupoch::geometry::VoxelGrid>();
-    voxel_target_collisions->voxel_size_ = voxel_size;
-    auto voxel_source_collisions =
-            std::make_shared<cupoch::geometry::VoxelGrid>();
-    voxel_source_collisions->voxel_size_ = voxel_size;
-
-    voxel_target->SelectByIndexImpl(*voxel_target, *voxel_target_collisions,
-                                    target_collision_indices, true);
-    voxel_source->SelectByIndexImpl(*voxel_source, *voxel_source_collisions,
-                                    source_collision_indices, true);
-    
     // Visualize some result and log
     auto t2 = high_resolution_clock::now();
     duration<double, std::milli> ms_double = t2 - t1;
     cupoch::utility::LogDebug("Trial example took : {:f}", ms_double.count());
 
     cupoch::visualization::DrawGeometries(
-            {voxel_target_collisions, voxel_source_collisions, cld1_source,
-             cld2_target},
-            /*{voxel_target, voxel_source},*/ "Copoch", 640, 480, 50, 50, true,
-            true, false);
+            {voxel_target_collision_free, voxel_source_collision_free,
+             target_collision_free_cloud, source_collision_free_cloud},
+            "Copoch", 640, 480, 50, 50, true, true, false);
     return 0;
 }

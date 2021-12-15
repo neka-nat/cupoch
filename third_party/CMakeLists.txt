@@ -124,9 +124,10 @@ if (BUILD_GLFW)
     list(APPEND GLFW_LIBRARIES    ${OPENGL_gl_LIBRARY})
 endif ()
 
-set(SPDLOG_MASTER_PROJECT OFF)
+set(SPDLOG_MASTER_PROJECT ON)
 add_subdirectory(spdlog)
 set(spdlog_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include)
+set(spdlog_LIBRARIES spdlog)
 
 # JSONCPP
 if ((APPLE) AND ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
@@ -332,7 +333,33 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${imgui_LIBRARIES}
      ${urdfdom_LIBRARIES}
      ${CUDA_LIBRARIES}
+     ${spdlog_LIBRARIES}
 )
 
 set(3RDPARTY_INCLUDE_DIRS ${3RDPARTY_INCLUDE_DIRS} PARENT_SCOPE)
 set(3RDPARTY_LIBRARIES ${3RDPARTY_LIBRARIES} PARENT_SCOPE)
+
+# Installation
+install(TARGETS ${FLANN_LIBRARIES}
+                ${fmt_LIBRARIES}
+                ${rmm_LIBRARIES}
+                ${liblzf_LIBRARIES}
+                ${rply_LIBRARIES}
+                ${spdlog_LIBRARIES}
+                ${imgui_LIBRARIES}
+        EXPORT ${PROJECT_NAME}3rdTargets
+        RUNTIME DESTINATION ${CUPOCH_INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${CUPOCH_INSTALL_LIB_DIR}
+)
+
+install(DIRECTORY ${flann_INCLUDE_DIRS}
+                    ${fmt_INCLUDE_DIRS}
+                    ${cnmem_INCLUDE_DIRS}
+                    ${rmm_INCLUDE_DIRS}
+                    ${liblzf_INCLUDE_DIRS}
+                    ${rply_INCLUDE_DIRS}
+                    ${spdlog_INCLUDE_DIRS}
+                    ${imgui_INCLUDE_DIRS}
+    DESTINATION ${CUPOCH_INSTALL_INCLUDE_DIR}/../
+)
