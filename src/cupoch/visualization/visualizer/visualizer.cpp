@@ -232,7 +232,7 @@ void Visualizer::BuildUtilities() {
     // 0. Build coordinate frame
     const auto boundingbox = GetViewControl().GetBoundingBox();
     coordinate_frame_mesh_ptr_ = geometry::TriangleMesh::CreateCoordinateFrame(
-            boundingbox.GetMaxExtent() * 0.2, boundingbox.min_bound_);
+            boundingbox.GetMaxExtent() * 0.2);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
     if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
@@ -271,6 +271,8 @@ void Visualizer::RenderImGui() {
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                     1000.0f / ImGui::GetIO().Framerate,
                     ImGui::GetIO().Framerate);
+        ImGui::Text("Optional rendering");
+        status_changed |= ImGui::Checkbox("Origin", &render_option_ptr_->show_coordinate_frame_);
         ImGui::Text("Visible");
         int count = 0;
         for (auto &geometry_ptr : geometry_ptrs_) {
