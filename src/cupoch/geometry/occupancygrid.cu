@@ -23,6 +23,7 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/densegrid.inl"
 #include "cupoch/geometry/geometry_functor.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/geometry/intersection_test.h"
 #include "cupoch/geometry/occupancygrid.h"
 #include "cupoch/geometry/pointcloud.h"
@@ -556,14 +557,14 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i& voxel,
 OccupancyGrid& OccupancyGrid::AddVoxels(
         const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
     if (voxels.empty()) return *this;
-    Eigen::Vector3i fv = voxels.front();
-    Eigen::Vector3i bv = voxels.back();
-    Eigen::Vector3ui16 fvu = fv.cast<unsigned short>();
-    Eigen::Vector3ui16 bvu = bv.cast<unsigned short>();
-    min_bound_ = min_bound_.array().min(fvu.array());
-    min_bound_ = min_bound_.array().min(bvu.array());
-    max_bound_ = max_bound_.array().max(fvu.array());
-    max_bound_ = max_bound_.array().max(bvu.array());
+    Eigen::Vector3i minv = ComputeMaxBound<3, int>(voxels);
+    Eigen::Vector3i maxv = ComputeMinBound<3, int>(voxels);
+    Eigen::Vector3ui16 minvu = minv.cast<unsigned short>();
+    Eigen::Vector3ui16 maxvu = maxv.cast<unsigned short>();
+    min_bound_ = min_bound_.array().min(minvu.array());
+    min_bound_ = min_bound_.array().min(maxvu.array());
+    max_bound_ = max_bound_.array().max(minvu.array());
+    max_bound_ = max_bound_.array().max(maxvu.array());
     add_occupancy_functor func(thrust::raw_pointer_cast(voxels_.data()),
                                resolution_, clamping_thres_min_,
                                clamping_thres_max_, prob_miss_log_,

@@ -44,21 +44,21 @@ Eigen::Matrix3f GetRotationMatrixFromAxisAngle(const Eigen::Vector3f &rotation);
 Eigen::Matrix3f GetRotationMatrixFromQuaternion(
         const Eigen::Vector4f &rotation);
 
-template <int Dim, typename FuncT>
-Eigen::Matrix<float, Dim, 1> ComputeBound(
+template <int Dim, typename T, typename FuncT>
+Eigen::Matrix<T, Dim, 1> ComputeBound(
         cudaStream_t stream,
-        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points);
 
-template <int Dim>
-Eigen::Matrix<float, Dim, 1> ComputeMinBound(
-        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
-template <int Dim>
-Eigen::Matrix<float, Dim, 1> ComputeMaxBound(
-        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeMinBound(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points);
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeMaxBound(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points);
 
-template <int Dim>
-Eigen::Matrix<float, Dim, 1> ComputeCenter(
-        const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points);
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeCenter(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points);
 
 void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f> &colors,
                                 const size_t size,
