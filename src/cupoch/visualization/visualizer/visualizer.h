@@ -34,6 +34,8 @@ namespace cupoch {
 
 namespace geometry {
 class Geometry;
+template<int Dim>
+class LineSet;
 class TriangleMesh;
 class Image;
 }  // namespace geometry
@@ -254,6 +256,11 @@ protected:
     std::shared_ptr<geometry::TriangleMesh> coordinate_frame_mesh_ptr_;
     std::shared_ptr<glsl::CoordinateFrameRenderer>
             coordinate_frame_mesh_renderer_ptr_;
+
+    // grid
+    std::shared_ptr<geometry::LineSet<3>> grid_line_ptr_;
+    std::shared_ptr<glsl::GridLineRenderer>
+            grid_line_renderer_ptr_;
 };
 
 }  // namespace visualization

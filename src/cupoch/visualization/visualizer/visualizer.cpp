@@ -24,6 +24,7 @@
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
+#include "cupoch/geometry/lineset.h"
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
@@ -235,12 +236,21 @@ void Visualizer::BuildUtilities() {
             boundingbox.GetMaxExtent() * 0.2);
     coordinate_frame_mesh_renderer_ptr_ =
             std::make_shared<glsl::CoordinateFrameRenderer>();
+    // 1. Build grid line
+    grid_line_ptr_ = geometry::LineSet<3>::CreateSquareGrid();
+    grid_line_renderer_ptr_ = std::make_shared<glsl::GridLineRenderer>();
     if (coordinate_frame_mesh_renderer_ptr_->AddGeometry(
                 coordinate_frame_mesh_ptr_) == false) {
         return;
     }
+    if (grid_line_renderer_ptr_->AddGeometry(
+                grid_line_ptr_) == false) {
+        return;
+    }
     utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
     utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
+    utility_ptrs_.push_back(grid_line_ptr_);
+    utility_renderer_ptrs_.push_back(grid_line_renderer_ptr_);
 }
 
 void Visualizer::Run() {
@@ -273,6 +283,7 @@ void Visualizer::RenderImGui() {
                     ImGui::GetIO().Framerate);
         ImGui::Text("Optional rendering");
         status_changed |= ImGui::Checkbox("Origin", &render_option_ptr_->show_coordinate_frame_);
+        status_changed |= ImGui::Checkbox("Grid", &render_option_ptr_->show_grid_line_);
         ImGui::Text("Visible");
         int count = 0;
         for (auto &geometry_ptr : geometry_ptrs_) {

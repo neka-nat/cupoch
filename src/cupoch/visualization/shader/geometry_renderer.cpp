@@ -282,3 +282,25 @@ bool CoordinateFrameRenderer::UpdateGeometry() {
     phong_shader_.InvalidateGeometry();
     return true;
 }
+
+bool GridLineRenderer::Render(const RenderOption &option,
+                              const ViewControl &view) {
+    if (is_visible_ == false || geometry_ptr_->IsEmpty()) return true;
+    if (option.show_grid_line_ == false) return true;
+    return simple_grid_line_shader_.Render(*geometry_ptr_, option, view);
+}
+
+bool GridLineRenderer::AddGeometry(
+        std::shared_ptr<const geometry::Geometry> geometry_ptr) {
+    if (geometry_ptr->GetGeometryType() !=
+        geometry::Geometry::GeometryType::LineSet) {
+        return false;
+    }
+    geometry_ptr_ = geometry_ptr;
+    return UpdateGeometry();
+}
+
+bool GridLineRenderer::UpdateGeometry() {
+    simple_grid_line_shader_.InvalidateGeometry();
+    return true;
+}

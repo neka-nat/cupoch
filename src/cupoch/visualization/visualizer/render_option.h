@@ -205,6 +205,9 @@ public:
 
     // Coordinate frame
     bool show_coordinate_frame_ = false;
+
+    // Grid line
+    bool show_grid_line_ = false;
 };
 
 }  // namespace visualization

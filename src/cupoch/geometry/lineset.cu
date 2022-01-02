@@ -53,6 +53,14 @@ LineSet<Dim>::LineSet(
 
 template <int Dim>
 LineSet<Dim>::LineSet(
+        const utility::pinned_host_vector<Eigen::Matrix<float, Dim, 1>> &points,
+        const utility::pinned_host_vector<Eigen::Vector2i> &lines)
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
+      points_(points),
+      lines_(lines) {}
+
+template <int Dim>
+LineSet<Dim>::LineSet(
         const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
         const thrust::host_vector<Eigen::Vector2i> &lines)
     : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),

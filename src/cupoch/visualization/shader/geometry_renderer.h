@@ -196,6 +196,20 @@ protected:
     PhongShaderForTriangleMesh phong_shader_;
 };
 
+class GridLineRenderer : public GeometryRenderer {
+public:
+    ~GridLineRenderer() override {}
+
+public:
+    bool Render(const RenderOption &option, const ViewControl &view) override;
+    bool AddGeometry(
+            std::shared_ptr<const geometry::Geometry> geometry_ptr) override;
+    bool UpdateGeometry() override;
+
+protected:
+    SimpleShaderForLineSet simple_grid_line_shader_;
+};
+
 class ImageRenderer : public GeometryRenderer {
 public:
     ~ImageRenderer() override {}

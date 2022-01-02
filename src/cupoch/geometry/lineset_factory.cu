@@ -204,8 +204,8 @@ std::shared_ptr<geometry::LineSet<3>> LineSet<3>::CreateCameraMarker(
         const camera::PinholeCameraIntrinsic& intrinsic,
         const Eigen::Matrix4f& extrinsic,
         float marker_size) {
-    thrust::host_vector<Eigen::Vector3f> points(5);
-    thrust::host_vector<Eigen::Vector2i> lines(8);
+    utility::pinned_host_vector<Eigen::Vector3f> points(5);
+    utility::pinned_host_vector<Eigen::Vector2i> lines(8);
     const auto focal_length = intrinsic.GetFocalLength();
     const auto x = intrinsic.width_ / focal_length.first * marker_size * 0.5;
     const auto y = intrinsic.height_ / focal_length.second * marker_size * 0.5;
@@ -239,5 +239,37 @@ std::shared_ptr<geometry::LineSet<2>> LineSet<2>::CreateCameraMarker(
         float marker_size) {
     utility::LogError(
             "LineSet<2>::CreateCameraMarker is not supported");
+    return std::make_shared<LineSet<2>>();
+}
+
+template <>
+template <>
+std::shared_ptr<geometry::LineSet<3>> LineSet<3>::CreateSquareGrid(
+        float cell_size,
+        int num_cells) {
+    utility::pinned_host_vector<Eigen::Vector3f> points((num_cells + 1) * 4);
+    utility::pinned_host_vector<Eigen::Vector2i> lines((num_cells + 1) * 2);
+    float grid_size = num_cells * cell_size;
+    Eigen::Vector3f center_offset = Eigen::Vector3f(grid_size * 0.5, grid_size * 0.5, 0.0);
+    for (int i = 0; i < num_cells + 1; ++i) {
+        float p = i * cell_size;
+        points[4 * i] = Eigen::Vector3f(p, 0.0, 0.0) - center_offset;
+        points[4 * i + 1] = Eigen::Vector3f(p, grid_size, 0.0) - center_offset;
+        points[4 * i + 2] = Eigen::Vector3f(0.0, p, 0.0) - center_offset;
+        points[4 * i + 3] = Eigen::Vector3f(grid_size, p, 0.0) - center_offset;
+        lines[2 * i] = Eigen::Vector2i(4 * i, 4 * i + 1);
+        lines[2 * i + 1] = Eigen::Vector2i(4 * i + 2, 4 * i + 3);
+     }
+     auto out = std::make_shared<LineSet<3>>(points, lines);
+     return out;
+}
+
+template <>
+template <>
+std::shared_ptr<geometry::LineSet<2>> LineSet<2>::CreateSquareGrid(
+        float cell_size,
+        int num_cells) {
+    utility::LogError(
+            "LineSet<2>::CreateSquareGrid is not supported");
     return std::make_shared<LineSet<2>>();
 }

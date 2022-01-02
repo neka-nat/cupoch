@@ -54,6 +54,8 @@ public:
             const utility::device_vector<Eigen::Vector2i> &lines);
     LineSet(const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const utility::device_vector<Eigen::Vector2i> &lines);
+    LineSet(const utility::pinned_host_vector<Eigen::Matrix<float, Dim, 1>> &points,
+            const utility::pinned_host_vector<Eigen::Vector2i> &lines);
     LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const thrust::host_vector<Eigen::Vector2i> &lines);
     LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &path);
@@ -135,6 +137,11 @@ public:
             const camera::PinholeCameraIntrinsic& intrinsic,
             const Eigen::Matrix4f& extrinsic,
             float marker_size = 0.3);
+
+    template <int D = Dim, std::enable_if_t<(D == 3 || D == 2)> * = nullptr>
+    static std::shared_ptr<geometry::LineSet<Dim>> CreateSquareGrid(
+            float cell_size = 1.0,
+            int num_cells = 10);
 
 public:
     utility::device_vector<Eigen::Matrix<float, Dim, 1>> points_;
