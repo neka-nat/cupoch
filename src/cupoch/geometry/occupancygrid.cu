@@ -557,8 +557,8 @@ OccupancyGrid& OccupancyGrid::AddVoxel(const Eigen::Vector3i& voxel,
 OccupancyGrid& OccupancyGrid::AddVoxels(
         const utility::device_vector<Eigen::Vector3i>& voxels, bool occupied) {
     if (voxels.empty()) return *this;
-    Eigen::Vector3i minv = ComputeMaxBound<3, int>(voxels);
-    Eigen::Vector3i maxv = ComputeMinBound<3, int>(voxels);
+    Eigen::Vector3i minv = ComputeMinBound<3, int>(voxels);
+    Eigen::Vector3i maxv = ComputeMaxBound<3, int>(voxels);
     Eigen::Vector3ui16 minvu = minv.cast<unsigned short>();
     Eigen::Vector3ui16 maxvu = maxv.cast<unsigned short>();
     min_bound_ = min_bound_.array().min(minvu.array());
