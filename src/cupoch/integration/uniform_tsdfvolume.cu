@@ -168,7 +168,6 @@ struct count_valid_voxels_functor {
         if (x == resolution_ - 1 || y == resolution_ - 1 ||
             z == resolution_ - 1)
             return false;
-        geometry::TSDFVoxel v = thrust::get<1>(kv);
 #pragma unroll
         for (int i = 0; i < 8; ++i) {
             Eigen::Vector3i idx = Eigen::Vector3i(

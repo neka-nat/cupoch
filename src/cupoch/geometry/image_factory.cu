@@ -78,7 +78,7 @@ struct make_gray_image_functor {
                     const uint16_t *pi16 = (const uint16_t *)pi;
                     return (float)(*pi16);
                 },
-                [] __device__(const uint8_t *pi) { return 0.0f; },
+                [] __device__(const uint8_t*) { return 0.0f; },
                 [] __device__(const uint8_t *pi) {
                     const float *pf = (const float *)pi;
                     return *pf;
@@ -95,7 +95,7 @@ struct make_gray_image_functor {
                            weights[1] * (float)(pi16[1]) +
                            weights[2] * (float)(pi16[2]);
                 },
-                [] __device__(const uint8_t *pi, const float *weights) {
+                [] __device__(const uint8_t*, const float*) {
                     return 0.0f;
                 },
                 [] __device__(const uint8_t *pi, const float *weights) {

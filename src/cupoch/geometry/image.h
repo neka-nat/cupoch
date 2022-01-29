@@ -105,10 +105,10 @@ public:
     }
 
     /// \brief Prepare Image properties and allocate Image buffer.
-    __host__ __device__ Image &Prepare(int width,
-                                       int height,
-                                       int num_of_channels,
-                                       int bytes_per_channel) {
+     Image &Prepare(int width,
+                    int height,
+                    int num_of_channels,
+                    int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
