@@ -124,7 +124,7 @@ python benchmarks.py
 
 ![og](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/og_gpu.gif)
 
-### Kinect fusion with intel realsense D435
+### Kinect fusion with intel realsense L515
 
 ![kf](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/kinfu.gif)
 
