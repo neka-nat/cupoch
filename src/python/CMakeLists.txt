@@ -77,7 +77,12 @@ add_custom_target(python-package
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_python_package.cmake
 )
 
-# Use `make pip-package` to create the pip package in the build directory
+add_custom_target(generate-stubs
+    COMMAND ${CMAKE_COMMAND}
+            -E env PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}
+            pybind11-stubgen cupoch --no-setup-py --root-module-suffix="" --ignore-invalid=all --output-dir="${PYTHON_PACKAGE_DST_DIR}/cupoch-stubs"
+)
+
 add_custom_target(pip-package
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
@@ -91,5 +96,5 @@ add_custom_target(install-pip-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
-    DEPENDS pip-package
+    DEPENDS pip-package generate-stubs
 )

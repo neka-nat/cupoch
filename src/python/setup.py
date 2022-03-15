@@ -1,5 +1,5 @@
+import os
 from setuptools import setup, find_packages
-import glob
 
 # Force platform specific wheel
 try:
@@ -22,6 +22,13 @@ with open('requirements.txt', 'r') as f:
     lines = f.readlines()
 install_requires = [line.strip() for line in lines if line]
 
+def find_stubs(package):
+    stubs = []
+    for root, _, files in os.walk(package):
+        for file in files:
+            path = os.path.join(root, file).replace(package + os.sep, "", 1)
+            stubs.append(path)
+    return {package: stubs}
 
 setup(
     author='neka-nat',
@@ -72,6 +79,7 @@ setup(
     packages=[
         'cupoch',
     ],
+    packages_data=find_stubs("cupoch-stubs"),
     url="@PROJECT_HOME@",
     project_urls={
         'Documentation': '@PROJECT_DOCS@',
