@@ -2,17 +2,17 @@ file(GLOB SHADER_FILES "shader/glsl/*.glsl")
 
 add_custom_command(
     OUTPUT ${PROJECT_SOURCE_DIR}/src/cupoch/visualization/shader/shader.h
-    COMMAND encode_shader shader.h
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/encode_shader.py shader.h
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/cupoch/visualization/shader/
-    DEPENDS ${SHADER_FILES} encode_shader
+    DEPENDS ${SHADER_FILES}
 )
 
 foreach(file ${SHADER_FILES})
     add_custom_command(
         OUTPUT ${PROJECT_SOURCE_DIR}/src/cupoch/visualization/shader/shader.h
-        COMMAND encode_shader shader.h ${file}
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/cuposh/visualization/shader/
-        DEPENDS ${SHADER_FILES} encode_shader
+        COMMAND ${PROJECT_SOURCE_DIR}/scripts/encode_shader.py shader.h ${file}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/cupoch/visualization/shader/
+        DEPENDS ${SHADER_FILES}
         APPEND
     )
 endforeach(file)
