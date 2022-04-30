@@ -39,41 +39,15 @@ void WriteFileHeader(FILE *file) {
     fprintf(file, "\n");
 }
 
-std::string MakeString(const std::string &line) {
-    std::string str;
-    for (size_t i = 0; i < line.size(); i++) {
-        char c = line[i];
-        if (c == '"') {
-            str += "\\\"";
-        } else if (c == '\\') {
-            str += "\\\\";
-        } else {
-            str += c;
-        }
-    }
-
-    size_t r_pos = str.find('\r');
-    if (r_pos != std::string::npos) {
-        str = str.substr(0, r_pos);
-    }
-
-    size_t n_pos = str.find('\n');
-    if (n_pos != std::string::npos) {
-        str = str.substr(0, n_pos);
-    }
-
-    return str;
-}
-
 void WriteStringHeader(const std::string &string_name, FILE *file) {
     fprintf(file, "namespace cupoch {\n\n");
     fprintf(file, "namespace visualization {\n\n");
     fprintf(file, "namespace glsl {\n\n");
-    fprintf(file, "const char * const %s = \n", string_name.c_str());
+    fprintf(file, "const char * const %s = R\"(\n", string_name.c_str());
 }
 
 void WriteStringFooter(FILE *file) {
-    fprintf(file, ";\n");
+    fprintf(file, ")\";\n");
     fprintf(file, "\n}  // namespace cupoch::glsl\n");
     fprintf(file, "\n}  // namespace cupoch::visualization\n");
     fprintf(file, "\n}  // namespace cupoch\n");
@@ -122,8 +96,7 @@ int main(int argc, char **args) {
         WriteStringHeader(string_name, file_out);
         char buffer[1024];
         while (fgets(buffer, sizeof(buffer), file_in)) {
-            std::string line = MakeString(std::string(buffer));
-            fprintf(file_out, "\"%s\\n\"\n", line.c_str());
+            fprintf(file_out, "%s", buffer);
         }
         WriteStringFooter(file_out);
         fprintf(file_out, "// clang-format on\n");
