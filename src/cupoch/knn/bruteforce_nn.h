@@ -25,7 +25,7 @@
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
-namespace geometry {
+namespace knn {
 
 template <int Dim>
 void BruteForceNN(
@@ -37,4 +37,4 @@ void BruteForceNN(
 }
 }  // namespace cupoch
 
-#include "cupoch/geometry/bruteforce_nn.inl"
+#include "cupoch/knn/bruteforce_nn.inl"

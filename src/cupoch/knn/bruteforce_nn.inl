@@ -18,14 +18,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
-#include "cupoch/geometry/bruteforce_nn.h"
+#include "cupoch/knn/bruteforce_nn.h"
 #include "cupoch/utility/platform.h"
 
 #define THREAD_2D_UNIT 16
 #define DIV_CEILING(a, b) ((a + b - 1) / b)
 
 namespace cupoch {
-namespace geometry {
+namespace knn {
 
 namespace {
 
@@ -134,5 +134,5 @@ void BruteForceNN(
     cudaSafeCall(cudaGetLastError());
 }
 
-}  // namespace geometry
+}  // namespace knn
 }  // namespace cupoch
