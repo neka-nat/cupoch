@@ -93,6 +93,8 @@ jobs:
             cat CMakeFiles/CMakeError.log
             echo "----"
           fi
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Build
       working-directory: ${{ env.build_dir }}
       run: cmake --build . --config ${{ env.config }} --target ALL_BUILD --verbose
