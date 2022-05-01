@@ -45,6 +45,8 @@ namespace utility {
 
 static const size_t MAX_NUM_STREAMS = 16;
 
+bool IsCudaAvailable();
+
 cudaStream_t GetStream(size_t i);
 
 int GetDevice();

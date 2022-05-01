@@ -26,10 +26,16 @@
 
 #include <mutex>
 
-using namespace cupoch;
-using namespace cupoch::utility;
+namespace cupoch {
+namespace utility {
 
-cudaStream_t cupoch::utility::GetStream(size_t i) {
+bool IsCudaAvailable() {
+    int num_gpus = 0;
+    cudaGetDeviceCount(&num_gpus);
+    return num_gpus > 0;
+}
+
+cudaStream_t GetStream(size_t i) {
     static std::once_flag streamInitFlags[MAX_NUM_STREAMS];
     static cudaStream_t streams[MAX_NUM_STREAMS];
     std::call_once(streamInitFlags[i],
@@ -37,19 +43,22 @@ cudaStream_t cupoch::utility::GetStream(size_t i) {
     return streams[i];
 }
 
-int cupoch::utility::GetDevice() {
+int GetDevice() {
     int device_no;
     cudaGetDevice(&device_no);
     return device_no;
 }
 
-void cupoch::utility::SetDevice(int device_no) { cudaSetDevice(device_no); }
+void SetDevice(int device_no) { cudaSetDevice(device_no); }
 
-void cupoch::utility::Error(const char *error_string,
-                            const char *file,
-                            const int line,
-                            const char *func) {
+void Error(const char *error_string,
+           const char *file,
+           const int line,
+           const char *func) {
     std::cout << "Error: " << error_string << "\t" << file << ":" << line
               << std::endl;
     exit(0);
+}
+
+}
 }
