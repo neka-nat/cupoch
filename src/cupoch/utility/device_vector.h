@@ -27,6 +27,7 @@
 #include <rmm/mr/device/managed_memory_resource.hpp>
 #include <rmm/mr/device/pool_memory_resource.hpp>
 #include <rmm/mr/device/thrust_allocator_adaptor.hpp>
+#include <rmm/mr/device/owning_wrapper.hpp>
 #else
 #include <thrust/device_vector.h>
 #endif
@@ -75,6 +76,9 @@ using pinned_host_vector =
 template <typename T>
 using device_vector = rmm::device_vector<T>;
 
+static std::vector<std::shared_ptr<rmm::mr::device_memory_resource>> g_per_device_memory;
+static std::vector<int> g_devices;
+
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return rmm::exec_policy(stream);
 }
@@ -84,26 +88,37 @@ inline void InitializeAllocator(
         size_t initial_pool_size = 0,
         const std::vector<int> &devices = {}) {
     static bool is_initialized = false;
-    if (is_initialized) rmm::mr::set_current_device_resource(nullptr);
-    if (mode & CudaManagedMemory) {
-        auto cuda_mr = new rmm::mr::managed_memory_resource();
-        if (mode & PoolAllocation) {
-            auto mr = new rmm::mr::pool_memory_resource<
-                    rmm::mr::managed_memory_resource>(cuda_mr,
-                                                      initial_pool_size);
-            rmm::mr::set_current_device_resource(mr);
-        } else {
-            rmm::mr::set_current_device_resource(cuda_mr);
+    if (is_initialized) {
+        rmm::mr::set_per_device_resource(rmm::cuda_device_id{0}, nullptr);
+        for (auto d: g_devices) {
+            rmm::mr::set_per_device_resource(rmm::cuda_device_id{d}, nullptr);
         }
-    } else {
-        auto cuda_mr = new rmm::mr::cuda_memory_resource();
-        if (mode & PoolAllocation) {
-            auto mr = new rmm::mr::pool_memory_resource<
-                    rmm::mr::cuda_memory_resource>(cuda_mr, initial_pool_size);
-            rmm::mr::set_current_device_resource(mr);
+        g_devices.clear();
+        g_per_device_memory.clear();
+    }
+    g_devices = devices;
+    if (g_devices.empty()) g_devices.push_back(0);
+
+    for (auto d: g_devices) {
+        cudaSetDevice(d);
+        if (mode & CudaManagedMemory) {
+            auto cuda_mr = std::make_shared<rmm::mr::managed_memory_resource>();
+            if (mode & PoolAllocation) {
+                auto pool = rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, initial_pool_size);
+                g_per_device_memory.emplace_back(pool);
+            } else {
+                g_per_device_memory.emplace_back(cuda_mr);
+            }
         } else {
-            rmm::mr::set_current_device_resource(cuda_mr);
+            auto cuda_mr = std::make_shared<rmm::mr::cuda_memory_resource>();
+            if (mode & PoolAllocation) {
+                auto pool = rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, initial_pool_size);
+                g_per_device_memory.emplace_back(pool);
+            } else {
+                g_per_device_memory.emplace_back(cuda_mr);
+            }
         }
+        rmm::mr::set_per_device_resource(rmm::cuda_device_id{d}, g_per_device_memory.back().get());
     }
     is_initialized = true;
 }
