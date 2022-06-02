@@ -76,52 +76,14 @@ using pinned_host_vector =
 template <typename T>
 using device_vector = rmm::device_vector<T>;
 
-static std::vector<std::shared_ptr<rmm::mr::device_memory_resource>> g_per_device_memory;
-static std::vector<int> g_devices;
-
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return rmm::exec_policy(stream);
 }
 
-inline void InitializeAllocator(
+void InitializeAllocator(
         rmmAllocationMode_t mode = CudaDefaultAllocation,
         size_t initial_pool_size = 0,
-        const std::vector<int> &devices = {}) {
-    static bool is_initialized = false;
-    if (is_initialized) {
-        rmm::mr::set_per_device_resource(rmm::cuda_device_id{0}, nullptr);
-        for (auto d: g_devices) {
-            rmm::mr::set_per_device_resource(rmm::cuda_device_id{d}, nullptr);
-        }
-        g_devices.clear();
-        g_per_device_memory.clear();
-    }
-    g_devices = devices;
-    if (g_devices.empty()) g_devices.push_back(0);
-
-    for (auto d: g_devices) {
-        cudaSetDevice(d);
-        if (mode & CudaManagedMemory) {
-            auto cuda_mr = std::make_shared<rmm::mr::managed_memory_resource>();
-            if (mode & PoolAllocation) {
-                auto pool = rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, initial_pool_size);
-                g_per_device_memory.emplace_back(pool);
-            } else {
-                g_per_device_memory.emplace_back(cuda_mr);
-            }
-        } else {
-            auto cuda_mr = std::make_shared<rmm::mr::cuda_memory_resource>();
-            if (mode & PoolAllocation) {
-                auto pool = rmm::mr::make_owning_wrapper<rmm::mr::pool_memory_resource>(cuda_mr, initial_pool_size);
-                g_per_device_memory.emplace_back(pool);
-            } else {
-                g_per_device_memory.emplace_back(cuda_mr);
-            }
-        }
-        rmm::mr::set_per_device_resource(rmm::cuda_device_id{d}, g_per_device_memory.back().get());
-    }
-    is_initialized = true;
-}
+        const std::vector<int> &devices = {});
 
 #else
 template <typename T>
