@@ -19,19 +19,19 @@ jobs:
           - os: windows-2019
             cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
-            python-version: 3.6
+            python-version: "3.7"
           - os: windows-2019
             cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
-            python-version: 3.7
+            python-version: "3.8"
           - os: windows-2019
             cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
-            python-version: 3.8
+            python-version: "3.9"
           - os: windows-2019
             cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
-            python-version: 3.9
+            python-version: "3.10"
     env:
       build_dir: "build"
       config: "Release"
