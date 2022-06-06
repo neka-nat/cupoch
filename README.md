@@ -181,3 +181,14 @@ python realsense_rgbd_odometry_node.py
 * CUDA repository forked from Open3D, https://github.com/theNded/Open3D
 * GPU computing in Robotics, https://github.com/JanuszBedkowski/gpu_computing_in_robotics
 * Voxel collision comupation for robotics, https://github.com/fzi-forschungszentrum-informatik/gpu-voxels
+
+## Citing
+
+```
+@misc{cupoch,
+   author = {Kenta Tanaka},
+   year = {2020},
+   note = {https://github.com/neka-nat/cupoch},
+   title = {cupoch -- Robotics with GPU computing}
+}
+```
