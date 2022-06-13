@@ -22,6 +22,7 @@
 
 #include <memory>
 #include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
 namespace geometry {
@@ -49,14 +50,14 @@ namespace keypoint {
 /// consider a keypoint.
 /// \param max_neighbors Maximum number of neighbors that has to be found to
 /// consider a keypoint.
-/// \authors Ignacio Vizzo and Cyrill Stachniss, University of Bonn.
-std::shared_ptr<PointCloud> ComputeISSKeypoints(const PointCloud &input,
-                                                float salient_radius = 0.0,
-                                                float non_max_radius = 0.0,
-                                                float gamma_21 = 0.975,
-                                                float gamma_32 = 0.975,
-                                                int min_neighbors = 5,
-                                                int max_neighbors = NUM_MAX_NN);
+std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<utility::device_vector<bool>>>
+ComputeISSKeypoints(const PointCloud &input,
+                    float salient_radius = 0.0,
+                    float non_max_radius = 0.0,
+                    float gamma_21 = 0.975,
+                    float gamma_32 = 0.975,
+                    int min_neighbors = 5,
+                    int max_neighbors = NUM_MAX_NN);
 
 }  // namespace keypoint
 }  // namespace geometry

@@ -105,7 +105,8 @@ struct is_local_maxima_functor {
 namespace geometry {
 namespace keypoint {
 
-std::shared_ptr<PointCloud> ComputeISSKeypoints(
+std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<utility::device_vector<bool>>>
+ComputeISSKeypoints(
         const PointCloud& input,
         float salient_radius /* = 0.0 */,
         float non_max_radius /* = 0.0 */,
@@ -115,7 +116,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
         int max_neighbors /*= NUM_MAX_NN */) {
     if (input.points_.empty()) {
         utility::LogWarning("[ComputeISSKeypoints] Input PointCloud is empty!");
-        return std::make_shared<PointCloud>();
+        return std::make_tuple(std::make_shared<PointCloud>(), std::make_shared<utility::device_vector<bool>>());
     }
 
     KDTreeFlann kdtree;
@@ -154,7 +155,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
                       make_tuple_end(cumulants, counts), third_eigen_values.begin(),
                       compute_third_eigen_values_functor(min_neighbors, gamma_21, gamma_32));
 
-    utility::device_vector<bool> mask(n_pt);
+    auto mask = std::make_shared<utility::device_vector<bool>>(n_pt);
     kdtree.SearchRadius(input.points_, non_max_radius, max_neighbors, indices,
                         distance2);
     is_local_maxima_functor func(thrust::raw_pointer_cast(indices.data()),
@@ -162,12 +163,12 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
                                  max_neighbors);
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_pt),
-                      mask.begin(), func);
+                      mask->begin(), func);
 
-    auto out = input.SelectByMask(mask);
+    auto out = input.SelectByMask(*mask);
     utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints",
                       out->points_.size());
-    return out;
+    return std::make_tuple(std::move(out), std::move(mask));
 }
 
 }  // namespace keypoint

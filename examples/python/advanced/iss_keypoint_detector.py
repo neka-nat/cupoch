@@ -12,7 +12,7 @@ pcd = cph.geometry.PointCloud()
 pcd.points = mesh.vertices
 
 tic = time.time()
-keypoints = cph.geometry.keypoint.compute_iss_keypoints(pcd)
+keypoints, masks = cph.geometry.keypoint.compute_iss_keypoints(pcd)
 toc = 1000 * (time.time() - tic)
 print("ISS Computation took {:.0f} [ms]".format(toc))
 print(len(pcd.points), len(keypoints.points))

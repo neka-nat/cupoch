@@ -248,6 +248,7 @@ void pybind_eigen(py::module &m) {
             }),
             py::none(), py::none(), "");
 
+    auto boolvector = pybind_eigen_vector_of_struct<bool>(m, "BoolVector");
     auto occvector = pybind_eigen_vector_of_struct<cupoch::geometry::OccupancyVoxel>(m, "OccupancyVoxelVector");
 
     auto vector3fvector = pybind_eigen_vector_of_vector<Eigen::Vector3f>(
