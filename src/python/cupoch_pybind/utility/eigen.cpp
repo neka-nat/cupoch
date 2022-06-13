@@ -21,6 +21,7 @@
 #include "cupoch_pybind/cupoch_pybind.h"
 
 #include "cupoch/utility/device_vector.h"
+#include "cupoch/geometry/occupancygrid.h"
 
 namespace pybind11 {
 
@@ -58,13 +59,30 @@ namespace {
 template <typename Scalar,
           typename Vector = cupoch::wrapper::device_vector_wrapper<Scalar>,
           typename holder_type = std::unique_ptr<Vector>>
-py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
+py::class_<Vector, holder_type> pybind_eigen_vector_of_struct(
         py::module &m, const std::string &bind_name) {
     auto vec = py::bind_vector_without_repr<
             cupoch::wrapper::device_vector_wrapper<Scalar>>(m, bind_name,
                                                             py::module_local());
     vec.def(py::init<cupoch::utility::pinned_host_vector<Scalar>>());
     vec.def("cpu", &cupoch::wrapper::device_vector_wrapper<Scalar>::cpu);
+    vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) {
+        return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
+    });
+    vec.def("__deepcopy__",
+            [](cupoch::wrapper::device_vector_wrapper<Scalar> &v,
+               py::dict &memo) {
+                return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
+            });
+    return vec;
+}
+
+template <typename Scalar,
+          typename Vector = cupoch::wrapper::device_vector_wrapper<Scalar>,
+          typename holder_type = std::unique_ptr<Vector>>
+py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
+        py::module &m, const std::string &bind_name) {
+    auto vec = pybind_eigen_vector_of_struct<Scalar>(m, bind_name);
     vec.def(
             "__iadd__",
             [](cupoch::wrapper::device_vector_wrapper<Scalar> &self,
@@ -75,14 +93,6 @@ py::class_<Vector, holder_type> pybind_eigen_vector_of_scalar(
                 return self;
             },
             py::is_operator());
-    vec.def("__copy__", [](cupoch::wrapper::device_vector_wrapper<Scalar> &v) {
-        return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
-    });
-    vec.def("__deepcopy__",
-            [](cupoch::wrapper::device_vector_wrapper<Scalar> &v,
-               py::dict &memo) {
-                return cupoch::wrapper::device_vector_wrapper<Scalar>(v);
-            });
     return vec;
 }
 
@@ -237,6 +247,8 @@ void pybind_eigen(py::module &m) {
                 return R"(Convert float32 numpy array of shape ``(n,)`` to Cupoch format.)";
             }),
             py::none(), py::none(), "");
+
+    auto occvector = pybind_eigen_vector_of_struct<cupoch::geometry::OccupancyVoxel>(m, "OccupancyVoxelVector");
 
     auto vector3fvector = pybind_eigen_vector_of_vector<Eigen::Vector3f>(
             m, "Vector3fVector", "utility::device_vector<Eigen::Vector3f>",

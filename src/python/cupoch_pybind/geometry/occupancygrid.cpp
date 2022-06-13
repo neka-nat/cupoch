@@ -97,7 +97,7 @@ void pybind_occupanygrid(py::module &m) {
                  })
             .def_property_readonly("voxels",
                                    [](const geometry::OccupancyGrid &og) {
-                                       return og.ExtractKnownVoxels();
+                                       return wrapper::device_vector_occupancyvoxel(*og.ExtractKnownVoxels());
                                    })
             .def("reconstruct", &geometry::OccupancyGrid::Reconstruct,
                  "Reconstruct dense voxel grid.")
