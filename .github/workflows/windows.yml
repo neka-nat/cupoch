@@ -102,7 +102,7 @@ jobs:
           python -m pip install -U pip wheel setuptools
           cmake --build . --config ${{ env.config }} --target pip-package --verbose
     - name: Publish package
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.cuda == '11.0.167'
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.cuda == '11.2.0'
       working-directory: ${{ env.build_dir }}/lib/python_package
       env:
         PYPI_USERNAME: ${{ secrets.pypi_username }}
