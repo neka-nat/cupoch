@@ -241,6 +241,16 @@ void pybind_eigen(py::module &m) {
             }),
             py::none(), py::none(), "");
 
+#if defined(_WIN32)
+    auto uint64vector =
+            pybind_eigen_vector_of_scalar<unsigned __int64>(m, "UInt64Vector");
+    uint64vector.attr("__doc__") = static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return R"(Convert uint64 numpy array of shape ``(n,)`` to Cupoch format.)";
+            }),
+            py::none(), py::none(), "");
+#endif
+
     auto floatvector = pybind_eigen_vector_of_scalar<float>(m, "FloatVector");
     floatvector.attr("__doc__") = static_property(
             py::cpp_function([](py::handle arg) -> std::string {
