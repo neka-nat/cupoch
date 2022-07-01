@@ -3,8 +3,9 @@ import numpy as np
 import os
 
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
+sys.path.append(os.path.join(dir_path, "../misc"))
 import meshes
 
 
@@ -29,10 +30,8 @@ def xyz_spherical(xyz):
 
 
 def get_rotation_matrix(r_x, r_y):
-    rot_x = np.asarray([[1, 0, 0], [0, np.cos(r_x), -np.sin(r_x)],
-                        [0, np.sin(r_x), np.cos(r_x)]])
-    rot_y = np.asarray([[np.cos(r_y), 0, np.sin(r_y)], [0, 1, 0],
-                        [-np.sin(r_y), 0, np.cos(r_y)]])
+    rot_x = np.asarray([[1, 0, 0], [0, np.cos(r_x), -np.sin(r_x)], [0, np.sin(r_x), np.cos(r_x)]])
+    rot_y = np.asarray([[np.cos(r_y), 0, np.sin(r_y)], [0, 1, 0], [-np.sin(r_y), 0, np.cos(r_y)]])
     return rot_y.dot(rot_x)
 
 
@@ -47,16 +46,18 @@ def preprocess(model):
     return model
 
 
-def voxel_carving(mesh,
-                  output_filename,
-                  camera_path,
-                  cubic_size,
-                  voxel_resolution,
-                  w=300,
-                  h=300,
-                  use_depth=True,
-                  surface_method='pointcloud',
-                  visualization=False):
+def voxel_carving(
+    mesh,
+    output_filename,
+    camera_path,
+    cubic_size,
+    voxel_resolution,
+    w=300,
+    h=300,
+    use_depth=True,
+    surface_method="pointcloud",
+    visualization=False,
+):
 
     mesh.compute_vertex_normals()
     camera_sphere = cph.io.read_triangle_mesh(camera_path)
@@ -66,7 +67,8 @@ def voxel_carving(mesh,
         height=cubic_size,
         depth=cubic_size,
         voxel_size=cubic_size / voxel_resolution,
-        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0])
+        origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0],
+    )
 
     # rescale geometry
     camera_sphere = preprocess(camera_sphere)
@@ -97,10 +99,8 @@ def voxel_carving(mesh,
         vis.update_renderer()
         depth = vis.capture_depth_float_buffer(False)
         pcd_agg += cph.geometry.PointCloud.create_from_depth_image(
-            cph.geometry.Image(depth),
-            param.intrinsic,
-            param.extrinsic,
-            depth_scale=1)
+            cph.geometry.Image(depth), param.intrinsic, param.extrinsic, depth_scale=1
+        )
 
         # depth map carving method
         if use_depth:
@@ -111,25 +111,27 @@ def voxel_carving(mesh,
 
     vis.destroy_window()
 
-    print('Surface voxel grid from %s' % surface_method)
-    if surface_method == 'pointcloud':
+    print("Surface voxel grid from %s" % surface_method)
+    if surface_method == "pointcloud":
         voxel_surface = cph.geometry.VoxelGrid.create_from_point_cloud_within_bounds(
             pcd_agg,
             voxel_size=cubic_size / voxel_resolution,
             min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
-            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
-    elif surface_method == 'mesh':
+            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2),
+        )
+    elif surface_method == "mesh":
         voxel_surface = cph.geometry.VoxelGrid.create_from_triangle_mesh_within_bounds(
             mesh,
             voxel_size=cubic_size / voxel_resolution,
             min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
-            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
+            max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2),
+        )
     else:
-        raise Exception('invalid surface method')
+        raise Exception("invalid surface method")
 
     voxel_carving_surface = voxel_surface + voxel_carving
 
-    if (visualization):
+    if visualization:
         print("visualize camera center")
         centers = cph.geometry.PointCloud()
         centers.points = cph.utility.Vector3fVector(centers_pts)
@@ -143,15 +145,14 @@ def voxel_carving(mesh,
         print(voxel_carving)
         cph.visualization.draw_geometries([voxel_carving])
 
-        print("combined voxels (carved + surface from %s) together with mesh" %
-              surface_method)
+        print("combined voxels (carved + surface from %s) together with mesh" % surface_method)
         print(voxel_carving_surface)
         cph.visualization.draw_geometries([voxel_carving_surface, mesh])
 
     cph.io.write_voxel_grid(output_filename, voxel_carving_surface)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mesh = meshes.armadillo()
 
     output_filename = os.path.abspath("../../testdata/voxelized.ply")
@@ -161,9 +162,4 @@ if __name__ == '__main__':
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    voxel_carving(mesh,
-                  output_filename,
-                  camera_path,
-                  cubic_size,
-                  voxel_resolution,
-                  visualization=True)
+    voxel_carving(mesh, output_filename, camera_path, cubic_size, voxel_resolution, visualization=True)

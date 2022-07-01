@@ -2,6 +2,7 @@ import os
 import itertools
 import time
 import cupoch as cph
+
 cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 import numpy as np
 
@@ -21,6 +22,6 @@ path = gp.dijkstra_path(0, 30)
 print("Find path: ", path)
 for i in range(len(path[:-1])):
     gp.paint_node_color(path[i], (0.0, 1.0, 0.0))
-    gp.paint_edge_color((path[i], path[i+1]), (1.0, 0.0, 0.0))
+    gp.paint_edge_color((path[i], path[i + 1]), (1.0, 0.0, 0.0))
 gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])

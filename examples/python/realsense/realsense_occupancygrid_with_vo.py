@@ -5,6 +5,7 @@ from enum import IntEnum
 
 from datetime import datetime
 import cupoch as cph
+
 cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 
 
@@ -19,9 +20,7 @@ class Preset(IntEnum):
 
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
-    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
-                                            intrinsics.fy, intrinsics.ppx,
-                                            intrinsics.ppy)
+    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx, intrinsics.fy, intrinsics.ppx, intrinsics.ppy)
     return out
 
 
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     # Create a pipeline
     pipeline = rs.pipeline()
 
-    #Create a config and configure the pipeline to stream
+    # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
     config = rs.config()
 
@@ -76,8 +75,7 @@ if __name__ == "__main__":
             # Get aligned frames
             aligned_depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-            intrinsic = cph.camera.PinholeCameraIntrinsic(
-                get_intrinsic_matrix(color_frame))
+            intrinsic = cph.camera.PinholeCameraIntrinsic(get_intrinsic_matrix(color_frame))
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
@@ -88,19 +86,21 @@ if __name__ == "__main__":
             color_temp = np.asarray(color_frame.get_data())
             color_image = cph.geometry.Image(color_temp)
 
-            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(
-                color_image,
-                depth_image)
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(color_image, depth_image)
             if not prev_rgbd_image is None:
                 res, odo_trans, _ = cph.odometry.compute_rgbd_odometry(
-                                prev_rgbd_image, rgbd_image, intrinsic,
-                                np.identity(4), cph.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                    prev_rgbd_image,
+                    rgbd_image,
+                    intrinsic,
+                    np.identity(4),
+                    cph.odometry.RGBDOdometryJacobianFromHybridTerm(),
+                    option,
+                )
                 if res:
                     cur_trans = np.matmul(cur_trans, odo_trans)
 
             prev_rgbd_image = rgbd_image
-            temp = cph.geometry.PointCloud.create_from_rgbd_image(
-                rgbd_image, intrinsic)
+            temp = cph.geometry.PointCloud.create_from_rgbd_image(rgbd_image, intrinsic)
             temp.transform(np.matmul(cur_trans, flip_transform))
             temp = temp.voxel_down_sample(0.05)
             ocgd.insert(temp, cur_trans[:3, 3])

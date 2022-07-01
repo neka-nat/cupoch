@@ -5,7 +5,8 @@ import numpy as np
 if __name__ == "__main__":
     camera_poses = read_trajectory("../../testdata/rgbd/odometry.log")
     camera_intrinsics = cph.camera.PinholeCameraIntrinsic(
-        cph.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
+        cph.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
+    )
     volume = cph.integration.UniformTSDFVolume(
         length=8.0,
         resolution=512,
@@ -16,18 +17,19 @@ if __name__ == "__main__":
     markers = []
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
-        color = cph.io.read_image(
-            "../../testdata/rgbd/color/{:05d}.jpg".format(i))
-        depth = cph.io.read_image(
-            "../../testdata/rgbd/depth/{:05d}.png".format(i))
+        color = cph.io.read_image("../../testdata/rgbd/color/{:05d}.jpg".format(i))
+        depth = cph.io.read_image("../../testdata/rgbd/depth/{:05d}.png".format(i))
         rgbd = cph.geometry.RGBDImage.create_from_color_and_depth(
-            color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
+            color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False
+        )
         volume.integrate(
             rgbd,
             camera_intrinsics,
             np.linalg.inv(camera_poses[i].pose),
         )
-        markers.append(cph.geometry.LineSet.create_camera_marker(camera_intrinsics, np.linalg.inv(camera_poses[i].pose)))
+        markers.append(
+            cph.geometry.LineSet.create_camera_marker(camera_intrinsics, np.linalg.inv(camera_poses[i].pose))
+        )
 
     print("Extract triangle mesh")
     mesh = volume.extract_triangle_mesh()

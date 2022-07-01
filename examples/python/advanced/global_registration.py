@@ -18,14 +18,13 @@ def preprocess_point_cloud(pcd, voxel_size):
 
     radius_normal = voxel_size * 2
     print(":: Estimate normal with search radius %.3f." % radius_normal)
-    pcd_down.estimate_normals(
-        cph.geometry.KDTreeSearchParamRadius(radius=radius_normal, max_nn=30))
+    pcd_down.estimate_normals(cph.geometry.KDTreeSearchParamRadius(radius=radius_normal, max_nn=30))
 
     radius_feature = voxel_size * 5
     print(":: Compute FPFH feature with search radius %.3f." % radius_feature)
     pcd_feature = cph.registration.compute_shot_feature(
-        pcd_down, radius_feature,
-        cph.geometry.KDTreeSearchParamRadius(radius=radius_feature, max_nn=100))
+        pcd_down, radius_feature, cph.geometry.KDTreeSearchParamRadius(radius=radius_feature, max_nn=100)
+    )
     return pcd_down, pcd_feature
 
 
@@ -33,8 +32,7 @@ def prepare_dataset(voxel_size):
     print(":: Load two point clouds and disturb initial pose.")
     source = cph.io.read_point_cloud("../../testdata/icp/cloud_bin_0.pcd")
     target = cph.io.read_point_cloud("../../testdata/icp/cloud_bin_1.pcd")
-    trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0],
-                             [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+    trans_init = np.asarray([[0.0, 0.0, 1.0, 0.0], [1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
     source.transform(trans_init)
     draw_registration_result(source, target, np.identity(4))
 

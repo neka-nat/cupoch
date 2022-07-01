@@ -2,7 +2,8 @@ import numpy as np
 from pyKinectAzure import pyKinectAzure, _k4a, _k4atypes
 import cupoch as cph
 
-module_path = '/usr/local/lib/libk4a.so' 
+module_path = "/usr/local/lib/libk4a.so"
+
 
 def main():
     pyk4a = pyKinectAzure.pyKinectAzure(module_path)
@@ -14,9 +15,14 @@ def main():
     calib = _k4atypes.k4a_calibration_t()
     pyk4a.device_get_calibration(device_config.depth_mode, device_config.color_resolution, calib)
     p = calib.depth_camera_calibration.intrinsics.parameters
-    intrinsic = cph.camera.PinholeCameraIntrinsic(calib.depth_camera_calibration.resolution_width,
-                                                  calib.depth_camera_calibration.resolution_height,
-                                                  p.param.fx, p.param.fy, p.param.cx, p.param.cy)
+    intrinsic = cph.camera.PinholeCameraIntrinsic(
+        calib.depth_camera_calibration.resolution_width,
+        calib.depth_camera_calibration.resolution_height,
+        p.param.fx,
+        p.param.fy,
+        p.param.cx,
+        p.param.cy,
+    )
 
     # Start cameras using modified configuration
     pyk4a.device_start_cameras(device_config)
@@ -32,10 +38,9 @@ def main():
         if depth_image_handle:
             depth_image = pyk4a.image_convert_to_numpy(depth_image_handle)
             depth_image = cph.geometry.Image(depth_image)
-            temp = cph.geometry.PointCloud.create_from_depth_image(
-                depth_image, intrinsic)
+            temp = cph.geometry.PointCloud.create_from_depth_image(depth_image, intrinsic)
             pcd.points = temp.points
- 
+
             if frame_count == 0:
                 vis.add_geometry(pcd)
 
@@ -50,6 +55,7 @@ def main():
 
     pyk4a.device_stop_cameras()
     pyk4a.device_close()
+
 
 if __name__ == "__main__":
     main()

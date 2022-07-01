@@ -7,22 +7,17 @@ from sensor_msgs.msg import PointCloud2
 class PointCloudSubscriber(Node):
     def __init__(self):
         super().__init__("pointcloud2_msg")
-        self.subscription = self.create_subscription(
-            PointCloud2,
-            '/d435/camera/pointcloud',
-            self.callback,
-            10)
+        self.subscription = self.create_subscription(PointCloud2, "/d435/camera/pointcloud", self.callback, 10)
         self.subscription  # prevent unused variable warning
         self.pcd = cph.geometry.PointCloud()
         self.vis = cph.visualization.Visualizer()
         self.vis.create_window()
         self.initialize = False
- 
+
     def callback(self, data):
-        temp = cph.io.create_from_pointcloud2_msg(data.data.tobytes(),
-                                                  cph.io.PointCloud2MsgInfo.default_dense(data.width,
-                                                                                          data.height,
-                                                                                          data.point_step))
+        temp = cph.io.create_from_pointcloud2_msg(
+            data.data.tobytes(), cph.io.PointCloud2MsgInfo.default_dense(data.width, data.height, data.point_step)
+        )
         self.pcd.points = temp.points
         self.pcd.colors = temp.colors
         self.get_logger().info("%d" % len(self.pcd.points))

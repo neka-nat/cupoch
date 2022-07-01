@@ -3,8 +3,9 @@ import cupoch as cph
 
 import os
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
+sys.path.append(os.path.join(dir_path, "../misc"))
 import time
 import meshes
 
@@ -19,10 +20,9 @@ target = cph.geometry.VoxelGrid.create_from_triangle_mesh_within_bounds(
     mesh,
     voxel_size=cubic_size / voxel_resolution,
     min_bound=(-cubic_size / 2, -cubic_size / 2, -cubic_size / 2),
-    max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2))
-gp = cph.geometry.Graph.create_from_axis_aligned_bounding_box([-1.0, -1.0, -1.0],
-                                                              [1.0, 1.0, 1.0],
-                                                              [10, 20, 5])
+    max_bound=(cubic_size / 2, cubic_size / 2, cubic_size / 2),
+)
+gp = cph.geometry.Graph.create_from_axis_aligned_bounding_box([-1.0, -1.0, -1.0], [1.0, 1.0, 1.0], [10, 20, 5])
 planner = cph.planning.Pos3DPlanner(gp, 0.2)
 planner.add_obstacle(target)
 planner.update_graph()

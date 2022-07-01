@@ -8,8 +8,9 @@ from enum import Enum as IntEnum
 
 from datetime import datetime
 
-rospy.init_node('rgbd_odometry_node', anonymous=True)
+rospy.init_node("rgbd_odometry_node", anonymous=True)
 import cupoch as cph
+
 cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 
 
@@ -24,9 +25,7 @@ class Preset(IntEnum):
 
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
-    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
-                                            intrinsics.fy, intrinsics.ppx,
-                                            intrinsics.ppy)
+    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx, intrinsics.fy, intrinsics.ppx, intrinsics.ppy)
     return out
 
 
@@ -35,7 +34,7 @@ if __name__ == "__main__":
     # Create a pipeline
     pipeline = rs.pipeline()
 
-    #Create a config and configure the pipeline to stream
+    # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
     config = rs.config()
 
@@ -62,7 +61,7 @@ if __name__ == "__main__":
     align = rs.align(align_to)
 
     # Streaming loop
-    pub = rospy.Publisher('/odom', Odometry, queue_size=1)
+    pub = rospy.Publisher("/odom", Odometry, queue_size=1)
     prev_rgbd_image = None
     option = cph.odometry.OdometryOption()
     cur_trans = np.identity(4)
@@ -80,8 +79,7 @@ if __name__ == "__main__":
             # Get aligned frames
             aligned_depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-            intrinsic = cph.camera.PinholeCameraIntrinsic(
-                get_intrinsic_matrix(color_frame))
+            intrinsic = cph.camera.PinholeCameraIntrinsic(get_intrinsic_matrix(color_frame))
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
@@ -92,13 +90,17 @@ if __name__ == "__main__":
             color_temp = np.asarray(color_frame.get_data())
             color_image = cph.geometry.Image(color_temp)
 
-            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(color_image,
-                                                                            depth_image)
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(color_image, depth_image)
 
             if not prev_rgbd_image is None:
                 res, odo_trans, _ = cph.odometry.compute_rgbd_odometry(
-                                prev_rgbd_image, rgbd_image, intrinsic,
-                                np.identity(4), cph.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                    prev_rgbd_image,
+                    rgbd_image,
+                    intrinsic,
+                    np.identity(4),
+                    cph.odometry.RGBDOdometryJacobianFromHybridTerm(),
+                    option,
+                )
                 if res:
                     cur_trans = np.matmul(cur_trans, odo_trans)
                     odom = Odometry()

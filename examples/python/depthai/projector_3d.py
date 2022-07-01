@@ -5,18 +5,21 @@
 import numpy as np
 import cupoch as cph
 
-class PointCloudVisualizer():
+
+class PointCloudVisualizer:
     def __init__(self, intrinsic_matrix, width, height):
         self.depth_map = None
         self.rgb = None
         self.pcl = None
 
-        self.pinhole_camera_intrinsic = cph.camera.PinholeCameraIntrinsic(width,
-                                                                         height,
-                                                                         intrinsic_matrix[0][0],
-                                                                         intrinsic_matrix[1][1],
-                                                                         intrinsic_matrix[0][2],
-                                                                         intrinsic_matrix[1][2])
+        self.pinhole_camera_intrinsic = cph.camera.PinholeCameraIntrinsic(
+            width,
+            height,
+            intrinsic_matrix[0][0],
+            intrinsic_matrix[1][1],
+            intrinsic_matrix[0][2],
+            intrinsic_matrix[1][2],
+        )
         self.vis = cph.visualization.Visualizer()
         self.vis.create_window()
         self.isstarted = False
@@ -28,7 +31,9 @@ class PointCloudVisualizer():
         depth_cph = cph.geometry.Image(self.depth_map)
         # TODO: query frame shape to get this, and remove the param 'is_rgb'
         if is_rgb:
-            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(rgb_cph, depth_cph, convert_rgb_to_intensity=False)
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(
+                rgb_cph, depth_cph, convert_rgb_to_intensity=False
+            )
         else:
             rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(rgb_cph, depth_cph)
         if self.pcl is None:

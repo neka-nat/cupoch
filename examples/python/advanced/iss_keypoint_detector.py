@@ -2,8 +2,9 @@ import os
 import sys
 import time
 import cupoch as cph
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
+sys.path.append(os.path.join(dir_path, "../misc"))
 import meshes
 
 # Compute ISS Keypoints on Armadillo

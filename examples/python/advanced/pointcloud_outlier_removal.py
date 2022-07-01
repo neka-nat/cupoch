@@ -26,8 +26,7 @@ if __name__ == "__main__":
     cph.visualization.draw_geometries([uni_down_pcd])
 
     print("Statistical oulier removal")
-    cl, ind = voxel_down_pcd.remove_statistical_outlier(nb_neighbors=20,
-                                                        std_ratio=2.0)
+    cl, ind = voxel_down_pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=2.0)
     display_inlier_outlier(voxel_down_pcd, ind)
 
     print("Radius oulier removal")

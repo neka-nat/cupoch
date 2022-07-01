@@ -9,6 +9,7 @@ import matplotlib.animation as animation
 from datetime import datetime
 
 import cupoch as cph
+
 cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 
 
@@ -23,9 +24,7 @@ class Preset(IntEnum):
 
 def get_intrinsic_matrix(frame):
     intrinsics = frame.profile.as_video_stream_profile().intrinsics
-    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx,
-                                            intrinsics.fy, intrinsics.ppx,
-                                            intrinsics.ppy)
+    out = cph.camera.PinholeCameraIntrinsic(640, 480, intrinsics.fx, intrinsics.fy, intrinsics.ppx, intrinsics.ppy)
     return out
 
 
@@ -34,7 +33,7 @@ if __name__ == "__main__":
     # Create a pipeline
     pipeline = rs.pipeline()
 
-    #Create a config and configure the pipeline to stream
+    # Create a config and configure the pipeline to stream
     #  different resolutions of color and depth streams
     config = rs.config()
 
@@ -55,7 +54,7 @@ if __name__ == "__main__":
     align = rs.align(align_to)
 
     fig = plt.figure()
-    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+    ax1 = fig.add_subplot(1, 2, 1, projection="3d")
     ax2 = fig.add_subplot(2, 2, 2)
     ax3 = fig.add_subplot(2, 2, 4)
 
@@ -67,12 +66,13 @@ if __name__ == "__main__":
     twist = np.zeros(6)
     path = []
     path.append(cur_trans[:3, 3].tolist())
-    line = ax1.plot(*list(zip(*path)), 'r-')[0]
-    pos = ax1.plot(*list(zip(*path)), 'yo')[0]
+    line = ax1.plot(*list(zip(*path)), "r-")[0]
+    pos = ax1.plot(*list(zip(*path)), "yo")[0]
     ax1.invert_yaxis()
     depth_im = ax2.imshow(np.zeros((480, 640), dtype=np.uint8), cmap="gray", vmin=0, vmax=255)
     color_im = ax3.imshow(np.zeros((480, 640, 3), dtype=np.uint8))
     try:
+
         def update_odom(frame):
             global prev_rgbd_image, cur_trans, twist
 
@@ -87,8 +87,7 @@ if __name__ == "__main__":
             # Get aligned frames
             aligned_depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-            intrinsic = cph.camera.PinholeCameraIntrinsic(
-                get_intrinsic_matrix(color_frame))
+            intrinsic = cph.camera.PinholeCameraIntrinsic(get_intrinsic_matrix(color_frame))
 
             # Validate that both frames are valid
             if not aligned_depth_frame or not color_frame:
@@ -99,14 +98,18 @@ if __name__ == "__main__":
             color_temp = np.asarray(color_frame.get_data())
             color_image = cph.geometry.Image(color_temp)
 
-            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(color_image,
-                                                                            depth_image)
+            rgbd_image = cph.geometry.RGBDImage.create_from_color_and_depth(color_image, depth_image)
 
             if not prev_rgbd_image is None:
                 res, odo_trans, twist, _ = cph.odometry.compute_weighted_rgbd_odometry(
-                                prev_rgbd_image, rgbd_image, intrinsic,
-                                np.identity(4), twist,
-                                cph.odometry.RGBDOdometryJacobianFromHybridTerm(), option)
+                    prev_rgbd_image,
+                    rgbd_image,
+                    intrinsic,
+                    np.identity(4),
+                    twist,
+                    cph.odometry.RGBDOdometryJacobianFromHybridTerm(),
+                    option,
+                )
                 if res:
                     cur_trans = np.matmul(cur_trans, odo_trans)
 

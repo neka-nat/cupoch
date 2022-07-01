@@ -35,7 +35,8 @@ def triangle():
                     (-np.sqrt(2 / 9), -np.sqrt(2 / 3), -1 / 3),
                 ],
                 dtype=np.float32,
-            )),
+            )
+        ),
         triangles=cph.utility.Vector3iVector(np.array([[0, 1, 2]])),
     )
     mesh.compute_vertex_normals()
@@ -48,7 +49,8 @@ def plane(height=0.2, width=1):
             np.array(
                 [[0, 0, 0], [0, height, 0], [width, height, 0], [width, 0, 0]],
                 dtype=np.float32,
-            )),
+            )
+        ),
         triangles=cph.utility.Vector3iVector(np.array([[0, 2, 1], [2, 0, 3]])),
     )
     mesh.compute_vertex_normals()
@@ -56,8 +58,7 @@ def plane(height=0.2, width=1):
 
 
 def non_manifold_edge():
-    verts = np.array([[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
-                     dtype=np.float64)
+    verts = np.array([[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]], dtype=np.float64)
     triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
     mesh = cph.geometry.TriangleMesh()
     mesh.vertices = cph.utility.Vector3fVector(verts)
@@ -79,16 +80,18 @@ def non_manifold_vertex():
         ],
         dtype=np.float64,
     )
-    triangles = np.array([
-        [0, 1, 2],
-        [0, 1, 3],
-        [1, 2, 3],
-        [2, 0, 3],
-        [4, 5, 6],
-        [4, 5, 3],
-        [5, 6, 3],
-        [4, 6, 3],
-    ])
+    triangles = np.array(
+        [
+            [0, 1, 2],
+            [0, 1, 3],
+            [1, 2, 3],
+            [2, 0, 3],
+            [4, 5, 6],
+            [4, 5, 3],
+            [5, 6, 3],
+            [4, 6, 3],
+        ]
+    )
     mesh = cph.geometry.TriangleMesh()
     mesh.vertices = cph.utility.Vector3fVector(verts)
     mesh.triangles = cph.utility.Vector3iVector(triangles)
@@ -127,8 +130,7 @@ def knot():
 
 
 def bathtub():
-    mesh = cph.io.read_triangle_mesh(
-        _relative_path("../../testdata/bathtub_0154.ply"))
+    mesh = cph.io.read_triangle_mesh(_relative_path("../../testdata/bathtub_0154.ply"))
     mesh.compute_vertex_normals()
     return mesh
 
@@ -159,8 +161,7 @@ def bunny():
         with tarfile.open(bunny_path + ".tar.gz") as tar:
             tar.extractall(path=os.path.dirname(bunny_path))
         shutil.move(
-            os.path.join(os.path.dirname(bunny_path), "bunny", "reconstruction",
-                         "bun_zipper.ply"),
+            os.path.join(os.path.dirname(bunny_path), "bunny", "reconstruction", "bun_zipper.ply"),
             bunny_path,
         )
         os.remove(bunny_path + ".tar.gz")
@@ -209,20 +210,13 @@ def print_1D_array_for_cpp(prefix, array):
 def print_2D_array_for_cpp(prefix, values, fmt):
     if values.shape[0] > 0:
         print(f"{prefix} = {{")
-        print(",\n".join([
-            f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}" for v in values
-        ]))
+        print(",\n".join([f"  {{{v[0]:{fmt}}, {v[1]:{fmt}}, {v[2]:{fmt}}}}" for v in values]))
         print(f"}};")
 
 
 def print_mesh_for_cpp(mesh, prefix=""):
-    print_2D_array_for_cpp(f"{prefix}vertices_", np.asarray(mesh.vertices),
-                           ".6f")
-    print_2D_array_for_cpp(f"{prefix}vertex_normals_",
-                           np.asarray(mesh.vertex_normals), ".6f")
-    print_2D_array_for_cpp(f"{prefix}vertex_colors_",
-                           np.asarray(mesh.vertex_colors), ".6f")
-    print_2D_array_for_cpp(f"{prefix}triangles_", np.asarray(mesh.triangles),
-                           "d")
-    print_2D_array_for_cpp(f"{prefix}triangle_normals_",
-                           np.asarray(mesh.triangle_normals), ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertices_", np.asarray(mesh.vertices), ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertex_normals_", np.asarray(mesh.vertex_normals), ".6f")
+    print_2D_array_for_cpp(f"{prefix}vertex_colors_", np.asarray(mesh.vertex_colors), ".6f")
+    print_2D_array_for_cpp(f"{prefix}triangles_", np.asarray(mesh.triangles), "d")
+    print_2D_array_for_cpp(f"{prefix}triangle_normals_", np.asarray(mesh.triangle_normals), ".6f")

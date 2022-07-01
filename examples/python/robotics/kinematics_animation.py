@@ -3,8 +3,7 @@ import numpy as np
 import time
 
 kin = cph.kinematics.KinematicChain("../../testdata/dobot/dobot.urdf")
-joint_map = {'joint_linkAlinkA9': 0.0,
-             'joint_linkAlinkB': 0.0}
+joint_map = {"joint_linkAlinkA9": 0.0, "joint_linkAlinkB": 0.0}
 poses = kin.forward_kinematics()
 geoms = kin.get_transformed_visual_geometry_map(poses)
 
@@ -15,8 +14,7 @@ for v in geoms.values():
 
 dh = np.pi * 0.05
 for i in range(15):
-    joint_map = {'joint_linkAlinkA9': dh * i,
-                 'joint_linkAlinkB': dh * i}
+    joint_map = {"joint_linkAlinkA9": dh * i, "joint_linkAlinkB": dh * i}
     poses = kin.forward_kinematics(joint_map)
     geoms = kin.get_transformed_visual_geometry_map(poses)
     vis.clear_geometries()

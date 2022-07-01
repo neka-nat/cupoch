@@ -3,8 +3,9 @@ import cupoch as cph
 import os
 
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
+sys.path.append(os.path.join(dir_path, "../misc"))
 import meshes
 
 if __name__ == "__main__":
@@ -30,31 +31,29 @@ if __name__ == "__main__":
         success = True
         if not test_float_array(vertices, np.asarray(mesh.vertices.cpu())):
             success = False
-            print('[WARNING] vertices are not the same')
-        if not test_float_array(vertex_normals, np.asarray(
-                mesh.vertex_normals.cpu())):
+            print("[WARNING] vertices are not the same")
+        if not test_float_array(vertex_normals, np.asarray(mesh.vertex_normals.cpu())):
             success = False
-            print('[WARNING] vertex_normals are not the same')
-        if not test_float_array(
-                vertex_colors, np.asarray(mesh.vertex_colors.cpu()), eps=1e-2):
+            print("[WARNING] vertex_normals are not the same")
+        if not test_float_array(vertex_colors, np.asarray(mesh.vertex_colors.cpu()), eps=1e-2):
             success = False
-            print('[WARNING] vertex_colors are not the same')
+            print("[WARNING] vertex_colors are not the same")
         if not test_int_array(triangles, np.asarray(mesh.triangles.cpu())):
             success = False
-            print('[WARNING] triangles are not the same')
+            print("[WARNING] triangles are not the same")
         if success:
-            print('[INFO] written and read mesh are equal')
+            print("[INFO] written and read mesh are equal")
 
-    print('Write ply file')
-    cph.io.write_triangle_mesh('tmp.ply', mesh)
-    print('Read ply file')
-    mesh_test = cph.io.read_triangle_mesh('tmp.ply')
+    print("Write ply file")
+    cph.io.write_triangle_mesh("tmp.ply", mesh)
+    print("Read ply file")
+    mesh_test = cph.io.read_triangle_mesh("tmp.ply")
     compare_mesh(mesh_test)
-    os.remove('tmp.ply')
+    os.remove("tmp.ply")
 
-    print('Write obj file')
-    cph.io.write_triangle_mesh('tmp.obj', mesh)
-    print('Read obj file')
-    mesh_test = cph.io.read_triangle_mesh('tmp.obj')
+    print("Write obj file")
+    cph.io.write_triangle_mesh("tmp.obj", mesh)
+    print("Read obj file")
+    mesh_test = cph.io.read_triangle_mesh("tmp.obj")
     compare_mesh(mesh_test)
-    os.remove('tmp.obj')
+    os.remove("tmp.obj")

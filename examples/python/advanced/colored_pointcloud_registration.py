@@ -17,19 +17,17 @@ if __name__ == "__main__":
 
     # draw initial alignment
     current_transformation = np.identity(4)
-    draw_registration_result_original_color(source, target,
-                                            current_transformation)
+    draw_registration_result_original_color(source, target, current_transformation)
 
     # point to plane ICP
     current_transformation = np.identity(4)
     print("2. Point-to-plane ICP registration is applied on original point")
     print("   clouds to refine the alignment. Distance threshold 0.02.")
     result_icp = cph.registration.registration_icp(
-        source, target, 0.02, current_transformation,
-        cph.registration.TransformationEstimationPointToPlane())
+        source, target, 0.02, current_transformation, cph.registration.TransformationEstimationPointToPlane()
+    )
     print(result_icp)
-    draw_registration_result_original_color(source, target,
-                                            result_icp.transformation)
+    draw_registration_result_original_color(source, target, result_icp.transformation)
 
     # colored pointcloud registration
     # This is implementation of following paper
@@ -49,18 +47,17 @@ if __name__ == "__main__":
         target_down = target.voxel_down_sample(radius)
 
         print("3-2. Estimate normal.")
-        source_down.estimate_normals(
-            cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
-        target_down.estimate_normals(
-            cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
+        source_down.estimate_normals(cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
+        target_down.estimate_normals(cph.geometry.KDTreeSearchParamRadius(radius=radius * 2, max_nn=30))
 
         print("3-3. Applying colored point cloud registration")
         result_icp = cph.registration.registration_colored_icp(
-            source_down, target_down, radius, current_transformation,
-            cph.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
-                                                    relative_rmse=1e-6,
-                                                    max_iteration=iter))
+            source_down,
+            target_down,
+            radius,
+            current_transformation,
+            cph.registration.ICPConvergenceCriteria(relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=iter),
+        )
         current_transformation = result_icp.transformation
         print(result_icp)
-    draw_registration_result_original_color(source, target,
-                                            result_icp.transformation)
+    draw_registration_result_original_color(source, target, result_icp.transformation)

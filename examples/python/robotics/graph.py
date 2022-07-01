@@ -2,13 +2,15 @@ import os
 import itertools
 import time
 import cupoch as cph
+
 cph.initialize_allocator(cph.PoolAllocation, 1000000000)
 import numpy as np
 import networkx as nx
 
 import sys
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, '../misc'))
+sys.path.append(os.path.join(dir_path, "../misc"))
 import meshes
 
 # Graph from random nodes
@@ -27,14 +29,12 @@ path, _ = gp.dijkstra_path(0, 30)
 print("Find path: ", path)
 for i in range(len(path[:-1])):
     gp.paint_node_color(path[i], (0.0, 1.0, 0.0))
-    gp.paint_edge_color((path[i], path[i+1]), (1.0, 0.0, 0.0))
+    gp.paint_edge_color((path[i], path[i + 1]), (1.0, 0.0, 0.0))
 gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])
 
 # Graph from axis aligned bounding box
-gp = cph.geometry.Graph.create_from_axis_aligned_bounding_box([-1.0, -1.0, -1.0],
-                                                              [1.0, 1.0, 1.0],
-                                                              [10, 20, 5])
+gp = cph.geometry.Graph.create_from_axis_aligned_bounding_box([-1.0, -1.0, -1.0], [1.0, 1.0, 1.0], [10, 20, 5])
 cph.visualization.draw_geometries([gp])
 
 # Graph from triangle mesh
@@ -47,7 +47,7 @@ elapsed_time = time.time() - start
 print("Find path (GPU): ", path, " Time: ", elapsed_time)
 for i in range(len(path[:-1])):
     gp.paint_node_color(path[i], (0.0, 1.0, 0.0))
-    gp.paint_edge_color((path[i], path[i+1]), (1.0, 0.0, 0.0))
+    gp.paint_edge_color((path[i], path[i + 1]), (1.0, 0.0, 0.0))
 gp.paint_node_color(path[-1], (0.0, 1.0, 0.0))
 cph.visualization.draw_geometries([gp])
 

@@ -15,10 +15,8 @@ if __name__ == "__main__":
     print("Testing IO for textured meshes ...")
     textured_mesh = cph.io.read_triangle_mesh("../../testdata/crate/crate.obj")
     print(textured_mesh)
-    cph.io.write_triangle_mesh("copy_of_crate.obj",
-                               textured_mesh,
-                               write_triangle_uvs=True)
-    copy_textured_mesh = cph.io.read_triangle_mesh('copy_of_crate.obj')
+    cph.io.write_triangle_mesh("copy_of_crate.obj", textured_mesh, write_triangle_uvs=True)
+    copy_textured_mesh = cph.io.read_triangle_mesh("copy_of_crate.obj")
     print(copy_textured_mesh)
 
     print("Testing IO for images ...")
