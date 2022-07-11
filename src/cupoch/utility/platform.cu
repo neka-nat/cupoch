@@ -51,6 +51,12 @@ int GetDevice() {
 
 void SetDevice(int device_no) { cudaSetDevice(device_no); }
 
+void GetDeviceProp(cudaDeviceProp& prop, int device_no) {
+    int cp_device_no = device_no;
+    if (cp_device_no < 0) cp_device_no = GetDevice();
+    cudaSafeCall(cudaGetDeviceProperties(&prop, cp_device_no));
+}
+
 void Error(const char *error_string,
            const char *file,
            const int line,

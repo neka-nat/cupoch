@@ -53,6 +53,8 @@ int GetDevice();
 
 void SetDevice(int device_no);
 
+void GetDeviceProp(cudaDeviceProp& prop, int device_no = -1);
+
 void Error(const char *error_string,
            const char *file,
            const int line,
