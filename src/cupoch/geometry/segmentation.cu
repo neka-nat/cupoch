@@ -110,7 +110,7 @@ RANSACResult EvaluateRANSACBasedOnDistance(
                 return thrust::get<1>(x) < distance_threshold;
             });
     resize_all(thrust::distance(begin, end), inliers, errors);
-    error = thrust::reduce(utility::exec_policy(0)->on(0), errors.begin(),
+    error = thrust::reduce(utility::exec_policy(0), errors.begin(),
                            errors.end(), 0.0);
 
     size_t inlier_num = inliers.size();
@@ -133,7 +133,7 @@ Eigen::Vector4f GetPlaneFromPoints(
         const utility::device_vector<Eigen::Vector3f> &points,
         const utility::device_vector<size_t> &inliers) {
     Eigen::Vector3f centroid = thrust::reduce(
-            utility::exec_policy(0)->on(0),
+            utility::exec_policy(0),
             thrust::make_permutation_iterator(points.begin(), inliers.begin()),
             thrust::make_permutation_iterator(points.begin(), inliers.end()),
             Eigen::Vector3f(0.0, 0.0, 0.0));
@@ -141,7 +141,7 @@ Eigen::Vector4f GetPlaneFromPoints(
 
     Eigen::Vector6f mul_xyz = Eigen::Vector6f::Zero();
     mul_xyz = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
+            utility::exec_policy(0),
             thrust::make_permutation_iterator(points.begin(), inliers.begin()),
             thrust::make_permutation_iterator(points.begin(), inliers.end()),
             [centroid] __device__(const Eigen::Vector3f &pt) {
@@ -215,7 +215,7 @@ PointCloud::SegmentPlane(float distance_threshold /* = 0.01 */,
     for (int itr = 0; itr < num_iterations; itr++) {
         thrust::tabulate(d_keys.begin(), d_keys.end(),
                          random_functor(rand(), num_points));
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), d_keys.begin(),
+        thrust::sort_by_key(utility::exec_policy(0), d_keys.begin(),
                             d_keys.end(), d_cards.begin());
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.

@@ -19,6 +19,7 @@
  * IN THE SOFTWARE.
  **/
 #pragma once
+#include <thrust/execution_policy.h>
 #include <thrust/functional.h>
 #include <thrust/host_vector.h>
 #include <thrust/iterator/discard_iterator.h>

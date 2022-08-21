@@ -41,8 +41,7 @@ float ComputeModelResolution(const geometry::PointCloud& points,
     thrust::strided_range<
             utility::device_vector<float>::const_iterator>
             range_dists(distance2.begin() + 1, distance2.end(), 2);
-    float resolution = thrust::reduce(utility::exec_policy(utility::GetStream(0))
-            ->on(utility::GetStream(0)),
+    float resolution = thrust::reduce(utility::exec_policy(utility::GetStream(0)),
             range_dists.begin(), range_dists.end(), 0.0f);
     resolution /= points.points_.size();
     return std::sqrt(resolution);
@@ -143,7 +142,7 @@ ComputeISSKeypoints(
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator(n_pt), max_neighbors);
     thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0), range.begin(), range.end(),
+            utility::exec_policy(0), range.begin(), range.end(),
             thrust::make_transform_iterator(
                     indices.begin(),
                     geometry::compute_cumulant_functor(

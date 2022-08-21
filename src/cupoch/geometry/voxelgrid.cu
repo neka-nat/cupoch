@@ -161,7 +161,7 @@ Eigen::Vector3f VoxelGrid::GetMinBound() const {
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
         Eigen::Vector3i min_grid_index =
-                thrust::reduce(utility::exec_policy(0)->on(0),
+                thrust::reduce(utility::exec_policy(0),
                                voxels_keys_.begin(), voxels_keys_.end(), init,
                                thrust::elementwise_minimum<Eigen::Vector3i>());
         return min_grid_index.cast<float>() * voxel_size_ + origin_;
@@ -174,7 +174,7 @@ Eigen::Vector3f VoxelGrid::GetMaxBound() const {
     } else {
         Eigen::Vector3i init = voxels_keys_[0];
         Eigen::Vector3i max_grid_index =
-                thrust::reduce(utility::exec_policy(0)->on(0),
+                thrust::reduce(utility::exec_policy(0),
                                voxels_keys_.begin(), voxels_keys_.end(), init,
                                thrust::elementwise_maximum<Eigen::Vector3i>());
         return (max_grid_index.cast<float>() + Eigen::Vector3f::Ones()) *
@@ -190,7 +190,7 @@ Eigen::Vector3f VoxelGrid::GetCenter() const {
     }
     compute_grid_center_functor func(voxel_size_, origin_);
     Eigen::Vector3f center = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+            utility::exec_policy(0), voxels_keys_.begin(),
             voxels_keys_.end(), func, init, thrust::plus<Eigen::Vector3f>());
     center /= float(voxels_values_.size());
     return center;
@@ -254,13 +254,13 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         voxels_values_.insert(voxels_values_.end(),
                               voxelgrid.voxels_values_.begin(),
                               voxelgrid.voxels_values_.end());
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
+        thrust::sort_by_key(utility::exec_policy(0),
                             voxels_keys_.begin(), voxels_keys_.end(),
                             voxels_values_.begin());
         utility::device_vector<int> counts(voxels_keys_.size());
         utility::device_vector<Eigen::Vector3i> new_keys(voxels_keys_.size());
         auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+                utility::exec_policy(0), voxels_keys_.begin(),
                 voxels_keys_.end(),
                 make_tuple_iterator(voxels_values_.begin(),
                                     thrust::make_constant_iterator(1)),
@@ -285,9 +285,9 @@ VoxelGrid VoxelGrid::operator+(const VoxelGrid &voxelgrid) const {
 void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_keys_.push_back(voxel.grid_index_);
     voxels_values_.push_back(voxel);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+    thrust::sort_by_key(utility::exec_policy(0), voxels_keys_.begin(),
                         voxels_keys_.end(), voxels_values_.begin());
-    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+    auto end = thrust::unique_by_key(utility::exec_policy(0),
                                      voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
     resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
@@ -301,9 +301,9 @@ void VoxelGrid::AddVoxels(const utility::device_vector<Voxel> &voxels) {
                         thrust::make_transform_iterator(
                                 voxels.end(), extract_grid_index_functor()));
     voxels_values_.insert(voxels_values_.end(), voxels.begin(), voxels.end());
-    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys_.begin(),
+    thrust::sort_by_key(utility::exec_policy(0), voxels_keys_.begin(),
                         voxels_keys_.end(), voxels_values_.begin());
-    auto end = thrust::unique_by_key(utility::exec_policy(0)->on(0),
+    auto end = thrust::unique_by_key(utility::exec_policy(0),
                                      voxels_keys_.begin(), voxels_keys_.end(),
                                      voxels_values_.begin());
     resize_all(thrust::distance(voxels_keys_.begin(), end.first), voxels_keys_,
@@ -394,7 +394,7 @@ VoxelGrid &VoxelGrid::CarveDepthMap(
             depth_map.height_, depth_map.num_of_channels_,
             depth_map.bytes_per_channel_, voxel_size_, origin_, intrinsic, rot,
             trans, keep_voxels_outside_image);
-    remove_if_vectors(utility::exec_policy(0)->on(0), func, voxels_keys_,
+    remove_if_vectors(utility::exec_policy(0), func, voxels_keys_,
                       voxels_values_);
     return *this;
 }
@@ -433,7 +433,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::SelectByIndex(
     if (invert) {
         size_t n_out = voxels_values_.size() - indices.size();
         utility::device_vector<size_t> sorted_indices = indices;
-        thrust::sort(utility::exec_policy(0)->on(0), sorted_indices.begin(),
+        thrust::sort(utility::exec_policy(0), sorted_indices.begin(),
                         sorted_indices.end());
         utility::device_vector<size_t> inv_indices(n_out);
         thrust::set_difference(thrust::make_counting_iterator<size_t>(0),
@@ -446,12 +446,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::SelectByIndex(
         dst->voxel_size_ = voxel_size_;
         dst->origin_ = origin_;
 
-        thrust::gather(utility::exec_policy(utility::GetStream(0))
-                            ->on(utility::GetStream(0)),
+        thrust::gather(utility::exec_policy(utility::GetStream(0)),
                     inv_indices.begin(), inv_indices.end(), voxels_values_.begin(),
                     dst->voxels_values_.begin());
-        thrust::gather(utility::exec_policy(utility::GetStream(0))
-                            ->on(utility::GetStream(0)),
+        thrust::gather(utility::exec_policy(utility::GetStream(0)),
                     inv_indices.begin(), inv_indices.end(), voxels_keys_.begin(),
                     dst->voxels_keys_.begin());
         cudaSafeCall(cudaDeviceSynchronize());
@@ -462,12 +460,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::SelectByIndex(
         dst->voxel_size_ = voxel_size_;
         dst->origin_ = origin_;
 
-        thrust::gather(utility::exec_policy(utility::GetStream(0))
-                            ->on(utility::GetStream(0)),
+        thrust::gather(utility::exec_policy(utility::GetStream(0)),
                     indices.begin(), indices.end(), voxels_values_.begin(),
                     dst->voxels_values_.begin());
-        thrust::gather(utility::exec_policy(utility::GetStream(0))
-                            ->on(utility::GetStream(0)),
+        thrust::gather(utility::exec_policy(utility::GetStream(0)),
                     indices.begin(), indices.end(), voxels_keys_.begin(),
                     dst->voxels_keys_.begin());
         cudaSafeCall(cudaDeviceSynchronize());

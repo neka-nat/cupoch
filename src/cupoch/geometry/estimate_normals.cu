@@ -111,7 +111,7 @@ bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator(n_pt), knn);
     thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0), range.begin(), range.end(),
+            utility::exec_policy(0), range.begin(), range.end(),
             thrust::make_transform_iterator(
                     indices.begin(),
                     geometry::compute_cumulant_functor(

@@ -138,14 +138,14 @@ utility::device_vector<thrust::tuple<int, int>> AdvancedMatching(
                          thrust::make_counting_iterator<int>(corresK.size()),
                          corresK.end()),
                  corres.begin() + nPtj);
-    thrust::sort(utility::exec_policy(0)->on(0), corres.begin(), corres.end());
+    thrust::sort(utility::exec_policy(0), corres.begin(), corres.end());
     utility::LogDebug("points are remained : {:d}", corres.size());
 
     // STEP 2) CROSS CHECK
     utility::LogDebug("\t[cross check] ");
     utility::device_vector<thrust::tuple<int, int>> corres_cross(corres.size());
     utility::device_vector<int> counts(corres.size());
-    auto end1 = thrust::reduce_by_key(utility::exec_policy(0)->on(0),
+    auto end1 = thrust::reduce_by_key(utility::exec_policy(0),
                                       corres.begin(), corres.end(),
                                       thrust::make_constant_iterator<int>(1),
                                       corres_cross.begin(), counts.begin());
@@ -205,8 +205,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
 
     for (int i = 0; i < num; ++i) {
         reduces[i] = thrust::async::reduce(
-                utility::exec_policy(utility::GetStream(i))
-                        ->on(utility::GetStream(i)),
+                utility::exec_policy(utility::GetStream(i)),
                 point_cloud_vec[i].points_.begin(),
                 point_cloud_vec[i].points_.end(),
                 Eigen::Vector3f(0.0, 0.0, 0.0),
@@ -216,8 +215,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
         means[i] = reduces[i].get() / point_cloud_vec[i].points_.size();
         foreach
             [i] = thrust::async::for_each(
-                    utility::exec_policy(utility::GetStream(i))
-                            ->on(utility::GetStream(i)),
+                    utility::exec_policy(utility::GetStream(i)),
                     point_cloud_vec[i].points_.begin(),
                     point_cloud_vec[i].points_.end(),
                     [mean = means[i]] __device__(Eigen::Vector3f & pt) {
@@ -231,7 +229,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
         foreach
             [i].wait();
         scale = thrust::transform_reduce(
-                utility::exec_policy(0)->on(0),
+                utility::exec_policy(0),
                 point_cloud_vec[i].points_.begin(),
                 point_cloud_vec[i].points_.end(),
                 [] __device__(const Eigen::Vector3f& pt) { return pt.norm(); },
@@ -250,8 +248,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
     for (int i = 0; i < num; ++i) {
         foreach
             [i] = thrust::async::for_each(
-                    utility::exec_policy(utility::GetStream(i))
-                            ->on(utility::GetStream(i)),
+                    utility::exec_policy(utility::GetStream(i)),
                     point_cloud_vec[i].points_.begin(),
                     point_cloud_vec[i].points_.end(),
                     [scale_global] __device__(Eigen::Vector3f & pt) {
@@ -327,7 +324,7 @@ Eigen::Matrix4f OptimizePairwiseRegistration(
         Eigen::Vector6f JTr = Eigen::Vector6f::Zero();
         compute_jacobian_functor func(par);
         thrust::tie(JTJ, JTr) = thrust::transform_reduce(
-                utility::exec_policy(0)->on(0),
+                utility::exec_policy(0),
                 make_tuple_iterator(
                         thrust::make_permutation_iterator(
                                 point_cloud_vec[i].points_.begin(),

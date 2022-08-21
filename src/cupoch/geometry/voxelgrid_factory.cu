@@ -148,10 +148,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateDense(const Eigen::Vector3f &origin,
             make_tuple_begin(output->voxels_keys_, output->voxels_values_),
             func);
     thrust::sort_by_key(
-            utility::exec_policy(0)->on(0), output->voxels_keys_.begin(),
+            utility::exec_policy(0), output->voxels_keys_.begin(),
             output->voxels_keys_.end(), output->voxels_values_.begin());
     auto end = thrust::unique_by_key(
-            utility::exec_policy(0)->on(0), output->voxels_keys_.begin(),
+            utility::exec_policy(0), output->voxels_keys_.begin(),
             output->voxels_keys_.end(), output->voxels_values_.begin());
     resize_all(thrust::distance(output->voxels_keys_.begin(), end.first),
                output->voxels_keys_, output->voxels_values_);
@@ -188,14 +188,14 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
                           input.colors_.begin(),
                           make_tuple_begin(voxels_keys, voxels_values), func);
     }
-    thrust::sort_by_key(utility::exec_policy(0)->on(0), voxels_keys.begin(),
+    thrust::sort_by_key(utility::exec_policy(0), voxels_keys.begin(),
                         voxels_keys.end(), voxels_values.begin());
 
     utility::device_vector<int> counts(voxels_keys.size());
     resize_all(voxels_keys.size(), output->voxels_keys_,
                output->voxels_values_);
     auto end = thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0), voxels_keys.begin(),
+            utility::exec_policy(0), voxels_keys.begin(),
             voxels_keys.end(),
             make_tuple_iterator(voxels_values.begin(),
                                 thrust::make_constant_iterator(1)),
@@ -263,7 +263,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         return idxs == Eigen::Vector3i(INVALID_VOXEL_INDEX, INVALID_VOXEL_INDEX,
                                        INVALID_VOXEL_INDEX);
     };
-    remove_if_vectors(utility::exec_policy(0)->on(0), check_fn,
+    remove_if_vectors(utility::exec_policy(0), check_fn,
                       output->voxels_keys_, output->voxels_values_);
     return output;
 }

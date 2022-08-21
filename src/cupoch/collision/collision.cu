@@ -812,7 +812,7 @@ Intersection<geometry::VoxelGrid>::Compute<geometry::VoxelGrid>(
     thrust::transform(enumerate_begin(query.voxels_keys_),
                       enumerate_end(query.voxels_keys_),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     return out;
 }
@@ -860,7 +860,7 @@ Intersection<geometry::VoxelGrid>::Compute<geometry::LineSet<3>>(
                                     query.lines_.end(),
                                     element_get_functor<Eigen::Vector2i, 1>()))),
             out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     return out;
 }
@@ -885,7 +885,7 @@ Intersection<geometry::VoxelGrid>::Compute<geometry::OccupancyGrid>(
     out->collision_index_pairs_.resize(occ_voxels->size());
     thrust::transform(enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     convert_index_functor1 cfunc(query.resolution_);
     thrust::transform(
@@ -927,7 +927,7 @@ Intersection<geometry::OccupancyGrid>::Compute<geometry::VoxelGrid>(
     thrust::transform(enumerate_begin(query.voxels_keys_),
                       enumerate_end(query.voxels_keys_),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     convert_index_functor2 cfunc(target_.resolution_);
     thrust::transform(
@@ -993,7 +993,7 @@ Intersection<geometry::OccupancyGrid>::Compute<geometry::LineSet<3>>(
                                 query.lines_.end(),
                                 element_get_functor<Eigen::Vector2i, 1>()))),
         out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
 
     convert_index_functor2 cfunc(target_.resolution_);
@@ -1036,7 +1036,7 @@ Intersection<geometry::VoxelGrid>::Compute<PrimitiveArray>(
             bvh_dev, target_.voxel_size_, target_.origin_, margin);
     thrust::transform(enumerate_begin(query), enumerate_end(query),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     return out;
 }
@@ -1061,7 +1061,7 @@ Intersection<PrimitiveArray>::Compute<geometry::VoxelGrid>(
     thrust::transform(enumerate_begin(query.voxels_keys_),
                       enumerate_end(query.voxels_keys_),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     return out;
 }
@@ -1086,7 +1086,7 @@ Intersection<geometry::OccupancyGrid>::Compute<PrimitiveArray>(
             bvh_dev, target_.voxel_size_, target_.origin_, margin);
     thrust::transform(enumerate_begin(query), enumerate_end(query),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     return out;
 }
@@ -1111,7 +1111,7 @@ Intersection<PrimitiveArray>::Compute<geometry::OccupancyGrid>(
     out->collision_index_pairs_.resize(occ_voxels->size());
     thrust::transform(enumerate_begin(*occ_voxels), enumerate_end(*occ_voxels),
                       out->collision_index_pairs_.begin(), func);
-    remove_negative(utility::exec_policy(0)->on(0),
+    remove_negative(utility::exec_policy(0),
                     out->collision_index_pairs_);
     convert_index_functor2 cfunc(query.resolution_);
     thrust::transform(

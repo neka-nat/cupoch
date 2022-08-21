@@ -44,19 +44,16 @@ void SelectByIndexImpl(const geometry::PointCloud &src,
     if (has_normals) dst.normals_.resize(indices.size());
     if (has_colors) dst.colors_.resize(indices.size());
     dst.points_.resize(indices.size());
-    thrust::gather(utility::exec_policy(utility::GetStream(0))
-                           ->on(utility::GetStream(0)),
+    thrust::gather(utility::exec_policy(utility::GetStream(0)),
                    indices.begin(), indices.end(), src.points_.begin(),
                    dst.points_.begin());
     if (has_normals) {
-        thrust::gather(utility::exec_policy(utility::GetStream(1))
-                               ->on(utility::GetStream(1)),
+        thrust::gather(utility::exec_policy(utility::GetStream(1)),
                        indices.begin(), indices.end(), src.normals_.begin(),
                        dst.normals_.begin());
     }
     if (has_colors) {
-        thrust::gather(utility::exec_policy(utility::GetStream(2))
-                               ->on(utility::GetStream(2)),
+        thrust::gather(utility::exec_policy(utility::GetStream(2)),
                        indices.begin(), indices.end(), src.colors_.begin(),
                        dst.colors_.begin());
     }
@@ -110,7 +107,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     if (invert) {
         size_t n_out = points_.size() - indices.size();
         utility::device_vector<size_t> sorted_indices = indices;
-        thrust::sort(utility::exec_policy(0)->on(0), sorted_indices.begin(),
+        thrust::sort(utility::exec_policy(0), sorted_indices.begin(),
                      sorted_indices.end());
         utility::device_vector<size_t> inv_indices(n_out);
         thrust::set_difference(thrust::make_counting_iterator<size_t>(0),
@@ -194,12 +191,12 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     utility::device_vector<int> counts(n);
     thrust::equal_to<Eigen::Vector3i> binary_pred;
     auto runs = [&keys, &binary_pred] (auto&& out_begins, auto&... params) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0), keys.begin(),
+        thrust::sort_by_key(utility::exec_policy(0), keys.begin(),
                             keys.end(),
                             make_tuple_begin(params...));
         add_tuple_functor<typename std::remove_reference_t<decltype(params)>::value_type..., int> add_func;
         auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), keys.begin(), keys.end(),
+                utility::exec_policy(0), keys.begin(), keys.end(),
                 make_tuple_iterator(std::begin(params)...,
                                     thrust::make_constant_iterator(1)),
                 thrust::make_discard_iterator(), out_begins, binary_pred, add_func);
@@ -276,16 +273,14 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
     thrust::strided_range<
             utility::device_vector<Eigen::Vector3f>::const_iterator>
             range_points(points_.begin(), points_.end(), every_k_points);
-    copy_e[0] = thrust::async::copy(utility::exec_policy(utility::GetStream(0))
-                 ->on(utility::GetStream(0)),
+    copy_e[0] = thrust::async::copy(utility::exec_policy(utility::GetStream(0)),
                  range_points.begin(), range_points.end(),
                  output->points_.begin());
     if (has_normals) {
         thrust::strided_range<
                 utility::device_vector<Eigen::Vector3f>::const_iterator>
                 range_normals(normals_.begin(), normals_.end(), every_k_points);
-        copy_e[1] = thrust::async::copy(utility::exec_policy(utility::GetStream(1))
-                     ->on(utility::GetStream(1)),
+        copy_e[1] = thrust::async::copy(utility::exec_policy(utility::GetStream(1)),
                      range_normals.begin(), range_normals.end(),
                      output->normals_.begin());
     }
@@ -293,8 +288,7 @@ std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
         thrust::strided_range<
                 utility::device_vector<Eigen::Vector3f>::const_iterator>
                 range_colors(colors_.begin(), colors_.end(), every_k_points);
-        copy_e[2] = thrust::async::copy(utility::exec_policy(utility::GetStream(2))
-                     ->on(utility::GetStream(2)),
+        copy_e[2] = thrust::async::copy(utility::exec_policy(utility::GetStream(2)),
                      range_colors.begin(), range_colors.end(),
                      output->colors_.begin());
     }
@@ -324,7 +318,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator(n_pt), nb_points + 1);
     thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0), range.begin(), range.end(),
+            utility::exec_policy(0), range.begin(), range.end(),
             thrust::make_transform_iterator(
                     tmp_indices.begin(),
                     [] __device__(int idx) { return (int)(idx >= 0); }),
@@ -366,7 +360,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator(n_pt), nb_neighbors);
     thrust::reduce_by_key(
-            utility::exec_policy(0)->on(0), range.begin(), range.end(),
+            utility::exec_policy(0), range.begin(), range.end(),
             make_tuple_iterator(thrust::make_constant_iterator<size_t>(1),
                                 dist.begin()),
             thrust::make_discard_iterator(),
@@ -394,7 +388,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                           return (cnt > 0) ? avg / (float)cnt : -1.0;
                       });
     auto mean_and_count = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), avg_distances.begin(),
+            utility::exec_policy(0), avg_distances.begin(),
             avg_distances.end(),
             [] __device__(float const &x) {
                 return thrust::make_tuple(max(x, 0.0f), (size_t)(x >= 0.0));
@@ -409,7 +403,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     float cloud_mean = thrust::get<0>(mean_and_count);
     cloud_mean /= valid_distances;
     const float sq_sum = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), avg_distances.begin(),
+            utility::exec_policy(0), avg_distances.begin(),
             avg_distances.end(),
             [cloud_mean] __device__(const float x) {
                 return (x > 0) ? (x - cloud_mean) * (x - cloud_mean) : 0;

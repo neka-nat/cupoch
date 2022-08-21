@@ -65,16 +65,13 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromPointCloudCorrespondences(
     const size_t corr_size = correspondences.size();
     lineset_ptr->points_.resize(point0_size + point1_size);
     lineset_ptr->lines_.resize(corr_size);
-    thrust::copy_n(utility::exec_policy(utility::GetStream(0))
-                           ->on(utility::GetStream(0)),
+    thrust::copy_n(utility::exec_policy(utility::GetStream(0)),
                    cloud0.points_.begin(), point0_size,
                    lineset_ptr->points_.begin());
-    thrust::copy_n(utility::exec_policy(utility::GetStream(1))
-                           ->on(utility::GetStream(1)),
+    thrust::copy_n(utility::exec_policy(utility::GetStream(1)),
                    cloud1.points_.begin(), point1_size,
                    lineset_ptr->points_.begin() + point0_size);
-    thrust::transform(utility::exec_policy(utility::GetStream(2))
-                              ->on(utility::GetStream(2)),
+    thrust::transform(utility::exec_policy(utility::GetStream(2)),
                       correspondences.begin(), correspondences.end(),
                       lineset_ptr->lines_.begin(),
                       [=] __device__(const thrust::pair<int, int> &corrs) {
@@ -106,17 +103,14 @@ std::shared_ptr<LineSet<3>> LineSet<3>::CreateFromTriangleMesh(
     convert_trianglemesh_line_functor func(
             thrust::raw_pointer_cast(mesh.triangles_.data()),
             thrust::raw_pointer_cast(lineset_ptr->lines_.data()));
-    thrust::copy(utility::exec_policy(utility::GetStream(0))
-                         ->on(utility::GetStream(0)),
+    thrust::copy(utility::exec_policy(utility::GetStream(0)),
                  mesh.vertices_.begin(), mesh.vertices_.end(),
                  lineset_ptr->points_.begin());
-    thrust::for_each(utility::exec_policy(utility::GetStream(1))
-                             ->on(utility::GetStream(1)),
+    thrust::for_each(utility::exec_policy(utility::GetStream(1)),
                      thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator(mesh.triangles_.size()),
                      func);
-    auto end = thrust::unique(utility::exec_policy(utility::GetStream(1))
-                                      ->on(utility::GetStream(1)),
+    auto end = thrust::unique(utility::exec_policy(utility::GetStream(1)),
                               lineset_ptr->lines_.begin(),
                               lineset_ptr->lines_.end());
     lineset_ptr->lines_.resize(

@@ -37,8 +37,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
         const CorrespondenceSet &corres) {
     // Compute the center
     auto res1 = thrust::async::reduce(
-            utility::exec_policy(utility::GetStream(0))
-                    ->on(utility::GetStream(0)),
+            utility::exec_policy(utility::GetStream(0)),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
@@ -51,8 +50,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                             element_get_functor<Eigen::Vector2i, 0>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     auto res2 = thrust::async::reduce(
-            utility::exec_policy(utility::GetStream(1))
-                    ->on(utility::GetStream(1)),
+            utility::exec_policy(utility::GetStream(1)),
             thrust::make_permutation_iterator(
                     target.begin(),
                     thrust::make_transform_iterator(
@@ -74,7 +72,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     // Compute the H matrix
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::inner_product(
-            utility::exec_policy(0)->on(0),
+            utility::exec_policy(0),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
@@ -128,18 +126,17 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
         const utility::device_vector<float> &weight) {
     // Compute the center
     auto res_w =
-            thrust::async::reduce(utility::exec_policy(utility::GetStream(0))
-                                          ->on(utility::GetStream(0)),
+            thrust::async::reduce(utility::exec_policy(utility::GetStream(0)),
                                   weight.begin(), weight.end(), 0.0f);
     Eigen::Vector3f model_center = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), make_tuple_begin(model, weight),
+            utility::exec_policy(0), make_tuple_begin(model, weight),
             make_tuple_end(model, weight),
             [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
                 return thrust::get<0>(x) * thrust::get<1>(x);
             },
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     Eigen::Vector3f target_center = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), make_tuple_begin(target, weight),
+            utility::exec_policy(0), make_tuple_begin(target, weight),
             make_tuple_end(target, weight),
             [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
                 return thrust::get<0>(x) * thrust::get<1>(x);
@@ -153,12 +150,12 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
     // Centralize them
     // Compute the H matrix
     const float h_weight = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), weight.begin(), weight.end(),
+            utility::exec_policy(0), weight.begin(), weight.end(),
             [] __device__(float x) { return x * x; }, 0.0f,
             thrust::plus<float>());
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0),
+            utility::exec_policy(0),
             make_tuple_begin(model, target, weight),
             make_tuple_end(model, target, weight),
             [model_center, target_center] __device__(

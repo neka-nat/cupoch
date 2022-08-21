@@ -295,7 +295,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
     size_t k = 0;
     auto runs = [=] (auto&... params) {
         remove_if_vectors(
-                utility::exec_policy(0)->on(0),
+                utility::exec_policy(0),
                 check_nan_functor<typename std::remove_reference_t<decltype(params)>::value_type...>(remove_nan, remove_infinite),
                 params...);
     };
@@ -378,7 +378,7 @@ std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no,
     bool has_color = HasColors();
     auto runs = [=, &points = out->points_] (auto&... params) {
         remove_if_vectors(
-                utility::exec_policy(0)->on(0),
+                utility::exec_policy(0),
                 pass_through_filter_functor<typename std::remove_reference_t<decltype(params)>::value_type...>(
                         axis_no, min_bound, max_bound),
                 points, params...);

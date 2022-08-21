@@ -21,7 +21,9 @@
 #pragma once
 
 #ifdef USE_RMM
-#include <rmm/thrust_rmm_allocator.h>
+#include <rmm/exec_policy.hpp>
+#include <rmm/device_vector.hpp>
+#include <rmm/device_uvector.hpp>
 
 #include <rmm/mr/device/cuda_memory_resource.hpp>
 #include <rmm/mr/device/managed_memory_resource.hpp>
@@ -75,6 +77,8 @@ using pinned_host_vector =
 #ifdef USE_RMM
 template <typename T>
 using device_vector = rmm::device_vector<T>;
+template <typename T>
+using device_uvector = rmm::device_uvector<T>;
 
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
     return rmm::exec_policy(stream);

@@ -125,10 +125,10 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     thrust::transform(thrust::make_counting_iterator<size_t>(0),
                       thrust::make_counting_iterator(n_pt),
                       vertex_degrees.begin(), vd_func);
-    thrust::exclusive_scan(utility::exec_policy(0)->on(0),
+    thrust::exclusive_scan(utility::exec_policy(0),
                            vertex_degrees.begin(), vertex_degrees.end(),
                            exscan_vd.begin(), 0);
-    auto end = thrust::remove_if(utility::exec_policy(0)->on(0),
+    auto end = thrust::remove_if(utility::exec_policy(0),
                                  indices.begin(), indices.end(),
                                  [] __device__(int idx) { return idx < 0; });
     indices.resize(thrust::distance(indices.begin(), end));

@@ -56,7 +56,7 @@ Eigen::Matrix<T, Dim, 1> ComputeBound(
         const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points) {
     if (points.empty()) return Eigen::Matrix<T, Dim, 1>::Zero();
     Eigen::Matrix<T, Dim, 1> init = points[0];
-    return thrust::reduce(utility::exec_policy(stream)->on(stream),
+    return thrust::reduce(utility::exec_policy(stream),
                           points.begin(), points.end(), init, FuncT());
 }
 
@@ -83,7 +83,7 @@ Eigen::Matrix<T, Dim, 1> ComputeMaxBound(
     if (points.empty()) return Eigen::Matrix<T, Dim, 1>::Zero();
     Eigen::Matrix<T, Dim, 1> init = points[0];
     return thrust::reduce(
-            utility::exec_policy(stream)->on(stream), points.begin(),
+            utility::exec_policy(stream), points.begin(),
             points.end(), init,
             thrust::elementwise_maximum<Eigen::Matrix<T, Dim, 1>>());
 }
@@ -94,7 +94,7 @@ Eigen::Matrix<T, Dim, 1> ComputeCenter(
     Eigen::Matrix<T, Dim, 1> init = Eigen::Matrix<T, Dim, 1>::Zero();
     if (points.empty()) return init;
     Eigen::Matrix<T, Dim, 1> sum = thrust::reduce(
-            utility::exec_policy(0)->on(0), points.begin(), points.end(), init,
+            utility::exec_policy(0), points.begin(), points.end(), init,
             thrust::plus<Eigen::Matrix<float, Dim, 1>>());
     return sum / points.size();
 }
@@ -166,7 +166,7 @@ void TransformPoints(
         const Eigen::Matrix<float, Dim + 1, Dim + 1> &transformation,
         utility::device_vector<Eigen::Matrix<float, Dim, 1>> &points) {
     transform_points_functor<Dim> func(transformation);
-    thrust::for_each(utility::exec_policy(stream)->on(stream), points.begin(),
+    thrust::for_each(utility::exec_policy(stream), points.begin(),
                      points.end(), func);
 }
 
@@ -197,7 +197,7 @@ void TransformNormals(cudaStream_t stream,
                       const Eigen::Matrix4f &transformation,
                       utility::device_vector<Eigen::Vector3f> &normals) {
     transform_normals_functor func(transformation);
-    thrust::for_each(utility::exec_policy(stream)->on(stream), normals.begin(),
+    thrust::for_each(utility::exec_policy(stream), normals.begin(),
                      normals.end(), func);
 }
 
@@ -266,7 +266,7 @@ void RotatePoints(cudaStream_t stream,
     if (center && !points.empty()) {
         points_center = ComputeCenter<Dim>(points);
     }
-    thrust::for_each(utility::exec_policy(stream)->on(stream), points.begin(),
+    thrust::for_each(utility::exec_policy(stream), points.begin(),
                      points.end(),
                      [=] __device__(Eigen::Matrix<float, Dim, 1> & pt) {
                          pt = R * (pt - points_center) + points_center;
@@ -297,7 +297,7 @@ void RotateNormals(const Eigen::Matrix3f &R,
 void RotateNormals(cudaStream_t stream,
                    const Eigen::Matrix3f &R,
                    utility::device_vector<Eigen::Vector3f> &normals) {
-    thrust::for_each(utility::exec_policy(stream)->on(stream), normals.begin(),
+    thrust::for_each(utility::exec_policy(stream), normals.begin(),
                      normals.end(), [=] __device__(Eigen::Vector3f & normal) {
                          normal = R * normal;
                      });

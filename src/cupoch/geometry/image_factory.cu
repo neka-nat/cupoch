@@ -142,13 +142,11 @@ std::shared_ptr<Image> Image::CreateDepthToCameraDistanceMultiplierFloatImage(
     float fpp1 = (float)intrinsic.GetPrincipalPoint().second;
     utility::device_vector<float> xx(intrinsic.width_);
     utility::device_vector<float> yy(intrinsic.height_);
-    thrust::tabulate(utility::exec_policy(utility::GetStream(0))
-                             ->on(utility::GetStream(0)),
+    thrust::tabulate(utility::exec_policy(utility::GetStream(0)),
                      xx.begin(), xx.end(), [=] __device__(int idx) {
                          return (idx - fpp0) * ffl_inv0;
                      });
-    thrust::tabulate(utility::exec_policy(utility::GetStream(1))
-                             ->on(utility::GetStream(1)),
+    thrust::tabulate(utility::exec_policy(utility::GetStream(1)),
                      yy.begin(), yy.end(), [=] __device__(int idx) {
                          return (idx - fpp1) * ffl_inv1;
                      });

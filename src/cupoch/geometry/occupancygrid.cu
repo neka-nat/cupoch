@@ -182,9 +182,9 @@ void ComputeFreeVoxels(const utility::device_vector<Eigen::Vector3f>& points,
                        idx[2] >= resolution;
             });
     free_voxels.resize(thrust::distance(free_voxels.begin(), end1));
-    thrust::sort(utility::exec_policy(0)->on(0), free_voxels.begin(),
+    thrust::sort(utility::exec_policy(0), free_voxels.begin(),
                  free_voxels.end());
-    auto end2 = thrust::unique(utility::exec_policy(0)->on(0),
+    auto end2 = thrust::unique(utility::exec_policy(0),
                                free_voxels.begin(), free_voxels.end());
     free_voxels.resize(thrust::distance(free_voxels.begin(), end2));
 }
@@ -235,9 +235,9 @@ void ComputeOccupiedVoxels(
                        idx[2] >= resolution;
             });
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end1));
-    thrust::sort(utility::exec_policy(0)->on(0), occupied_voxels.begin(),
+    thrust::sort(utility::exec_policy(0), occupied_voxels.begin(),
                  occupied_voxels.end());
-    auto end2 = thrust::unique(utility::exec_policy(0)->on(0),
+    auto end2 = thrust::unique(utility::exec_policy(0),
                                occupied_voxels.begin(), occupied_voxels.end());
     occupied_voxels.resize(thrust::distance(occupied_voxels.begin(), end2));
 }

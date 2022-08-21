@@ -207,12 +207,12 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         const utility::device_vector<Eigen::Vector3f> &points) {
     Eigen::Vector3f mean = thrust::reduce(
-            utility::exec_policy(0)->on(0), points.begin(), points.end(),
+            utility::exec_policy(0), points.begin(), points.end(),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     mean /= points.size();
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f cov = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), points.begin(), points.end(),
+            utility::exec_policy(0), points.begin(), points.end(),
             [mean] __device__(const Eigen::Vector3f &pt) -> Eigen::Matrix3f {
                 Eigen::Vector3f centered = pt - mean;
                 return centered * centered.transpose();

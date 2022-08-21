@@ -47,7 +47,7 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                                indices, dists);
     result.correspondence_set_.resize(n_pt);
     const float error2 = thrust::transform_reduce(
-            utility::exec_policy(0)->on(0), dists.begin(), dists.end(),
+            utility::exec_policy(0), dists.begin(), dists.end(),
             [] __device__(float d) { return (isinf(d)) ? 0.0 : d; }, 0.0f,
             thrust::plus<float>());
     thrust::transform(enumerate_begin(indices), enumerate_end(indices),

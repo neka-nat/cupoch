@@ -214,19 +214,19 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     bool has_colors = this->HasColors();
     bool has_weights = this->HasWeights();
     if (has_colors && has_weights) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
+        thrust::sort_by_key(utility::exec_policy(0),
                             this->lines_.begin(), this->lines_.end(),
                             make_tuple_begin(edge_weights_, this->colors_));
     } else if (!has_colors && has_weights) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
+        thrust::sort_by_key(utility::exec_policy(0),
                             this->lines_.begin(), this->lines_.end(),
                             edge_weights_.begin());
     } else if (has_colors && !has_weights) {
-        thrust::sort_by_key(utility::exec_policy(0)->on(0),
+        thrust::sort_by_key(utility::exec_policy(0),
                             this->lines_.begin(), this->lines_.end(),
                             this->colors_.begin());
     } else {
-        thrust::sort(utility::exec_policy(0)->on(0), this->lines_.begin(),
+        thrust::sort(utility::exec_policy(0), this->lines_.begin(),
                      this->lines_.end());
         edge_weights_.resize(this->lines_.size(), 1.0);
     }
@@ -236,7 +236,7 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     utility::device_vector<int> counts(this->lines_.size());
     const auto begin = thrust::make_transform_iterator(
             this->lines_.begin(), element_get_functor<Eigen::Vector2i, 0>());
-    auto end = thrust::reduce_by_key(utility::exec_policy(0)->on(0), begin,
+    auto end = thrust::reduce_by_key(utility::exec_policy(0), begin,
                                      thrust::make_transform_iterator(
                                             this->lines_.end(),
                                             element_get_functor<Eigen::Vector2i, 0>()),
@@ -247,7 +247,7 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
     thrust::scatter(counts.begin(), counts.end(), indices.begin(),
                     edge_index_offsets_.begin());
     thrust::exclusive_scan(
-            utility::exec_policy(0)->on(0), edge_index_offsets_.begin(),
+            utility::exec_policy(0), edge_index_offsets_.begin(),
             edge_index_offsets_.end(), edge_index_offsets_.begin());
     if (set_edge_weights_from_distance) {
         SetEdgeWeightsFromDistance();
@@ -278,9 +278,9 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges,
+    remove_if_vectors(utility::exec_policy(0), remove_fn, new_edges,
                       weights);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0), new_edges.begin(),
+    thrust::sort_by_key(utility::exec_policy(0), new_edges.begin(),
                         new_edges.end(), weights.begin());
     utility::device_vector<Eigen::Vector2i> res_edges(new_edges.size());
     utility::device_vector<float> res_weights(new_edges.size());
@@ -311,7 +311,7 @@ Graph<Dim> &Graph<Dim>::AddNodeAndConnect(
             [] __device__(const thrust::tuple<Eigen::Vector2i, float> &x) {
                 return thrust::get<0>(x)[0] < 0;
             };
-    remove_if_vectors(utility::exec_policy(0)->on(0), remove_fn, new_edges,
+    remove_if_vectors(utility::exec_policy(0), remove_fn, new_edges,
                       new_weights);
     this->points_.push_back(point);
     return AddEdges(new_edges, new_weights, lazy_add);
@@ -392,7 +392,7 @@ Graph<Dim> &Graph<Dim>::RemoveEdge(const Eigen::Vector2i &edge) {
     bool has_weights = this->HasWeights();
     auto runs = [&edge, is_directed = is_directed_] (auto&... params) {
         remove_if_vectors(
-                utility::exec_policy(0)->on(0),
+                utility::exec_policy(0),
                 check_edge_functor<typename std::remove_reference_t<decltype(params)>::value_type...>(
                         edge, is_directed),
                 params...);
@@ -419,11 +419,11 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
     utility::device_vector<Eigen::Vector3f> new_colors(this->colors_.size());
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     utility::device_vector<Eigen::Vector2i> sorted_swap_edges = edges;
-    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+    thrust::sort(utility::exec_policy(0), sorted_edges.begin(),
                  sorted_edges.end());
     if (!is_directed_) {
         swap_index(sorted_swap_edges);
-        thrust::sort(utility::exec_policy(0)->on(0), sorted_swap_edges.begin(),
+        thrust::sort(utility::exec_policy(0), sorted_swap_edges.begin(),
                      sorted_swap_edges.end());
     }
     auto cnst_w = thrust::make_constant_iterator<float>(1.0);
@@ -531,7 +531,7 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
         const Eigen::Vector3f &color) {
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     utility::device_vector<size_t> indices(edges.size());
-    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+    thrust::sort(utility::exec_policy(0), sorted_edges.begin(),
                  sorted_edges.end());
     thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
                                     sorted_edges.begin(), sorted_edges.end(),
@@ -545,7 +545,7 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
                      [color] __device__(Eigen::Vector3f & c) { c = color; });
     if (!is_directed_) {
         swap_index(sorted_edges);
-        thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+        thrust::sort(utility::exec_policy(0), sorted_edges.begin(),
                      sorted_edges.end());
         thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
                                         sorted_edges.begin(), sorted_edges.end(),
@@ -629,7 +629,7 @@ Graph<Dim> &Graph<Dim>::SetEdgeWeights(const utility::device_vector<Eigen::Vecto
     utility::device_vector<Eigen::Vector2i> sorted_edges = edges;
     utility::device_vector<float> new_edge_weights = edge_weights_;
     new_edge_weights.resize(this->lines_.size(), 1.0);
-    thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+    thrust::sort(utility::exec_policy(0), sorted_edges.begin(),
                  sorted_edges.end());
     utility::device_vector<size_t> result_indices(edges.size());
     auto end = thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
@@ -643,7 +643,7 @@ Graph<Dim> &Graph<Dim>::SetEdgeWeights(const utility::device_vector<Eigen::Vecto
                     result_indices.begin(), new_edge_weights.begin());
     if (!is_directed_) {
         swap_index(sorted_edges);
-        thrust::sort(utility::exec_policy(0)->on(0), sorted_edges.begin(),
+        thrust::sort(utility::exec_policy(0), sorted_edges.begin(),
                      sorted_edges.end());
         result_indices.resize(edges.size());
         auto end = thrust::set_intersection_by_key(this->lines_.begin(), this->lines_.end(),
@@ -676,7 +676,7 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     utility::device_vector<int> old_to_new_edge_table(this->lines_.size());
     thrust::sequence(new_to_old_edge_table.begin(), new_to_old_edge_table.end(),
                      0);
-    thrust::sort_by_key(utility::exec_policy(0)->on(0), sorted_lines.begin(),
+    thrust::sort_by_key(utility::exec_policy(0), sorted_lines.begin(),
                         sorted_lines.end(), new_to_old_edge_table.begin(),
                         [] __device__(const Eigen::Vector2i &lhs,
                                       const Eigen::Vector2i &rhs) {
@@ -712,14 +712,14 @@ std::shared_ptr<typename Graph<Dim>::SSSPResultArray> Graph<Dim>::DijkstraPaths(
     while (thrust::find(open_flags.begin(), open_flags.end(), 1) !=
            open_flags.end()) {
         if (end_node_index >= 0 &&
-            thrust::count_if(utility::exec_policy(0)->on(0), indices.begin(),
+            thrust::count_if(utility::exec_policy(0), indices.begin(),
                              indices.begin() + nt, func3) == 0)
             break;
         thrust::for_each(indices.begin(), indices.begin() + nt, func1);
         const auto begin = thrust::make_transform_iterator(
                 sorted_lines.begin(), element_get_functor<Eigen::Vector2i, 1>());
         auto end = thrust::reduce_by_key(
-                utility::exec_policy(0)->on(0), begin,
+                utility::exec_policy(0), begin,
                 begin + sorted_lines.size(), res_tmp.begin(), indices.begin(),
                 res_tmp_s.begin(), thrust::equal_to<int>(),
                 [] __device__(const SSSPResult &lhs, const SSSPResult &rhs) {
