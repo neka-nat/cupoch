@@ -94,7 +94,7 @@ template <typename T>
 using device_vector = thrust::device_vector<T>;
 
 inline decltype(auto) exec_policy(cudaStream_t stream = 0) {
-    return &thrust::cuda::par;
+    return thrust::cuda::par.on(stream);
 }
 
 inline void InitializeAllocator(
