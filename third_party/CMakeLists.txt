@@ -26,6 +26,7 @@ macro(INSTALL_HEADERS source)
 endmacro()
 
 if (BUILD_PYBIND11)
+    set(PYBIND11_MASTER_PROJECT OFF)
     add_subdirectory(pybind11)
 endif ()
 

@@ -21,10 +21,6 @@ target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS}
 )
 
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE PYTHON_2_FALLBACK)
-endif ()
-
 target_link_libraries(${PACKAGE_NAME} PRIVATE cupoch_registration
                       cupoch_visualization cupoch_io cupoch_odometry
                       cupoch_planning cupoch_kinematics cupoch_kinfu
