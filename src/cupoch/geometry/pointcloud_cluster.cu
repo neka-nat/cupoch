@@ -150,7 +150,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
                            1, thrust::make_tuple(1, cluster));
             thrust::fill(make_tuple_begin(xa, fa), make_tuple_end(xa, fa),
                          thrust::make_tuple(0, 0));
-            fa[i] = 1;
+            fa[i] = true;
             while (!thrust::any_of(fa.begin(), fa.end(), thrust::identity<bool>())) {
                 bfs_functor bfs_func(
                         thrust::raw_pointer_cast(vertex_degrees.data()),
