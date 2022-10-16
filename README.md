@@ -100,6 +100,10 @@ cmake -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON ..
 sudo make install-pip-package
 ```
 
+## Getting Started
+
+Please see how to use cupoch in [Getting Started](https://github.com/neka-nat/cupoch/blob/master/docs/getting_started.md) first.
+
 ## Results
 The figure shows Cupoch's point cloud algorithms speedup over Open3D.
 The environment tested on has the following specs:
