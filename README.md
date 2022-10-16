@@ -21,6 +21,8 @@ This repository is based on [Open3D](https://github.com/intel-isl/Open3D).
 ## Core Features
 
 * 3D data processing and robotics computation using CUDA
+    * KNN
+        * [Optimizing LBVH-Construction and Hierarchy-Traversal to accelerate kNN Queries on Point Clouds using the GPU](https://epub.uni-bayreuth.de/5288/1/cgf.14177.pdf)
     * Point cloud registration
         * ICP
         * [Colored Point Cloud Registration](https://ieeexplore.ieee.org/document/8237287)

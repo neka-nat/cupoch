@@ -252,6 +252,9 @@ set(imgui_LIBRARIES imgui)
 # lbvh
 set(lbvh_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lbvh)
 
+# lbvh_index
+set(lbvh_index_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/lbvh_index)
+
 # urdfdom
 set(CONSOLE_BRIDGE_MAJOR_VERSION 1)
 set(CONSOLE_BRIDGE_MINOR_VERSION 0)
@@ -313,6 +316,7 @@ list(APPEND 3RDPARTY_INCLUDE_DIRS
      ${tinyobjloader_INCLUDE_DIRS}
      ${googletest_INCLUDE_DIRS}
      ${lbvh_INCLUDE_DIRS}
+     ${lbvh_index_INCLUDE_DIRS}
      ${urdfdom_INCLUDE_DIR}
 )
 
