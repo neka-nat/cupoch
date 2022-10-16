@@ -21,6 +21,7 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/meshbase.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/utility/eigen.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -80,15 +81,15 @@ MeshBase &MeshBase::Clear() {
 bool MeshBase::IsEmpty() const { return !HasVertices(); }
 
 Eigen::Vector3f MeshBase::GetMinBound() const {
-    return ComputeMinBound<3>(vertices_);
+    return utility::ComputeMinBound<3>(vertices_);
 }
 
 Eigen::Vector3f MeshBase::GetMaxBound() const {
-    return ComputeMaxBound<3>(vertices_);
+    return utility::ComputeMaxBound<3>(vertices_);
 }
 
 Eigen::Vector3f MeshBase::GetCenter() const {
-    return ComputeCenter<3>(vertices_);
+    return utility::ComputeCenter<3>(vertices_);
 }
 
 AxisAlignedBoundingBox<3> MeshBase::GetAxisAlignedBoundingBox() const {

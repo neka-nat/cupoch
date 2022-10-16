@@ -24,6 +24,7 @@
 #include "cupoch/geometry/lineset.h"
 
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/eigen.h"
 
 using namespace cupoch;
 using namespace cupoch::geometry;
@@ -145,17 +146,17 @@ bool LineSet<Dim>::IsEmpty() const {
 
 template <int Dim>
 Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMinBound() const {
-    return ComputeMinBound<Dim>(points_);
+    return utility::ComputeMinBound<Dim>(points_);
 }
 
 template <int Dim>
 Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetMaxBound() const {
-    return ComputeMaxBound<Dim>(points_);
+    return utility::ComputeMaxBound<Dim>(points_);
 }
 
 template <int Dim>
 Eigen::Matrix<float, Dim, 1> LineSet<Dim>::GetCenter() const {
-    return ComputeCenter<Dim>(points_);
+    return utility::ComputeCenter<Dim>(points_);
 }
 
 template <int Dim>

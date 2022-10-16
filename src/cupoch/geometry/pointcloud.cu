@@ -181,15 +181,15 @@ PointCloud &PointCloud::Clear() {
 bool PointCloud::IsEmpty() const { return !HasPoints(); }
 
 Eigen::Vector3f PointCloud::GetMinBound() const {
-    return ComputeMinBound<3>(points_);
+    return utility::ComputeMinBound<3>(points_);
 }
 
 Eigen::Vector3f PointCloud::GetMaxBound() const {
-    return ComputeMaxBound<3>(points_);
+    return utility::ComputeMaxBound<3>(points_);
 }
 
 Eigen::Vector3f PointCloud::GetCenter() const {
-    return ComputeCenter<3>(points_);
+    return utility::ComputeCenter<3>(points_);
 }
 
 AxisAlignedBoundingBox<3> PointCloud::GetAxisAlignedBoundingBox() const {

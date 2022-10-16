@@ -175,5 +175,42 @@ thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
                               thrust::get<2>(jtj_jtr_r2), w_sum);
 }
 
+template <int Dim, typename T, typename FuncT>
+Eigen::Matrix<T, Dim, 1> ComputeBound(
+        cudaStream_t stream,
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points) {
+    if (points.empty()) return Eigen::Matrix<T, Dim, 1>::Zero();
+    Eigen::Matrix<T, Dim, 1> init = points[0];
+    return thrust::reduce(utility::exec_policy(stream),
+                          points.begin(), points.end(), init, FuncT());
+}
+
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeMinBound(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points) {
+    return ComputeBound<
+            Dim, T, thrust::elementwise_minimum<Eigen::Matrix<T, Dim, 1>>>(
+            0, points);
+}
+
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeMaxBound(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points) {
+    return ComputeBound<
+            Dim, T, thrust::elementwise_maximum<Eigen::Matrix<T, Dim, 1>>>(
+            0, points);
+}
+
+template <int Dim, typename T>
+Eigen::Matrix<T, Dim, 1> ComputeCenter(
+        const utility::device_vector<Eigen::Matrix<T, Dim, 1>> &points) {
+    Eigen::Matrix<T, Dim, 1> init = Eigen::Matrix<T, Dim, 1>::Zero();
+    if (points.empty()) return init;
+    Eigen::Matrix<T, Dim, 1> sum = thrust::reduce(
+            utility::exec_policy(0), points.begin(), points.end(), init,
+            thrust::plus<Eigen::Matrix<float, Dim, 1>>());
+    return sum / points.size();
+}
+
 }  // namespace utility
 }  // namespace cupoch

@@ -59,6 +59,9 @@ void Error(const char *error_string,
            const char *file,
            const int line,
            const char *func);
+
+std::tuple<dim3, dim3> SelectBlockGridSizes(int data_size, int threads_per_block = -1);
+
 }  // namespace utility
 }  // namespace cupoch
 

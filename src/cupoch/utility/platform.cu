@@ -66,5 +66,30 @@ void Error(const char *error_string,
     exit(0);
 }
 
+std::tuple<dim3, dim3> SelectBlockGridSizes(int data_size, int threads_per_block) {
+    cudaDeviceProp prop;
+    cupoch::utility::GetDeviceProp(prop);
+    int max_threads_per_block = prop.maxThreadsPerBlock;
+    if (threads_per_block < 0) {
+        if (threads_per_block > max_threads_per_block) {
+            throw std::runtime_error("Threads per block exceeds device maximum.");
+        } else {
+            max_threads_per_block = threads_per_block;
+        }
+    }
+    int blocks_needed = static_cast<int>(std::ceil(data_size / float(max_threads_per_block)));
+    if (blocks_needed <= prop.maxThreadsDim[0]) {
+        return std::make_tuple(dim3(max_threads_per_block, 1, 1), dim3(blocks_needed, 1, 1));
+    } else if (prop.maxThreadsDim[0] < blocks_needed) {
+        blocks_needed = static_cast<int>(std::ceil(blocks_needed / float(prop.maxThreadsDim[0])));
+        return std::make_tuple(dim3(max_threads_per_block, 1, 1), dim3(prop.maxThreadsDim[0], blocks_needed, 1));
+    } else if (prop.maxThreadsDim[0] * prop.maxThreadsDim[1] < blocks_needed && blocks_needed <= prop.maxThreadsDim[0] * prop.maxThreadsDim[1] * prop.maxThreadsDim[2]) {
+        blocks_needed = static_cast<int>(std::ceil(blocks_needed / float(prop.maxThreadsDim[0] * prop.maxThreadsDim[1])));
+        return std::make_tuple(dim3(max_threads_per_block, 1, 1), dim3(prop.maxThreadsDim[0], prop.maxThreadsDim[1], blocks_needed));
+    } else {
+        throw std::runtime_error("Data size too large.");
+    }
+}
+
 }
 }

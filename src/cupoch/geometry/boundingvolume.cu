@@ -370,10 +370,10 @@ AxisAlignedBoundingBox<Dim> AxisAlignedBoundingBox<Dim>::CreateFromPoints(
         box.min_bound_ = Eigen::Matrix<float, Dim, 1>::Zero();
         box.max_bound_ = Eigen::Matrix<float, Dim, 1>::Zero();
     } else {
-        box.min_bound_ = ComputeBound<
+        box.min_bound_ = utility::ComputeBound<
                 Dim, float, thrust::elementwise_minimum<Eigen::Matrix<float, Dim, 1>>>(
                 utility::GetStream(0), points);
-        box.max_bound_ = ComputeBound<
+        box.max_bound_ = utility::ComputeBound<
                 Dim, float, thrust::elementwise_maximum<Eigen::Matrix<float, Dim, 1>>>(
                 utility::GetStream(1), points);
     }
