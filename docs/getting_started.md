@@ -33,7 +33,7 @@ cph.visualization.draw_geometries([pointcloud])
 
 If the following window appears, you have succeeded.
 
-![getting_started_1](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/getting_started_1.png)
+![getting_started_1](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/getting_started_1.png)
 
 Close the window and then downsample.
 Call the function that performs downsampling as follows.
@@ -44,7 +44,7 @@ downsampled = pointcloud.voxel_down_sample(0.05)
 
 Draw the point cloud after downsampling.
 
-![getting_started_2](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/getting_started_2.png)
+![getting_started_2](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/getting_started_2.png)
 
 That concludes our introduction!
 There's plenty of other features you can use and experiment with!
