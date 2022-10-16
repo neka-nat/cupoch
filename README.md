@@ -100,6 +100,14 @@ cmake -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON ..
 sudo make install-pip-package
 ```
 
+### Use Docker
+
+```sh
+docker-compose up -d
+# xhost +
+docker exec -it cupoch bash
+```
+
 ## Getting Started
 
 Please see how to use cupoch in [Getting Started](https://github.com/neka-nat/cupoch/blob/master/docs/getting_started.md) first.

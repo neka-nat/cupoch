@@ -1,0 +1,8 @@
+dist
+build*
+install*
+*.nvp
+site
+__pycache__
+shader.h
+imgui.ini
