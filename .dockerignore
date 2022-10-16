@@ -3,6 +3,7 @@ build*
 install*
 *.nvp
 site
-__pycache__
-shader.h
-imgui.ini
+**/__pycache__
+src/cupoch/visualization/shader/shader.h
+**/imgui.ini
+src/python/poetry.lock
