@@ -75,7 +75,7 @@ add_custom_target(python-package
 
 add_custom_target(generate-stubs
     COMMAND ${CMAKE_COMMAND}
-            -E env PYTHONPATH=${PYTHON_PACKAGE_DST_DIR}
+            -E env PYTHONPATH=$ENV{PYTHONPATH}:${PYTHON_PACKAGE_DST_DIR}
             pybind11-stubgen cupoch --no-setup-py --root-module-suffix="" --ignore-invalid=all --output-dir="${PYTHON_PACKAGE_DST_DIR}/cupoch-stubs"
 )
 

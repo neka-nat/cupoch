@@ -16,8 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          xorg-dev \
          cmake \
          python3-dev \
-         python3-setuptools \
-         python3-wheel && \
+         python3-setuptools && \
      rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
@@ -27,9 +26,11 @@ ENV PATH $PATH:/root/.local/bin
 COPY . .
 
 RUN cd src/python \
-    poetry config virtualenvs.create false \
+    && poetry config virtualenvs.create false \
     && poetry run pip install -U pip \
     && poetry install
+
+ENV PYTHONPATH $PYTHONPATH:/usr/lib/python3.8/site-packages
 
 RUN mkdir build \
     && cd build \
