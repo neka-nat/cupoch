@@ -1,6 +1,6 @@
 #pragma once
-#include <cuda/std/cmath>
-#include <cuda/std/limits>
+#include <cmath>
+#include <limits>
 
 #define _min(x, y) (x < y ? x : y)
 #define _max(x, y) (x < y ? y : x)

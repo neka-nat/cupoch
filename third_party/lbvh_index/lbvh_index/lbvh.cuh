@@ -1,5 +1,5 @@
 #pragma once
-#include <cuda/std/limits>
+#include <limits>
 #include "lbvh_index/aabb.cuh"
 #include "lbvh_index/morton_code.cuh"
 
