@@ -21,7 +21,7 @@
 #pragma once
 
 namespace cupoch {
-namespace geometry {
+namespace knn {
 
 static const int NUM_MAX_NN = 100;
 
@@ -66,5 +66,5 @@ public:
     int max_nn_;
 };
 
-}  // namespace geometry
+}  // namespace knn
 }  // namespace cupoch

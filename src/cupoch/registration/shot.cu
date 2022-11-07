@@ -20,8 +20,9 @@
  **/
 #include <Eigen/Geometry>
 
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/registration/feature.h"
 #include "cupoch/utility/eigenvalue.h"
 #include "cupoch/utility/console.h"
@@ -221,20 +222,20 @@ namespace {
 std::shared_ptr<Feature<352>> ComputeSHOTFeature(
         const geometry::PointCloud &input,
         float radius,
-        const geometry::KDTreeSearchParam &search_param) {
+        const knn::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature<352>>();
     feature->Resize((int)input.points_.size());
 
-    geometry::KDTreeFlann kdtree(input);
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(input));
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
     int knn;
     switch (search_param.GetSearchType()) {
-        case geometry::KDTreeSearchParam::SearchType::Knn:
-            knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
+        case knn::KDTreeSearchParam::SearchType::Knn:
+            knn = ((const knn::KDTreeSearchParamKNN &)search_param).knn_;
             break;
-        case geometry::KDTreeSearchParam::SearchType::Radius:
-            knn = ((const geometry::KDTreeSearchParamRadius &)search_param)
+        case knn::KDTreeSearchParam::SearchType::Radius:
+            knn = ((const knn::KDTreeSearchParamRadius &)search_param)
                           .max_nn_;
             break;
         default:

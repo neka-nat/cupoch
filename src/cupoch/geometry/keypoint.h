@@ -21,7 +21,7 @@
 #pragma once
 
 #include <memory>
-#include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
@@ -57,7 +57,7 @@ ComputeISSKeypoints(const PointCloud &input,
                     float gamma_21 = 0.975,
                     float gamma_32 = 0.975,
                     int min_neighbors = 5,
-                    int max_neighbors = NUM_MAX_NN);
+                    int max_neighbors = knn::NUM_MAX_NN);
 
 }  // namespace keypoint
 }  // namespace geometry

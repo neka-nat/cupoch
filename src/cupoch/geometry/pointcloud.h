@@ -22,7 +22,7 @@
 #include <thrust/host_vector.h>
 
 #include "cupoch/geometry/geometry_base.h"
-#include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 #include "cupoch/utility/eigen.h"
 
@@ -163,7 +163,7 @@ public:
     /// normals exist in the input. \param search_param The KDTree search
     /// parameters
     bool EstimateNormals(
-            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+            const knn::KDTreeSearchParam &search_param = knn::KDTreeSearchParamKNN());
 
     /// Function to orient the normals of a point cloud
     /// \param cloud is the input point cloud. It must have normals.
@@ -181,7 +181,7 @@ public:
             float eps,
             size_t min_points,
             bool print_progress = false,
-            size_t max_edges = NUM_MAX_NN) const;
+            size_t max_edges = knn::NUM_MAX_NN) const;
 
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
     ///

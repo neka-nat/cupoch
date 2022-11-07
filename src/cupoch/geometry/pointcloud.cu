@@ -25,7 +25,7 @@
 #include "cupoch/geometry/boundingvolume.h"
 #include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/geometry/image.h"
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
@@ -325,8 +325,8 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
     }
     bool has_normal = HasNormals();
     bool has_color = HasColors();
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    knn::KDTreeFlann kdtree;
+    kdtree.SetRawData(ConvertVector3fVectorRef(*this));
     utility::device_vector<int> indices;
     utility::device_vector<float> dist;
     kdtree.SearchRadius(points_, search_radius, num_max_search_points, indices,

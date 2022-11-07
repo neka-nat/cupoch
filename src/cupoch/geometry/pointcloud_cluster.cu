@@ -18,8 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/utility/console.h"
 
 #include <thrust/logical.h>
@@ -119,7 +120,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     utility::device_vector<int> exscan_vd(n_pt);
     utility::device_vector<int> indices;
     utility::device_vector<float> distances;
-    KDTreeFlann kdtree(*this);
+    knn::KDTreeFlann kdtree(ConvertVector3fVectorRef(*this));
     kdtree.SearchRadius(points_, eps, max_edges + 1, indices, distances);
     compute_vertex_degree_functor vd_func(
             thrust::raw_pointer_cast(indices.data()), min_points,

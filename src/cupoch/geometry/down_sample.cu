@@ -24,7 +24,8 @@
 #include <thrust/sort.h>
 #include <thrust/async/copy.h>
 
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
@@ -305,8 +306,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
                 "[RemoveRadiusOutliers] Illegal input parameters,"
                 "number of points and radius must be positive");
     }
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    knn::KDTreeFlann kdtree;
+    kdtree.SetRawData(ConvertVector3fVectorRef(*this));
     utility::device_vector<int> tmp_indices;
     utility::device_vector<float> dist;
     kdtree.SearchRadius(points_, search_radius, nb_points + 1, tmp_indices,
@@ -347,8 +348,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         return std::make_tuple(std::make_shared<PointCloud>(),
                                utility::device_vector<size_t>());
     }
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    knn::KDTreeFlann kdtree;
+    kdtree.SetRawData(ConvertVector3fVectorRef(*this));
     const size_t n_pt = points_.size();
     utility::device_vector<float> avg_distances(n_pt);
     utility::device_vector<size_t> indices(n_pt);

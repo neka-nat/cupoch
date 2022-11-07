@@ -18,8 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/registration/registration.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
@@ -32,7 +33,7 @@ namespace {
 RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const geometry::KDTreeFlann &target_kdtree,
+        const knn::KDTreeFlann &target_kdtree,
         float max_correspondence_distance,
         const Eigen::Matrix4f &transformation) {
     RegistrationResult result(transformation);
@@ -108,7 +109,7 @@ RegistrationResult cupoch::registration::EvaluateRegistration(
         float max_correspondence_distance,
         const Eigen::Matrix4f
                 &transformation /* = Eigen::Matrix4d::Identity()*/) {
-    geometry::KDTreeFlann kdtree(target);
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(target));
     geometry::PointCloud pcd = source;
     if (!transformation.isIdentity()) {
         pcd.Transform(transformation);
@@ -142,7 +143,7 @@ RegistrationResult cupoch::registration::RegistrationICP(
     }
 
     Eigen::Matrix4f transformation = init;
-    geometry::KDTreeFlann kdtree(target);
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(target));
     geometry::PointCloud pcd = source;
     if (init.isIdentity() == false) {
         pcd.Transform(init);

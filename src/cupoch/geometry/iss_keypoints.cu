@@ -22,9 +22,10 @@
 #include <Eigen/Geometry>
 
 #include "cupoch/geometry/geometry_functor.h"
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/keypoint.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/eigenvalue.h"
 #include "cupoch/utility/range.h"
@@ -34,7 +35,7 @@ namespace cupoch {
 namespace {
 
 float ComputeModelResolution(const geometry::PointCloud& points,
-                             const geometry::KDTreeFlann& kdtree) {
+                             const knn::KDTreeFlann& kdtree) {
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
     kdtree.SearchKNN(points.points_, 2, indices, distance2);
@@ -118,8 +119,8 @@ ComputeISSKeypoints(
         return std::make_tuple(std::make_shared<PointCloud>(), std::make_shared<utility::device_vector<bool>>());
     }
 
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(input);
+    knn::KDTreeFlann kdtree;
+    kdtree.SetRawData(ConvertVector3fVectorRef(input));
     if (salient_radius == 0.0 || non_max_radius == 0.0) {
         const float resolution = ComputeModelResolution(input, kdtree);
         salient_radius = 6 * resolution;

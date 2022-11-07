@@ -578,7 +578,7 @@ TEST(PointCloud, EstimateNormals) {
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    pc.EstimateNormals(geometry::KDTreeSearchParamKNN());
+    pc.EstimateNormals(knn::KDTreeSearchParamKNN());
     thrust::host_vector<Vector3f> normals = pc.GetNormals();
     for (size_t idx = 0; idx < ref.size(); ++idx) {
         if ((ref[idx](0) < 0 && normals[idx](0) > 0) ||

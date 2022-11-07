@@ -23,7 +23,7 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace cupoch {
@@ -55,15 +55,15 @@ public:
 /// Function to compute FPFH feature for a point cloud
 std::shared_ptr<Feature<33>> ComputeFPFHFeature(
         const geometry::PointCloud& input,
-        const geometry::KDTreeSearchParam& search_param =
-                geometry::KDTreeSearchParamKNN());
+        const knn::KDTreeSearchParam& search_param =
+                knn::KDTreeSearchParamKNN());
 
 /// Function to compute SHOT feature for a point cloud
 std::shared_ptr<Feature<352>> ComputeSHOTFeature(
         const geometry::PointCloud& input,
         float radius,
-        const geometry::KDTreeSearchParam& search_param =
-                geometry::KDTreeSearchParamKNN());
+        const knn::KDTreeSearchParam& search_param =
+                knn::KDTreeSearchParamKNN());
 
 }  // namespace registration
 }  // namespace cupoch

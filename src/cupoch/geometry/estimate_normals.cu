@@ -23,8 +23,9 @@
 #include <Eigen/Geometry>
 
 #include "cupoch/geometry/geometry_functor.h"
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/eigenvalue.h"
 #include "cupoch/utility/range.h"
@@ -78,22 +79,22 @@ struct align_normals_direction_functor {
 
 }  // namespace
 
-bool PointCloud::EstimateNormals(const KDTreeSearchParam &search_param) {
+bool PointCloud::EstimateNormals(const knn::KDTreeSearchParam &search_param) {
     if (HasNormals() == false) {
         normals_.resize(points_.size());
     }
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
+    knn::KDTreeFlann kdtree;
+    kdtree.SetRawData(ConvertVector3fVectorRef(*this));
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
     kdtree.Search(points_, search_param, indices, distance2);
     int knn;
     switch (search_param.GetSearchType()) {
-        case KDTreeSearchParam::SearchType::Knn:
-            knn = ((const KDTreeSearchParamKNN &)search_param).knn_;
+        case knn::KDTreeSearchParam::SearchType::Knn:
+            knn = ((const knn::KDTreeSearchParamKNN &)search_param).knn_;
             break;
-        case KDTreeSearchParam::SearchType::Radius:
-            knn = ((const KDTreeSearchParamRadius &)search_param).max_nn_;
+        case knn::KDTreeSearchParam::SearchType::Radius:
+            knn = ((const knn::KDTreeSearchParamRadius &)search_param).max_nn_;
             break;
         default:
             utility::LogError("Unknown search param type.");

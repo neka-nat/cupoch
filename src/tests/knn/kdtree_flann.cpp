@@ -18,12 +18,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
 **/
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 
 #include <thrust/remove.h>
 #include <thrust/sort.h>
 
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "tests/test_utility/unit_test.h"
 
 using namespace Eigen;
@@ -70,7 +71,7 @@ TEST(KDTreeFlann, SearchKNN) {
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    geometry::KDTreeFlann kdtree(pc);
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(pc));
 
     Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
@@ -112,7 +113,7 @@ TEST(KDTreeFlann, SearchRadius) {
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    geometry::KDTreeFlann kdtree(pc);
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(pc));
 
     Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;

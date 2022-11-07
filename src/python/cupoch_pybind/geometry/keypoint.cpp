@@ -46,7 +46,7 @@ void pybind_keypoint_methods(py::module &m) {
           "Descriptor for 3D Object Recognition', 2009.",
           "input"_a, "salient_radius"_a = 0.0, "non_max_radius"_a = 0.0,
           "gamma_21"_a = 0.975, "gamma_32"_a = 0.975, "min_neighbors"_a = 5,
-          "max_neighbots"_a = geometry::NUM_MAX_NN);
+          "max_neighbots"_a = knn::NUM_MAX_NN);
 
     docstring::FunctionDocInject(
             m, "compute_iss_keypoints",
