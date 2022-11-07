@@ -70,8 +70,8 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     data_float3_.resize(n_points_);
     utility::device_vector<lbvh::AABB> aabbs(n_points_);
     thrust::transform(data.begin(), data.end(), make_tuple_begin(aabbs, data_float3_), convert_float3_and_aabb_functor<T>());
-    T min_data = utility::ComputeMinBound(data);
-    T max_data = utility::ComputeMaxBound(data);
+    T min_data = utility::ComputeMinBound<T::SizeAtCompileTime, typename T::Scalar>(data);
+    T max_data = utility::ComputeMaxBound<T::SizeAtCompileTime, typename T::Scalar>(data);
     extent_.min = make_float3(min_data[0], min_data[1], min_data[2]);
     extent_.max = make_float3(max_data[0], max_data[1], max_data[2]);
 
