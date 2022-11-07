@@ -25,7 +25,7 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 
 namespace flann {
@@ -38,21 +38,17 @@ class KDTreeCuda3dIndex;
 }  // namespace flann
 
 namespace cupoch {
-namespace geometry {
-
-class Geometry;
+namespace knn {
 
 class KDTreeFlann {
 public:
     KDTreeFlann();
-    KDTreeFlann(const Geometry &geometry);
+    KDTreeFlann(const utility::device_vector<Eigen::Vector3f> &data);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
 
 public:
-    bool SetGeometry(const Geometry &geometry);
-
     template <typename InputIterator, int Dim>
     int Search(InputIterator first,
                InputIterator last,
@@ -127,7 +123,7 @@ protected:
     size_t dataset_size_ = 0;
 };
 
-}  // namespace geometry
+}  // namespace knn
 }  // namespace cupoch
 
-#include "cupoch/geometry/kdtree_flann.inl"
+#include "cupoch/knn/kdtree_flann.inl"

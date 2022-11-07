@@ -25,7 +25,7 @@
 
 #include "cupoch/geometry/geometry_functor.h"
 #include "cupoch/geometry/graph.h"
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
 
@@ -262,7 +262,7 @@ Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
     utility::device_vector<float> weights;
     utility::device_vector<Eigen::Vector2i> new_edges(this->points_.size() *
                                                       (max_num_edges + 1));
-    geometry::KDTreeFlann kdtree;
+    knn::KDTreeFlann kdtree;
     kdtree.SetRawData(this->points_);
     kdtree.SearchRadius(this->points_, max_edge_distance, max_num_edges + 1,
                         indices, weights);

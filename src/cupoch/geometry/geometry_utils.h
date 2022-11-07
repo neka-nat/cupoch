@@ -26,6 +26,8 @@
 namespace cupoch {
 namespace geometry {
 
+const utility::device_vector<Eigen::Vector3f>& ConvertVector3fVectorRef(const Geometry &geometry);
+
 /// Get Rotation Matrix from XYZ RotationType.
 Eigen::Matrix3f GetRotationMatrixFromXYZ(const Eigen::Vector3f &rotation);
 /// Get Rotation Matrix from YZX RotationType.

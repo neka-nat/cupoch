@@ -18,35 +18,18 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
-#include "cupoch/geometry/kdtree_flann.h"
-#include "cupoch/geometry/pointcloud.h"
-#include "cupoch/geometry/trianglemesh.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/utility/eigen.h"
 #include "cupoch/utility/helper.h"
 
-using namespace cupoch;
-using namespace cupoch::geometry;
+namespace cupoch {
+namespace knn {
 
 KDTreeFlann::KDTreeFlann() {}
 
-KDTreeFlann::KDTreeFlann(const Geometry &data) { SetGeometry(data); }
+KDTreeFlann::KDTreeFlann(const utility::device_vector<Eigen::Vector3f>& data) { SetRawData(data); }
 
 KDTreeFlann::~KDTreeFlann() {}
-
-bool KDTreeFlann::SetGeometry(const Geometry &geometry) {
-    switch (geometry.GetGeometryType()) {
-        case Geometry::GeometryType::PointCloud:
-            return SetRawData(((const PointCloud &)geometry).points_);
-        case Geometry::GeometryType::TriangleMesh:
-            return SetRawData(((const TriangleMesh &)geometry).vertices_);
-        case Geometry::GeometryType::Image:
-        case Geometry::GeometryType::Unspecified:
-        default:
-            utility::LogWarning(
-                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
-            return false;
-    }
-}
 
 template <typename T>
 int KDTreeFlann::Search(const utility::device_vector<T> &query,
@@ -214,3 +197,6 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
         thrust::host_vector<float> &distance2) const;
 template bool KDTreeFlann::SetRawData<Eigen::Vector2f>(
         const utility::device_vector<Eigen::Vector2f> &data);
+
+}
+}

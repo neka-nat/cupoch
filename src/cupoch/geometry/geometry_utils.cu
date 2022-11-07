@@ -21,6 +21,8 @@
 #include <Eigen/Dense>
 
 #include "cupoch/geometry/geometry_utils.h"
+#include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -49,6 +51,23 @@ struct transform_normals_functor {
     }
 };
 }  // namespace
+
+
+const utility::device_vector<Eigen::Vector3f>& ConvertVector3fVectorRef(const Geometry &geometry) {
+    switch (geometry.GetGeometryType()) {
+        case Geometry::GeometryType::PointCloud:
+            return ((const PointCloud &)geometry).points_;
+        case Geometry::GeometryType::TriangleMesh:
+            return ((const TriangleMesh &)geometry).vertices_;
+        case Geometry::GeometryType::Image:
+        case Geometry::GeometryType::Unspecified:
+        default:
+            utility::LogWarning(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+            throw std::runtime_error(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+    }
+}
 
 void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f> &colors,
                                 const size_t size,

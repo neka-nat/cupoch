@@ -22,7 +22,8 @@ This repository is based on [Open3D](https://github.com/intel-isl/Open3D).
 
 * 3D data processing and robotics computation using CUDA
     * KNN
-        * [Optimizing LBVH-Construction and Hierarchy-Traversal to accelerate kNN Queries on Point Clouds using the GPU](https://epub.uni-bayreuth.de/5288/1/cgf.14177.pdf)
+        * [WIP] [Optimizing LBVH-Construction and Hierarchy-Traversal to accelerate kNN Queries on Point Clouds using the GPU](https://epub.uni-bayreuth.de/5288/1/cgf.14177.pdf)
+        * [flann](https://github.com/flann-lib/flann)
     * Point cloud registration
         * ICP
         * [Colored Point Cloud Registration](https://ieeexplore.ieee.org/document/8237287)

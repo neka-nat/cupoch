@@ -20,8 +20,9 @@
  **/
 #include <Eigen/Geometry>
 
-#include "cupoch/geometry/kdtree_flann.h"
+#include "cupoch/knn/kdtree_flann.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/registration/feature.h"
 #include "cupoch/utility/console.h"
 
@@ -107,8 +108,8 @@ struct compute_spfh_functor {
 
 std::shared_ptr<Feature<33>> ComputeSPFHFeature(
         const geometry::PointCloud &input,
-        const geometry::KDTreeFlann &kdtree,
-        const geometry::KDTreeSearchParam &search_param) {
+        const knn::KDTreeFlann &kdtree,
+        const knn::KDTreeSearchParam &search_param) {
     auto feature = std::make_shared<Feature<33>>();
     feature->Resize((int)input.points_.size());
 
@@ -116,11 +117,11 @@ std::shared_ptr<Feature<33>> ComputeSPFHFeature(
     utility::device_vector<float> distance2;
     int knn;
     switch (search_param.GetSearchType()) {
-        case geometry::KDTreeSearchParam::SearchType::Knn:
-            knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
+        case knn::KDTreeSearchParam::SearchType::Knn:
+            knn = ((const knn::KDTreeSearchParamKNN &)search_param).knn_;
             break;
-        case geometry::KDTreeSearchParam::SearchType::Radius:
-            knn = ((const geometry::KDTreeSearchParamRadius &)search_param)
+        case knn::KDTreeSearchParam::SearchType::Radius:
+            knn = ((const knn::KDTreeSearchParamRadius &)search_param)
                           .max_nn_;
             break;
         default:
@@ -187,8 +188,8 @@ struct compute_fpfh_functor {
 
 std::shared_ptr<Feature<33>> ComputeFPFHFeature(
         const geometry::PointCloud &input,
-        const geometry::KDTreeSearchParam
-                &search_param /* = geometry::KDTreeSearchParamKNN()*/) {
+        const knn::KDTreeSearchParam
+                &search_param /* = knn::KDTreeSearchParamKNN()*/) {
     auto feature = std::make_shared<Feature<33>>();
     feature->Resize((int)input.points_.size());
 
@@ -198,17 +199,17 @@ std::shared_ptr<Feature<33>> ComputeFPFHFeature(
                 "normal.");
     }
 
-    geometry::KDTreeFlann kdtree(input);
+    knn::KDTreeFlann kdtree(ConvertVector3fVectorRef(input));
     auto spfh = ComputeSPFHFeature(input, kdtree, search_param);
     utility::device_vector<int> indices;
     utility::device_vector<float> distance2;
     int knn;
     switch (search_param.GetSearchType()) {
-        case geometry::KDTreeSearchParam::SearchType::Knn:
-            knn = ((const geometry::KDTreeSearchParamKNN &)search_param).knn_;
+        case knn::KDTreeSearchParam::SearchType::Knn:
+            knn = ((const knn::KDTreeSearchParamKNN &)search_param).knn_;
             break;
-        case geometry::KDTreeSearchParam::SearchType::Radius:
-            knn = ((const geometry::KDTreeSearchParamRadius &)search_param)
+        case knn::KDTreeSearchParam::SearchType::Radius:
+            knn = ((const knn::KDTreeSearchParamRadius &)search_param)
                           .max_nn_;
             break;
         default:

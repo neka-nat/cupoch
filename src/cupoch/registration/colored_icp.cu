@@ -21,9 +21,10 @@
 #include <Eigen/Geometry>
 #include <iostream>
 
-#include "cupoch/geometry/kdtree_flann.h"
-#include "cupoch/geometry/kdtree_search_param.h"
+#include "cupoch/knn/kdtree_flann.h"
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/geometry/pointcloud.h"
+#include "cupoch/geometry/geometry_utils.h"
 #include "cupoch/registration/colored_icp.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/eigen.h"
@@ -118,11 +119,11 @@ struct compute_color_gradient_functor {
 
 std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
         const geometry::PointCloud &target,
-        const geometry::KDTreeSearchParamRadius &search_param) {
+        const knn::KDTreeSearchParamRadius &search_param) {
     utility::LogDebug("InitializePointCloudForColoredICP");
 
-    geometry::KDTreeFlann tree;
-    tree.SetGeometry(target);
+    knn::KDTreeFlann tree;
+    tree.SetRawData(geometry::ConvertVector3fVectorRef(target));
 
     auto output = std::make_shared<PointCloudForColoredICP>();
     output->colors_ = target.colors_;
@@ -334,7 +335,7 @@ RegistrationResult cupoch::registration::RegistrationColoredICP(
         float lambda_geometric /* = 0.968*/,
         float det_thresh /* = 1.0e-6 */) {
     auto target_c = InitializePointCloudForColoredICP(
-            target, geometry::KDTreeSearchParamRadius(max_distance * 2.0, 30));
+            target, knn::KDTreeSearchParamRadius(max_distance * 2.0, 30));
     return RegistrationICP(
             source, *target_c, max_distance, init,
             TransformationEstimationForColoredICP(lambda_geometric, det_thresh), criteria);

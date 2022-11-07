@@ -220,7 +220,7 @@ void pybind_pointcloud(py::module &m) {
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
                  "normals exist",
-                 "search_param"_a = geometry::KDTreeSearchParamKNN())
+                 "search_param"_a = knn::KDTreeSearchParamKNN())
             .def("orient_normals_to_align_with_direction",
                  &geometry::PointCloud::OrientNormalsToAlignWithDirection,
                  "Function to orient the normals of a point cloud",
@@ -242,7 +242,7 @@ void pybind_pointcloud(py::module &m) {
                     "point "
                     "labels, -1 indicates noise according to the algorithm.",
                     "eps"_a, "min_points"_a, "print_progress"_a = false,
-                    "max_edges"_a = geometry::NUM_MAX_NN)
+                    "max_edges"_a = knn::NUM_MAX_NN)
             .def("segment_plane",
                  [](const geometry::PointCloud &pcd,
                     float distance_threshold,
