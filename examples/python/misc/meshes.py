@@ -159,7 +159,26 @@ def bunny():
         urllib.request.urlretrieve(url, bunny_path + ".tar.gz")
         print("extract bunny mesh")
         with tarfile.open(bunny_path + ".tar.gz") as tar:
-            tar.extractall(path=os.path.dirname(bunny_path))
+            def is_within_directory(directory, target):
+                
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
+            
+                prefix = os.path.commonprefix([abs_directory, abs_target])
+                
+                return prefix == abs_directory
+            
+            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+            
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")
+            
+                tar.extractall(path, members, numeric_owner=numeric_owner) 
+                
+            
+            safe_extract(tar, path=os.path.dirname(bunny_path))
         shutil.move(
             os.path.join(os.path.dirname(bunny_path), "bunny", "reconstruction", "bun_zipper.ply"),
             bunny_path,
