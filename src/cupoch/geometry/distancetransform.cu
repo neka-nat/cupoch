@@ -260,6 +260,24 @@ struct compute_obstacle_cells_functor {
     };
 };
 
+struct get_index_functor {
+    get_index_functor(float voxel_size, int resolution, const Eigen::Vector3f& origin)
+    : voxel_size_(voxel_size), resolution_(resolution), origin_(origin) {};
+    const float voxel_size_;
+    const int resolution_;
+    const Eigen::Vector3f origin_;
+    __device__ int operator()(const Eigen::Vector3f& query) const {
+        Eigen::Vector3f qv =
+                (query - origin_ +
+                 0.5 * voxel_size_ * Eigen::Vector3f::Constant(resolution_)) /
+                voxel_size_;
+        Eigen::Vector3i idx =
+                Eigen::device_vectorize<float, 3, ::floor>(qv.array())
+                        .cast<int>();
+        return IndexOf(idx, resolution_);
+    };
+};
+
 }  // namespace
 
 template class DenseGrid<DistanceVoxel>;
@@ -402,17 +420,7 @@ float DistanceTransform::GetDistance(const Eigen::Vector3f& query) const {
 
 utility::device_vector<float> DistanceTransform::GetDistances(
         const utility::device_vector<Eigen::Vector3f>& queries) const {
-    auto func = [voxel_size = voxel_size_, resolution = resolution_,
-                 origin = origin_] __device__(const Eigen::Vector3f& query) {
-        Eigen::Vector3f qv =
-                (query - origin +
-                 0.5 * voxel_size * Eigen::Vector3f::Constant(resolution)) /
-                voxel_size;
-        Eigen::Vector3i idx =
-                Eigen::device_vectorize<float, 3, ::floor>(qv.array())
-                        .cast<int>();
-        return IndexOf(idx, resolution);
-    };
+    auto func = get_index_functor(voxel_size_, resolution_, origin_);
     utility::device_vector<float> dists(queries.size());
     thrust::transform(
             thrust::make_permutation_iterator(

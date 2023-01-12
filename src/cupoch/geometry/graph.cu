@@ -18,7 +18,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/sort.h>
+#include <thrust/set_operations.h>
 #include <thrust/gather.h>
+#include <thrust/count.h>
+#include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/discard_iterator.h>
 
 #include <stdgpu/unordered_set.cuh>

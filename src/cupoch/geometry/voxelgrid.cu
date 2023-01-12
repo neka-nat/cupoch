@@ -18,6 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/sort.h>
+#include <thrust/unique.h>
+#include <thrust/set_operations.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/gather.h>
 

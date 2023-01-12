@@ -14,6 +14,7 @@
 #include <thrust/for_each.h>
 #include <thrust/transform.h>
 #include <thrust/reduce.h>
+#include <thrust/unique.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/execution_policy.h>
@@ -220,6 +221,15 @@ struct default_morton_code_calculator
     aabb<Real> whole;
 };
 
+template <typename aabb_type>
+struct aabb_merge_functor {
+    __device__ __host__
+    inline aabb_type operator() (const aabb_type& lhs, const aabb_type& rhs) {
+        return merge(lhs, rhs);
+    }
+};
+
+
 template<typename Real, typename Object>
 using  bvh_device = detail::basic_device_bvh<Real, Object, false>;
 template<typename Real, typename Object>
@@ -311,9 +321,7 @@ class bvh
 
         const auto aabb_whole = thrust::reduce(
             aabbs_.begin() + num_internal_nodes, aabbs_.end(), default_aabb,
-            [] __device__ (const aabb_type& lhs, const aabb_type& rhs) {
-                return merge(lhs, rhs);
-            });
+            aabb_merge_functor<aabb_type>());
 
         thrust::device_vector<unsigned int> morton(num_objects);
         thrust::transform(this->objects_d_.begin(), this->objects_d_.end(),

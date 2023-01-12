@@ -18,9 +18,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/sort.h>
 #include <thrust/async/for_each.h>
 #include <thrust/async/reduce.h>
 #include <thrust/random.h>
+#include <thrust/iterator/constant_iterator.h>
 
 #include "cupoch/knn/bruteforce_nn.h"
 #include "cupoch/geometry/pointcloud.h"

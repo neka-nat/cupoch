@@ -99,6 +99,12 @@ struct check_distance_threshold_functor {
     }
 };
 
+struct is_valid_index_functor {
+    __device__ int operator()(int idx) const {
+        return (int)(idx >= 0);
+    }
+};
+
 }  // namespace
 
 std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
@@ -322,7 +328,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, float search_radius) const {
             utility::exec_policy(0), range.begin(), range.end(),
             thrust::make_transform_iterator(
                     tmp_indices.begin(),
-                    [] __device__(int idx) { return (int)(idx >= 0); }),
+                    is_valid_index_functor()),
             thrust::make_discard_iterator(), counts.begin(),
             thrust::equal_to<size_t>(), thrust::plus<size_t>());
     auto begin = make_tuple_iterator(indices.begin(),

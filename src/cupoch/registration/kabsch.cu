@@ -18,6 +18,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/tabulate.h>
 #include <thrust/async/reduce.h>
 #include <thrust/inner_product.h>
 #include <thrust/iterator/permutation_iterator.h>
