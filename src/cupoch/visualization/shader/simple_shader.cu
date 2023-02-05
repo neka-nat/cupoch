@@ -19,6 +19,7 @@
  * IN THE SOFTWARE.
 **/
 #include <cuda_runtime.h>
+#include <thrust/sort.h>
 #include <thrust/iterator/constant_iterator.h>
 
 #include "cupoch/geometry/boundingvolume.h"

@@ -18,6 +18,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/sequence.h>
+#include <thrust/tabulate.h>
+#include <thrust/sort.h>
 #include <thrust/iterator/discard_iterator.h>
 #include <thrust/random.h>
 

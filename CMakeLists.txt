@@ -166,7 +166,7 @@ if (NOT cuda_nvcc_target_flags)
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -arch=sm_52 -std=c++17)
 endif ()
 include_directories(${CUDA_INCLUDE_DIRS})
-set(CMAKE_CUDA_COMPILE_FEATURES cuda_std_14)
+set(CMAKE_CUDA_COMPILE_FEATURES cuda_std_17)
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
     --expt-relaxed-constexpr
     --expt-extended-lambda

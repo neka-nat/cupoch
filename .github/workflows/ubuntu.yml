@@ -24,20 +24,11 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install CUDA
-      env:
-        cuda: "11.2"
-      run: |
-        source ./scripts/actions/install_cuda_ubuntu.sh
-        sudo ln -s /usr/local/cuda-${cuda}/ /usr/local/cuda
-        if [[ $? -eq 0 ]]; then
-          # Set paths for subsequent steps, using ${CUDA_PATH}
-          echo "Adding CUDA to CUDA_PATH, PATH and LD_LIBRARY_PATH"
-          echo "CUDA_PATH=${CUDA_PATH}" >> $GITHUB_ENV
-          echo "${CUDA_PATH}/bin" >> $GITHUB_PATH
-          echo "LD_LIBRARY_PATH=${CUDA_PATH}/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
-        fi
-      shell: bash
+    - name: Install CUDA 
+      uses: Jimver/cuda-toolkit@v0.2.8
+      id: cuda-toolkit
+      with:
+        cuda: '11.7.0'
     - name: Install dependencies
       run: |
         ./scripts/actions/install_deps_ubuntu.sh

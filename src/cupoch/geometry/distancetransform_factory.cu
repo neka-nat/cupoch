@@ -24,6 +24,19 @@
 namespace cupoch {
 namespace geometry {
 
+namespace {
+
+struct get_voxel_index_functor {
+    get_voxel_index_functor(int resolution)
+        : resolution_(resolution) {}
+    const int resolution_;
+    __device__ int operator()(const OccupancyVoxel& voxel) const {
+        return IndexOf(voxel.grid_index_.cast<int>(), resolution_);
+    }
+};
+
+} // namespace
+
 std::shared_ptr<DistanceTransform> DistanceTransform::CreateFromOccupancyGrid(
         const OccupancyGrid& input) {
     if (input.voxel_size_ <= 0.0) {
@@ -39,12 +52,8 @@ std::shared_ptr<DistanceTransform> DistanceTransform::CreateFromOccupancyGrid(
                               output->voxels_.begin(),
                               thrust::make_transform_iterator(
                                       occvoxels->begin(),
-                                      [res = output->resolution_] __device__(
-                                              const OccupancyVoxel& voxel) {
-                                          return IndexOf(
-                                                  voxel.grid_index_.cast<int>(),
-                                                  res);
-                                      })),
+                                      get_voxel_index_functor(output->resolution_)
+                                      )),
                       [res = output->resolution_] __device__(
                               const OccupancyVoxel& voxel) {
                           return DistanceVoxel(voxel.grid_index_, 0);

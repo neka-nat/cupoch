@@ -18,6 +18,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/tabulate.h>
 #include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/image.h"
 #include "cupoch/utility/console.h"

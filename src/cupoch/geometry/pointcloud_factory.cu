@@ -18,6 +18,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  **/
+#include <thrust/sort.h>
+#include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/discard_iterator.h>
 
 #include <Eigen/Dense>
