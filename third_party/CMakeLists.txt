@@ -350,7 +350,6 @@ install(TARGETS ${FLANN_LIBRARIES}
                 ${liblzf_LIBRARIES}
                 ${rply_LIBRARIES}
                 ${JSONCPP_LIBRARIES}
-                ${stdgpu_LIBRARIES}
                 ${SGM_LIBRARIES}
                 ${tinyobjloader_LIBRARIES}
                 ${googletest_LIBRARIES}
