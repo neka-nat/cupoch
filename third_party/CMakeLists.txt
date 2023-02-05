@@ -211,6 +211,7 @@ add_subdirectory(stdgpu)
 target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fPIC>)
 target_compile_options(stdgpu PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--compiler-options -fPIC>)
 set(stdgpu_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/stdgpu/src ${CMAKE_CURRENT_BINARY_DIR}/stdgpu/src/stdgpu/include)
+set(stdgpu_LIBRARIES stdgpu)
 
 # tinyobjloader
 message(STATUS "Building tinyobjloader from source")
@@ -329,6 +330,7 @@ list(APPEND 3RDPARTY_LIBRARIES
      ${liblzf_LIBRARIES}
      ${rply_LIBRARIES}
      ${JSONCPP_LIBRARIES}
+     ${stdgpu_LIBRARIES}
      ${SGM_LIBRARIES}
      ${tinyobjloader_LIBRARIES}
      ${googletest_LIBRARIES}
