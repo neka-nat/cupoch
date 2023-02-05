@@ -41,22 +41,11 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-
     - name: Install CUDA 
-      env: 
-        cuda: ${{ matrix.cuda }}
-        visual_studio: ${{ matrix.visual_studio }}
-      shell: powershell
-      run: |
-        # Install CUDA via a powershell script
-        .\scripts\actions\install_cuda_windows.ps1
-        if ($?) {
-          # Set paths for subsequent steps, using $env:CUDA_PATH
-          echo "Adding CUDA to CUDA_PATH, CUDA_PATH_X_Y and PATH"
-          echo "CUDA_PATH=$env:CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$env:CUDA_PATH_VX_Y=$env:CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$env:CUDA_PATH/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        }
+      uses: Jimver/cuda-toolkit@v0.2.8
+      id: cuda-toolkit
+      with:
+        cuda: '11.7.0'
     - name: nvcc check
       shell: powershell
       run: |
