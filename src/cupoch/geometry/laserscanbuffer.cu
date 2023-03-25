@@ -117,7 +117,11 @@ LaserScanBuffer::LaserScanBuffer(int num_steps,
       num_steps_(num_steps),
       num_max_scans_(num_max_scans),
       min_angle_(min_angle),
-      max_angle_(max_angle) {}
+      max_angle_(max_angle) {
+    ranges_.reserve(num_steps_ * num_max_scans_);
+    intensities_.reserve(num_steps_ * num_max_scans_);
+    origins_.reserve(num_max_scans_);
+}
 
 LaserScanBuffer::~LaserScanBuffer(){};
 
@@ -186,6 +190,7 @@ LaserScanBuffer& LaserScanBuffer::Clear() {
     bottom_ = 0;
     ranges_.clear();
     intensities_.clear();
+    origins_.clear();
     return *this;
 }
 
