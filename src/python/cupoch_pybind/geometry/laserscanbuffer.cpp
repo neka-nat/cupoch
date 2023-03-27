@@ -36,6 +36,8 @@ void pybind_laserscanbuffer(py::module &m) {
     laserscan.def(py::init<int, int, float, float>(),
                   "Create a LaserScanBuffer from given a number of points and angle ranges",
                   "num_steps"_a, "num_max_scans"_a = 10, "min_angle"_a = M_PI, "max_angle"_a = M_PI)
+             .def("num_scans", &geometry::LaserScanBuffer::GetNumScans)
+             .def("is_full", &geometry::LaserScanBuffer::IsFull)
              .def("add_ranges", [](geometry::LaserScanBuffer &self,
                                    const wrapper::device_vector_float &ranges,
                                    const Eigen::Matrix4f &transformation,
@@ -46,6 +48,8 @@ void pybind_laserscanbuffer(py::module &m) {
                   py::arg("ranges"),
                   py::arg("transformation") = Eigen::Matrix4f::Identity(),
                   py::arg("intensities") = wrapper::device_vector_float())
+             .def("pop_one_range", &geometry::LaserScanBuffer::PopOneRange,
+                  "Pop one scan range from the buffer")
              .def("range_filter", &geometry::LaserScanBuffer::RangeFilter)
              .def("scan_shadow_filter", &geometry::LaserScanBuffer::ScanShadowsFilter,
                   "This filter removes laser readings that are most likely caused"

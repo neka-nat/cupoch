@@ -194,7 +194,7 @@ LaserScanBuffer& LaserScanBuffer::Clear() {
     return *this;
 }
 
-bool LaserScanBuffer::IsEmpty() const { return ranges_.empty(); }
+bool LaserScanBuffer::IsEmpty() const { return bottom_ == top_; }
 
 Eigen::Vector3f LaserScanBuffer::GetMinBound() const {
     utility::LogError("LaserScanBuffer::GetMinBound is not supported");
@@ -251,10 +251,11 @@ LaserScanBuffer& LaserScanBuffer::Rotate(const Eigen::Matrix3f& R,
     return *this;
 }
 
+template <typename ContainerType>
 LaserScanBuffer& LaserScanBuffer::AddRanges(
-        const utility::device_vector<float>& ranges,
+        const ContainerType& ranges,
         const Eigen::Matrix4f& transformation,
-        const utility::device_vector<float>& intensities) {
+        const ContainerType& intensities) {
     if (ranges.size() != num_steps_) {
         utility::LogError("[AddRanges] Invalid size of input ranges.");
         return *this;
@@ -281,25 +282,43 @@ LaserScanBuffer& LaserScanBuffer::AddRanges(
             thrust::copy_n(intensities.begin(), num_steps_,
                            intensities_.begin() + end * num_steps_);
         origins_[end] = transformation;
-        top_++;
+        if (IsFull()) top_++;
         bottom_++;
     }
     return *this;
 }
 
-LaserScanBuffer& LaserScanBuffer::AddRanges(
+template LaserScanBuffer& LaserScanBuffer::AddRanges(
+        const utility::device_vector<float>& range,
+        const Eigen::Matrix4f& transformation,
+        const utility::device_vector<float>& intensities);
+
+template LaserScanBuffer& LaserScanBuffer::AddRanges(
         const utility::pinned_host_vector<float>& ranges,
         const Eigen::Matrix4f& transformation,
-        const utility::pinned_host_vector<float>& intensities) {
-    utility::device_vector<float> d_ranges(ranges.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(d_ranges.data()),
-                            ranges.data(), ranges.size() * sizeof(float),
-                            cudaMemcpyHostToDevice));
-    utility::device_vector<float> d_intensities(intensities.size());
-    cudaSafeCall(cudaMemcpy(
-            thrust::raw_pointer_cast(d_intensities.data()), intensities.data(),
-            intensities.size() * sizeof(float), cudaMemcpyHostToDevice));
-    return AddRanges(d_ranges, transformation, d_intensities);
+        const utility::pinned_host_vector<float>& intensities);
+
+std::shared_ptr<LaserScanBuffer> LaserScanBuffer::PopOneRange() {
+    if (IsEmpty()) {
+        utility::LogError("[PopRange] Buffer is empty.");
+        return nullptr;
+    }
+    const int start = top_ % num_max_scans_;
+    auto out = std::make_shared<LaserScanBuffer>(num_steps_, num_max_scans_,
+                                                 min_angle_, max_angle_);
+    out->ranges_.resize(num_steps_);
+    thrust::copy_n(ranges_.begin() + start * num_steps_, num_steps_,
+                   out->ranges_.begin());
+    if (HasIntensities()) {
+        out->intensities_.resize(num_steps_);
+        thrust::copy_n(intensities_.begin() + start * num_steps_, num_steps_,
+                       out->intensities_.begin());
+    }
+    out->origins_.push_back(origins_[start]);
+    out->top_ = 0;
+    out->bottom_ = 1;
+    top_++;
+    return out;
 }
 
 std::shared_ptr<LaserScanBuffer> LaserScanBuffer::RangeFilter(

@@ -59,16 +59,17 @@ public:
         return (max_angle_ - min_angle_) / (num_steps_ - 1);
     };
 
+    bool IsFull() const { return (bottom_ + 1) % num_max_scans_ == top_; };
+    int GetNumScans() const { return bottom_ - top_ + 1; };
+
+    template <typename ContainerType>
     LaserScanBuffer &AddRanges(
-            const utility::device_vector<float> &ranges,
+            const ContainerType &ranges,
             const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity(),
-            const utility::device_vector<float> &intensities =
-                    utility::device_vector<float>());
-    LaserScanBuffer &AddRanges(
-            const utility::pinned_host_vector<float> &ranges,
-            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity(),
-            const utility::pinned_host_vector<float> &intensities =
-                    utility::pinned_host_vector<float>());
+            const ContainerType &intensities =
+                    ContainerType());
+
+    std::shared_ptr<LaserScanBuffer> PopOneRange();
 
     std::shared_ptr<LaserScanBuffer> RangeFilter(float min_range,
                                                  float max_range) const;
