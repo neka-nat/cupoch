@@ -24,15 +24,25 @@
 #include "cupoch/utility/eigen.h"
 
 namespace cupoch {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}  // namespace camera
+
 namespace geometry {
 
 template <int Dim>
 class AxisAlignedBoundingBox;
+class Image;
+class PointCloud;
+
+
+static const unsigned int DEFAULT_NUM_MAX_SCANS = 10;
 
 class LaserScanBuffer : public GeometryBase3D {
 public:
     LaserScanBuffer(int num_steps,
-                    int num_max_scans = 10,
+                    int num_max_scans = DEFAULT_NUM_MAX_SCANS,
                     float min_angle = -M_PI,
                     float max_angle = M_PI);
     ~LaserScanBuffer();
@@ -80,13 +90,39 @@ public:
             int neighbors = 0,
             bool remove_shadow_start_point = false) const;
 
+    static std::shared_ptr<LaserScanBuffer> CreateFromPointCloud(
+            const geometry::PointCloud &pcd,
+            float angle_increment,
+            float min_height,
+            float max_height,
+            unsigned int num_vertical_divisions = 1,
+            float min_range = 0.0,
+            float max_range = std::numeric_limits<float>::infinity(),
+            float min_angle = -M_PI,
+            float max_angle = M_PI);
+
+    static std::shared_ptr<LaserScanBuffer> CreateFromDepthImage(
+            const geometry::Image &depth,
+            const camera::PinholeCameraIntrinsic &intrinsic,
+            float angle_increment,
+            float min_y,
+            float max_y,
+            unsigned int num_vertical_divisions = 1,
+            float min_range = 0.0,
+            float max_range = std::numeric_limits<float>::infinity(),
+            float min_angle = -M_PI,
+            float max_angle = M_PI,
+            float depth_scale = 1000.0,
+            float depth_trunc = 1000.0,
+            int stride = 1);
+
 public:
     utility::device_vector<float> ranges_;
     utility::device_vector<float> intensities_;
-    int top_ = 0;
-    int bottom_ = 0;
-    const int num_steps_;
-    const int num_max_scans_;
+    int top_ = 0;     //!< index of the oldest scan
+    int bottom_ = 0;  //!< index of the newest scan
+    const int num_steps_;      //!< number of steps in a scan
+    const int num_max_scans_;  //!< maximum number of scans
     float min_angle_;
     float max_angle_;
     utility::device_vector<Eigen::Matrix4f_u> origins_;

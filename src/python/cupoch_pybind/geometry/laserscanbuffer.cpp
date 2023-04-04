@@ -20,6 +20,7 @@
 **/
 #include "cupoch/geometry/laserscanbuffer.h"
 
+#include "cupoch/camera/pinhole_camera_intrinsic.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch_pybind/docstring.h"
 #include "cupoch_pybind/geometry/geometry.h"
@@ -36,7 +37,6 @@ void pybind_laserscanbuffer(py::module &m) {
     laserscan.def(py::init<int, int, float, float>(),
                   "Create a LaserScanBuffer from given a number of points and angle ranges",
                   "num_steps"_a, "num_max_scans"_a = 10, "min_angle"_a = M_PI, "max_angle"_a = M_PI)
-             .def("num_scans", &geometry::LaserScanBuffer::GetNumScans)
              .def("is_full", &geometry::LaserScanBuffer::IsFull)
              .def("add_ranges", [](geometry::LaserScanBuffer &self,
                                    const wrapper::device_vector_float &ranges,
@@ -56,12 +56,41 @@ void pybind_laserscanbuffer(py::module &m) {
                   " by the veiling effect when the edge of an object is being scanned.",
                   "min_angle"_a, "max_angle"_a, "window"_a,
                   "neighbors"_a = 0, "remove_shadow_start_point"_a = false)
+            .def_static("create_from_point_cloud", &geometry::LaserScanBuffer::CreateFromPointCloud,
+                        "Create a LaserScanBuffer from a point cloud",
+                        "pcd"_a,
+                        "angle_increment"_a,
+                        "min_height"_a,
+                        "max_height"_a,
+                        "num_vertical_divisions"_a = 1,
+                        "min_range"_a = 0.0,
+                        "max_range"_a = std::numeric_limits<float>::infinity(),
+                        "min_angle"_a = -M_PI,
+                        "max_angle"_a = M_PI)
+            .def_static("create_from_depth_image", &geometry::LaserScanBuffer::CreateFromDepthImage,
+                        "Create a LaserScanBuffer from a depth image",
+                        "depth"_a,
+                        "intrinsic"_a,
+                        "angle_increment"_a,
+                        "min_y"_a,
+                        "max_y"_a,
+                        "num_vertical_divisions"_a = 1,
+                        "min_range"_a = 0.0,
+                        "max_range"_a = std::numeric_limits<float>::infinity(),
+                        "min_angle"_a = -M_PI,
+                        "max_angle"_a = M_PI,
+                        "depth_scale"_a = 1000.0,
+                        "depth_trunc"_a = 1000.0,
+                        "stride"_a = 1)
             .def_readonly("num_steps", &geometry::LaserScanBuffer::num_steps_,
                           "Integer: Number of steps per scan.")
             .def_readonly("num_max_scans", &geometry::LaserScanBuffer::num_max_scans_,
                           "Integer: Maximum buffer size.")
             .def_readwrite("min_angle", &geometry::LaserScanBuffer::min_angle_)
             .def_readwrite("max_angle", &geometry::LaserScanBuffer::max_angle_)
+            .def_property_readonly(
+                    "num_scans", &geometry::LaserScanBuffer::GetNumScans,
+                    "Integer: Number of scans in the buffer.")
             .def_property_readonly(
                     "ranges",
                     [](geometry::LaserScanBuffer &scan) {
