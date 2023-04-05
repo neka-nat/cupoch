@@ -374,6 +374,14 @@ std::shared_ptr<PointCloud> PointCloud::CreateFromRGBDImage(
 
 std::shared_ptr<PointCloud> PointCloud::CreateFromLaserScanBuffer(
         const LaserScanBuffer &scan, float min_range, float max_range) {
+    if (scan.ranges_.size() == 0) {
+        utility::LogError("[PointCloud::CreateFromLaserScanBuffer] Empty scan, return empty pointcloud.");
+        return std::make_shared<PointCloud>();
+    }
+    if (min_range >= max_range) {
+        utility::LogError("[PointCloud::CreateFromLaserScanBuffer] min_range must be smaller than max_range.");
+        return std::make_shared<PointCloud>();
+    }
     auto pointcloud = std::make_shared<PointCloud>();
     thrust::repeated_range<
             utility::device_vector<Eigen::Matrix4f_u>::const_iterator>

@@ -102,6 +102,14 @@ std::shared_ptr<LaserScanBuffer> LaserScanBuffer::CreateFromPointCloud(
         utility::LogError("[LaserScanBuffer::CreateFromPointCloud] min_height must be smaller than max_height.");
         return std::shared_ptr<LaserScanBuffer>();
     }
+    if (min_range >= max_range) {
+        utility::LogError("[LaserScanBuffer::CreateFromPointCloud] min_range must be smaller than max_range.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
+    if (min_angle >= max_angle) {
+        utility::LogError("[LaserScanBuffer::CreateFromPointCloud] min_angle must be smaller than max_angle.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
     size_t num_steps = std::ceil((max_angle - min_angle) / angle_increment);
     size_t num_max_scans = std::max(DEFAULT_NUM_MAX_SCANS, num_vertical_divisions);
     auto laserscanbuffer = std::make_shared<LaserScanBuffer>(
@@ -148,6 +156,22 @@ std::shared_ptr<LaserScanBuffer> LaserScanBuffer::CreateFromDepthImage(
         float depth_scale,
         float depth_trunc,
         int stride) {
+    if (angle_increment <= 0.0) {
+        utility::LogError("[LaserScanBuffer::CreateFromDepthImage] angle_increment must be positive.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
+    if (min_y >= max_y) {
+        utility::LogError("[LaserScanBuffer::CreateFromDepthImage] min_y must be smaller than max_y.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
+    if (min_range >= max_range) {
+        utility::LogError("[LaserScanBuffer::CreateFromDepthImage] min_range must be smaller than max_range.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
+    if (min_angle >= max_angle) {
+        utility::LogError("[LaserScanBuffer::CreateFromDepthImage] min_angle must be smaller than max_angle.");
+        return std::shared_ptr<LaserScanBuffer>();
+    }
     Eigen::Matrix4f x_rot90 = Eigen::Matrix4f::Identity();
     x_rot90.block<3, 3>(0, 0) = Eigen::AngleAxisf(-M_PI_2, Eigen::Vector3f::UnitX()).toRotationMatrix();
     auto pcd = geometry::PointCloud::CreateFromDepthImage(
