@@ -84,10 +84,16 @@ sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
 pip3 install cupoch
 ```
 
-Or you can compile it from source.
+Or you can compile it from source. Update your version of cmake if necessary.
 
 ```
-git clone https://github.com/neka-nat/cupoch.git --recurse
+wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz
+tar zxvf cmake-3.18.4.tar.gz
+cd cmake-3.18.4
+./bootstrap -- -DCMAKE_USE_OPENSSL=OFF
+make && sudo make install
+cd ..
+git clone -b jetson_nano https://github.com/neka-nat/cupoch.git --recurse
 cd cupoch/
 mkdir build
 cd build/
