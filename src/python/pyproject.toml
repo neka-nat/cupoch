@@ -17,6 +17,10 @@ rospkg = {version = "^1.2.9", optional = true}
 matplotlib = {version = "^3.3.3", optional = true}
 pyrealsense2 = {version = "^2.41.0", optional = true}
 depthai = {version = "^2.10.0", optional = true}
+rospy-all = {version = "^0.0.1", optional = true}
+rosmaster = {version = "^1.15.11", optional = true}
+rosbag = {version = "^1.15.11", optional = true}
+transformations = {version = "^2022.9.26", optional = true}
 
 [tool.poetry.dev-dependencies]
 twine = "^3.2.0"
@@ -30,5 +34,10 @@ black = "^22.6.0"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[[tool.poetry.source]]
+name = "ros"
+url = "https://rospypi.github.io/simple/"
+secondary = true
+
 [tool.poetry.extras]
-examples = ["open3d", "torch", "opencv-python", "networkx", "rospkg", "matplotlib", "pyrealsense2", "depthai"]
+examples = ["open3d", "torch", "opencv-python", "networkx", "rospkg", "matplotlib", "pyrealsense2", "depthai", "rospy-all", "rosmaster", "rosbag", "transformations"]

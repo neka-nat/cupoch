@@ -1,16 +1,15 @@
 import numpy as np
 import cupoch as cph
 import rosbag
+from sensor_msgs.msg import LaserScan
 import transformations as tftrans
+
 
 bagfile = "../../testdata/Mapping1.bag"
 bag = rosbag.Bag(bagfile)
 initialize = False
 scan = None
 trans = np.identity(4)
-vis = cph.visualization.Visualizer()
-vis.create_window()
-pcd = cph.geometry.PointCloud()
 frame = 0
 n_buf = 50
 for topic, msg, t in bag.read_messages():
@@ -37,12 +36,12 @@ for topic, msg, t in bag.read_messages():
                 cph.utility.HostFloatVector(msg.intensities),
             )
 
-    if initialize and frame % n_buf == 0:
-        temp = cph.geometry.PointCloud.create_from_laserscanbuffer(scan, 0.0, 10.0)
-        pcd += temp
-        vis.add_geometry(pcd)
-        vis.update_geometry(pcd)
-        vis.poll_events()
-        vis.update_renderer()
-
-vis.destroy_window()
+            new_msg = LaserScan()
+            new_msg.angle_min = scan.min_angle
+            new_msg.angle_max = scan.max_angle
+            new_msg.angle_increment = (scan.max_angle - scan.min_angle) / scan.num_steps
+            new_msg.range_min = 0.0
+            new_msg.range_max = 10000.0
+            new_msg.ranges = scan.pop_host_one_scan()
+            print("------ Original laserscan ------ \n", msg)
+            print("------ Converted laserscan ------\n", new_msg)

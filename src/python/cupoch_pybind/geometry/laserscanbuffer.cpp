@@ -48,8 +48,26 @@ void pybind_laserscanbuffer(py::module &m) {
                   py::arg("ranges"),
                   py::arg("transformation") = Eigen::Matrix4f::Identity(),
                   py::arg("intensities") = wrapper::device_vector_float())
-             .def("pop_one_range", &geometry::LaserScanBuffer::PopOneRange,
-                  "Pop one scan range from the buffer")
+             .def("add_host_ranges", [](geometry::LaserScanBuffer &self,
+                                        const cupoch::utility::pinned_host_vector<float> &ranges,
+                                        const Eigen::Matrix4f &transformation,
+                                        const cupoch::utility::pinned_host_vector<float> &intensities) {
+                                            return self.AddRanges(
+                                                wrapper::device_vector_float(ranges).data_,
+                                                transformation,
+                                                wrapper::device_vector_float(intensities).data_
+                                            );
+                                        },
+                  "Add host single scan ranges",
+                  py::arg("ranges"),
+                  py::arg("transformation") = Eigen::Matrix4f::Identity(),
+                  py::arg("intensities") = cupoch::utility::pinned_host_vector<float>())
+             .def("merge", &geometry::LaserScanBuffer::Merge,
+                  "Merge other LaserScanBuffer into this one")
+             .def("pop_one_scan", &geometry::LaserScanBuffer::PopOneScan,
+                  "Pop one scan from the buffer")
+             .def("pop_host_one_scan", &geometry::LaserScanBuffer::PopHostOneScan,
+                  "Pop host one scan from the buffer")
              .def("range_filter", &geometry::LaserScanBuffer::RangeFilter)
              .def("scan_shadow_filter", &geometry::LaserScanBuffer::ScanShadowsFilter,
                   "This filter removes laser readings that are most likely caused"

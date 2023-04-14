@@ -46,7 +46,8 @@ TEST(LaserScanBuffer, Constructor) {
 }
 
 TEST(LaserScanBuffer, AddRanges) {
-    geometry::LaserScanBuffer scan(100);
+    unsigned int buffer_size = 10;
+    geometry::LaserScanBuffer scan(100, buffer_size);
     EXPECT_EQ(scan.num_steps_, 100);
     EXPECT_EQ(scan.bottom_, 0);
 
@@ -56,16 +57,26 @@ TEST(LaserScanBuffer, AddRanges) {
     EXPECT_EQ(scan.bottom_, 1);
     EXPECT_EQ(scan.origins_.size(), scan.bottom_);
     EXPECT_EQ(scan.ranges_.size(), scan.num_steps_ * scan.bottom_);
+    EXPECT_EQ(scan.GetNumScans(), 1);
     scan.AddRanges(hvec);
     EXPECT_EQ(scan.num_steps_, 100);
     EXPECT_EQ(scan.bottom_, 2);
     EXPECT_EQ(scan.origins_.size(), scan.bottom_);
     EXPECT_EQ(scan.ranges_.size(), scan.num_steps_ * scan.bottom_);
+    EXPECT_EQ(scan.GetNumScans(), 2);
+    auto latest = scan.PopOneScan();
+    EXPECT_EQ(latest->num_steps_, 100);
+    EXPECT_EQ(scan.GetNumScans(), 1);
 
     scan.Clear();
-    scan.AddRanges(hvec, Matrix4f::Identity(), hvec);
-    EXPECT_EQ(scan.ranges_.size(), scan.num_steps_ * scan.bottom_);
-    EXPECT_EQ(scan.intensities_.size(), scan.num_steps_ * scan.bottom_);
+    for (int i = 0; i < buffer_size; ++i) {
+        EXPECT_FALSE(scan.IsFull());
+        scan.AddRanges(hvec, Matrix4f::Identity(), hvec);
+        EXPECT_EQ(scan.ranges_.size(), scan.num_steps_ * scan.GetNumScans());
+        EXPECT_EQ(scan.intensities_.size(), scan.num_steps_ * scan.GetNumScans());
+        EXPECT_EQ(scan.GetNumScans(), i + 1);
+    }
+    EXPECT_TRUE(scan.IsFull());
 }
 
 TEST(LaserScanBuffer, RangeFilter) {

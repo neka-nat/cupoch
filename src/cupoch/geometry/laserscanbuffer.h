@@ -37,7 +37,7 @@ class Image;
 class PointCloud;
 
 
-static const unsigned int DEFAULT_NUM_MAX_SCANS = 10;
+static const unsigned int DEFAULT_NUM_MAX_SCANS = 50;
 
 class LaserScanBuffer : public GeometryBase3D {
 public:
@@ -69,8 +69,8 @@ public:
         return (max_angle_ - min_angle_) / (num_steps_ - 1);
     };
 
-    bool IsFull() const { return (bottom_ + 1) % num_max_scans_ == top_; };
-    int GetNumScans() const { return bottom_ - top_ + 1; };
+    bool IsFull() const { return GetNumScans() == num_max_scans_; };
+    int GetNumScans() const { return bottom_ - top_; };
 
     template <typename ContainerType>
     LaserScanBuffer &AddRanges(
@@ -79,7 +79,15 @@ public:
             const ContainerType &intensities =
                     ContainerType());
 
-    std::shared_ptr<LaserScanBuffer> PopOneRange();
+    LaserScanBuffer &AddRanges(
+            const float *ranges,
+            const Eigen::Matrix4f &transformation = Eigen::Matrix4f::Identity(),
+            const float *intensities = nullptr);
+
+    LaserScanBuffer &Merge(const LaserScanBuffer &other);
+
+    std::shared_ptr<LaserScanBuffer> PopOneScan();
+    std::unique_ptr<utility::pinned_host_vector<float>> PopHostOneScan();
 
     std::shared_ptr<LaserScanBuffer> RangeFilter(float min_range,
                                                  float max_range) const;
