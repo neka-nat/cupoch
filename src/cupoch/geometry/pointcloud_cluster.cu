@@ -105,7 +105,7 @@ struct set_label_functor {
 }  // namespace
 
 // https://www.sciencedirect.com/science/article/pii/S1877050913003438
-utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
+std::unique_ptr<utility::device_vector<int>> PointCloud::ClusterDBSCAN(float eps,
                                                       size_t min_points,
                                                       bool print_progress,
                                                       size_t max_edges) const {
@@ -140,14 +140,14 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
     int cluster = 0;
     utility::device_vector<int> visited(n_pt, 0);
     utility::pinned_host_vector<int> h_visited(n_pt, 0);
-    utility::device_vector<int> clusters(n_pt, -1);
+    auto clusters = std::make_unique<utility::device_vector<int>>(n_pt, -1);
     utility::device_vector<int> xa(n_pt);
     utility::device_vector<bool> fa(n_pt);
     for (int i = 0; i < n_pt; i++) {
         ++progress_bar;
         if (h_visited[i] != 1) {
             thrust::fill_n(make_tuple_iterator(visited.begin() + i,
-                                               clusters.begin() + i),
+                                               clusters->begin() + i),
                            1, thrust::make_tuple(1, cluster));
             thrust::fill(make_tuple_begin(xa, fa), make_tuple_end(xa, fa),
                          thrust::make_tuple(0, 0));
@@ -165,7 +165,7 @@ utility::device_vector<int> PointCloud::ClusterDBSCAN(float eps,
             }
             set_label_functor sl_func(thrust::raw_pointer_cast(xa.data()),
                                       cluster,
-                                      thrust::raw_pointer_cast(clusters.data()),
+                                      thrust::raw_pointer_cast(clusters->data()),
                                       thrust::raw_pointer_cast(visited.data()));
             thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                              thrust::make_counting_iterator(n_pt), sl_func);

@@ -418,10 +418,10 @@ float DistanceTransform::GetDistance(const Eigen::Vector3f& query) const {
     return v.distance_;
 }
 
-utility::device_vector<float> DistanceTransform::GetDistances(
+std::unique_ptr<utility::device_vector<float>> DistanceTransform::GetDistances(
         const utility::device_vector<Eigen::Vector3f>& queries) const {
     auto func = get_index_functor(voxel_size_, resolution_, origin_);
-    utility::device_vector<float> dists(queries.size());
+    auto dists = std::make_unique<utility::device_vector<float>>(queries.size());
     thrust::transform(
             thrust::make_permutation_iterator(
                     voxels_.begin(),
@@ -429,7 +429,7 @@ utility::device_vector<float> DistanceTransform::GetDistances(
             thrust::make_permutation_iterator(
                     voxels_.begin(),
                     thrust::make_transform_iterator(queries.end(), func)),
-            dists.begin(),
+            dists->begin(),
             [] __device__(const DistanceVoxel& v) { return v.distance_; });
     return dists;
 }

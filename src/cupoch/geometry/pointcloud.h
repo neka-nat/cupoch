@@ -177,7 +177,7 @@ public:
     /// in Large Spatial Databases with Noise", 1996
     /// Returns a vector of point labels, -1 indicates noise according to
     /// the algorithm.
-    utility::device_vector<int> ClusterDBSCAN(
+    std::unique_ptr<utility::device_vector<int>> ClusterDBSCAN(
             float eps,
             size_t min_points,
             bool print_progress = false,

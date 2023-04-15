@@ -82,7 +82,7 @@ void pybind_distancetransform(py::module &m) {
             .def("get_distances",
                  [] (const geometry::DistanceTransform& self,
                      const wrapper::device_vector_vector3f& points) {
-                     return wrapper::device_vector_float(self.GetDistances(points.data_));
+                     return wrapper::device_vector_float(*self.GetDistances(points.data_));
                  })
             .def_static(
                     "create_from_occupancy_grid",

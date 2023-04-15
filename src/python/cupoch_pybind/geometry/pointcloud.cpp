@@ -232,7 +232,7 @@ void pybind_pointcloud(py::module &m) {
                        size_t max_edges) {
                         auto res = pcd.ClusterDBSCAN(eps, min_points,
                                                      print_progress, max_edges);
-                        return wrapper::device_vector_int(std::move(res));
+                        return wrapper::device_vector_int(std::move(*res));
                     },
                     "Cluster PointCloud using the DBSCAN algorithm  Ester et "
                     "al., "
