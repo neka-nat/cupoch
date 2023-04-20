@@ -72,7 +72,7 @@ class OccupancyGrid : public DenseGrid<OccupancyVoxel> {
 public:
     OccupancyGrid();
     OccupancyGrid(float voxel_size,
-                  int resolution = 512,
+                  size_t resolution = 512,
                   const Eigen::Vector3f& origin = Eigen::Vector3f::Zero());
     ~OccupancyGrid();
     OccupancyGrid(const OccupancyGrid& other);

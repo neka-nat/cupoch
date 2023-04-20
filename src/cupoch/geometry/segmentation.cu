@@ -186,8 +186,8 @@ Eigen::Vector4f GetPlaneFromPoints(
 
 std::tuple<Eigen::Vector4f, utility::device_vector<size_t>>
 PointCloud::SegmentPlane(float distance_threshold /* = 0.01 */,
-                         int ransac_n /* = 3 */,
-                         int num_iterations /* = 100 */) const {
+                         size_t ransac_n /* = 3 */,
+                         size_t num_iterations /* = 100 */) const {
     RANSACResult result;
     float error = 0.0;
 

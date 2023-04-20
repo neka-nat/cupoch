@@ -31,7 +31,7 @@ DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type)
 template <class VoxelType>
 DenseGrid<VoxelType>::DenseGrid(Geometry::GeometryType type,
                                 float voxel_size,
-                                int resolution,
+                                size_t resolution,
                                 const Eigen::Vector3f &origin)
     : GeometryBase3D(type),
       voxel_size_(voxel_size),
@@ -126,7 +126,7 @@ DenseGrid<VoxelType> &DenseGrid<VoxelType>::Rotate(const Eigen::Matrix3f &R,
 
 template <class VoxelType>
 DenseGrid<VoxelType> &DenseGrid<VoxelType>::Reconstruct(float voxel_size,
-                                                        int resolution) {
+                                                        size_t resolution) {
     voxel_size_ = voxel_size;
     resolution_ = resolution;
     voxels_.resize(resolution_ * resolution_ * resolution_, VoxelType());

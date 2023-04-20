@@ -105,10 +105,10 @@ public:
     }
 
     /// \brief Prepare Image properties and allocate Image buffer.
-     Image &Prepare(int width,
-                    int height,
-                    int num_of_channels,
-                    int bytes_per_channel) {
+     Image &Prepare(unsigned int width,
+                    unsigned int height,
+                    unsigned int num_of_channels,
+                    unsigned int bytes_per_channel) {
         width_ = width;
         height_ = height;
         num_of_channels_ = num_of_channels;
@@ -211,13 +211,13 @@ protected:
 
 public:
     /// Width of the image.
-    int width_ = 0;
+    unsigned int width_ = 0;
     /// Height of the image.
-    int height_ = 0;
+    unsigned int height_ = 0;
     /// Number of chanels in the image.
-    int num_of_channels_ = 0;
+    unsigned int num_of_channels_ = 0;
     /// Number of bytes per channel.
-    int bytes_per_channel_ = 0;
+    unsigned int bytes_per_channel_ = 0;
     /// Image storage buffer.
     utility::device_vector<uint8_t> data_;
 };

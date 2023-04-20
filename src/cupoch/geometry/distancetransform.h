@@ -52,12 +52,12 @@ class DistanceTransform : public DenseGrid<DistanceVoxel> {
 public:
     DistanceTransform();
     DistanceTransform(float voxel_size,
-                      int resolution,
+                      size_t resolution,
                       const Eigen::Vector3f &origin = Eigen::Vector3f::Zero());
     DistanceTransform(const DistanceTransform &other);
     ~DistanceTransform();
 
-    DistanceTransform &Reconstruct(float voxel_size, int resolution);
+    DistanceTransform &Reconstruct(float voxel_size, size_t resolution);
 
     DistanceTransform &ComputeEDT(
             const utility::device_vector<Eigen::Vector3i> &points);
