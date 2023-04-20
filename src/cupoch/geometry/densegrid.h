@@ -35,7 +35,7 @@ public:
     DenseGrid(Geometry::GeometryType type);
     DenseGrid(Geometry::GeometryType type,
               float voxel_size,
-              int resolution,
+              size_t resolution,
               const Eigen::Vector3f &origin);
     DenseGrid(Geometry::GeometryType type, const DenseGrid &src_grid);
     virtual ~DenseGrid();
@@ -53,14 +53,14 @@ public:
     virtual DenseGrid &Scale(const float scale, bool center = true);
     virtual DenseGrid &Rotate(const Eigen::Matrix3f &R, bool center = true);
 
-    virtual DenseGrid &Reconstruct(float voxel_size, int resolution);
+    virtual DenseGrid &Reconstruct(float voxel_size, size_t resolution);
 
     int GetVoxelIndex(const Eigen::Vector3f &point) const;
     thrust::tuple<bool, VoxelType> GetVoxel(const Eigen::Vector3f &point) const;
 
 public:
     float voxel_size_ = 0.0;
-    int resolution_ = 0;
+    size_t resolution_ = 0;
     Eigen::Vector3f origin_ = Eigen::Vector3f::Zero();
     utility::device_vector<VoxelType> voxels_;
 };

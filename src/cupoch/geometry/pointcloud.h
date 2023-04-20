@@ -137,9 +137,9 @@ public:
 
     std::shared_ptr<PointCloud> GaussianFilter(float search_radius,
                                                float sigma2,
-                                               int num_max_search_points = 50);
+                                               size_t num_max_search_points = 50);
 
-    std::shared_ptr<PointCloud> PassThroughFilter(int axis_no,
+    std::shared_ptr<PointCloud> PassThroughFilter(size_t axis_no,
                                                   float min_bound,
                                                   float max_bound);
 
@@ -194,8 +194,8 @@ public:
     /// the plane inliers.
     std::tuple<Eigen::Vector4f, utility::device_vector<size_t>> SegmentPlane(
             float distance_threshold = 0.01,
-            int ransac_n = 3,
-            int num_iterations = 100) const;
+            size_t ransac_n = 3,
+            size_t num_iterations = 100) const;
 
     /// Factory function to create a pointcloud from a depth image and a camera
     /// model (PointCloudFactory.cpp)

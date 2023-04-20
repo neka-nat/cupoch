@@ -80,7 +80,7 @@ public:
 
     Graph<Dim> &ConstructGraph(bool set_edge_weights_from_distance = true);
     Graph<Dim> &ConnectToNearestNeighbors(float max_edge_distance,
-                                          int max_num_edges = 30);
+                                          size_t max_num_edges = 30);
     Graph<Dim> &AddNodeAndConnect(const Eigen::Matrix<float, Dim, 1> &point,
                                   float max_edge_distance = 0.0f,
                                   bool lazy_add = false);

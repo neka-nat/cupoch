@@ -60,7 +60,7 @@ struct gaussian_filter_functor {
                             const int *indices,
                             const float *dists,
                             float sigma2,
-                            int num_max_search_points,
+                            size_t num_max_search_points,
                             bool has_normal,
                             bool has_color)
         : points_(points),
@@ -78,7 +78,7 @@ struct gaussian_filter_functor {
     const int *indices_;
     const float *dists_;
     const float sigma2_;
-    const int num_max_search_points_;
+    const size_t num_max_search_points_;
     const bool has_normal_;
     const bool has_color_;
     __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f>
@@ -315,7 +315,7 @@ PointCloud &PointCloud::RemoveNoneFinitePoints(bool remove_nan,
 }
 
 std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
-        float search_radius, float sigma2, int num_max_search_points) {
+        float search_radius, float sigma2, size_t num_max_search_points) {
     auto out = std::make_shared<PointCloud>();
     if (search_radius <= 0 || sigma2 <= 0 || num_max_search_points <= 0) {
         utility::LogError(
@@ -363,11 +363,11 @@ std::shared_ptr<PointCloud> PointCloud::GaussianFilter(
     return out;
 }
 
-std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(int axis_no,
+std::shared_ptr<PointCloud> PointCloud::PassThroughFilter(size_t axis_no,
                                                           float min_bound,
                                                           float max_bound) {
     auto out = std::make_shared<PointCloud>();
-    if (axis_no < 0 || axis_no >= 3) {
+    if (axis_no >= 3) {
         utility::LogError(
                 "[PassThroughFilter] Illegal input parameters, axis_no "
                 "must be 0, 1 or 2.");

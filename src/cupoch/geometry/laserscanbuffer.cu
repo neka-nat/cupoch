@@ -377,19 +377,26 @@ std::shared_ptr<LaserScanBuffer> LaserScanBuffer::PopOneScan() {
     return out;
 }
 
-std::unique_ptr<utility::pinned_host_vector<float>> LaserScanBuffer::PopHostOneScan() {
+std::pair<std::unique_ptr<utility::pinned_host_vector<float>>, std::unique_ptr<utility::pinned_host_vector<float>>> LaserScanBuffer::PopHostOneScan() {
     if (IsEmpty()) {
         utility::LogError("[PopRange] Buffer is empty.");
-        return std::make_unique<utility::pinned_host_vector<float>>();
+        return std::make_pair(std::make_unique<utility::pinned_host_vector<float>>(), std::make_unique<utility::pinned_host_vector<float>>());
     }
     const int start = top_ % num_max_scans_;
     auto out = std::make_unique<utility::pinned_host_vector<float>>(num_steps_);
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(out->data()),
                             thrust::raw_pointer_cast(ranges_.data()) + start * num_steps_,
                             num_steps_ * sizeof(float), cudaMemcpyDeviceToHost));
+    auto out_intensities = std::make_unique<utility::pinned_host_vector<float>>();
+    if (HasIntensities()) {
+        out_intensities->resize(num_steps_);
+        cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(out_intensities->data()),
+                                thrust::raw_pointer_cast(intensities_.data()) + start * num_steps_,
+                                num_steps_ * sizeof(float), cudaMemcpyDeviceToHost));
+    }
     top_++;
     cudaSafeCall(cudaDeviceSynchronize());
-    return out;
+    return std::make_pair(std::move(out), std::move(out_intensities));
 }
 
 std::shared_ptr<LaserScanBuffer> LaserScanBuffer::RangeFilter(

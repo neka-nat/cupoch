@@ -261,7 +261,7 @@ Graph<Dim> &Graph<Dim>::ConstructGraph(bool set_edge_weights_from_distance) {
 
 template <int Dim>
 Graph<Dim> &Graph<Dim>::ConnectToNearestNeighbors(float max_edge_distance,
-                                                  int max_num_edges) {
+                                                  size_t max_num_edges) {
     utility::device_vector<int> indices;
     utility::device_vector<float> weights;
     utility::device_vector<Eigen::Vector2i> new_edges(this->points_.size() *

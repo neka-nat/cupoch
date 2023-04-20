@@ -291,7 +291,7 @@ DistanceTransform::DistanceTransform()
 }
 
 DistanceTransform::DistanceTransform(float voxel_size,
-                                     int resolution,
+                                     size_t resolution,
                                      const Eigen::Vector3f& origin)
     : DenseGrid<DistanceVoxel>(Geometry::GeometryType::DistanceTransform,
                                voxel_size,
@@ -311,7 +311,7 @@ DistanceTransform::DistanceTransform(const DistanceTransform& other)
 DistanceTransform::~DistanceTransform() {}
 
 DistanceTransform& DistanceTransform::Reconstruct(float voxel_size,
-                                                  int resolution) {
+                                                  size_t resolution) {
     DenseGrid::Reconstruct(voxel_size, resolution);
     buffer_.resize(voxels_.size());
     return *this;

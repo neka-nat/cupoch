@@ -87,7 +87,7 @@ public:
     LaserScanBuffer &Merge(const LaserScanBuffer &other);
 
     std::shared_ptr<LaserScanBuffer> PopOneScan();
-    std::unique_ptr<utility::pinned_host_vector<float>> PopHostOneScan();
+    std::pair<std::unique_ptr<utility::pinned_host_vector<float>>, std::unique_ptr<utility::pinned_host_vector<float>>> PopHostOneScan();
 
     std::shared_ptr<LaserScanBuffer> RangeFilter(float min_range,
                                                  float max_range) const;

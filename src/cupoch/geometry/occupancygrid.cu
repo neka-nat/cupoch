@@ -290,7 +290,7 @@ OccupancyGrid::OccupancyGrid()
       min_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)),
       max_bound_(Eigen::Vector3ui16::Constant(resolution_ / 2)) {}
 OccupancyGrid::OccupancyGrid(float voxel_size,
-                             int resolution,
+                             size_t resolution,
                              const Eigen::Vector3f& origin)
     : DenseGrid<OccupancyVoxel>(Geometry::GeometryType::OccupancyGrid,
                                 voxel_size,
