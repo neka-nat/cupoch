@@ -42,6 +42,6 @@ for topic, msg, t in bag.read_messages():
             new_msg.angle_increment = (scan.max_angle - scan.min_angle) / scan.num_steps
             new_msg.range_min = 0.0
             new_msg.range_max = 10000.0
-            new_msg.ranges = scan.pop_host_one_scan()
+            new_msg.ranges, new_msg.intensities = scan.pop_host_one_scan()
             print("------ Original laserscan ------ \n", msg)
             print("------ Converted laserscan ------\n", new_msg)
