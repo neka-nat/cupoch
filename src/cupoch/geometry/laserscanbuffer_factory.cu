@@ -138,6 +138,7 @@ std::shared_ptr<LaserScanBuffer> LaserScanBuffer::CreateFromPointCloud(
         max_angle,
         angle_increment);
     thrust::for_each(pcd.points_.begin(), pcd.points_.end(), func);
+    laserscanbuffer->bottom_ += num_vertical_divisions;
     return laserscanbuffer;
 }
 
