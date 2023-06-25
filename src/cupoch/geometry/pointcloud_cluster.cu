@@ -60,7 +60,7 @@ struct bfs_functor {
                 const int *exscan_vd,
                 const int *indices,
                 int *xa,
-                bool *fa)
+                int *fa)
         : vertex_degrees_(vertex_degrees),
           exscan_vd_(exscan_vd),
           indices_(indices),
@@ -70,17 +70,17 @@ struct bfs_functor {
     const int *exscan_vd_;
     const int *indices_;
     int *xa_;
-    bool *fa_;
+    int *fa_;
     __device__ void operator()(size_t idx) const {
         if (fa_[idx] == 1) {
-            fa_[idx] = false;
+            fa_[idx] = 0;
             xa_[idx] = 1;
             const int vd = __ldg(&vertex_degrees_[idx]);
             for (int i = 0; i < vd; i++) {
                 const int ev = __ldg(&exscan_vd_[idx]);
                 const int index = __ldg(&indices_[ev + i]);
                 if (xa_[index] == 0) {
-                    fa_[index] = true;
+                    fa_[index] = 1;
                 }
             }
         }
@@ -142,7 +142,7 @@ std::unique_ptr<utility::device_vector<int>> PointCloud::ClusterDBSCAN(float eps
     utility::pinned_host_vector<int> h_visited(n_pt, 0);
     auto clusters = std::make_unique<utility::device_vector<int>>(n_pt, -1);
     utility::device_vector<int> xa(n_pt);
-    utility::device_vector<bool> fa(n_pt);
+    utility::device_vector<int> fa(n_pt);
     for (int i = 0; i < n_pt; i++) {
         ++progress_bar;
         if (h_visited[i] != 1) {
@@ -151,8 +151,8 @@ std::unique_ptr<utility::device_vector<int>> PointCloud::ClusterDBSCAN(float eps
                            1, thrust::make_tuple(1, cluster));
             thrust::fill(make_tuple_begin(xa, fa), make_tuple_end(xa, fa),
                          thrust::make_tuple(0, 0));
-            fa[i] = true;
-            while (!thrust::any_of(fa.begin(), fa.end(), thrust::identity<bool>())) {
+            fa[i] = 1;
+            while (thrust::find(fa.begin(), fa.end(), 1) != fa.end()) {
                 bfs_functor bfs_func(
                         thrust::raw_pointer_cast(vertex_degrees.data()),
                         thrust::raw_pointer_cast(exscan_vd.data()),
