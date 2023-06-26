@@ -88,15 +88,16 @@ struct bfs_functor {
 };
 
 struct set_label_functor {
-    set_label_functor(const int *xa, int cluster, int *clusters, int *visited)
-        : xa_(xa), cluster_(cluster), clusters_(clusters), visited_(visited){};
+    set_label_functor(const int *xa, int cluster, int *clusters, int *visited, bool is_noise)
+        : xa_(xa), cluster_(cluster), clusters_(clusters), visited_(visited), is_noise_(is_noise) {};
     const int *xa_;
     const int cluster_;
     int *clusters_;
     int *visited_;
+    bool is_noise_;
     __device__ void operator()(size_t idx) const {
         if (xa_[idx] == 1) {
-            clusters_[idx] = cluster_;
+            clusters_[idx] = is_noise_ ? -1 : cluster_;
             visited_[idx] = 1;
         }
     }
@@ -146,9 +147,6 @@ std::unique_ptr<utility::device_vector<int>> PointCloud::ClusterDBSCAN(float eps
     for (int i = 0; i < n_pt; i++) {
         ++progress_bar;
         if (h_visited[i] != 1) {
-            thrust::fill_n(make_tuple_iterator(visited.begin() + i,
-                                               clusters->begin() + i),
-                           1, thrust::make_tuple(1, cluster));
             thrust::fill(make_tuple_begin(xa, fa), make_tuple_end(xa, fa),
                          thrust::make_tuple(0, 0));
             fa[i] = 1;
@@ -163,15 +161,19 @@ std::unique_ptr<utility::device_vector<int>> PointCloud::ClusterDBSCAN(float eps
                                  thrust::make_counting_iterator(n_pt),
                                  bfs_func);
             }
+            const int xa_count = thrust::reduce(utility::exec_policy(0), xa.begin(), xa.end(),
+                                                0, thrust::plus<int>());
+            const bool is_noise = xa_count < min_points;
             set_label_functor sl_func(thrust::raw_pointer_cast(xa.data()),
                                       cluster,
                                       thrust::raw_pointer_cast(clusters->data()),
-                                      thrust::raw_pointer_cast(visited.data()));
+                                      thrust::raw_pointer_cast(visited.data()),
+                                      is_noise);
             thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                              thrust::make_counting_iterator(n_pt), sl_func);
             copy_device_to_host(visited, h_visited);
             cudaSafeCall(cudaDeviceSynchronize());
-            cluster++;
+            if (!is_noise) cluster++;
         }
     }
     return clusters;
