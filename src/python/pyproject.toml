@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cupoch"
-version = "0.2.8.0"
+version = "0.2.8.1"
 description = ""
 authors = ["nekanat <nekanat.stock@gmail.com>"]
 license = "MIT"
