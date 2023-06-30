@@ -33,6 +33,7 @@ def write_string_footer(fd):
 
 
 if __name__ == "__main__":
+    import os
     import sys
     if len(sys.argv) <= 1:
         print_help()
@@ -56,7 +57,7 @@ if __name__ == "__main__":
             sys.exit()
 
         file_in_name = sys.argv[2]
-        string_name = file_in_name.split(".")[0].split("/")[-1]
+        string_name = os.path.splitext(os.path.split(file_in_name)[-1])[0]
 
         fd_out.write("// clang-format off\n")
         write_string_header(string_name, fd_out)
