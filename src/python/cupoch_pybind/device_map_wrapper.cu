@@ -43,9 +43,9 @@ device_map_wrapper<KeyType, ValueType, Hash>::device_map_wrapper(
         keys[cnt] = it.first;
         values[cnt] = it.second;
     }
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(keys_.data()), keys.data(),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(keys_.data()), thrust::raw_pointer_cast(keys.data()),
                             other.size() * sizeof(KeyType), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(values_.data()), values.data(),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(values_.data()), thrust::raw_pointer_cast(values.data()),
                             other.size() * sizeof(ValueType), cudaMemcpyHostToDevice));
 }
 
@@ -82,9 +82,9 @@ std::unordered_map<KeyType, ValueType, Hash>
 device_map_wrapper<KeyType, ValueType, Hash>::cpu() const {
     utility::pinned_host_vector<KeyType> keys(keys_.size());
     utility::pinned_host_vector<ValueType> values(values_.size());
-    cudaSafeCall(cudaMemcpy(keys.data(), thrust::raw_pointer_cast(keys_.data()),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(keys.data()), thrust::raw_pointer_cast(keys_.data()),
                             keys.size() * sizeof(KeyType), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(values.data(), thrust::raw_pointer_cast(values_.data()),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(values.data()), thrust::raw_pointer_cast(values_.data()),
                             values.size() * sizeof(ValueType), cudaMemcpyDeviceToHost));
     std::unordered_map<KeyType, ValueType, Hash> ans;
     for (int i = 0; i < keys.size(); i++) {

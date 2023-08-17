@@ -114,7 +114,7 @@ void device_vector_wrapper<Type>::push_back(const Type& x) {
 template <typename Type>
 utility::pinned_host_vector<Type> device_vector_wrapper<Type>::cpu() const {
     utility::pinned_host_vector<Type> ans(data_.size());
-    cudaSafeCall(cudaMemcpy(ans.data(), thrust::raw_pointer_cast(data_.data()),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(ans.data()), thrust::raw_pointer_cast(data_.data()),
                             sizeof(Type) * data_.size(), cudaMemcpyDeviceToHost));
     return ans;
 }

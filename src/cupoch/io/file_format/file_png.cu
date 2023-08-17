@@ -83,7 +83,7 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
                      PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
                      PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
     SetPNGImageFromImage(host_img, pngimage);
-    if (png_image_finish_read(&pngimage, NULL, host_img.data_.data(), 0,
+    if (png_image_finish_read(&pngimage, NULL, thrust::raw_pointer_cast(host_img.data_.data()), 0,
                               NULL) == 0) {
         utility::LogWarning("Read PNG failed: unable to read file: {}",
                             filename);
@@ -107,7 +107,7 @@ bool WriteImageToPNG(const std::string &filename,
     HostImage host_img;
     host_img.FromDevice(image);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
-                                host_img.data_.data(), 0, NULL) == 0) {
+                                thrust::raw_pointer_cast(host_img.data_.data()), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
         return false;
@@ -127,7 +127,7 @@ bool WriteHostImageToPNG(const std::string &filename,
     pngimage.version = PNG_IMAGE_VERSION;
     SetPNGImageFromImage(image, pngimage);
     if (png_image_write_to_file(&pngimage, filename.c_str(), 0,
-                                image.data_.data(), 0, NULL) == 0) {
+                                thrust::raw_pointer_cast(image.data_.data()), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
         return false;

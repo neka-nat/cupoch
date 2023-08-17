@@ -29,18 +29,18 @@ using namespace cupoch::io;
 void HostVoxelGrid::FromDevice(const geometry::VoxelGrid& voxelgrid) {
     voxels_keys_.resize(voxelgrid.voxels_keys_.size());
     voxels_values_.resize(voxelgrid.voxels_values_.size());
-    cudaSafeCall(cudaMemcpy(voxels_keys_.data(), thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxels_keys_.data()), thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()),
                             voxels_keys_.size() * sizeof(Eigen::Vector3i), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(voxels_values_.data(), thrust::raw_pointer_cast(voxelgrid.voxels_values_.data()),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxels_values_.data()), thrust::raw_pointer_cast(voxelgrid.voxels_values_.data()),
                             voxels_values_.size() * sizeof(geometry::Voxel), cudaMemcpyDeviceToHost));
 }
 
 void HostVoxelGrid::ToDevice(geometry::VoxelGrid& voxelgrid) const {
     voxelgrid.voxels_keys_.resize(voxels_keys_.size());
     voxelgrid.voxels_values_.resize(voxels_values_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()), voxels_keys_.data(),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxelgrid.voxels_keys_.data()), thrust::raw_pointer_cast(voxels_keys_.data()),
                             voxels_keys_.size() * sizeof(Eigen::Vector3i), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxelgrid.voxels_values_.data()), voxels_values_.data(),
+    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(voxelgrid.voxels_values_.data()), thrust::raw_pointer_cast(voxels_values_.data()),
                             voxels_values_.size() * sizeof(geometry::Voxel), cudaMemcpyHostToDevice));
 }
 

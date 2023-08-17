@@ -78,7 +78,7 @@ bool ReadImageFromJPG(const std::string &filename, geometry::Image &image) {
     int row_stride = cinfo.output_width * cinfo.output_components;
     buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
                                         row_stride, 1);
-    uint8_t *pdata = host_img.data_.data();
+    uint8_t *pdata = thrust::raw_pointer_cast(host_img.data_.data());
     while (cinfo.output_scanline < cinfo.output_height) {
         jpeg_read_scanlines(&cinfo, buffer, 1);
         memcpy(pdata, buffer[0], row_stride);
@@ -128,7 +128,7 @@ bool WriteImageToJPG(const std::string &filename,
     int row_stride = image.width_ * image.num_of_channels_;
     HostImage host_img;
     host_img.FromDevice(image);
-    const uint8_t *pdata = host_img.data_.data();
+    const uint8_t *pdata = thrust::raw_pointer_cast(host_img.data_.data());
     std::vector<uint8_t> buffer(row_stride);
     while (cinfo.next_scanline < cinfo.image_height) {
         memcpy(buffer.data(), pdata, row_stride);

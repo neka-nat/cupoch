@@ -168,8 +168,8 @@ void Visualizer::CaptureScreenImage(const std::string &filename /* = ""*/,
                       view_control_ptr_->GetWindowHeight(), 3, 1);
     int bytes_per_line = screen_image.BytesPerLine();
     for (int i = 0; i < screen_image.height_; i++) {
-        memcpy(png_image.data_.data() + bytes_per_line * i,
-               host_data.data() +
+        memcpy(thrust::raw_pointer_cast(png_image.data_.data()) + bytes_per_line * i,
+               thrust::raw_pointer_cast(host_data.data()) +
                        bytes_per_line * (screen_image.height_ - i - 1),
                bytes_per_line);
     }
@@ -232,10 +232,10 @@ std::shared_ptr<geometry::Image> Visualizer::CaptureDepthFloatBuffer(
     image_ptr->Prepare(view_control_ptr_->GetWindowWidth(),
                        view_control_ptr_->GetWindowHeight(), 1, 4);
     for (int i = 0; i < depth_image.height_; i++) {
-        float *p_depth = (float *)(host_data.data() +
+        float *p_depth = (float *)(thrust::raw_pointer_cast(host_data.data()) +
                                    depth_image.BytesPerLine() *
                                            (depth_image.height_ - i - 1));
-        float *p_image = (float *)(image_ptr->data_.data() +
+        float *p_image = (float *)(thrust::raw_pointer_cast(image_ptr->data_.data()) +
                                    image_ptr->BytesPerLine() * i);
         for (int j = 0; j < depth_image.width_; j++) {
             if (p_depth[j] == 1.0) {
@@ -308,10 +308,10 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
     png_image.Prepare(view_control_ptr_->GetWindowWidth(),
                       view_control_ptr_->GetWindowHeight(), 1, 2);
     for (int i = 0; i < depth_image.height_; i++) {
-        float *p_depth = (float *)(host_data.data() +
+        float *p_depth = (float *)(thrust::raw_pointer_cast(host_data.data()) +
                                    depth_image.BytesPerLine() *
                                            (depth_image.height_ - i - 1));
-        uint16_t *p_png = (uint16_t *)(png_image.data_.data() +
+        uint16_t *p_png = (uint16_t *)(thrust::raw_pointer_cast(png_image.data_.data()) +
                                        png_image.BytesPerLine() * i);
         for (int j = 0; j < depth_image.width_; j++) {
             if (p_depth[j] == 1.0) {
