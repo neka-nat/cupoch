@@ -125,8 +125,6 @@ __global__ void OpenVolumeUnitKernel(const Eigen::Vector3f *points,
 struct extract_pointcloud_functor {
     extract_pointcloud_functor(
             const VolumeUnitsMap &volume_units,
-            const stdgpu::device_indexed_range<const VolumeUnitsMap::value_type>
-                    &range,
             int resolution,
             float voxel_length,
             float volume_unit_length,
@@ -135,7 +133,7 @@ struct extract_pointcloud_functor {
             Eigen::Vector3f *normals,
             Eigen::Vector3f *colors)
         : volume_units_(volume_units),
-          range_(range),
+          range_(volume_units.device_range()),
           resolution_(resolution),
           voxel_length_(voxel_length),
           half_voxel_length_(0.5 * voxel_length_),
@@ -363,7 +361,7 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
     pointcloud->normals_.resize(3 * n_total, nanvec);
     pointcloud->colors_.resize(3 * n_total, nanvec);
     extract_pointcloud_functor func(
-            impl_->volume_units_, impl_->volume_units_.device_range(),
+            impl_->volume_units_,
             resolution_, voxel_length_, volume_unit_length_, color_type_,
             thrust::raw_pointer_cast(pointcloud->points_.data()),
             thrust::raw_pointer_cast(pointcloud->normals_.data()),
