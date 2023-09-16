@@ -108,6 +108,10 @@ public:
             const utility::pinned_host_vector<Eigen::Vector3f>& points,
             const Eigen::Vector3f& viewpoint,
             float max_range = -1.0);
+    OccupancyGrid& Insert(
+            const thrust::host_vector<Eigen::Vector3f>& points,
+            const Eigen::Vector3f& viewpoint,
+            float max_range = -1.0);
     OccupancyGrid& Insert(const PointCloud& pointcloud,
                           const Eigen::Vector3f& viewpoint,
                           float max_range = -1.0);

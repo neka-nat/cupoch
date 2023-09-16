@@ -34,7 +34,8 @@
 #include <thrust/device_vector.h>
 #endif
 #include <thrust/host_vector.h>
-#include <thrust/system/cuda/experimental/pinned_allocator.h>
+#include <cupoch/utility/pinned_allocator.h>
+
 
 #if defined(_WIN32)
 struct float4_t {

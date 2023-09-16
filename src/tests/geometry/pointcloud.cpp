@@ -178,18 +178,25 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     geometry::OrientedBoundingBox obb;
 
     // Valid 4 points
-    pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}});
+    thrust::host_vector<Vector3f> points;
+    points.push_back({0, 0, 0});
+    points.push_back({0, 0, 1});
+    points.push_back({0, 1, 0});
+    points.push_back({1, 1, 1});
+    pcd = geometry::PointCloud(points);
     pcd.GetOrientedBoundingBox();
 
     // 8 points with known ground truth
-    pcd = geometry::PointCloud({{0, 0, 0},
-                                {0, 0, 1},
-                                {0, 2, 0},
-                                {0, 2, 1},
-                                {3, 0, 0},
-                                {3, 0, 1},
-                                {3, 2, 0},
-                                {3, 2, 1}});
+    points.clear();
+    points.push_back({0, 0, 0});
+    points.push_back({0, 0, 1});
+    points.push_back({0, 2, 0});
+    points.push_back({0, 2, 1});
+    points.push_back({3, 0, 0});
+    points.push_back({3, 0, 1});
+    points.push_back({3, 2, 0});
+    points.push_back({3, 2, 1});
+    pcd = geometry::PointCloud(points);
     obb = pcd.GetOrientedBoundingBox();
     EXPECT_EQ(obb.center_, Eigen::Vector3f(1.5, 1, 0.5));
     EXPECT_EQ(obb.extent_, Eigen::Vector3f(3, 2, 1));

@@ -298,6 +298,11 @@ template LaserScanBuffer& LaserScanBuffer::AddRanges(
         const Eigen::Matrix4f& transformation,
         const utility::pinned_host_vector<float>& intensities);
 
+template LaserScanBuffer& LaserScanBuffer::AddRanges(
+        const thrust::host_vector<float>& ranges,
+        const Eigen::Matrix4f& transformation,
+        const thrust::host_vector<float>& intensities);
+
 
 class ContainerLikePtr {
 public:
