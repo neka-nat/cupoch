@@ -74,6 +74,14 @@ namespace knn {
 LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(size_t leaf_size, bool compact, bool sort_queries, bool shrink_to_fit)
     : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {}
 
+LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data,
+                                                                   size_t leaf_size, bool compact, bool sort_queries, bool shrink_to_fit)
+    : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {
+    SetRawData(data);
+}
+
+LinearBoundingVolumeHierarchyKNN::~LinearBoundingVolumeHierarchyKNN() {}
+
 template <typename T>
 int LinearBoundingVolumeHierarchyKNN::SearchKNN(const utility::device_vector<T> &query,
                                                 int knn,
@@ -86,6 +94,20 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(const utility::device_vector<T> 
     return SearchKNN<typename utility::device_vector<T>::const_iterator,
                      T::RowsAtCompileTime>(query.begin(), query.end(), knn,
                                            indices, distance2);
+}
+
+template <typename T>
+int LinearBoundingVolumeHierarchyKNN::SearchKNN(const T &query,
+                           int knn,
+                           thrust::host_vector<unsigned int> &indices,
+                           thrust::host_vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<unsigned int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = SearchKNN<T>(query_dv, knn, indices_dv, distance2_dv);
+    indices = indices_dv;
+    distance2 = distance2_dv;
+    return result;
 }
 
 template <typename T>
@@ -208,6 +230,18 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
     cudaSafeCall(cudaDeviceSynchronize());
     return 1;
 }
+
+template int LinearBoundingVolumeHierarchyKNN::SearchKNN<Eigen::Vector3f>(
+        const utility::device_vector<Eigen::Vector3f> &query,
+        int knn,
+        utility::device_vector<unsigned int> &indices,
+        utility::device_vector<float> &distance2) const;
+
+template int LinearBoundingVolumeHierarchyKNN::SearchKNN<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        int knn,
+        thrust::host_vector<unsigned int> &indices,
+        thrust::host_vector<float> &distance2) const;
 
 template bool LinearBoundingVolumeHierarchyKNN::SetRawData<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &data);

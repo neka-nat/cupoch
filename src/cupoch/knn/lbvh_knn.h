@@ -41,7 +41,7 @@ using AABB = std::pair<Eigen::Vector3f, Eigen::Vector3f>;
 class LinearBoundingVolumeHierarchyKNN {
 public:
     LinearBoundingVolumeHierarchyKNN(size_t leaf_size = 32, bool compact = true, bool sort_queries = true, bool shrink_to_fit = false);
-    LinearBoundingVolumeHierarchyKNN(const geometry::Geometry &geometry);
+    LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data, size_t leaf_size = 32, bool compact = true, bool sort_queries = true, bool shrink_to_fit = false);
     ~LinearBoundingVolumeHierarchyKNN();
     LinearBoundingVolumeHierarchyKNN(const LinearBoundingVolumeHierarchyKNN &) = delete;
     LinearBoundingVolumeHierarchyKNN &operator=(const LinearBoundingVolumeHierarchyKNN &) = delete;
@@ -59,6 +59,12 @@ public:
                   int knn,
                   utility::device_vector<unsigned int> &indices,
                   utility::device_vector<float> &distance2) const;
+
+    template <typename T>
+    int SearchKNN(const T &query,
+                  int knn,
+                  thrust::host_vector<unsigned int> &indices,
+                  thrust::host_vector<float> &distance2) const;
 
     template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);
