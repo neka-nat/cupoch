@@ -21,8 +21,6 @@
 #pragma once
 #include <Eigen/Core>
 
-#include "cupoch/knn/lbvh_knn.h"
-
 #include "cupoch/utility/device_vector.h"
 
 namespace lbvh {
@@ -84,4 +82,3 @@ private:
 }
 }
 
-#include "cupoch/knn/lbvh_knn.inl"
