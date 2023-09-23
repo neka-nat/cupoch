@@ -19,11 +19,15 @@
  * IN THE SOFTWARE.
  **/
 #pragma once
+#include <Eigen/Core>
+
 #include "cupoch/knn/lbvh_knn.h"
-#include <lbvh_index/aabb.cuh>
-#include <lbvh_index/lbvh.cuh>
 
 #include "cupoch/utility/device_vector.h"
+
+namespace lbvh {
+struct BVHNode;
+}
 
 namespace cupoch {
 
@@ -32,6 +36,9 @@ class Geometry;
 }
 
 namespace knn {
+
+using AABB = std::pair<Eigen::Vector3f, Eigen::Vector3f>;
+
 
 class LinearBoundingVolumeHierarchyKNN {
 public:
@@ -67,8 +74,8 @@ private:
     bool sort_queries_;
     bool shrink_to_fit_;
 
-    lbvh::AABB extent_;
-    utility::device_vector<lbvh::BVHNode> nodes_;
+    AABB extent_;
+    std::unique_ptr<utility::device_vector<lbvh::BVHNode>> nodes_;
     utility::device_vector<float3> data_float3_;
     utility::device_vector<unsigned int> sorted_indices_;
     unsigned int root_node_index_;

@@ -21,6 +21,8 @@
 #include <Eigen/Core>
 #include "cupoch/knn/lbvh_knn.h"
 
+#include <lbvh_index/aabb.cuh>
+#include <lbvh_index/lbvh.cuh>
 #include <lbvh_index/lbvh_kernels.cuh>
 #include "cupoch/utility/eigen.h"
 #include "cupoch/utility/platform.h"
@@ -72,29 +74,29 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     thrust::transform(data.begin(), data.end(), make_tuple_begin(aabbs, data_float3_), convert_float3_and_aabb_functor<T>());
     T min_data = utility::ComputeMinBound<T::SizeAtCompileTime, typename T::Scalar>(data);
     T max_data = utility::ComputeMaxBound<T::SizeAtCompileTime, typename T::Scalar>(data);
-    extent_.min = make_float3(min_data[0], min_data[1], min_data[2]);
-    extent_.max = make_float3(max_data[0], max_data[1], max_data[2]);
+    extent_.first = Eigen::Vector3f(min_data[0], min_data[1], min_data[2]);
+    extent_.second = Eigen::Vector3f(max_data[0], max_data[1], max_data[2]);
 
     utility::device_vector<unsigned long long int> morton_codes(n_points_);
     thrust::transform(
         aabbs.begin(), aabbs.end(), morton_codes.begin(),
-        [this] __device__ (const lbvh::AABB& aabb) { return lbvh::morton_code(aabb, extent_); });
+        [this] __device__ (const lbvh::AABB& aabb) { return lbvh::morton_code(aabb, to_float3_aabb(extent_)); });
     dim3 block_dim, grid_dim;
     std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_points_);
     compute_morton_points_kernel<<<grid_dim, block_dim>>>(
-        thrust::raw_pointer_cast(data_float3_.data()), extent_, thrust::raw_pointer_cast(morton_codes.data()), n_points_);
+        thrust::raw_pointer_cast(data_float3_.data()), to_float3_aabb(extent_), thrust::raw_pointer_cast(morton_codes.data()), n_points_);
     cudaSafeCall(cudaDeviceSynchronize());
     sorted_indices_.resize(morton_codes.size());
     thrust::sequence(sorted_indices_.begin(), sorted_indices_.end());
     thrust::sort_by_key(morton_codes.begin(), morton_codes.end(), make_tuple_begin(sorted_indices_, aabbs));
 
-    nodes_.resize(n_nodes_);
+    nodes_->resize(n_nodes_);
     initialize_tree_kernel<<<grid_dim, block_dim>>>(
-        thrust::raw_pointer_cast(nodes_.data()), thrust::raw_pointer_cast(aabbs.data()), n_points_);
+        thrust::raw_pointer_cast(nodes_->data()), thrust::raw_pointer_cast(aabbs.data()), n_points_);
     cudaSafeCall(cudaDeviceSynchronize());
     thrust::device_vector<unsigned int> root_node_index(1, std::numeric_limits<unsigned int>::max());
     construct_tree_kernel<<<grid_dim, block_dim>>>(
-        thrust::raw_pointer_cast(nodes_.data()),
+        thrust::raw_pointer_cast(nodes_->data()),
         thrust::raw_pointer_cast(root_node_index.data()),
         thrust::raw_pointer_cast(morton_codes.data()), n_points_);
     cudaSafeCall(cudaDeviceSynchronize());
@@ -102,7 +104,7 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     if (leaf_size_ > 1) {
         utility::device_vector<unsigned int> valid(n_nodes_, 1);
         optimize_tree_kernel<<<grid_dim, block_dim>>>(
-            thrust::raw_pointer_cast(nodes_.data()),
+            thrust::raw_pointer_cast(nodes_->data()),
             thrust::raw_pointer_cast(root_node_index.data()),
             thrust::raw_pointer_cast(valid.data()), leaf_size_, n_points_);
         cudaSafeCall(cudaDeviceSynchronize());
@@ -125,14 +127,13 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
             unsigned int first_moved = valid_sums[new_node_count];
             std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_nodes_);
             compact_tree_kernel<<<grid_dim, block_dim>>>(
-                thrust::raw_pointer_cast(nodes_.data()),
+                thrust::raw_pointer_cast(nodes_->data()),
                 thrust::raw_pointer_cast(root_node_index.data()),
                 thrust::raw_pointer_cast(valid_sums.data()),
                 thrust::raw_pointer_cast(free.data()),
                 first_moved, new_node_count, n_nodes_);
             if (shrink_to_fit_) {
-                utility::device_vector<lbvh::BVHNode> nodes_old(nodes_);
-                nodes_.resize(new_node_count);
+                nodes_->resize(new_node_count);
             }
             n_nodes_ = new_node_count;
         }
