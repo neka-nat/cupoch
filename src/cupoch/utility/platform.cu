@@ -70,7 +70,7 @@ std::tuple<dim3, dim3> SelectBlockGridSizes(int data_size, int threads_per_block
     cudaDeviceProp prop;
     cupoch::utility::GetDeviceProp(prop);
     int max_threads_per_block = prop.maxThreadsPerBlock;
-    if (threads_per_block < 0) {
+    if (threads_per_block > 0) {
         if (threads_per_block > max_threads_per_block) {
             throw std::runtime_error("Threads per block exceeds device maximum.");
         } else {

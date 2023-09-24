@@ -117,6 +117,7 @@ template <typename T>
 bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T> &data) {
     n_points_ = data.size();
     n_nodes_ = n_points_ * 2 - 1;
+    dimension_ = T::SizeAtCompileTime;
     data_float3_.resize(n_points_);
     dim3 block_dim, grid_dim;
     std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_points_);
