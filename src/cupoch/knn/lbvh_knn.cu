@@ -72,11 +72,14 @@ namespace cupoch {
 namespace knn {
 
 LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(size_t leaf_size, bool compact, bool sort_queries, bool shrink_to_fit)
-    : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {}
+    : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {
+    nodes_ = std::make_unique<utility::device_vector<lbvh::BVHNode>>();
+}
 
 LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data,
                                                                    size_t leaf_size, bool compact, bool sort_queries, bool shrink_to_fit)
     : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {
+    nodes_ = std::make_unique<utility::device_vector<lbvh::BVHNode>>();
     SetRawData(data);
 }
 
@@ -121,15 +124,16 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     T max_data = utility::ComputeMaxBound<T::SizeAtCompileTime, typename T::Scalar>(data);
     extent_.first = Eigen::Vector3f(min_data[0], min_data[1], min_data[2]);
     extent_.second = Eigen::Vector3f(max_data[0], max_data[1], max_data[2]);
+    auto extent_float3 = to_float3_aabb(extent_);
 
     utility::device_vector<unsigned long long int> morton_codes(n_points_);
     thrust::transform(
         aabbs.begin(), aabbs.end(), morton_codes.begin(),
-        [this] __device__ (const lbvh::AABB& aabb) { return lbvh::morton_code(aabb, to_float3_aabb(extent_)); });
+        [extent_float3] __device__ (const lbvh::AABB& aabb) { return lbvh::morton_code(aabb, extent_float3); });
     dim3 block_dim, grid_dim;
     std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_points_);
     compute_morton_points_kernel<<<grid_dim, block_dim>>>(
-        thrust::raw_pointer_cast(data_float3_.data()), to_float3_aabb(extent_), thrust::raw_pointer_cast(morton_codes.data()), n_points_);
+        thrust::raw_pointer_cast(data_float3_.data()), extent_float3, thrust::raw_pointer_cast(morton_codes.data()), n_points_);
     cudaSafeCall(cudaDeviceSynchronize());
     sorted_indices_.resize(morton_codes.size());
     thrust::sequence(sorted_indices_.begin(), sorted_indices_.end());
@@ -194,6 +198,7 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
                                                 utility::device_vector<unsigned int> &indices,
                                                 utility::device_vector<float> &distance2) const {
     size_t num_query = thrust::distance(first, last);
+    auto extent_float3 = to_float3_aabb(extent_);
     utility::device_vector<float3> data_float3(num_query);
     thrust::transform(first, last, data_float3.begin(), convert_float3_functor<Dim>());
 
@@ -204,7 +209,7 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
         dim3 block_dim, grid_dim;
         std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(num_query);
         compute_morton_points_kernel<<<grid_dim, block_dim>>>(
-            thrust::raw_pointer_cast(data_float3.data()), to_float3_aabb(extent_), thrust::raw_pointer_cast(morton_codes.data()), num_query);
+            thrust::raw_pointer_cast(data_float3.data()), extent_float3, thrust::raw_pointer_cast(morton_codes.data()), num_query);
         cudaSafeCall(cudaDeviceSynchronize());
         thrust::sort_by_key(morton_codes.begin(), morton_codes.end(), sorted_indices.begin());
     }
