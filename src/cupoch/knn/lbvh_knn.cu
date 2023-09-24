@@ -118,6 +118,10 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     n_points_ = data.size();
     n_nodes_ = n_points_ * 2 - 1;
     data_float3_.resize(n_points_);
+    dim3 block_dim, grid_dim;
+    std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_points_);
+
+    // init aabbs
     utility::device_vector<lbvh::AABB> aabbs(n_points_);
     thrust::transform(data.begin(), data.end(), make_tuple_begin(aabbs, data_float3_), convert_float3_and_aabb_functor<T>());
     T min_data = utility::ComputeMinBound<T::SizeAtCompileTime, typename T::Scalar>(data);
@@ -126,19 +130,18 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
     extent_.second = Eigen::Vector3f(max_data[0], max_data[1], max_data[2]);
     auto extent_float3 = to_float3_aabb(extent_);
 
-    utility::device_vector<unsigned long long int> morton_codes(n_points_);
+    // compute the morton codes of the aabbs
+    utility::device_vector<lbvh::HashType> morton_codes(n_points_);
     thrust::transform(
         aabbs.begin(), aabbs.end(), morton_codes.begin(),
         [extent_float3] __device__ (const lbvh::AABB& aabb) { return lbvh::morton_code(aabb, extent_float3); });
-    dim3 block_dim, grid_dim;
-    std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(n_points_);
-    compute_morton_points_kernel<<<grid_dim, block_dim>>>(
-        thrust::raw_pointer_cast(data_float3_.data()), extent_float3, thrust::raw_pointer_cast(morton_codes.data()), n_points_);
-    cudaSafeCall(cudaDeviceSynchronize());
+
+    // sort everything by the morton codes
     sorted_indices_.resize(morton_codes.size());
     thrust::sequence(sorted_indices_.begin(), sorted_indices_.end());
     thrust::sort_by_key(morton_codes.begin(), morton_codes.end(), make_tuple_begin(sorted_indices_, aabbs));
 
+    // allocate space for the nodes as a raw cuda array
     nodes_->resize(n_nodes_);
     initialize_tree_kernel<<<grid_dim, block_dim>>>(
         thrust::raw_pointer_cast(nodes_->data()), thrust::raw_pointer_cast(aabbs.data()), n_points_);
@@ -157,6 +160,7 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
             thrust::raw_pointer_cast(root_node_index.data()),
             thrust::raw_pointer_cast(valid.data()), leaf_size_, n_points_);
         cudaSafeCall(cudaDeviceSynchronize());
+        // compact the tree to increase bandwidth
         if (compact_) {
             utility::device_vector<unsigned int> valid_sums(n_nodes_ + 1, 0);
             thrust::inclusive_scan(valid.begin(), valid.end(), valid_sums.begin() + 1);
