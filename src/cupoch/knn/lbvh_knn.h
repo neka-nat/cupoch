@@ -48,23 +48,23 @@ public:
 
 public:
     template <typename InputIterator, int Dim>
-    int SearchKNN(InputIterator first,
-                  InputIterator last,
-                  int knn,
-                  utility::device_vector<unsigned int> &indices,
-                  utility::device_vector<float> &distance2) const;
+    int SearchNN(InputIterator first,
+                 InputIterator last,
+                 float radius,
+                 utility::device_vector<unsigned int> &indices,
+                 utility::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const utility::device_vector<T> &query,
-                  int knn,
-                  utility::device_vector<unsigned int> &indices,
-                  utility::device_vector<float> &distance2) const;
+    int SearchNN(const utility::device_vector<T> &query,
+                 float radius,
+                 utility::device_vector<unsigned int> &indices,
+                 utility::device_vector<float> &distance2) const;
 
     template <typename T>
-    int SearchKNN(const T &query,
-                  int knn,
-                  thrust::host_vector<unsigned int> &indices,
-                  thrust::host_vector<float> &distance2) const;
+    int SearchNN(const T &query,
+                 float radius,
+                 thrust::host_vector<unsigned int> &indices,
+                 thrust::host_vector<float> &distance2) const;
 
     template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);

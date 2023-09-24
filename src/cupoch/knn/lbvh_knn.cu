@@ -28,6 +28,7 @@
 #include <lbvh_index/lbvh_kernels.cuh>
 #include <lbvh_index/query_knn_kernels.cuh>
 
+#include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/eigen.h"
 #include "cupoch/utility/platform.h"
 #include "cupoch/utility/helper.h"
@@ -86,28 +87,28 @@ LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(const utility
 LinearBoundingVolumeHierarchyKNN::~LinearBoundingVolumeHierarchyKNN() {}
 
 template <typename T>
-int LinearBoundingVolumeHierarchyKNN::SearchKNN(const utility::device_vector<T> &query,
-                                                int knn,
-                                                utility::device_vector<unsigned int> &indices,
-                                                utility::device_vector<float> &distance2) const{
-    if (query.empty() || n_points_ <= 0 || n_nodes_ <= 0 || knn < 0)
+int LinearBoundingVolumeHierarchyKNN::SearchNN(const utility::device_vector<T> &query,
+                                               float radius,
+                                               utility::device_vector<unsigned int> &indices,
+                                               utility::device_vector<float> &distance2) const{
+    if (query.empty() || n_points_ <= 0 || n_nodes_ <= 0)
         return -1;
     T query0 = query[0];
     if (size_t(query0.size()) != dimension_) return -1;
-    return SearchKNN<typename utility::device_vector<T>::const_iterator,
-                     T::RowsAtCompileTime>(query.begin(), query.end(), knn,
-                                           indices, distance2);
+    return SearchNN<typename utility::device_vector<T>::const_iterator,
+                    T::RowsAtCompileTime>(query.begin(), query.end(), radius,
+                                          indices, distance2);
 }
 
 template <typename T>
-int LinearBoundingVolumeHierarchyKNN::SearchKNN(const T &query,
-                           int knn,
+int LinearBoundingVolumeHierarchyKNN::SearchNN(const T &query,
+                           float radius,
                            thrust::host_vector<unsigned int> &indices,
                            thrust::host_vector<float> &distance2) const {
     utility::device_vector<T> query_dv(1, query);
     utility::device_vector<unsigned int> indices_dv;
     utility::device_vector<float> distance2_dv;
-    auto result = SearchKNN<T>(query_dv, knn, indices_dv, distance2_dv);
+    auto result = SearchNN<T>(query_dv, radius, indices_dv, distance2_dv);
     indices = indices_dv;
     distance2 = distance2_dv;
     return result;
@@ -197,17 +198,17 @@ bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T
 }
 
 template <typename InputIterator, int Dim>
-int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
-                                                InputIterator last,
-                                                int knn,
-                                                utility::device_vector<unsigned int> &indices,
-                                                utility::device_vector<float> &distance2) const {
+int LinearBoundingVolumeHierarchyKNN::SearchNN(InputIterator first,
+                                               InputIterator last,
+                                               float radius,
+                                               utility::device_vector<unsigned int> &indices,
+                                               utility::device_vector<float> &distance2) const {
     size_t num_query = thrust::distance(first, last);
     auto extent_float3 = to_float3_aabb(extent_);
     utility::device_vector<float3> data_float3(num_query);
     thrust::transform(first, last, data_float3.begin(), convert_float3_functor<Dim>());
 
-    utility::device_vector<unsigned long long int> morton_codes(num_query);
+    utility::device_vector<lbvh::HashType> morton_codes(num_query);
     utility::device_vector<unsigned int> sorted_indices(num_query);
     thrust::sequence(sorted_indices.begin(), sorted_indices.end());
     if (sort_queries_) {
@@ -221,8 +222,8 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
 
     dim3 block_dim, grid_dim;
     std::tie(block_dim, grid_dim) = utility::SelectBlockGridSizes(num_query);
-    indices.resize(num_query * knn, std::numeric_limits<unsigned int>::max());
-    distance2.resize(num_query * knn, std::numeric_limits<float>::max());
+    indices.resize(num_query, std::numeric_limits<unsigned int>::max());
+    distance2.resize(num_query, std::numeric_limits<float>::max());
     utility::device_vector<unsigned int> neighbors(num_query, 0);
 
     query_knn_kernel<<<grid_dim, block_dim>>>(
@@ -230,7 +231,7 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
         thrust::raw_pointer_cast(data_float3_.data()),
         thrust::raw_pointer_cast(sorted_indices_.data()),
         root_node_index_,
-        std::numeric_limits<float>::max(),
+        radius * radius,
         thrust::raw_pointer_cast(data_float3.data()),
         thrust::raw_pointer_cast(sorted_indices.data()),
         num_query,
@@ -241,15 +242,15 @@ int LinearBoundingVolumeHierarchyKNN::SearchKNN(InputIterator first,
     return 1;
 }
 
-template int LinearBoundingVolumeHierarchyKNN::SearchKNN<Eigen::Vector3f>(
+template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &query,
-        int knn,
+        float radius,
         utility::device_vector<unsigned int> &indices,
         utility::device_vector<float> &distance2) const;
 
-template int LinearBoundingVolumeHierarchyKNN::SearchKNN<Eigen::Vector3f>(
+template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
         const Eigen::Vector3f &query,
-        int knn,
+        float radius,
         thrust::host_vector<unsigned int> &indices,
         thrust::host_vector<float> &distance2) const;
 

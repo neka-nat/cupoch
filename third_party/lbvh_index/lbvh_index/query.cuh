@@ -4,9 +4,8 @@
 #include "vec_math.h"
 
 // default is one nearest neighbor
-#ifndef K
 #define K 1
-#endif
+
 
 namespace lbvh {
 

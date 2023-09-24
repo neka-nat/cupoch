@@ -3,9 +3,6 @@
 #include "static_priorityqueue.cuh"
 
 // default is one nearest neighbor
-#ifndef K
-#define K 1
-#endif
 
 namespace lbvh {
     __device__ void query_knn(const BVHNode* __restrict__ nodes,
