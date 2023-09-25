@@ -104,27 +104,6 @@ sudo make install-pip-package
 
 ### Use Docker
 
-Setting default container runtime to nvidia-container-runtime.
-Edit or create the `/etc/docker/daemon.json`.
-
-```sh
-{
-    "runtimes": {
-        "nvidia": {
-            "path": "/usr/bin/nvidia-container-runtime",
-            "runtimeArgs": []
-         }
-    },
-    "default-runtime": "nvidia"
-}
-```
-
-Restart docker daemon.
-
-```sh
-sudo systemctl restart docker
-```
-
 ```sh
 docker-compose up -d
 # xhost +

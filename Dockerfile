@@ -1,5 +1,5 @@
 
-FROM nvidia/cuda:11.4.3-devel-ubuntu20.04
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04
 
 WORKDIR /work/cupoch
 
@@ -9,6 +9,7 @@ ENV TZ Asia/Tokyo
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
          curl \
+         wget \
          build-essential \
          libxinerama-dev \
          libxcursor-dev \
@@ -18,6 +19,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          python3-dev \
          python3-setuptools && \
      rm -rf /var/lib/apt/lists/*
+
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz \
+    && tar zxvf cmake-3.18.4.tar.gz \
+    && cd cmake-3.18.4 \
+    && ./bootstrap -- -DCMAKE_USE_OPENSSL=OFF \
+    && make && make install
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
@@ -35,4 +42,5 @@ ENV PYTHONPATH $PYTHONPATH:/usr/lib/python3.8/site-packages
 RUN mkdir build \
     && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_GLEW=ON -DBUILD_GLFW=ON -DBUILD_PNG=ON -DBUILD_JSONCPP=ON \
-    && make install-pip-package
+    && make pip-package \
+    && pip install lib/python_package/pip_package/*.whl
