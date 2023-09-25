@@ -123,10 +123,30 @@ The environment tested on has the following specs:
 
 You can get the result by running the example script in your environment.
 
-```
+```sh
 cd examples/python/basic
 python benchmarks.py
 ```
+
+If you get the following error when executing an example that includes 3D drawing, please start the program as follows.
+
+```sh
+$ cd examples/basic
+$ python visualization.py
+Load a ply point cloud, print it, and render it
+MESA: warning: Driver does not support the 0xa7a0 PCI ID.
+libGL error: failed to create dri screen
+libGL error: failed to load driver: iris
+MESA: warning: Driver does not support the 0xa7a0 PCI ID.
+libGL error: failed to create dri screen
+libGL error: failed to load driver: iris
+Error: unknown error	phong_shader.cu:330
+```
+
+```sh
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia python visualization.py
+```
+
 
 ![speedup](https://raw.githubusercontent.com/neka-nat/cupoch/master/docs/_static/speedup.png)
 
