@@ -40,8 +40,8 @@ using AABB = std::pair<Eigen::Vector3f, Eigen::Vector3f>;
 
 class LinearBoundingVolumeHierarchyKNN {
 public:
-    LinearBoundingVolumeHierarchyKNN(size_t leaf_size = 32, bool compact = true, bool sort_queries = true, bool shrink_to_fit = false);
-    LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data, size_t leaf_size = 32, bool compact = true, bool sort_queries = true, bool shrink_to_fit = false);
+    LinearBoundingVolumeHierarchyKNN(size_t leaf_size = 32, bool compact = false, bool sort_queries = false, bool shrink_to_fit = false);
+    LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data, size_t leaf_size = 32, bool compact = false, bool sort_queries = false, bool shrink_to_fit = false);
     ~LinearBoundingVolumeHierarchyKNN();
     LinearBoundingVolumeHierarchyKNN(const LinearBoundingVolumeHierarchyKNN &) = delete;
     LinearBoundingVolumeHierarchyKNN &operator=(const LinearBoundingVolumeHierarchyKNN &) = delete;

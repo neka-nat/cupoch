@@ -28,6 +28,16 @@
 #include <thrust/system/system_error.h>
 #include <thrust/system/cuda/error.h>
 
+
+#ifndef THRUST_NAMESPACE_BEGIN
+#define THRUST_NAMESPACE_BEGIN namespace thrust {
+#endif // THRUST_NAMESPACE_BEGIN
+
+#ifndef THRUST_NAMESPACE_END
+#define THRUST_NAMESPACE_END }
+#endif // THRUST_NAMESPACE_END
+
+
 THRUST_NAMESPACE_BEGIN
 
 namespace system
