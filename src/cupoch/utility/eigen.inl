@@ -80,8 +80,18 @@ struct wrapped_calc_weights_functor {
 
 }  // namespace
 
+
 template <typename MatType, typename VecType, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
+                                                        int iteration_num,
+                                                        bool verbose) {
+    return ComputeJTJandJTr<MatType, VecType, FuncType>(
+            0, f, iteration_num, verbose);
+}
+
+template <typename MatType, typename VecType, typename FuncType>
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(cudaStream_t stream,
+                                                        const FuncType &f,
                                                         int iteration_num,
                                                         bool verbose) {
     MatType JTJ;
@@ -91,6 +101,7 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
     JTr.setZero();
     jtj_jtr_functor<MatType, VecType, FuncType> func(f);
     auto jtj_jtr_r2 = thrust::transform_reduce(
+            utility::exec_policy(stream),
             thrust::make_counting_iterator(0),
             thrust::make_counting_iterator(iteration_num), func,
             thrust::make_tuple(JTJ, JTr, r2_sum),
@@ -106,6 +117,13 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
 template <typename MatType, typename VecType, int NumJ, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
         const FuncType &f, int iteration_num, bool verbose /*=true*/) {
+    return ComputeJTJandJTr<MatType, VecType, NumJ, FuncType>(
+            0, f, iteration_num, verbose);
+}
+
+template <typename MatType, typename VecType, int NumJ, typename FuncType>
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
+        cudaStream_t stream, const FuncType &f, int iteration_num, bool verbose /*=true*/) {
     MatType JTJ;
     VecType JTr;
     float r2_sum = 0.0;
@@ -113,6 +131,7 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(
     JTr.setZero();
     multiple_jtj_jtr_functor<MatType, VecType, NumJ, FuncType> func(f);
     auto jtj_jtr_r2 = thrust::transform_reduce(
+            utility::exec_policy(stream),
             thrust::make_counting_iterator(0),
             thrust::make_counting_iterator(iteration_num), func,
             thrust::make_tuple(JTJ, JTr, r2_sum),

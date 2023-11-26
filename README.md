@@ -80,7 +80,7 @@ You can also install cupoch using pip on Jetson Nano.
 Please set up Jetson using [jetpack](https://developer.nvidia.com/embedded/jetpack) and install some packages with apt.
 
 ```
-sudo apt-get install libxinerama-dev libxcursor-dev libglu1-mesa-dev
+sudo apt-get install xorg-dev libxinerama-dev libxcursor-dev libglu1-mesa-dev
 pip3 install cupoch
 ```
 

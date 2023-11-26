@@ -30,8 +30,17 @@ namespace registration {
 Eigen::Matrix4f_u Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
                          const utility::device_vector<Eigen::Vector3f> &target,
                          const CorrespondenceSet &corres);
+Eigen::Matrix4f_u Kabsch(cudaStream_t stream1,
+                         cudaStream_t stream2,
+                         const utility::device_vector<Eigen::Vector3f> &model,
+                         const utility::device_vector<Eigen::Vector3f> &target,
+                         const CorrespondenceSet &corres);
 
 Eigen::Matrix4f_u Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
+                         const utility::device_vector<Eigen::Vector3f> &target);
+Eigen::Matrix4f_u Kabsch(cudaStream_t stream1,
+                         cudaStream_t stream2,
+                         const utility::device_vector<Eigen::Vector3f> &model,
                          const utility::device_vector<Eigen::Vector3f> &target);
 
 Eigen::Matrix4f_u KabschWeighted(
