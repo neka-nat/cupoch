@@ -86,6 +86,11 @@ template <typename MatType, typename VecType, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
                                                         int iteration_num,
                                                         bool verbose = true);
+template <typename MatType, typename VecType, typename FuncType>
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(cudaStream_t stream,
+                                                        const FuncType &f,
+                                                        int iteration_num,
+                                                        bool verbose = true);
 
 /// Function to compute JTJ and Jtr
 /// Input: function pointer f and total number of rows of Jacobian matrix
@@ -94,6 +99,11 @@ thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
 /// vector.
 template <typename MatType, typename VecType, int NumJ, typename FuncType>
 thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(const FuncType &f,
+                                                        int iteration_num,
+                                                        bool verbose = true);
+template <typename MatType, typename VecType, int NumJ, typename FuncType>
+thrust::tuple<MatType, VecType, float> ComputeJTJandJTr(cudaStream_t stream,
+                                                        FuncType &f,
                                                         int iteration_num,
                                                         bool verbose = true);
 

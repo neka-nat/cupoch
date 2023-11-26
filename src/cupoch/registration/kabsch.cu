@@ -32,13 +32,21 @@
 using namespace cupoch;
 using namespace cupoch::registration;
 
+Eigen::Matrix4f_u cupoch::registration::Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
+                         const utility::device_vector<Eigen::Vector3f> &target,
+                         const CorrespondenceSet &corres) {
+    return Kabsch(utility::GetStream(0), utility::GetStream(1), model, target,
+                  corres);
+}
+
 Eigen::Matrix4f_u cupoch::registration::Kabsch(
+        cudaStream_t stream1, cudaStream_t stream2,
         const utility::device_vector<Eigen::Vector3f> &model,
         const utility::device_vector<Eigen::Vector3f> &target,
         const CorrespondenceSet &corres) {
     // Compute the center
     auto res1 = thrust::async::reduce(
-            utility::exec_policy(utility::GetStream(0)),
+            utility::exec_policy(stream1),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
@@ -51,7 +59,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
                             element_get_functor<Eigen::Vector2i, 0>())),
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     auto res2 = thrust::async::reduce(
-            utility::exec_policy(utility::GetStream(1)),
+            utility::exec_policy(stream2),
             thrust::make_permutation_iterator(
                     target.begin(),
                     thrust::make_transform_iterator(
@@ -73,7 +81,7 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     // Compute the H matrix
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::inner_product(
-            utility::exec_policy(0),
+            utility::exec_policy(stream1),
             thrust::make_permutation_iterator(
                     model.begin(),
                     thrust::make_transform_iterator(
@@ -111,14 +119,20 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     return tr;
 }
 
+Eigen::Matrix4f_u cupoch::registration::Kabsch(const utility::device_vector<Eigen::Vector3f> &model,
+                         const utility::device_vector<Eigen::Vector3f> &target) {
+    return Kabsch(utility::GetStream(0), utility::GetStream(1), model, target);
+}
+
 Eigen::Matrix4f_u cupoch::registration::Kabsch(
+        cudaStream_t stream1, cudaStream_t stream2,
         const utility::device_vector<Eigen::Vector3f> &model,
         const utility::device_vector<Eigen::Vector3f> &target) {
     CorrespondenceSet corres(model.size());
     thrust::tabulate(corres.begin(), corres.end(), [] __device__(size_t idx) {
         return Eigen::Vector2i(idx, idx);
     });
-    return Kabsch(model, target, corres);
+    return Kabsch(stream1, stream2, model, target, corres);
 }
 
 Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
