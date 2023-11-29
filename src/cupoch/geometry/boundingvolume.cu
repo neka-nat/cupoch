@@ -51,7 +51,7 @@ struct check_within_oriented_bounding_box_functor {
     __device__ bool operator()(
             const thrust::tuple<int, Eigen::Vector3f> &x) const {
         const Eigen::Vector3f &point = thrust::get<1>(x);
-        return (test_plane(box_points_[0], box_points_[1], box_points_[3],
+        return ((test_plane(box_points_[0], box_points_[1], box_points_[3],
                            point) <= 0 &&
                 test_plane(box_points_[0], box_points_[5], box_points_[3],
                            point) >= 0 &&
@@ -62,7 +62,19 @@ struct check_within_oriented_bounding_box_functor {
                 test_plane(box_points_[3], box_points_[4], box_points_[5],
                            point) <= 0 &&
                 test_plane(box_points_[0], box_points_[1], box_points_[7],
-                           point) >= 0);
+                           point) >= 0) ||
+                (test_plane(box_points_[0], box_points_[1], box_points_[3],
+                           point) >= 0 &&
+                test_plane(box_points_[0], box_points_[5], box_points_[3],
+                           point) <= 0 &&
+                test_plane(box_points_[2], box_points_[5], box_points_[7],
+                           point) >= 0 &&
+                test_plane(box_points_[1], box_points_[4], box_points_[7],
+                           point) <= 0 &&
+                test_plane(box_points_[3], box_points_[4], box_points_[5],
+                           point) >= 0 &&
+                test_plane(box_points_[0], box_points_[1], box_points_[7],
+                           point) <= 0));
     }
 };
 
