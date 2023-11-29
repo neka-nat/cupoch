@@ -42,7 +42,7 @@ struct check_within_oriented_bounding_box_functor {
     const std::array<Eigen::Vector3f, 8> box_points_;
     __device__ float test_plane(const Eigen::Vector3f &a,
                                 const Eigen::Vector3f &b,
-                                const Eigen::Vector3f c,
+                                const Eigen::Vector3f &c,
                                 const Eigen::Vector3f &x) const {
         Eigen::Matrix3f design;
         design << (b - a), (c - a), (x - a);
