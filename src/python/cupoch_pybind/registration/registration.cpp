@@ -120,7 +120,7 @@ void pybind_registration_classes(py::module &m) {
     py::enum_<registration::TransformationEstimationType> tf_type(m, "TransformationEstimationType");
     tf_type.value("PointToPoint", registration::TransformationEstimationType::PointToPoint)
             .value("PointToPlane", registration::TransformationEstimationType::PointToPlane)
-            .value("PlaneToPlane", registration::TransformationEstimationType::PlaneToPlane)
+            .value("SymmetricMethod", registration::TransformationEstimationType::SymmetricMethod)
             .value("ColoredICP", registration::TransformationEstimationType::ColoredICP)
             .export_values();
 
@@ -165,23 +165,23 @@ void pybind_registration_classes(py::module &m) {
                 return std::string("TransformationEstimationPointToPlane");
             });
 
-    // cupoch.registration.TransformationEstimationPlaneToPlane:
+    // cupoch.registration.TransformationEstimationSymmetricMethod:
     // TransformationEstimation
-    py::class_<registration::TransformationEstimationPlaneToPlane,
+    py::class_<registration::TransformationEstimationSymmetricMethod,
                PyTransformationEstimation<
-                       registration::TransformationEstimationPlaneToPlane>,
+                       registration::TransformationEstimationSymmetricMethod>,
                registration::TransformationEstimation>
-            te_l2l(m, "TransformationEstimationPlaneToPlane",
+            te_l2l(m, "TransformationEstimationSymmetricMethod",
                    "Class to estimate a transformation for plane to plane "
                    "distance.");
     py::detail::bind_default_constructor<
-            registration::TransformationEstimationPlaneToPlane>(te_l2l);
+            registration::TransformationEstimationSymmetricMethod>(te_l2l);
     py::detail::bind_copy_functions<
-            registration::TransformationEstimationPlaneToPlane>(te_l2l);
+            registration::TransformationEstimationSymmetricMethod>(te_l2l);
     te_l2l.def(
             "__repr__",
-            [](const registration::TransformationEstimationPlaneToPlane &te) {
-                return std::string("TransformationEstimationPlaneToPlane");
+            [](const registration::TransformationEstimationSymmetricMethod &te) {
+                return std::string("TransformationEstimationSymmetricMethod");
             });
 
     // cupoch.registration.FastGlobalRegistrationOption:
@@ -373,7 +373,7 @@ static const std::unordered_map<std::string, std::string>
                  "Estimation method. One of "
                  "(``registration::TransformationEstimationPointToPoint``,"
                  "``registration::TransformationEstimationPointToPlane``,"
-                 "``registration::TransformationEstimationPlaneToPlane``)"},
+                 "``registration::TransformationEstimationSymmetricMethod``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"max_correspondence_distance",

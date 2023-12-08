@@ -218,7 +218,7 @@ Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
     return is_success ? extrinsic : Eigen::Matrix4f::Identity();
 }
 
-float TransformationEstimationPlaneToPlane::ComputeRMSE(
+float TransformationEstimationSymmetricMethod::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
@@ -283,7 +283,7 @@ float TransformationEstimationPlaneToPlane::ComputeRMSE(
     return std::sqrt(err / (float)corres.size());
 }
 
-Eigen::Matrix4f TransformationEstimationPlaneToPlane::ComputeTransformation(
+Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {

@@ -39,7 +39,7 @@ enum class TransformationEstimationType {
     Unspecified = 0,
     PointToPoint = 1,
     PointToPlane = 2,
-    PlaneToPlane = 3,
+    SymmetricMethod = 3,
     ColoredICP = 4,
 };
 
@@ -115,11 +115,11 @@ private:
 };
 
 /// Estimate a transformation for plane to plane distance
-class TransformationEstimationPlaneToPlane : public TransformationEstimation {
+class TransformationEstimationSymmetricMethod : public TransformationEstimation {
 public:
-    TransformationEstimationPlaneToPlane(float det_thresh = 1.0e-6)
+    TransformationEstimationSymmetricMethod(float det_thresh = 1.0e-6)
         : det_thresh_(det_thresh) {}
-    ~TransformationEstimationPlaneToPlane() override {}
+    ~TransformationEstimationSymmetricMethod() override {}
 
 public:
     TransformationEstimationType GetTransformationEstimationType()
@@ -138,7 +138,7 @@ public:
 
 private:
     const TransformationEstimationType type_ =
-            TransformationEstimationType::PlaneToPlane;
+            TransformationEstimationType::SymmetricMethod;
 };
 
 }  // namespace registration
