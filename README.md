@@ -26,7 +26,7 @@ This repository is based on [Open3D](https://github.com/intel-isl/Open3D).
         * [flann](https://github.com/flann-lib/flann)
     * Point cloud registration
         * ICP
-        * [Symmetric ICP](https://gfx.cs.princeton.edu/pubs/Rusinkiewicz_2019_ASO/symm_icp.pdf)(Implemented by @eclipse0922 )
+        * [Symmetric ICP](https://gfx.cs.princeton.edu/pubs/Rusinkiewicz_2019_ASO/symm_icp.pdf) (Implemented by [@eclipse0922](https://github.com/eclipse0922))
         * [Colored Point Cloud Registration](https://ieeexplore.ieee.org/document/8237287)
         * [Fast Global Registration](http://vladlen.info/papers/fast-global-registration.pdf)
         * [FilterReg](https://arxiv.org/abs/1811.10136)
