@@ -39,7 +39,8 @@ enum class TransformationEstimationType {
     Unspecified = 0,
     PointToPoint = 1,
     PointToPlane = 2,
-    ColoredICP = 3,
+    PlaneToPlane = 3,
+    ColoredICP = 4,
 };
 
 /// Base class that estimates a transformation between two point clouds
@@ -111,6 +112,33 @@ public:
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
+};
+
+/// Estimate a transformation for plane to plane distance
+class TransformationEstimationPlaneToPlane : public TransformationEstimation {
+public:
+    TransformationEstimationPlaneToPlane(float det_thresh = 1.0e-6)
+        : det_thresh_(det_thresh) {}
+    ~TransformationEstimationPlaneToPlane() override {}
+
+public:
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+    float ComputeRMSE(const geometry::PointCloud &source,
+                      const geometry::PointCloud &target,
+                      const CorrespondenceSet &corres) const override;
+    Eigen::Matrix4f ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const override;
+
+    float det_thresh_;
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::PlaneToPlane;
 };
 
 }  // namespace registration
