@@ -55,6 +55,52 @@ struct pt2pl_jacobian_residual_functor
     }
 };
 
+struct pl2pl_jacobian_residual_functor
+    : public utility::jacobian_residual_functor<Eigen::Vector6f> {
+    pl2pl_jacobian_residual_functor(const Eigen::Vector3f *source,
+                                    const Eigen::Vector3f *source_normals,
+                                    const Eigen::Vector3f *target_points,
+                                    const Eigen::Vector3f *target_normals,
+                                    const Eigen::Vector2i *corres)
+        : source_(source),
+          source_normals_(source_normals),
+          target_points_(target_points),
+          target_normals_(target_normals),
+          corres_(corres){};
+    const Eigen::Vector3f *source_;
+    const Eigen::Vector3f *source_normals_;
+    const Eigen::Vector3f *target_points_;
+    const Eigen::Vector3f *target_normals_;
+    const Eigen::Vector2i *corres_;
+    __device__ void operator()(int idx, Eigen::Vector6f &vec, float &r) const {
+        const Eigen::Vector3f &vs = source_[corres_[idx][0]];
+        const Eigen::Vector3f &ns = source_normals_[corres_[idx][0]];
+        const Eigen::Vector3f &vt = target_points_[corres_[idx][1]];
+        const Eigen::Vector3f &nt = target_normals_[corres_[idx][1]];
+
+        Eigen::Vector3f n = ns + nt;  // sum of normals
+        Eigen::Vector3f d = vs - vt;  // difference of points
+
+        r = d.dot(n);  // symmetric residual
+
+        Eigen::Vector3f cross_product = (vs + vt).cross(n);
+        vec.block<3, 1>(0, 0) = cross_product;
+        vec.block<3, 1>(3, 0) = n;
+    }
+};
+
+// Define a function or a lambda to compute the error using normals
+__device__ float ComputeErrorUsingNormals(
+        const Eigen::Vector3f &source_point,
+        const Eigen::Vector3f &source_normal,
+        const Eigen::Vector3f &target_point,
+        const Eigen::Vector3f &target_normal) {
+    // Implement the error calculation logic here
+    // This is just a placeholder logic
+    return (source_point - target_point).dot(target_normal) +
+           (source_point - target_point).dot(source_normal);
+}
+
 }  // namespace
 
 float TransformationEstimationPointToPoint::ComputeRMSE(
@@ -114,7 +160,8 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
                             target.normals_.begin(),
                             thrust::make_transform_iterator(
                                     corres.begin(),
-                                    element_get_functor<Eigen::Vector2i, 1>()))),
+                                    element_get_functor<Eigen::Vector2i,
+                                                        1>()))),
             make_tuple_iterator(
                     thrust::make_permutation_iterator(
                             source.points_.begin(),
@@ -130,7 +177,8 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
                             target.normals_.begin(),
                             thrust::make_transform_iterator(
                                     corres.end(),
-                                    element_get_functor<Eigen::Vector2i, 1>()))),
+                                    element_get_functor<Eigen::Vector2i,
+                                                        1>()))),
             [] __device__(const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f,
                                               Eigen::Vector3f> &x) {
                 float r = (thrust::get<0>(x) - thrust::get<1>(x))
@@ -159,6 +207,101 @@ Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
     thrust::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f,
                                       pt2pl_jacobian_residual_functor>(
+                    func, (int)corres.size());
+
+    bool is_success;
+    Eigen::Matrix4f extrinsic;
+    thrust::tie(is_success, extrinsic) =
+            utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr,
+                                                                 det_thresh_);
+
+    return is_success ? extrinsic : Eigen::Matrix4f::Identity();
+}
+
+float TransformationEstimationSymmetricMethod::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres) const {
+    if (corres.empty() || !source.HasNormals() || !target.HasNormals())
+        return 0.0;
+    const float err = thrust::transform_reduce(
+            utility::exec_policy(0),
+            make_tuple_iterator(
+                    thrust::make_permutation_iterator(
+                            source.points_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.begin(),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
+                    thrust::make_permutation_iterator(
+                            source.normals_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.begin(),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
+                    thrust::make_permutation_iterator(
+                            target.points_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.begin(),
+                                    element_get_functor<Eigen::Vector2i, 1>())),
+                    thrust::make_permutation_iterator(
+                            target.normals_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.begin(),
+                                    element_get_functor<Eigen::Vector2i,
+                                                        1>()))),
+            make_tuple_iterator(
+                    thrust::make_permutation_iterator(
+                            source.points_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.end(),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
+                    thrust::make_permutation_iterator(
+                            source.normals_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.end(),
+                                    element_get_functor<Eigen::Vector2i, 0>())),
+                    thrust::make_permutation_iterator(
+                            target.points_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.end(),
+                                    element_get_functor<Eigen::Vector2i, 1>())),
+                    thrust::make_permutation_iterator(
+                            target.normals_.begin(),
+                            thrust::make_transform_iterator(
+                                    corres.end(),
+                                    element_get_functor<Eigen::Vector2i,
+                                                        1>()))),
+            [] __device__(
+                    const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f,
+                                        Eigen::Vector3f, Eigen::Vector3f> &x) {
+                // Compute error using both source and target normals
+                float r = ComputeErrorUsingNormals(
+                        thrust::get<0>(x), thrust::get<1>(x), thrust::get<2>(x),
+                        thrust::get<3>(x));
+                return r * r;
+            },
+            0.0f, thrust::plus<float>());
+    return std::sqrt(err / (float)corres.size());
+}
+
+Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres) const {
+    if (corres.empty() || !target.HasNormals())
+        return Eigen::Matrix4f::Identity();
+
+    Eigen::Matrix6f JTJ;
+    Eigen::Vector6f JTr;
+    float r2;
+    pl2pl_jacobian_residual_functor func(
+            thrust::raw_pointer_cast(source.points_.data()),
+            thrust::raw_pointer_cast(source.normals_.data()),
+            thrust::raw_pointer_cast(target.points_.data()),
+            thrust::raw_pointer_cast(target.normals_.data()),
+            thrust::raw_pointer_cast(corres.data()));
+    thrust::tie(JTJ, JTr, r2) =
+            utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f,
+                                      pl2pl_jacobian_residual_functor>(
                     func, (int)corres.size());
 
     bool is_success;

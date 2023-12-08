@@ -119,9 +119,10 @@ void pybind_registration_classes(py::module &m) {
 
     py::enum_<registration::TransformationEstimationType> tf_type(m, "TransformationEstimationType");
     tf_type.value("PointToPoint", registration::TransformationEstimationType::PointToPoint)
-           .value("PointToPlane", registration::TransformationEstimationType::PointToPlane)
-           .value("ColoredICP", registration::TransformationEstimationType::ColoredICP)
-           .export_values();
+            .value("PointToPlane", registration::TransformationEstimationType::PointToPlane)
+            .value("SymmetricMethod", registration::TransformationEstimationType::SymmetricMethod)
+            .value("ColoredICP", registration::TransformationEstimationType::ColoredICP)
+            .export_values();
 
     // cupoch.registration.TransformationEstimationPointToPoint:
     // TransformationEstimation
@@ -162,6 +163,25 @@ void pybind_registration_classes(py::module &m) {
             "__repr__",
             [](const registration::TransformationEstimationPointToPlane &te) {
                 return std::string("TransformationEstimationPointToPlane");
+            });
+
+    // cupoch.registration.TransformationEstimationSymmetricMethod:
+    // TransformationEstimation
+    py::class_<registration::TransformationEstimationSymmetricMethod,
+               PyTransformationEstimation<
+                       registration::TransformationEstimationSymmetricMethod>,
+               registration::TransformationEstimation>
+            te_l2l(m, "TransformationEstimationSymmetricMethod",
+                   "Class to estimate a transformation for plane to plane "
+                   "distance.");
+    py::detail::bind_default_constructor<
+            registration::TransformationEstimationSymmetricMethod>(te_l2l);
+    py::detail::bind_copy_functions<
+            registration::TransformationEstimationSymmetricMethod>(te_l2l);
+    te_l2l.def(
+            "__repr__",
+            [](const registration::TransformationEstimationSymmetricMethod &te) {
+                return std::string("TransformationEstimationSymmetricMethod");
             });
 
     // cupoch.registration.FastGlobalRegistrationOption:
@@ -351,8 +371,9 @@ static const std::unordered_map<std::string, std::string>
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``registration::TransformationEstimationPointToPoint``, "
-                 "``registration::TransformationEstimationPointToPlane``)"},
+                 "(``registration::TransformationEstimationPointToPoint``,"
+                 "``registration::TransformationEstimationPointToPlane``,"
+                 "``registration::TransformationEstimationSymmetricMethod``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"max_correspondence_distance",
