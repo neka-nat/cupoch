@@ -94,8 +94,7 @@ jobs:
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.cuda == '11.2.0'
       working-directory: ${{ env.build_dir }}/lib/python_package
       env:
-        PYPI_USERNAME: ${{ secrets.pypi_username }}
-        PYPI_PASSWORD: ${{ secrets.pypi_password }}
+        PYPI_API_TOKEN: ${{ secrets.pypi_api_token }}
       run: |
         python -m pip install twine
-        python -m twine upload -u $env:PYPI_USERNAME -p $env:PYPI_PASSWORD pip_package/*
+        python -m twine upload -u "__token__" -p $env:PYPI_API_TOKEN pip_package/*
