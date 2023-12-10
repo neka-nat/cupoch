@@ -55,9 +55,9 @@ struct pt2pl_jacobian_residual_functor
     }
 };
 
-struct pl2pl_jacobian_residual_functor
+struct symmetric_jacobian_residual_functor
     : public utility::jacobian_residual_functor<Eigen::Vector6f> {
-    pl2pl_jacobian_residual_functor(const Eigen::Vector3f *source,
+    symmetric_jacobian_residual_functor(const Eigen::Vector3f *source,
                                     const Eigen::Vector3f *source_normals,
                                     const Eigen::Vector3f *target_points,
                                     const Eigen::Vector3f *target_normals,
@@ -95,10 +95,13 @@ __device__ float ComputeErrorUsingNormals(
         const Eigen::Vector3f &source_normal,
         const Eigen::Vector3f &target_point,
         const Eigen::Vector3f &target_normal) {
-    // Implement the error calculation logic here
-    // This is just a placeholder logic
-    return (source_point - target_point).dot(target_normal) +
-           (source_point - target_point).dot(source_normal);
+    // Symmetric treatment of normals
+    Eigen::Vector3f combined_normal = source_normal + target_normal;
+
+    // Compute the symmetric point-to-plane error
+    float error = (source_point - target_point).dot(combined_normal);
+
+    return error * error;  // Return squared error for consistency
 }
 
 }  // namespace
@@ -287,13 +290,13 @@ Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals())
+    if (corres.empty() || !source.HasNormals() || !target.HasNormals())
         return Eigen::Matrix4f::Identity();
 
     Eigen::Matrix6f JTJ;
     Eigen::Vector6f JTr;
     float r2;
-    pl2pl_jacobian_residual_functor func(
+    symmetric_jacobian_residual_functor func(
             thrust::raw_pointer_cast(source.points_.data()),
             thrust::raw_pointer_cast(source.normals_.data()),
             thrust::raw_pointer_cast(target.points_.data()),
@@ -301,14 +304,47 @@ Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
             thrust::raw_pointer_cast(corres.data()));
     thrust::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f,
-                                      pl2pl_jacobian_residual_functor>(
+                                      symmetric_jacobian_residual_functor>(
                     func, (int)corres.size());
 
     bool is_success;
-    Eigen::Matrix4f extrinsic;
-    thrust::tie(is_success, extrinsic) =
+    Eigen::Matrix4f transformation_matrix;
+    thrust::tie(is_success, transformation_matrix) =
             utility::SolveJacobianSystemAndObtainExtrinsicMatrix(JTJ, JTr,
                                                                  det_thresh_);
+    if (is_success) {
+        // Extract the rotation matrix (3x3 upper-left block) from the 4x4
+        // transformation matrix. This matrix represents the rotation component
+        // of the transformation.
+        Eigen::Matrix3f rotation_matrix_3f =
+                transformation_matrix.template block<3, 3>(0, 0);
 
-    return is_success ? extrinsic : Eigen::Matrix4f::Identity();
+        // Convert the rotation matrix to double precision for higher accuracy.
+        // This step is essential to maintain accuracy in the subsequent
+        // squaring operation.
+        Eigen::Matrix3d rotation_matrix_3d = rotation_matrix_3f.cast<double>();
+
+        // Square the rotation matrix as described in the original Symmetric ICP
+        // paper. This approach, part of the rotated-normals version of the
+        // symmetric objective, optimizes for half of the rotation angle,
+        // reducing linearization error and enabling exact correspondences in
+        // certain cases.
+        Eigen::Matrix3d R = rotation_matrix_3d * rotation_matrix_3d;
+
+        // Construct the final transformation matrix using the squared rotation
+        // matrix (R) and the translation vector. The translation component is
+        // extracted directly from the original 4x4 transformation matrix.
+        Eigen::Matrix4f extrinsic = Eigen::Matrix4f::Identity();
+        extrinsic.template block<3, 3>(0, 0) =
+                R.cast<float>();  // Set the rotation part with the squared
+                                  // rotation matrix.
+        extrinsic.template block<3, 1>(0, 3) =
+                transformation_matrix.template block<3, 1>(
+                        0, 3);  // Set the translation part from the original
+                                // transformation matrix.
+
+        return extrinsic;
+    }
+
+    return Eigen::Matrix4f::Identity();
 }
