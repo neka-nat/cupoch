@@ -106,6 +106,13 @@ __device__ float ComputeErrorUsingNormals(
 
 }  // namespace
 
+Eigen::Matrix4f TransformationEstimation::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres) const {
+    return ComputeTransformation(0, 0, source, target, corres);
+}
+
 float TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -135,10 +142,11 @@ float TransformationEstimationPointToPoint::ComputeRMSE(
 }
 
 Eigen::Matrix4f TransformationEstimationPointToPoint::ComputeTransformation(
+        cudaStream_t stream1, cudaStream_t stream2,
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    return Kabsch(source.points_, target.points_, corres);
+    return Kabsch(stream1, stream2, source.points_, target.points_, corres);
 }
 
 float TransformationEstimationPointToPlane::ComputeRMSE(
@@ -193,6 +201,7 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
 }
 
 Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
+        cudaStream_t stream1, cudaStream_t stream2,
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
@@ -210,7 +219,7 @@ Eigen::Matrix4f TransformationEstimationPointToPlane::ComputeTransformation(
     thrust::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f,
                                       pt2pl_jacobian_residual_functor>(
-                    func, (int)corres.size());
+                    stream1, func, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4f extrinsic;
@@ -287,6 +296,7 @@ float TransformationEstimationSymmetricMethod::ComputeRMSE(
 }
 
 Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
+        cudaStream_t stream1, cudaStream_t stream2,
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
@@ -305,7 +315,7 @@ Eigen::Matrix4f TransformationEstimationSymmetricMethod::ComputeTransformation(
     thrust::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<Eigen::Matrix6f, Eigen::Vector6f,
                                       symmetric_jacobian_residual_functor>(
-                    func, (int)corres.size());
+                    stream1, func, (int)corres.size());
 
     bool is_success;
     Eigen::Matrix4f transformation_matrix;
