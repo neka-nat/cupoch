@@ -67,6 +67,8 @@ public:
     AxisAlignedBoundingBox<3> GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox() const;
     PointCloud &Transform(const Eigen::Matrix4f &transformation) override;
+    PointCloud &Transform(cudaStream_t stream1, cudaStream_t stream2,
+                          const Eigen::Matrix4f &transformation);
     PointCloud &Translate(const Eigen::Vector3f &translation,
                           bool relative = true) override;
     PointCloud &Scale(const float scale, bool center = true) override;

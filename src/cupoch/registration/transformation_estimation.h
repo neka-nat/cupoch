@@ -58,7 +58,12 @@ public:
     virtual float ComputeRMSE(const geometry::PointCloud &source,
                               const geometry::PointCloud &target,
                               const CorrespondenceSet &corres) const = 0;
+    Eigen::Matrix4f ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const CorrespondenceSet &corres) const;
     virtual Eigen::Matrix4f ComputeTransformation(
+            cudaStream_t stream1, cudaStream_t stream2,
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const = 0;
@@ -79,6 +84,7 @@ public:
                       const geometry::PointCloud &target,
                       const CorrespondenceSet &corres) const override;
     Eigen::Matrix4f ComputeTransformation(
+            cudaStream_t stream1, cudaStream_t stream2,
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
@@ -104,6 +110,7 @@ public:
                       const geometry::PointCloud &target,
                       const CorrespondenceSet &corres) const override;
     Eigen::Matrix4f ComputeTransformation(
+            cudaStream_t stream1, cudaStream_t stream2,
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
@@ -131,6 +138,7 @@ public:
                       const geometry::PointCloud &target,
                       const CorrespondenceSet &corres) const override;
     Eigen::Matrix4f ComputeTransformation(
+            cudaStream_t stream1, cudaStream_t stream2,
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;

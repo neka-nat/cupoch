@@ -31,6 +31,7 @@ public:
                        const CorrespondenceSet &corres) const override;
 
     Eigen::Matrix4f ComputeTransformation(
+            cudaStream_t stream1, cudaStream_t stream2,
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const CorrespondenceSet &corres) const override;
