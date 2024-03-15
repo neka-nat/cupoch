@@ -247,10 +247,10 @@ void Visualizer::BuildUtilities() {
                 grid_line_ptr_) == false) {
         return;
     }
-    utility_ptrs_.push_back(coordinate_frame_mesh_ptr_);
-    utility_renderer_ptrs_.push_back(coordinate_frame_mesh_renderer_ptr_);
-    utility_ptrs_.push_back(grid_line_ptr_);
-    utility_renderer_ptrs_.push_back(grid_line_renderer_ptr_);
+    utility_ptrs_.emplace_back(coordinate_frame_mesh_ptr_);
+    utility_renderer_ptrs_.emplace_back(coordinate_frame_mesh_renderer_ptr_);
+    utility_ptrs_.emplace_back(grid_line_ptr_);
+    utility_renderer_ptrs_.emplace_back(grid_line_renderer_ptr_);
 }
 
 void Visualizer::Run() {

@@ -61,7 +61,7 @@ KinematicChain& KinematicChain::BuildFromURDF(const std::string& filename) {
     for (std::map<std::string, urdf::JointSharedPtr>::const_iterator itr =
                  jmap.begin();
          itr != jmap.end(); ++itr) {
-        joints.push_back(itr->second);
+        joints.emplace_back(itr->second);
     }
     int n_joints = joints.size();
     std::vector<bool> has_root(n_joints, true);
@@ -84,11 +84,11 @@ KinematicChain& KinematicChain::BuildFromURDF(const std::string& filename) {
     root_.joint_ = Joint("root_joint");
     std::vector<ShapeInfo> collisions;
     for (const auto& col : root_link->collision_array) {
-        collisions.push_back(ConvertCollision(col, root_path_));
+        collisions.emplace_back(ConvertCollision(col, root_path_));
     }
     std::vector<ShapeInfo> visuals;
     for (const auto& vis : root_link->visual_array) {
-        visuals.push_back(ConvertVisual(vis, root_path_));
+        visuals.emplace_back(ConvertVisual(vis, root_path_));
     }
     root_.link_ = Link(root_link->name, collisions, visuals);
     link_map_[root_.link_.name_] = &(root_.link_);
@@ -137,16 +137,16 @@ std::vector<std::shared_ptr<Frame>> KinematicChain::BuildChainRecurse(
             auto link = lmap.at(joint->child_link_name);
             std::vector<ShapeInfo> collisions;
             for (const auto& col : link->collision_array) {
-                collisions.push_back(ConvertCollision(col, root_path_));
+                collisions.emplace_back(ConvertCollision(col, root_path_));
             }
             std::vector<ShapeInfo> visuals;
             for (const auto& vis : link->visual_array) {
-                visuals.push_back(ConvertVisual(vis, root_path_));
+                visuals.emplace_back(ConvertVisual(vis, root_path_));
             }
             child->link_ = Link(link->name, collisions, visuals);
             link_map_[child->link_.name_] = &(child->link_);
             child->children_ = BuildChainRecurse(*child, lmap, joints);
-            children.push_back(child);
+            children.emplace_back(child);
         }
     }
     return children;

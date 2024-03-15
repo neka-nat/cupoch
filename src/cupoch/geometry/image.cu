@@ -536,7 +536,7 @@ ImagePyramid Image::FilterPyramid(const ImagePyramid &input,
     std::vector<std::shared_ptr<Image>> output;
     for (size_t i = 0; i < input.size(); i++) {
         auto layer_filtered = input[i]->Filter(type);
-        output.push_back(layer_filtered);
+        output.emplace_back(layer_filtered);
     }
     return output;
 }
@@ -549,7 +549,7 @@ ImagePyramid Image::BilateralFilterPyramid(const ImagePyramid &input,
     for (size_t i = 0; i < input.size(); i++) {
         auto layer_filtered =
                 input[i]->BilateralFilter(diameter, sigma_color, sigma_space);
-        output.push_back(layer_filtered);
+        output.emplace_back(layer_filtered);
     }
     return output;
 }

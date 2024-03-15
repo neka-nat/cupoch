@@ -169,7 +169,7 @@ void FunctionDoc::ParseArguments() {
     std::vector<std::string> argument_tokens = GetArgumentTokens(pybind_doc_);
     argument_docs_.clear();
     for (const std::string& argument_token : argument_tokens) {
-        argument_docs_.push_back(ParseArgumentToken(argument_token));
+        argument_docs_.emplace_back(ParseArgumentToken(argument_token));
     }
 }
 
@@ -348,7 +348,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
         size_t pos = res.position(0) + (start_iter - str.cbegin());
         start_iter = res.suffix().first;
         // Now the pos include ", ", which needs to be removed
-        argument_start_positions.push_back(pos + 2);
+        argument_start_positions.emplace_back(pos + 2);
     }
 
     // Get end positions (non-inclusive)
@@ -356,13 +356,13 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
     // The last argument's end pos is the location of the parenthesis before ->
     std::vector<size_t> argument_end_positions;
     for (size_t i = 0; i + 1 < argument_start_positions.size(); ++i) {
-        argument_end_positions.push_back(argument_start_positions[i + 1] - 2);
+        argument_end_positions.emplace_back(argument_start_positions[i + 1] - 2);
     }
     std::size_t arrow_pos = str.rfind(") -> ");
     if (arrow_pos == std::string::npos) {
         return {};
     } else {
-        argument_end_positions.push_back(arrow_pos);
+        argument_end_positions.emplace_back(arrow_pos);
     }
 
     std::vector<std::string> argument_tokens;
@@ -370,7 +370,7 @@ std::vector<std::string> FunctionDoc::GetArgumentTokens(
         std::string token = str.substr(
                 argument_start_positions[i],
                 argument_end_positions[i] - argument_start_positions[i]);
-        argument_tokens.push_back(token);
+        argument_tokens.emplace_back(token);
     }
     return argument_tokens;
 }

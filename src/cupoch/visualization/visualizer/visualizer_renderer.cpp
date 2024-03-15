@@ -113,7 +113,7 @@ void Visualizer::CopyViewStatusToClipboard() {
         utility::LogError("Something is wrong copying view status.");
     }
     ViewTrajectory trajectory;
-    trajectory.view_status_.push_back(current_status);
+    trajectory.view_status_.emplace_back(current_status);
     std::string clipboard_string;
     if (io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory) ==
         false) {

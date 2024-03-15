@@ -260,17 +260,17 @@ ImagePyramid Image::CreatePyramid(size_t num_of_levels,
         if (i == 0) {
             std::shared_ptr<Image> input_copy_ptr = std::make_shared<Image>();
             *input_copy_ptr = *this;
-            pyramid_image.push_back(input_copy_ptr);
+            pyramid_image.emplace_back(input_copy_ptr);
         } else {
             if (with_gaussian_filter && num_of_channels_ == 1) {
                 // https://en.wikipedia.org/wiki/Pyramid_(image_processing)
                 auto level_b = pyramid_image[i - 1]->Filter(
                         Image::FilterType::Gaussian3);
                 auto level_bd = level_b->Downsample();
-                pyramid_image.push_back(level_bd);
+                pyramid_image.emplace_back(level_bd);
             } else {
                 auto level_d = pyramid_image[i - 1]->Downsample();
-                pyramid_image.push_back(level_d);
+                pyramid_image.emplace_back(level_d);
             }
         }
     }

@@ -69,7 +69,7 @@ RGBDImagePyramid RGBDImage::FilterPyramid(
         auto depth_level_filtered = depth_level.Filter(type);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(
                 RGBDImage(*color_level_filtered, *depth_level_filtered));
-        rgbd_image_pyramid_filtered.push_back(rgbd_image_level_filtered);
+        rgbd_image_pyramid_filtered.emplace_back(rgbd_image_level_filtered);
     }
     return rgbd_image_pyramid_filtered;
 }
@@ -87,7 +87,7 @@ RGBDImagePyramid RGBDImage::BilateralFilterPyramidDepth(
                 depth_level.BilateralFilter(diameter, sigma_depth, sigma_space);
         auto rgbd_image_level_filtered = std::make_shared<RGBDImage>(RGBDImage(
                 rgbd_image_pyramid[level]->color_, *depth_level_filtered));
-        rgbd_image_pyramid_filtered.push_back(
+        rgbd_image_pyramid_filtered.emplace_back(
                 std::move(rgbd_image_level_filtered));
     }
     return rgbd_image_pyramid_filtered;
@@ -106,7 +106,7 @@ RGBDImagePyramid RGBDImage::CreatePyramid(
     for (size_t level = 0; level < num_of_levels; level++) {
         auto rgbd_image_level = std::make_shared<RGBDImage>(
                 RGBDImage(*color_pyramid[level], *depth_pyramid[level]));
-        rgbd_image_pyramid.push_back(rgbd_image_level);
+        rgbd_image_pyramid.emplace_back(rgbd_image_level);
     }
     return rgbd_image_pyramid;
 }

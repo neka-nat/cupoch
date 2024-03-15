@@ -34,7 +34,7 @@ void cupoch::utility::SplitString(std::vector<std::string> &tokens,
         pos = str.find_first_of(delimiters, last_pos);
         new_pos = (pos == std::string::npos ? str.length() : pos);
         if (new_pos != last_pos || !trim_empty_str) {
-            tokens.push_back(str.substr(last_pos, new_pos - last_pos));
+            tokens.emplace_back(str.substr(last_pos, new_pos - last_pos));
         }
         last_pos = new_pos + 1;
     }
