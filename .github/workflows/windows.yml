@@ -46,10 +46,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install CUDA 
-      uses: Jimver/cuda-toolkit@v0.2.8
+      uses: Jimver/cuda-toolkit@v0.2.14
       id: cuda-toolkit
       with:
         cuda: '11.7.0'
+        method: 'network'
     - name: nvcc check
       shell: powershell
       run: |
