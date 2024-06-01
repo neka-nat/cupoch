@@ -88,6 +88,11 @@ public:
         return !points_.empty() && colors_.size() == points_.size();
     }
 
+    /// Returns 'true' if the point cloud contains per-point covariance matrix.
+    __host__ __device__ bool HasCovariances() const {
+        return !points_.empty() && covariances_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals();
 
@@ -244,6 +249,7 @@ public:
     utility::device_vector<Eigen::Vector3f> points_;
     utility::device_vector<Eigen::Vector3f> normals_;
     utility::device_vector<Eigen::Vector3f> colors_;
+    utility::device_vector<Eigen::Matrix3f> covariances_;
 };
 
 }  // namespace geometry
