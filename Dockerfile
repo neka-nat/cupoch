@@ -1,5 +1,5 @@
 
-FROM nvidia/cuda:11.7.1-devel-ubuntu20.04
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 
 WORKDIR /work/cupoch
 
@@ -19,12 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          python3-dev \
          python3-setuptools && \
      rm -rf /var/lib/apt/lists/*
-
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.18.4/cmake-3.18.4.tar.gz \
-    && tar zxvf cmake-3.18.4.tar.gz \
-    && cd cmake-3.18.4 \
-    && ./bootstrap -- -DCMAKE_USE_OPENSSL=OFF \
-    && make && make install
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 

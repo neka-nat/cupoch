@@ -106,7 +106,7 @@ sudo make install-pip-package
 ### Use Docker
 
 ```sh
-docker-compose up -d
+docker compose up -d
 # xhost +
 docker exec -it cupoch bash
 ```
