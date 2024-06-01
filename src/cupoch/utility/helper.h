@@ -182,6 +182,19 @@ __host__ __device__ Eigen::Matrix<T, Dim, 1> device_vectorize(
     return ans;
 }
 
+template <typename T, int M, int N, float (*Func)(float)>
+__host__ __device__ Eigen::Matrix<T, M, N> device_vectorize(
+        const Eigen::Matrix<T, M, N> &x) {
+    Eigen::Matrix<T, M, N> ans;
+#pragma unroll
+    for (int k = 0; k < M * N; ++k) {
+        int i = k / N;
+        int j = i % N;
+        ans(i, j) = Func(x(i, j));
+    }
+    return ans;
+}
+
 }  // namespace Eigen
 
 namespace cupoch {

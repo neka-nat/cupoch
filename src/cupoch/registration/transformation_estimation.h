@@ -41,6 +41,7 @@ enum class TransformationEstimationType {
     PointToPlane = 2,
     SymmetricMethod = 3,
     ColoredICP = 4,
+    GeneralizedICP = 5,
 };
 
 /// Base class that estimates a transformation between two point clouds

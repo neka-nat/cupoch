@@ -24,6 +24,7 @@
 #include "cupoch/registration/colored_icp.h"
 #include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/registration/filterreg.h"
+#include "cupoch/registration/generalized_icp.h"
 #include "cupoch/registration/registration.h"
 #include "cupoch/utility/console.h"
 #include "cupoch_pybind/docstring.h"
@@ -122,6 +123,7 @@ void pybind_registration_classes(py::module &m) {
             .value("PointToPlane", registration::TransformationEstimationType::PointToPlane)
             .value("SymmetricMethod", registration::TransformationEstimationType::SymmetricMethod)
             .value("ColoredICP", registration::TransformationEstimationType::ColoredICP)
+            .value("GeneralizedICP", registration::TransformationEstimationType::GeneralizedICP)
             .export_values();
 
     // cupoch.registration.TransformationEstimationPointToPoint:
@@ -183,6 +185,34 @@ void pybind_registration_classes(py::module &m) {
             [](const registration::TransformationEstimationSymmetricMethod &te) {
                 return std::string("TransformationEstimationSymmetricMethod");
             });
+
+    // cupoch.registration.TransformationEstimationForGeneralizedICP:
+    // TransformationEstimation
+    py::class_<registration::TransformationEstimationForGeneralizedICP,
+               PyTransformationEstimation<
+                       registration::TransformationEstimationForGeneralizedICP>,
+               registration::TransformationEstimation>
+            te_gicp(m, "TransformationEstimationForGeneralizedICP",
+                    "Class to estimate a transformation for Generalized ICP.");
+    py::detail::bind_copy_functions<
+            registration::TransformationEstimationForGeneralizedICP>(te_gicp);
+    te_gicp.def(py::init([](float epsilon) {
+                  return new registration::TransformationEstimationForGeneralizedICP(
+                          epsilon);
+              }),
+              "epsilon"_a = 1e-3)
+            .def_readwrite("epsilon",
+                           &registration::TransformationEstimationForGeneralizedICP::
+                                   epsilon_,
+                           "Small constant representing covariance along the "
+                           "normal.")
+            .def("__repr__",
+                 [](const registration::TransformationEstimationForGeneralizedICP
+                            &te) {
+                     return std::string(
+                             "registration::"
+                             "TransformationEstimationForGeneralizedICP");
+                 });
 
     // cupoch.registration.FastGlobalRegistrationOption:
     py::class_<registration::FastGlobalRegistrationOption> fgr_option(
@@ -373,7 +403,8 @@ static const std::unordered_map<std::string, std::string>
                  "Estimation method. One of "
                  "(``registration::TransformationEstimationPointToPoint``,"
                  "``registration::TransformationEstimationPointToPlane``,"
-                 "``registration::TransformationEstimationSymmetricMethod``)"},
+                 "``registration::TransformationEstimationSymmetricMethod``,"
+                 "``registration::TransformationEstimationForGeneralizedICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
                 {"max_correspondence_distance",
@@ -408,6 +439,13 @@ void pybind_registration_methods(py::module &m) {
           "det_thresh"_a = 1.0e-6);
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
+
+    m.def("registration_generalized_icp", &registration::RegistrationGeneralizedICP,
+          "Function for Generalized ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init"_a = Eigen::Matrix4f::Identity(),
+          "estimation"_a = registration::TransformationEstimationForGeneralizedICP(),
+          "criteria"_a = registration::ICPConvergenceCriteria());
 
     m.def("registration_fast_based_on_feature_matching",
           &registration::FastGlobalRegistration<33>,

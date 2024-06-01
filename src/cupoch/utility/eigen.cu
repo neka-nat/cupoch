@@ -25,12 +25,6 @@
 namespace cupoch {
 namespace utility {
 
-Eigen::Matrix3f SkewMatrix(const Eigen::Vector3f &vec) {
-    return (Eigen::Matrix3f() << 0,      -vec.z(),  vec.y(),
-                                 vec.z(), 0,       -vec.x(),
-                                -vec.y(), vec.x(),  0).finished();
-}
-
 Eigen::Matrix4f TransformVector6fToMatrix4f(const Eigen::Vector6f &input) {
     Eigen::Matrix4f output = Eigen::Matrix4f::Identity();
     output.topRightCorner<3, 1>() = input.tail<3>();

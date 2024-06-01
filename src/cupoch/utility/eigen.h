@@ -54,7 +54,11 @@ struct multiple_jacobians_residuals_functor {
 };
 
 /// Genretate a skew-symmetric matrix from a vector 3x1.
-Eigen::Matrix3f SkewMatrix(const Eigen::Vector3f &vec);
+inline __device__ Eigen::Matrix3f SkewMatrix(const Eigen::Vector3f &vec) {
+    return (Eigen::Matrix3f() << 0,      -vec.z(),  vec.y(),
+                                 vec.z(), 0,       -vec.x(),
+                                -vec.y(), vec.x(),  0).finished();
+}
 
 /// Function to transform 6D motion vector to 4D motion matrix
 Eigen::Matrix4f TransformVector6fToMatrix4f(const Eigen::Vector6f &input);
