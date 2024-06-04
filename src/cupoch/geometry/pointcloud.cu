@@ -132,7 +132,8 @@ PointCloud::PointCloud(const PointCloud &other)
     : GeometryBase3D(Geometry::GeometryType::PointCloud),
       points_(other.points_),
       normals_(other.normals_),
-      colors_(other.colors_) {}
+      colors_(other.colors_),
+      covariances_(other.covariances_) {}
 
 PointCloud::~PointCloud() {}
 
