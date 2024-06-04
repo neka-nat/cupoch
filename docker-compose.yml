@@ -11,6 +11,7 @@ services:
       - "NVIDIA_DRIVER_CAPABILITIES=all"
     volumes:
       - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+      - .:/work/cupoch
     tty: true
     privileged: true
     deploy:

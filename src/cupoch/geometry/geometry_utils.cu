@@ -135,6 +135,18 @@ void TransformNormals(cudaStream_t stream,
                      normals.end(), func);
 }
 
+void TransformCovariances(const Eigen::Matrix4f &transformation,
+                          utility::device_vector<Eigen::Matrix3f> &covariances) {
+    TransformCovariances(0, transformation, covariances);
+}
+
+void TransformCovariances(cudaStream_t stream,
+                         const Eigen::Matrix4f& transformation,
+                         utility::device_vector<Eigen::Matrix3f>& covariances) {
+    RotateCovariances(transformation.block<3, 3>(0, 0), covariances);
+}
+
+
 template <int Dim>
 void TranslatePoints(
         const Eigen::Matrix<float, Dim, 1> &translation,
@@ -234,6 +246,21 @@ void RotateNormals(cudaStream_t stream,
     thrust::for_each(utility::exec_policy(stream), normals.begin(),
                      normals.end(), [=] __device__(Eigen::Vector3f & normal) {
                          normal = R * normal;
+                     });
+}
+
+void RotateCovariances(const Eigen::Matrix3f &R,
+                       utility::device_vector<Eigen::Matrix3f> &covariances) {
+    RotateCovariances(0, R, covariances);
+}
+
+void RotateCovariances(cudaStream_t stream,
+                       const Eigen::Matrix3f& R,
+                       utility::device_vector<Eigen::Matrix3f>& covariances) {
+    thrust::for_each(utility::exec_policy(stream),
+                     covariances.begin(), covariances.end(),
+                     [=] __device__(Eigen::Matrix3f& covariance) {
+                         covariance = R * covariance * R.transpose();
                      });
 }
 

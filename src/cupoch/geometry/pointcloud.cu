@@ -140,6 +140,7 @@ PointCloud &PointCloud::operator=(const PointCloud &other) {
     points_ = other.points_;
     normals_ = other.normals_;
     colors_ = other.colors_;
+    covariances_ = other.covariances_;
     return *this;
 }
 
@@ -175,6 +176,7 @@ PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    covariances_.clear();
     return *this;
 }
 
@@ -214,6 +216,7 @@ PointCloud &PointCloud::Scale(const float scale, bool center) {
 PointCloud &PointCloud::Rotate(const Eigen::Matrix3f &R, bool center) {
     RotatePoints<3>(utility::GetStream(0), R, points_, center);
     RotateNormals(utility::GetStream(1), R, normals_);
+    RotateCovariances(utility::GetStream(2), R, covariances_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;
 }
@@ -239,6 +242,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     } else {
         colors_.clear();
     }
+    if ((!HasPoints() || HasCovariances()) && cloud.HasCovariances()) {
+        covariances_.resize(new_vert_num);
+        thrust::copy(cloud.covariances_.begin(), cloud.covariances_.end(),
+                     covariances_.begin() + old_vert_num);
+    } else {
+        covariances_.clear();
+    }
     points_.resize(new_vert_num);
     thrust::copy(cloud.points_.begin(), cloud.points_.end(),
                  points_.begin() + old_vert_num);
@@ -263,6 +273,7 @@ PointCloud &PointCloud::PaintUniformColor(const Eigen::Vector3f &color) {
 PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
     TransformPoints<3>(utility::GetStream(0), transformation, points_);
     TransformNormals(utility::GetStream(1), transformation, normals_);
+    TransformCovariances(utility::GetStream(2), transformation, covariances_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;
 }

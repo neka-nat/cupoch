@@ -72,6 +72,17 @@ void TransformNormals(const Eigen::Matrix4f &transformation,
 void TransformNormals(cudaStream_t stream,
                       const Eigen::Matrix4f &transformation,
                       utility::device_vector<Eigen::Vector3f> &normals);
+
+/// \brief Transforms all covariance matrices with the transformation.
+///
+/// \param transformation 4x4 matrix for transformation.
+/// \param covariances A list of covariance matrices to be transformed.
+void TransformCovariances(cudaStream_t stream,
+                          const Eigen::Matrix4f& transformation,
+                          utility::device_vector<Eigen::Matrix3f>& covariances);
+void TransformCovariances(const Eigen::Matrix4f& transformation,
+                          utility::device_vector<Eigen::Matrix3f>& covariances);
+
 /// \brief Apply translation to the geometry coordinates.
 ///
 /// \param translation A 3D vector to transform the geometry.
@@ -125,6 +136,16 @@ void RotateNormals(const Eigen::Matrix3f &R,
 void RotateNormals(cudaStream_t stream,
                    const Eigen::Matrix3f &R,
                    utility::device_vector<Eigen::Vector3f> &normals);
+
+/// \brief Rotate all covariance matrices with the rotation matrix \p R.
+///
+/// \param R A 3x3 rotation matrix
+/// \param covariances A list of covariance matrices to be transformed.
+void RotateCovariances(const Eigen::Matrix3f& R,
+                       utility::device_vector<Eigen::Matrix3f>& covariances);
+void RotateCovariances(cudaStream_t stream,
+                       const Eigen::Matrix3f& R,
+                       utility::device_vector<Eigen::Matrix3f>& covariances);
 
 }  // namespace geometry
 }  // namespace cupoch
