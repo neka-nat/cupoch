@@ -30,6 +30,8 @@ __device__ thrust::tuple<Eigen::Vector3f, Eigen::Vector3f> FastEigen3x3MinMaxVec
 
 __device__ Eigen::Vector3f FastEigen3x3Val(Eigen::Matrix3f &A);
 
+__device__ Eigen::Matrix3f SqrtMatrix3x3(Eigen::Matrix3f &A);
+
 }
 }
 

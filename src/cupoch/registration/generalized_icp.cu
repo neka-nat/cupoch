@@ -6,6 +6,7 @@
 #include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/utility/eigen.h"
+#include "cupoch/utility/eigenvalue.h"
 #include "cupoch/utility/console.h"
 
 namespace cupoch {
@@ -88,8 +89,8 @@ struct compute_jacobian_and_residual_functor
         const Eigen::Vector3f &vt = target_points_[ct];
         const Eigen::Matrix3f &Ct = target_covariances_[ct];
         const Eigen::Vector3f d = vs - vt;
-        const Eigen::Matrix3f M = Ct + Cs;
-        const Eigen::Matrix3f W = Eigen::device_vectorize<float, 3, 3, sqrtf>(M.inverse());
+        Eigen::Matrix3f M_inv = (Ct + Cs).inverse();
+        const Eigen::Matrix3f W = utility::SqrtMatrix3x3(M_inv);
 
         Eigen::Matrix<float, 3, 6> J;
         J.block<3, 3>(0, 0) = -utility::SkewMatrix(vs);
@@ -124,8 +125,8 @@ struct mahalanobis_distance_functor {
         const Eigen::Vector3f &vt = target_points_[cor[1]];
         const Eigen::Matrix3f &Ct = target_covariances_[cor[1]];
         const Eigen::Vector3f d = vs - vt;
-        const Eigen::Matrix3f M = Ct + Cs;
-        const Eigen::Matrix3f W = Eigen::device_vectorize<float, 3, 3, sqrtf>(M.inverse());
+        Eigen::Matrix3f M_inv = (Ct + Cs).inverse();
+        const Eigen::Matrix3f W = utility::SqrtMatrix3x3(M_inv);
         return d.transpose() * W * d;
     }
 };

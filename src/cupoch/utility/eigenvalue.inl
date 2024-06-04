@@ -169,5 +169,12 @@ __device__ inline Eigen::Vector3f FastEigen3x3Val(Eigen::Matrix3f &A) {
     return Eigen::Vector3f(minv, thrust::get<0>(eig_val_vec).sum() - minv - maxv, maxv);
 }
 
+__device__ inline Eigen::Matrix3f SqrtMatrix3x3(Eigen::Matrix3f &A) {
+    Eigen::Vector3f eig_vals;
+    Eigen::Matrix3f eig_vecs;
+    thrust::tie(eig_vals, eig_vecs) = FastEigen3x3(A);
+    return eig_vecs * eig_vals.cwiseSqrt().asDiagonal() * eig_vecs.transpose();
+}
+
 }
 }
