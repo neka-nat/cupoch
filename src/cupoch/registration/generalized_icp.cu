@@ -1,7 +1,6 @@
 #include "cupoch/registration/generalized_icp.h"
 
 #include <Eigen/Dense>
-#include <unsupported/Eigen/MatrixFunctions>
 
 #include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/geometry/pointcloud.h"
