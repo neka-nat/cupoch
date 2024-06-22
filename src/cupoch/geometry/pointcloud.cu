@@ -119,6 +119,25 @@ struct pass_through_filter_functor {
     }
 };
 
+struct compute_farthest_index_functor {
+    compute_farthest_index_functor(
+        const Eigen::Vector3f *points,
+        float *distances,
+        size_t farthest_index)
+        : points_(points),
+          distances_(distances),
+          farthest_index_(farthest_index){};
+    const Eigen::Vector3f *points_;
+    float *distances_;
+    size_t farthest_index_;
+    __device__ thrust::tuple<size_t, float> operator()(size_t idx) const {
+        const Eigen::Vector3f &selected = points_[farthest_index_];
+        float dist = (points_[idx] - selected).squaredNorm();
+        distances_[idx] = min(distances_[idx], dist);
+        return thrust::make_tuple(idx, distances_[idx]);
+    }
+};
+
 }  // namespace
 
 PointCloud::PointCloud() : GeometryBase3D(Geometry::GeometryType::PointCloud) {}
@@ -277,6 +296,45 @@ PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
     TransformCovariances(utility::GetStream(2), transformation, covariances_);
     cudaSafeCall(cudaDeviceSynchronize());
     return *this;
+}
+
+std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
+        size_t num_samples) const {
+    if (num_samples == 0) {
+        return std::make_shared<PointCloud>();
+    } else if (num_samples == points_.size()) {
+        return std::make_shared<PointCloud>(*this);
+    } else if (num_samples > points_.size()) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, points_.size());
+    }
+    // We can also keep track of the non-selected indices with unordered_set,
+    // but since typically num_samples << num_points, it may not be worth it.
+    std::vector<size_t> selected_indices;
+    selected_indices.reserve(num_samples);
+    const size_t num_points = points_.size();
+    utility::device_vector<float> distances(
+        num_points, std::numeric_limits<float>::infinity());
+    size_t farthest_index = 0;
+    for (size_t i = 0; i < num_samples; i++) {
+        selected_indices.push_back(farthest_index);
+        compute_farthest_index_functor func(
+            thrust::raw_pointer_cast(points_.data()),
+            thrust::raw_pointer_cast(distances.data()),
+            farthest_index);
+        auto res = thrust::transform_reduce(
+            thrust::make_counting_iterator<size_t>(0),
+            thrust::make_counting_iterator<size_t>(num_points),
+            func,
+            thrust::make_tuple<size_t, float>(farthest_index, 0.0f),
+            [] __host__ __device__(const thrust::tuple<size_t, float> &a,
+                              const thrust::tuple<size_t, float> &b) -> thrust::tuple<size_t, float> {
+                return thrust::get<1>(a) > thrust::get<1>(b) ? a : b;
+            });
+        farthest_index = thrust::get<0>(res);
+    }
+    return SelectByIndex(selected_indices);
 }
 
 std::shared_ptr<PointCloud> PointCloud::Crop(
