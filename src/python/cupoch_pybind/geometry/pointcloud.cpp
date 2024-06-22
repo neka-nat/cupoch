@@ -113,7 +113,8 @@ void pybind_pointcloud(py::module &m) {
                  "Returns ``True`` if the point cloud contains point colors.")
             .def("normalize_normals", &geometry::PointCloud::NormalizeNormals,
                  "Normalize point normals to length 1.")
-            .def("transform", &geometry::PointCloud::Transform,
+            .def("transform",
+                 py::overload_cast<const Eigen::Matrix4f&>(&geometry::PointCloud::Transform),
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")
             .def("get_oriented_bounding_box",

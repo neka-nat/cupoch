@@ -298,6 +298,14 @@ PointCloud &PointCloud::Transform(const Eigen::Matrix4f &transformation) {
     return *this;
 }
 
+PointCloud &PointCloud::Transform(cudaStream_t stream1, cudaStream_t stream2,
+                                  const Eigen::Matrix4f &transformation) {
+    TransformPoints<3>(stream1, transformation, points_);
+    TransformNormals(stream2, transformation, normals_);
+    cudaSafeCall(cudaDeviceSynchronize());
+    return *this;
+}
+
 std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
         size_t num_samples) const {
     if (num_samples == 0) {

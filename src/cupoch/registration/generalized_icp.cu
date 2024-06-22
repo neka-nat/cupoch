@@ -151,6 +151,7 @@ float TransformationEstimationForGeneralizedICP::ComputeRMSE(
 
 Eigen::Matrix4f
 TransformationEstimationForGeneralizedICP::ComputeTransformation(
+        cudaStream_t stream1, cudaStream_t stream2,
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
@@ -172,7 +173,7 @@ TransformationEstimationForGeneralizedICP::ComputeTransformation(
     thrust::tie(JTJ, JTr, r2) =
             utility::ComputeJTJandJTr<
             Eigen::Matrix6f, Eigen::Vector6f, 3, compute_jacobian_and_residual_functor>(
-                    func, (int)corres.size());
+                    stream1, func, (int)corres.size());
 
     bool is_success = false;
     Eigen::Matrix4f extrinsic;

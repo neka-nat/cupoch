@@ -21,6 +21,7 @@
 #pragma once
 #include <thrust/host_vector.h>
 
+#include "cupoch/registration/correspondence_checker.h"
 #include "cupoch/registration/transformation_estimation.h"
 #include "cupoch/utility/eigen.h"
 
@@ -48,6 +49,22 @@ public:
     int max_iteration_;
 };
 
+
+class RANSACConvergenceCriteria {
+public:
+    RANSACConvergenceCriteria(int max_iteration = 100000,
+                              double confidence = 0.999)
+        : max_iteration_(max_iteration),
+          confidence_(std::max(std::min(confidence, 1.0), 0.0)) {}
+
+    ~RANSACConvergenceCriteria() {}
+
+public:
+    int max_iteration_;
+    double confidence_;
+};
+
+
 class RegistrationResult {
 public:
     RegistrationResult(const Eigen::Matrix4f &transformation =
@@ -58,6 +75,11 @@ public:
     void SetCorrespondenceSet(
             const thrust::host_vector<Eigen::Vector2i> &corres);
     thrust::host_vector<Eigen::Vector2i> GetCorrespondenceSet() const;
+
+    bool IsBetterRANSACThan(const RegistrationResult &other) const {
+        return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
+                                             inlier_rmse_ < other.inlier_rmse_);
+    }
 
 public:
     Eigen::Matrix4f_u transformation_;
@@ -89,6 +111,23 @@ RegistrationResult RegistrationICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+
+
+/// \brief Function for global RANSAC registration based on a given set of
+/// correspondences.
+RegistrationResult RegistrationRANSACBasedOnCorrespondence(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        float max_correspondence_distance,
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint(),
+        int ransac_n = 3,
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+                &checkers = {},
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
+
 
 }  // namespace registration
 }  // namespace cupoch

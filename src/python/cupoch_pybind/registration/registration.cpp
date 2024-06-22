@@ -22,6 +22,7 @@
 
 #include "cupoch/geometry/pointcloud.h"
 #include "cupoch/registration/colored_icp.h"
+#include "cupoch/registration/correspondence_checker.h"
 #include "cupoch/registration/fast_global_registration.h"
 #include "cupoch/registration/filterreg.h"
 #include "cupoch/registration/generalized_icp.h"
@@ -52,11 +53,24 @@ public:
     Eigen::Matrix4f ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const registration::CorrespondenceSet &corres) const override {
+            const registration::CorrespondenceSet &corres) const {
         PYBIND11_OVERLOAD_PURE(Eigen::Matrix4f, TransformationEstimationBase,
                                source, target, corres);
     }
 #endif
+};
+
+template <class CorrespondenceCheckerBase = registration::CorrespondenceChecker>
+class PyCorrespondenceChecker : public CorrespondenceCheckerBase {
+public:
+    using CorrespondenceCheckerBase::CorrespondenceCheckerBase;
+    bool Check(const geometry::PointCloud &source,
+               const geometry::PointCloud &target,
+               const registration::CorrespondenceSet &corres,
+               const Eigen::Matrix4f &transformation) const override {
+        PYBIND11_OVERLOAD_PURE(bool, CorrespondenceCheckerBase, source, target,
+                               corres, transformation);
+    }
 };
 
 void pybind_registration_classes(py::module &m) {
@@ -113,7 +127,8 @@ void pybind_registration_classes(py::module &m) {
            "Compute RMSE between source and target points cloud given "
            "correspondences.");
     te.def("compute_transformation",
-           &registration::TransformationEstimation::ComputeTransformation,
+           py::overload_cast<const geometry::PointCloud&, const geometry::PointCloud&, const registration::CorrespondenceSet&>(
+                &registration::TransformationEstimation::ComputeTransformation, py::const_),
            "source"_a, "target"_a, "corres"_a,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
@@ -213,6 +228,130 @@ void pybind_registration_classes(py::module &m) {
                              "registration::"
                              "TransformationEstimationForGeneralizedICP");
                  });
+
+    // cupoch.registration.CorrespondenceChecker
+    py::class_<registration::CorrespondenceChecker,
+               PyCorrespondenceChecker<registration::CorrespondenceChecker>>
+            cc(m, "CorrespondenceChecker",
+               "Base class that checks if two (small) point clouds can be "
+               "aligned. This class is used in feature based matching "
+               "algorithms (such as RANSAC and FastGlobalRegistration) to "
+               "prune out outlier correspondences. The virtual function "
+               "Check() must be implemented in subclasses.");
+    cc.def("Check", &registration::CorrespondenceChecker::Check, "source"_a, "target"_a,
+           "corres"_a, "transformation"_a,
+           "Function to check if two points can be aligned. The two input "
+           "point clouds must have exact the same number of points.");
+    cc.def_readwrite(
+            "require_pointcloud_alignment_",
+            &registration::CorrespondenceChecker::require_pointcloud_alignment_,
+            "Some checkers do not require point clouds to be aligned, e.g., "
+            "the edge length checker. Some checkers do, e.g., the distance "
+            "checker.");
+    docstring::ClassMethodDocInject(
+            m, "CorrespondenceChecker", "Check",
+            {{"source", "Source point cloud."},
+             {"target", "Target point cloud."},
+             {"corres",
+              "Correspondence set between source and target point cloud."},
+             {"transformation", "The estimated transformation (inplace)."}});
+
+    // cupoch.registration.CorrespondenceCheckerBasedOnEdgeLength:
+    // CorrespondenceChecker
+    py::class_<registration::CorrespondenceCheckerBasedOnEdgeLength,
+               PyCorrespondenceChecker<registration::CorrespondenceCheckerBasedOnEdgeLength>,
+               registration::CorrespondenceChecker>
+            cc_el(m, "CorrespondenceCheckerBasedOnEdgeLength",
+                  "Check if two point clouds build the polygons with similar "
+                  "edge lengths. That is, checks if the lengths of any two "
+                  "arbitrary edges (line formed by two vertices) individually "
+                  "drawn withinin source point cloud and within the target "
+                  "point cloud with correspondences are similar. The only "
+                  "parameter similarity_threshold is a number between 0 "
+                  "(loose) and 1 (strict)");
+    py::detail::bind_copy_functions<registration::CorrespondenceCheckerBasedOnEdgeLength>(
+            cc_el);
+    cc_el.def(py::init([](float similarity_threshold) {
+                  return new registration::CorrespondenceCheckerBasedOnEdgeLength(
+                          similarity_threshold);
+              }),
+              "similarity_threshold"_a = 0.9)
+            .def("__repr__",
+                 [](const registration::CorrespondenceCheckerBasedOnEdgeLength &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnEdgeLength "
+                             "with similarity_threshold={:f}",
+                             c.similarity_threshold_);
+                 })
+            .def_readwrite(
+                    "similarity_threshold",
+                    &registration::CorrespondenceCheckerBasedOnEdgeLength::
+                            similarity_threshold_,
+                    R"(float value between 0 (loose) and 1 (strict): For the
+check to be true,
+
+:math:`||\text{edge}_{\text{source}}|| > \text{similarity_threshold} \times ||\text{edge}_{\text{target}}||` and
+
+:math:`||\text{edge}_{\text{target}}|| > \text{similarity_threshold} \times ||\text{edge}_{\text{source}}||`
+
+must hold true for all edges.)");
+
+    // cupoch.registration.CorrespondenceCheckerBasedOnDistance:
+    // CorrespondenceChecker
+    py::class_<registration::CorrespondenceCheckerBasedOnDistance,
+               PyCorrespondenceChecker<registration::CorrespondenceCheckerBasedOnDistance>,
+               registration::CorrespondenceChecker>
+            cc_d(m, "CorrespondenceCheckerBasedOnDistance",
+                 "Class to check if aligned point clouds are close (less than "
+                 "specified threshold).");
+    py::detail::bind_copy_functions<registration::CorrespondenceCheckerBasedOnDistance>(cc_d);
+    cc_d.def(py::init([](float distance_threshold) {
+                 return new registration::CorrespondenceCheckerBasedOnDistance(
+                         distance_threshold);
+             }),
+             "distance_threshold"_a)
+            .def("__repr__",
+                 [](const registration::CorrespondenceCheckerBasedOnDistance &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnDistance with "
+                             "distance_threshold={:f}",
+                             c.distance_threshold_);
+                 })
+            .def_readwrite(
+                    "distance_threshold",
+                    &registration::CorrespondenceCheckerBasedOnDistance::distance_threshold_,
+                    "Distance threshold for the check.");
+
+    // cupoch.registration.CorrespondenceCheckerBasedOnNormal:
+    // CorrespondenceChecker
+    py::class_<registration::CorrespondenceCheckerBasedOnNormal,
+               PyCorrespondenceChecker<registration::CorrespondenceCheckerBasedOnNormal>,
+               registration::CorrespondenceChecker>
+            cc_n(m, "CorrespondenceCheckerBasedOnNormal",
+                 "Class to check if two aligned point clouds have similar "
+                 "normals. It considers vertex normal affinity of any "
+                 "correspondences. It computes dot product of two normal "
+                 "vectors. It takes radian value for the threshold.");
+    py::detail::bind_copy_functions<registration::CorrespondenceCheckerBasedOnNormal>(cc_n);
+    cc_n.def(py::init([](float normal_angle_threshold) {
+                 return new registration::CorrespondenceCheckerBasedOnNormal(
+                         normal_angle_threshold);
+             }),
+             "normal_angle_threshold"_a)
+            .def("__repr__",
+                 [](const registration::CorrespondenceCheckerBasedOnNormal &c) {
+                     return fmt::format(
+                             ""
+                             "CorrespondenceCheckerBasedOnNormal with "
+                             "normal_threshold={:f}",
+                             c.normal_angle_threshold_);
+                 })
+            .def_readwrite("normal_angle_threshold",
+                           &registration::CorrespondenceCheckerBasedOnNormal::
+                                   normal_angle_threshold_,
+                           "Radian value for angle threshold.");
 
     // cupoch.registration.FastGlobalRegistrationOption:
     py::class_<registration::FastGlobalRegistrationOption> fgr_option(
@@ -390,7 +529,12 @@ void pybind_registration_classes(py::module &m) {
 // Registration functions have similar arguments, sharing arg docstrings
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
-                {"checkers", "checkers"},
+                {"checkers",
+                 "Vector of Checker class to check if two point "
+                 "clouds can be aligned. One of "
+                 "(``CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``CorrespondenceCheckerBasedOnDistance``, "
+                 "``CorrespondenceCheckerBasedOnNormal``)"},
                 {"corres",
                  "Checker class to check if two point clouds can be "
                  "aligned. "
@@ -446,6 +590,21 @@ void pybind_registration_methods(py::module &m) {
           "init"_a = Eigen::Matrix4f::Identity(),
           "estimation"_a = registration::TransformationEstimationForGeneralizedICP(),
           "criteria"_a = registration::ICPConvergenceCriteria());
+
+    m.def("registration_ransac_based_on_correspondence",
+          &registration::RegistrationRANSACBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for global RANSAC registration based on a set of "
+          "correspondences",
+          "source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
+          "estimation_method"_a = registration::TransformationEstimationPointToPoint(),
+          "ransac_n"_a = 3,
+          "checkers"_a = std::vector<
+                  std::reference_wrapper<const registration::CorrespondenceChecker>>(),
+          "criteria"_a = registration::RANSACConvergenceCriteria(100000, 0.999));
+    docstring::FunctionDocInject(m,
+                                 "registration_ransac_based_on_correspondence",
+                                 map_shared_argument_docstrings);
 
     m.def("registration_fast_based_on_feature_matching",
           &registration::FastGlobalRegistration<33>,

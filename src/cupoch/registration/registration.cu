@@ -24,6 +24,9 @@
 #include "cupoch/registration/registration.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/helper.h"
+#include "cupoch/utility/random.h"
+
+#include <omp.h>
 
 using namespace cupoch;
 using namespace cupoch::registration;
@@ -31,6 +34,7 @@ using namespace cupoch::registration;
 namespace {
 
 RegistrationResult GetRegistrationResultAndCorrespondences(
+        cudaStream_t stream,
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const knn::KDTreeFlann &target_kdtree,
@@ -48,10 +52,11 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                                indices, dists);
     result.correspondence_set_.resize(n_pt);
     const float error2 = thrust::transform_reduce(
-            utility::exec_policy(0), dists.begin(), dists.end(),
+            utility::exec_policy(stream), dists.begin(), dists.end(),
             [] __device__(float d) { return (isinf(d)) ? 0.0 : d; }, 0.0f,
             thrust::plus<float>());
-    thrust::transform(enumerate_begin(indices), enumerate_end(indices),
+    thrust::transform(utility::exec_policy(stream),
+                      enumerate_begin(indices), enumerate_end(indices),
                       result.correspondence_set_.begin(),
                       [] __device__(const thrust::tuple<int, int> &idxs) {
                           int j = thrust::get<1>(idxs);
@@ -60,7 +65,8 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
                                                            j);
                       });
     auto end =
-            thrust::remove_if(result.correspondence_set_.begin(),
+            thrust::remove_if(utility::exec_policy(stream),
+                              result.correspondence_set_.begin(),
                               result.correspondence_set_.end(),
                               [] __device__(const Eigen::Vector2i &x) -> bool {
                                   return (x[0] < 0);
@@ -77,6 +83,29 @@ RegistrationResult GetRegistrationResultAndCorrespondences(
         result.inlier_rmse_ = std::sqrt(error2 / (float)corres_number);
     }
     return result;
+}
+
+struct correspondence_count_functor {
+    const Eigen::Vector3f *source_points_;
+    float max_dis2_;
+    correspondence_count_functor(float max_correspondence_distance)
+        : max_dis2_(max_correspondence_distance * max_correspondence_distance) {}
+    __device__ int operator()(const Eigen::Vector2i &c) const {
+        float dis2 = (source_points_[c[0]] - source_points_[c[1]]).squaredNorm();
+        return (dis2 < max_dis2_) ? 1 : 0;
+    }
+};
+
+float EvaluateInlierCorrespondenceRatio(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        float max_correspondence_distance,
+        const Eigen::Matrix4f &transformation) {
+    int inlier_corres = thrust::transform_reduce(
+            utility::exec_policy(0), corres.begin(), corres.end(),
+            correspondence_count_functor(max_correspondence_distance), 0, thrust::plus<int>());
+    return static_cast<float>(inlier_corres / corres.size());
 }
 
 }  // namespace
@@ -115,7 +144,7 @@ RegistrationResult cupoch::registration::EvaluateRegistration(
         pcd.Transform(transformation);
     }
     return GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            0, pcd, target, kdtree, max_correspondence_distance, transformation);
 }
 
 RegistrationResult cupoch::registration::RegistrationICP(
@@ -150,7 +179,7 @@ RegistrationResult cupoch::registration::RegistrationICP(
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            0, pcd, target, kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
@@ -160,7 +189,7 @@ RegistrationResult cupoch::registration::RegistrationICP(
         pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
+                0, pcd, target, kdtree, max_correspondence_distance,
                 transformation);
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
@@ -170,4 +199,114 @@ RegistrationResult cupoch::registration::RegistrationICP(
         }
     }
     return result;
+}
+
+RegistrationResult RegistrationRANSACBasedOnCorrespondence(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        float max_correspondence_distance,
+        const TransformationEstimation &estimation
+        /* = TransformationEstimationPointToPoint(false)*/,
+        int ransac_n /* = 3*/,
+        const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
+                &checkers /* = {}*/,
+        const RANSACConvergenceCriteria &criteria
+        /* = RANSACConvergenceCriteria()*/) {
+    if (ransac_n < 3 || (int)corres.size() < ransac_n ||
+        max_correspondence_distance <= 0.0) {
+        return RegistrationResult();
+    }
+    RegistrationResult best_result;
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(target));
+    int est_k_global = criteria.max_iteration_;
+    int total_validation = 0;
+
+#pragma omp parallel
+    {
+        CorrespondenceSet ransac_corres(ransac_n);
+        RegistrationResult best_result_local;
+        int est_k_local = criteria.max_iteration_;
+        utility::random::UniformIntGenerator<int> rand_gen(0,
+                                                           corres.size() - 1);
+
+#pragma omp for nowait
+        for (int itr = 0; itr < criteria.max_iteration_; itr++) {
+            if (itr >= est_k_global) {
+                continue;
+            }
+            int thread_id = omp_get_thread_num();
+            cudaStream_t stream1 = utility::GetStream((2 * thread_id) % utility::MAX_NUM_STREAMS);
+            cudaStream_t stream2 = utility::GetStream((2 * thread_id + 1) % utility::MAX_NUM_STREAMS);
+            // Randomly select ransac_n correspondences
+            for (int i = 0; i < ransac_n; i++) {
+                ransac_corres[i] = corres[rand_gen()];
+            }
+            // Estimate transformation
+            Eigen::Matrix4f transformation = estimation.ComputeTransformation(
+                    stream1, stream2,
+                    source, target, ransac_corres);
+
+            bool check = true;
+            for (const auto &checker : checkers) {
+                if (!checker.get().Check(source, target, ransac_corres,
+                                         transformation)) {
+                    check = false;
+                    break;
+                }
+            }
+            if (!check) continue;
+
+            geometry::PointCloud pcd = source;
+            pcd.Transform(stream1, stream2, transformation);
+            RegistrationResult result = GetRegistrationResultAndCorrespondences(
+                stream1, pcd, target, kdtree, max_correspondence_distance,
+                transformation);
+            if (result.IsBetterRANSACThan(best_result_local)) {
+                best_result_local = result;
+
+                float corres_inlier_ratio =
+                        EvaluateInlierCorrespondenceRatio(
+                                pcd, target, corres,
+                                max_correspondence_distance,
+                                transformation);
+
+                // Update exit condition if necessary.
+                // If confidence is 1.0, then it is safely inf, we always
+                // consume all the iterations.
+                float est_k_local_d =
+                        std::log(1.0 - criteria.confidence_) /
+                        std::log(1.0 -
+                                 std::pow(corres_inlier_ratio, ransac_n));
+                est_k_local =
+                        est_k_local_d < est_k_global
+                                ? static_cast<int>(std::ceil(est_k_local_d))
+                                : est_k_local;
+                utility::LogDebug(
+                        "Thread {:06d}: registration fitness={:.3f}, "
+                        "corres inlier ratio={:.3f}, "
+                        "Est. max k = {}",
+                        itr, result.fitness_, corres_inlier_ratio,
+                        est_k_local_d);
+                }
+#pragma omp critical
+            {
+                total_validation += 1;
+                if (est_k_local < est_k_global) {
+                    est_k_global = est_k_local;
+                }
+            }
+        }      // for loop
+#pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
+        {
+            if (best_result_local.IsBetterRANSACThan(best_result)) {
+                best_result = best_result_local;
+            }
+        }
+    }
+    utility::LogDebug(
+            "RANSAC exits after {:d} validations. Best inlier ratio {:e}, "
+            "RMSE {:e}",
+            total_validation, best_result.fitness_, best_result.inlier_rmse_);
+    return best_result;
 }
