@@ -177,7 +177,7 @@ thrust::tuple<MatType, VecType, float, float> ComputeWeightedJTJandJTr(
             make_tuple_begin(JTJs, JTrs, r2s, ws),
             make_tuple_end(JTJs, JTrs, r2s, ws),
             [] __device__(
-                    const thrust::tuple<MatType, VecType, float, float> &x) {
+                    const thrust::tuple<MatType, VecType, float, float> &x) -> thrust::tuple<MatType, VecType, float> {
                 float w = thrust::get<3>(x);
                 return thrust::make_tuple(thrust::get<0>(x) * w,
                                           thrust::get<1>(x) * w,

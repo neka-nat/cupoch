@@ -234,7 +234,7 @@ std::tuple<std::vector<Eigen::Vector3f>, float, float> NormalizePointCloud(
                 utility::exec_policy(0),
                 point_cloud_vec[i].points_.begin(),
                 point_cloud_vec[i].points_.end(),
-                [] __device__(const Eigen::Vector3f& pt) { return pt.norm(); },
+                [] __device__(const Eigen::Vector3f& pt) -> float { return pt.norm(); },
                 scale, thrust::maximum<float>());
     }
 

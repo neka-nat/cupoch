@@ -51,7 +51,6 @@ struct equal_to<Eigen::Matrix<int, Dim, 1>> {
     typedef Eigen::Matrix<int, Dim, 1> second_argument_type;
     typedef bool result_type;
     // clang-format off
-    __thrust_exec_check_disable__
     __host__ __device__ bool operator()(
             const Eigen::Matrix<int, Dim, 1> &lhs,
             const Eigen::Matrix<int, Dim, 1> &rhs) const {
@@ -207,7 +206,7 @@ __host__ __device__ void add_fn(T &x, const T &y) {
 template <typename T, std::size_t... Is>
 __host__ __device__ void add_tuple_impl(T &t,
                                         const T &y,
-                                        std::index_sequence<Is...>) {
+                                        thrust::integer_sequence<std::size_t, Is...>) {
     std::initializer_list<int>{
             ((void)add_fn(thrust::get<Is>(t), thrust::get<Is>(y)), 0)...};
 }
@@ -227,26 +226,26 @@ struct add_tuple_functor
 };
 
 template <typename T>
-__host__ __device__ void devide_fn(T &x, const int &y) {
+__host__ __device__ void divide_fn(T &x, const int &y) {
     x /= static_cast<float>(y);
 }
 
 template <typename T, std::size_t... Is>
-__host__ __device__ void devide_tuple_impl(T &t,
+__host__ __device__ void divide_tuple_impl(T &t,
                                            const int &y,
-                                           std::index_sequence<Is...>) {
-    std::initializer_list<int>{((void)devide_fn(thrust::get<Is>(t), y), 0)...};
+                                           thrust::integer_sequence<std::size_t, Is...>) {
+    std::initializer_list<int>{((void)divide_fn(thrust::get<Is>(t), y), 0)...};
 }
 
 template <class... Args>
-struct devide_tuple_functor
+struct divide_tuple_functor
     : public thrust::binary_function<const thrust::tuple<Args...>,
                                      const int,
                                      thrust::tuple<Args...>> {
     __host__ __device__ thrust::tuple<Args...> operator()(
             const thrust::tuple<Args...> &x, const int &y) const {
         thrust::tuple<Args...> ans = x;
-        devide_tuple_impl(ans, y,
+        divide_tuple_impl(ans, y,
                           thrust::make_index_sequence<sizeof...(Args)>{});
         return ans;
     }

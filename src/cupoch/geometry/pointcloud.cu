@@ -327,7 +327,7 @@ std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
             thrust::make_counting_iterator<size_t>(0),
             thrust::make_counting_iterator<size_t>(num_points),
             func,
-            thrust::make_tuple<size_t, float>(farthest_index, 0.0f),
+            thrust::make_tuple<size_t, float>(static_cast<size_t>(farthest_index), 0.0f),
             [] __host__ __device__(const thrust::tuple<size_t, float> &a,
                               const thrust::tuple<size_t, float> &b) -> thrust::tuple<size_t, float> {
                 return thrust::get<1>(a) > thrust::get<1>(b) ? a : b;

@@ -210,7 +210,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
     thrust::transform(output->voxels_values_.begin(),
                       output->voxels_values_.end(), counts.begin(),
                       output->voxels_values_.begin(),
-                      devide_voxel_color_functor());
+                      divide_voxel_color_functor());
     utility::LogDebug(
             "Pointcloud is voxelized from {:d} points to {:d} voxels.",
             (int)input.points_.size(), (int)output->voxels_keys_.size());

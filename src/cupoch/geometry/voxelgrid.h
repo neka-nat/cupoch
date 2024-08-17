@@ -72,7 +72,7 @@ struct add_voxel_color_functor {
     }
 };
 
-struct devide_voxel_color_functor {
+struct divide_voxel_color_functor {
     __device__ Voxel operator()(const Voxel &x, int y) const {
         Voxel ans;
         ans.grid_index_ = x.grid_index_;

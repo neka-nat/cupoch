@@ -274,7 +274,7 @@ VoxelGrid &VoxelGrid::operator+=(const VoxelGrid &voxelgrid) {
         thrust::swap(voxels_keys_, new_keys);
         thrust::transform(voxels_values_.begin(), voxels_values_.end(),
                           counts.begin(), voxels_values_.begin(),
-                          devide_voxel_color_functor());
+                          divide_voxel_color_functor());
     } else {
         this->AddVoxels(voxelgrid.voxels_values_);
     }
