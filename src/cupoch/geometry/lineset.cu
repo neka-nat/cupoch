@@ -225,7 +225,7 @@ float LineSet<Dim>::GetMaxLineLength() const {
                                     element_get_functor<Eigen::Vector2i, 1>()))),
             [] __device__(
                     const thrust::tuple<Eigen::Matrix<float, Dim, 1>,
-                                        Eigen::Matrix<float, Dim, 1>> &ppair) {
+                                        Eigen::Matrix<float, Dim, 1>> &ppair) -> float {
                 return (thrust::get<0>(ppair) - thrust::get<1>(ppair)).norm();
             },
             0.0f, thrust::maximum<float>());

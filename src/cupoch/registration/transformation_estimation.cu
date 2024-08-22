@@ -183,7 +183,7 @@ float TransformationEstimationPointToPlane::ComputeRMSE(
                                     element_get_functor<Eigen::Vector2i,
                                                         1>()))),
             [] __device__(const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f,
-                                              Eigen::Vector3f> &x) {
+                                              Eigen::Vector3f> &x) -> float {
                 float r = (thrust::get<0>(x) - thrust::get<1>(x))
                                   .dot(thrust::get<2>(x));
                 return r * r;
@@ -275,7 +275,7 @@ float TransformationEstimationSymmetricMethod::ComputeRMSE(
                                                         1>()))),
             [] __device__(
                     const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f,
-                                        Eigen::Vector3f, Eigen::Vector3f> &x) {
+                                        Eigen::Vector3f, Eigen::Vector3f> &x) -> float{
                 // Compute error using both source and target normals
                 float r = ComputeErrorUsingNormals(
                         thrust::get<0>(x), thrust::get<1>(x), thrust::get<2>(x),

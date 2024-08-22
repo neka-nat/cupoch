@@ -21,7 +21,6 @@
 #pragma once
 
 #include <thrust/detail/config.h>
-#include <thrust/system/cuda/detail/guarded_cuda_runtime_api.h>
 #include <stdexcept>
 #include <limits>
 #include <string>

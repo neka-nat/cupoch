@@ -23,6 +23,7 @@
 #include <Eigen/Core>
 #include <memory>
 
+#include "cupoch/registration/transformation_estimation.h"
 #include "cupoch/knn/kdtree_search_param.h"
 #include "cupoch/utility/device_vector.h"
 
@@ -64,6 +65,11 @@ std::shared_ptr<Feature<352>> ComputeSHOTFeature(
         float radius,
         const knn::KDTreeSearchParam& search_param =
                 knn::KDTreeSearchParamKNN());
+
+CorrespondenceSet CorrespondencesFromFeatures(const Feature<33> &source_features,
+                                              const Feature<33> &target_features,
+                                              bool mutual_filter = false,
+                                              float mutual_consistency_ratio = 0.1);
 
 }  // namespace registration
 }  // namespace cupoch

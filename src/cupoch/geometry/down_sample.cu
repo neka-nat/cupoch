@@ -75,14 +75,14 @@ struct compute_key_functor {
 };
 
 template <int Index, class... Args>
-struct normalize_and_devide_tuple_functor
+struct normalize_and_divide_tuple_functor
     : public thrust::binary_function<const thrust::tuple<Args...>,
                                      const int,
                                      thrust::tuple<Args...>> {
     __host__ __device__ thrust::tuple<Args...> operator()(
             const thrust::tuple<Args...> &x, const int &y) const {
         thrust::tuple<Args...> ans = x;
-        devide_tuple_impl(ans, y,
+        divide_tuple_impl(ans, y,
                           thrust::make_index_sequence<sizeof...(Args)>{});
         thrust::get<Index>(ans).normalize();
         return ans;
@@ -211,8 +211,17 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     };
     if (!has_normals && !has_colors) {
         auto begin = make_tuple_begin(output->points_, counts);
-        int n_out = runs(begin, sorted_points);
-        devide_tuple_functor<Eigen::Vector3f> dv_func;
+        thrust::sort_by_key(
+            utility::exec_policy(0), keys.begin(), keys.end(),
+            sorted_points.begin());
+        add_tuple_functor<Eigen::Vector3f, int> add_func;
+        auto end = thrust::reduce_by_key(
+            utility::exec_policy(0), keys.begin(), keys.end(),
+            make_tuple_iterator(sorted_points.begin(),
+                                thrust::make_constant_iterator(1)),
+            thrust::make_discard_iterator(), begin, binary_pred, add_func);
+        int n_out = thrust::distance(begin, end.second);
+        divide_tuple_functor<Eigen::Vector3f> dv_func;
         auto output_begins = make_tuple_begin(output->points_);
         thrust::transform(output_begins, output_begins + n_out, counts.begin(),
                           output_begins, dv_func);
@@ -223,7 +232,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto begin =
                 make_tuple_begin(output->points_, output->normals_, counts);
         int n_out = runs(begin, sorted_points, sorted_normals);
-        normalize_and_devide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f>
+        normalize_and_divide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f>
                 dv_func;
         auto output_begins =
                 make_tuple_begin(output->points_, output->normals_);
@@ -235,7 +244,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         resize_all(n, output->colors_);
         auto begin = make_tuple_begin(output->points_, output->colors_, counts);
         int n_out = runs(begin, sorted_points, sorted_colors);
-        devide_tuple_functor<Eigen::Vector3f, Eigen::Vector3f> dv_func;
+        divide_tuple_functor<Eigen::Vector3f, Eigen::Vector3f> dv_func;
         auto output_begins = make_tuple_begin(output->points_, output->colors_);
         thrust::transform(output_begins, output_begins + n_out, counts.begin(),
                           output_begins, dv_func);
@@ -247,7 +256,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         auto begin = make_tuple_begin(output->points_, output->normals_,
                                       output->colors_, counts);
         int n_out = runs(begin, sorted_points, sorted_normals, sorted_colors);
-        normalize_and_devide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f,
+        normalize_and_divide_tuple_functor<1, Eigen::Vector3f, Eigen::Vector3f,
                                            Eigen::Vector3f>
                 dv_func;
         auto output_begins = make_tuple_begin(output->points_, output->normals_,
@@ -397,7 +406,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     auto mean_and_count = thrust::transform_reduce(
             utility::exec_policy(0), avg_distances.begin(),
             avg_distances.end(),
-            [] __device__(float const &x) {
+            [] __device__(float const &x) -> thrust::tuple<float, size_t> {
                 return thrust::make_tuple(max(x, 0.0f), (size_t)(x >= 0.0));
             },
             thrust::make_tuple(0.0f, size_t(0)),
@@ -412,8 +421,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     const float sq_sum = thrust::transform_reduce(
             utility::exec_policy(0), avg_distances.begin(),
             avg_distances.end(),
-            [cloud_mean] __device__(const float x) {
-                return (x > 0) ? (x - cloud_mean) * (x - cloud_mean) : 0;
+            [cloud_mean] __device__(const float x) -> float {
+                return (x > 0) ? (x - cloud_mean) * (x - cloud_mean) : 0.0f;
             },
             0.0, thrust::plus<float>());
     // Bessel's correction

@@ -929,12 +929,14 @@ TriangleMesh &TriangleMesh::RemoveDuplicatedVertices() {
     if (has_vert_normal && has_vert_color) {
         k = runs(vertex_normals_, vertex_colors_);
     } else if (has_vert_normal) {
-        k = runs(vertex_normals_);
+        thrust::discard_iterable dummy;
+        k = runs(vertex_normals_, dummy);
     } else if (has_vert_color) {
-        k = runs(vertex_colors_);
+        thrust::discard_iterable dummy;
+        k = runs(vertex_colors_, dummy);
     } else {
         thrust::discard_iterable dummy;
-        k = runs(dummy);
+        k = runs(dummy, dummy);
     }
     vertices_.resize(k);
     if (has_vert_normal) vertex_normals_.resize(k);

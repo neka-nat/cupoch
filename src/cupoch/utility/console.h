@@ -117,7 +117,7 @@ public:
 private:
     const size_t resolution_ = 40;
     size_t expected_count_;
-    size_t current_count_;
+    int current_count_;
     std::string progress_info_;
     size_t progress_pixel_;
     bool active_;

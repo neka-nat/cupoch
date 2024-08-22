@@ -146,14 +146,14 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
     Eigen::Vector3f model_center = thrust::transform_reduce(
             utility::exec_policy(0), make_tuple_begin(model, weight),
             make_tuple_end(model, weight),
-            [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
+            [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) -> Eigen::Vector3f {
                 return thrust::get<0>(x) * thrust::get<1>(x);
             },
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
     Eigen::Vector3f target_center = thrust::transform_reduce(
             utility::exec_policy(0), make_tuple_begin(target, weight),
             make_tuple_end(target, weight),
-            [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) {
+            [] __device__(const thrust::tuple<Eigen::Vector3f, float> &x) -> Eigen::Vector3f {
                 return thrust::get<0>(x) * thrust::get<1>(x);
             },
             Eigen::Vector3f(0.0, 0.0, 0.0), thrust::plus<Eigen::Vector3f>());
@@ -166,7 +166,7 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
     // Compute the H matrix
     const float h_weight = thrust::transform_reduce(
             utility::exec_policy(0), weight.begin(), weight.end(),
-            [] __device__(float x) { return x * x; }, 0.0f,
+            [] __device__(float x) -> float { return x * x; }, 0.0f,
             thrust::plus<float>());
     const Eigen::Matrix3f init = Eigen::Matrix3f::Zero();
     Eigen::Matrix3f hh = thrust::transform_reduce(
@@ -175,7 +175,7 @@ Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
             make_tuple_end(model, target, weight),
             [model_center, target_center] __device__(
                     const thrust::tuple<Eigen::Vector3f, Eigen::Vector3f, float>
-                            &x) {
+                            &x) -> Eigen::Matrix3f {
                 const Eigen::Vector3f centralized_x =
                         thrust::get<0>(x) - model_center;
                 const Eigen::Vector3f centralized_y =
