@@ -70,7 +70,7 @@ void unit_test::Rand(Vector3f &v,
 // Initialize an Vector2i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector2i> &v,
+void unit_test::Rand(std::vector<Vector2i> &v,
                      const Vector2i &vmin,
                      const Vector2i &vmax,
                      const int &seed) {
@@ -90,7 +90,7 @@ void unit_test::Rand(host_vector<Vector2i> &v,
 // Initialize an Vector3i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector3i> &v,
+void unit_test::Rand(std::vector<Vector3i> &v,
                      const Vector3i &vmin,
                      const Vector3i &vmax,
                      const int &seed) {
@@ -112,7 +112,7 @@ void unit_test::Rand(host_vector<Vector3i> &v,
 // Initialize an Vector3d vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector3f> &v,
+void unit_test::Rand(std::vector<Vector3f> &v,
                      const Vector3f &vmin,
                      const Vector3f &vmax,
                      const int &seed) {
@@ -134,7 +134,7 @@ void unit_test::Rand(host_vector<Vector3f> &v,
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector4i> &v,
+void unit_test::Rand(std::vector<Vector4i> &v,
                      const int &vmin,
                      const int &vmax,
                      const int &seed) {
@@ -154,7 +154,7 @@ void unit_test::Rand(host_vector<Vector4i> &v,
 // Initialize an Vector4i vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<Vector4i> &v,
+void unit_test::Rand(std::vector<Vector4i> &v,
                      const Vector4i &vmin,
                      const Vector4i &vmax,
                      const int &seed) {
@@ -178,7 +178,7 @@ void unit_test::Rand(host_vector<Vector4i> &v,
 // Initialize a uint8_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<uint8_t> &v,
+void unit_test::Rand(std::vector<uint8_t> &v,
                      const uint8_t &vmin,
                      const uint8_t &vmax,
                      const int &seed) {
@@ -211,7 +211,7 @@ void unit_test::Rand(int *const v,
 // Initialize an int vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<int> &v,
+void unit_test::Rand(std::vector<int> &v,
                      const int &vmin,
                      const int &vmax,
                      const int &seed) {
@@ -222,7 +222,7 @@ void unit_test::Rand(host_vector<int> &v,
 // Initialize a size_t vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<size_t> &v,
+void unit_test::Rand(std::vector<size_t> &v,
                      const size_t &vmin,
                      const size_t &vmax,
                      const int &seed) {
@@ -254,7 +254,7 @@ void unit_test::Rand(float *const v,
 // Initialize a float vector.
 // Output range: [vmin:vmax].
 // ----------------------------------------------------------------------------
-void unit_test::Rand(host_vector<float> &v,
+void unit_test::Rand(std::vector<float> &v,
                      const float &vmin,
                      const float &vmax,
                      const int &seed) {

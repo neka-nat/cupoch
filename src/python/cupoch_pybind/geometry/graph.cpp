@@ -42,29 +42,29 @@ void bind_def(GraphT& graph) {
                  "Add an edge to the graph", "edge"_a, "weight"_a = 1.0,
                  "lazy_add"_a = false)
             .def("add_edges",
-                 py::overload_cast<const utility::pinned_host_vector<Eigen::Vector2i> &,
-                                   const utility::pinned_host_vector<float> &, bool>(
+                 py::overload_cast<const std::vector<Eigen::Vector2i> &,
+                                   const std::vector<float> &, bool>(
                          &geometry::Graph<Dim>::AddEdges),
                  "Add edges to the graph", "edges"_a,
-                 "weights"_a = utility::pinned_host_vector<float>(),
+                 "weights"_a = std::vector<float>(),
                  "lazy_add"_a = false)
             .def("remove_edge", &geometry::Graph<Dim>::RemoveEdge,
                  "Remove an edge from the graph", "edge"_a)
             .def("remove_edges",
-                 py::overload_cast<const thrust::host_vector<Eigen::Vector2i>
-                                           &>(&geometry::Graph<Dim>::RemoveEdges),
+                 py::overload_cast<const std::vector<Eigen::Vector2i> &>(
+                         &geometry::Graph<Dim>::RemoveEdges),
                  "Remove edges from the graph", "edges"_a)
             .def("paint_edge_color", &geometry::Graph<Dim>::PaintEdgeColor,
                  "Paint an edge with the color", "edge"_a, "color"_a)
             .def("paint_edges_color",
-                 py::overload_cast<const thrust::host_vector<Eigen::Vector2i> &,
+                 py::overload_cast<const std::vector<Eigen::Vector2i> &,
                                    const Eigen::Vector3f &>(
                          &geometry::Graph<Dim>::PaintEdgesColor),
                  "Paint edges with the color", "edges"_a, "color"_a)
             .def("paint_node_color", &geometry::Graph<Dim>::PaintNodeColor,
                  "Paint a node with the color", "node"_a, "color"_a)
             .def("paint_nodes_color",
-                 py::overload_cast<const thrust::host_vector<int> &,
+                 py::overload_cast<const std::vector<int> &,
                                    const Eigen::Vector3f &>(
                          &geometry::Graph<Dim>::PaintNodesColor),
                  "Paint nodes with the color", "nodes"_a, "color"_a)

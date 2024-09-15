@@ -168,8 +168,14 @@ void PointCloud::SetPoints(const thrust::host_vector<Eigen::Vector3f> &points) {
     points_ = points;
 }
 
-thrust::host_vector<Eigen::Vector3f> PointCloud::GetPoints() const {
-    thrust::host_vector<Eigen::Vector3f> points = points_;
+void PointCloud::SetPoints(const std::vector<Eigen::Vector3f> &points) {
+    points_.resize(points.size());
+    copy_host_to_device(points, points_);
+}
+
+std::vector<Eigen::Vector3f> PointCloud::GetPoints() const {
+    std::vector<Eigen::Vector3f> points(points_.size());
+    copy_device_to_host(points_, points);
     return points;
 }
 
@@ -178,8 +184,14 @@ void PointCloud::SetNormals(
     normals_ = normals;
 }
 
-thrust::host_vector<Eigen::Vector3f> PointCloud::GetNormals() const {
-    thrust::host_vector<Eigen::Vector3f> normals = normals_;
+void PointCloud::SetNormals(const std::vector<Eigen::Vector3f> &normals) {
+    normals_.resize(normals.size());
+    copy_host_to_device(normals, normals_);
+}
+
+std::vector<Eigen::Vector3f> PointCloud::GetNormals() const {
+    std::vector<Eigen::Vector3f> normals(normals_.size());
+    copy_device_to_host(normals_, normals);
     return normals;
 }
 
@@ -187,8 +199,14 @@ void PointCloud::SetColors(const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
 }
 
-thrust::host_vector<Eigen::Vector3f> PointCloud::GetColors() const {
-    thrust::host_vector<Eigen::Vector3f> colors = colors_;
+void PointCloud::SetColors(const std::vector<Eigen::Vector3f> &colors) {
+    colors_.resize(colors.size());
+    copy_host_to_device(colors, colors_);
+}
+
+std::vector<Eigen::Vector3f> PointCloud::GetColors() const {
+    std::vector<Eigen::Vector3f> colors(colors_.size());
+    copy_device_to_host(colors_, colors);
     return colors;
 }
 

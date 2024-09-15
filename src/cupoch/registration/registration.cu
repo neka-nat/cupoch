@@ -97,9 +97,15 @@ void RegistrationResult::SetCorrespondenceSet(
     correspondence_set_ = corres;
 }
 
-thrust::host_vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet()
-        const {
-    thrust::host_vector<Eigen::Vector2i> corres = correspondence_set_;
+void RegistrationResult::SetCorrespondenceSet(
+        const std::vector<Eigen::Vector2i> &corres) {
+    correspondence_set_.resize(corres.size());
+    copy_host_to_device(corres, correspondence_set_);
+}
+
+std::vector<Eigen::Vector2i> RegistrationResult::GetCorrespondenceSet() const {
+    std::vector<Eigen::Vector2i> corres(correspondence_set_.size());
+    copy_device_to_host(correspondence_set_, corres);
     return corres;
 }
 

@@ -60,11 +60,11 @@ TEST(PointCloud, Clear) {
 
     geometry::PointCloud pc;
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
-    thrust::host_vector<Vector3f> normals(size);
+    std::vector<Vector3f> normals(size);
     Rand(normals, vmin, vmax, 0);
-    thrust::host_vector<Vector3f> colors(size);
+    std::vector<Vector3f> colors(size);
     Rand(colors, vmin, vmax, 0);
     pc.SetPoints(points);
     pc.SetNormals(normals);
@@ -101,7 +101,7 @@ TEST(PointCloud, IsEmpty) {
 
     EXPECT_TRUE(pc.IsEmpty());
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
@@ -116,7 +116,7 @@ TEST(PointCloud, GetMinBound) {
 
     geometry::PointCloud pc;
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
@@ -132,7 +132,7 @@ TEST(PointCloud, GetMaxBound) {
 
     geometry::PointCloud pc;
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
@@ -147,11 +147,11 @@ TEST(PointCloud, Transform) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    thrust::host_vector<Vector3f> normals(size);
+    std::vector<Vector3f> normals(size);
     normals.resize(size);
     Rand(normals, vmin, vmax, 0);
     pc.SetNormals(normals);
@@ -178,7 +178,7 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     geometry::OrientedBoundingBox obb;
 
     // Valid 4 points
-    thrust::host_vector<Vector3f> points;
+    std::vector<Vector3f> points;
     points.push_back({0, 0, 0});
     points.push_back({0, 0, 1});
     points.push_back({0, 1, 0});
@@ -203,9 +203,9 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     EXPECT_EQ(obb.color_, Eigen::Vector3f(0, 0, 0));
     EXPECT_EQ(obb.R_, Eigen::Matrix3f::Identity());
     const auto obb_pts_arr = obb.GetBoxPoints();
-    thrust::host_vector<Eigen::Vector3f> obb_points(obb_pts_arr.begin(), obb_pts_arr.end());
+    std::vector<Eigen::Vector3f> obb_points(obb_pts_arr.begin(), obb_pts_arr.end());
     sort::Do(obb_points);
-    thrust::host_vector<Eigen::Vector3f> ref_points;
+    std::vector<Eigen::Vector3f> ref_points;
     ref_points.push_back({0, 0, 0});
     ref_points.push_back({0, 0, 1});
     ref_points.push_back({0, 2, 0});
@@ -225,7 +225,7 @@ TEST(PointCloud, HasPoints) {
 
     EXPECT_FALSE(pc.HasPoints());
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     pc.SetPoints(points);
 
     EXPECT_TRUE(pc.HasPoints());
@@ -238,9 +238,9 @@ TEST(PointCloud, HasNormals) {
 
     EXPECT_FALSE(pc.HasNormals());
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     pc.SetPoints(points);
-    thrust::host_vector<Vector3f> normals(size);
+    std::vector<Vector3f> normals(size);
     pc.SetNormals(normals);
 
     EXPECT_TRUE(pc.HasNormals());
@@ -253,16 +253,16 @@ TEST(PointCloud, HasColors) {
 
     EXPECT_FALSE(pc.HasColors());
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     pc.SetPoints(points);
-    thrust::host_vector<Vector3f> colors(size);
+    std::vector<Vector3f> colors(size);
     pc.SetColors(colors);
 
     EXPECT_TRUE(pc.HasColors());
 }
 
 TEST(PointCloud, NormalizeNormals) {
-    thrust::host_vector<Vector3f> ref;
+    std::vector<Vector3f> ref;
     ref.push_back(Vector3f(0.692861, 0.323767, 0.644296));
     ref.push_back(Vector3f(0.650010, 0.742869, 0.160101));
     ref.push_back(Vector3f(0.379563, 0.870761, 0.312581));
@@ -291,7 +291,7 @@ TEST(PointCloud, NormalizeNormals) {
 
     geometry::PointCloud pc;
 
-    thrust::host_vector<Vector3f> normals(size);
+    std::vector<Vector3f> normals(size);
     Rand(normals, vmin, vmax, 0);
     pc.SetNormals(normals);
 
@@ -301,7 +301,7 @@ TEST(PointCloud, NormalizeNormals) {
 }
 
 TEST(PointCloud, SelectByIndex) {
-    thrust::host_vector<size_t> ref_idx;
+    std::vector<size_t> ref_idx;
     ref_idx.push_back(3);
     ref_idx.push_back(10);
     ref_idx.push_back(24);
@@ -319,8 +319,8 @@ TEST(PointCloud, SelectByIndex) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
-    thrust::host_vector<Vector3f> ref_pt;
+    std::vector<Vector3f> points(size);
+    std::vector<Vector3f> ref_pt;
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
     for (auto i: ref_idx) ref_pt.push_back(points[i]);
@@ -334,7 +334,7 @@ TEST(PointCloud, SelectByIndex) {
 }
 
 TEST(PointCloud, SelectByMask) {
-    thrust::host_vector<size_t> ref_idx;
+    std::vector<size_t> ref_idx;
     ref_idx.push_back(3);
     ref_idx.push_back(10);
     ref_idx.push_back(24);
@@ -352,9 +352,9 @@ TEST(PointCloud, SelectByMask) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
-    thrust::host_vector<Vector3f> ref_pt;
-    thrust::host_vector<bool> ref_mask(size, false);
+    std::vector<Vector3f> points(size);
+    std::vector<Vector3f> ref_pt;
+    std::vector<bool> ref_mask(size, false);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
     for (auto i: ref_idx) ref_pt.push_back(points[i]);
@@ -369,7 +369,7 @@ TEST(PointCloud, SelectByMask) {
 }
 
 TEST(PointCloud, VoxelDownSample) {
-    thrust::host_vector<Vector3f> ref_points;
+    std::vector<Vector3f> ref_points;
     ref_points.push_back(Vector3f(19.607843, 454.901961, 62.745098));
     ref_points.push_back(Vector3f(66.666667, 949.019608, 525.490196));
     ref_points.push_back(Vector3f(82.352941, 192.156863, 662.745098));
@@ -391,7 +391,7 @@ TEST(PointCloud, VoxelDownSample) {
     ref_points.push_back(Vector3f(890.196078, 345.098039, 62.745098));
     ref_points.push_back(Vector3f(913.725490, 635.294118, 713.725490));
 
-    thrust::host_vector<Vector3f> ref_normals;
+    std::vector<Vector3f> ref_normals;
     ref_normals.push_back(Vector3f(0.042660, 0.989719, 0.136513));
     ref_normals.push_back(Vector3f(0.061340, 0.873191, 0.483503));
     ref_normals.push_back(Vector3f(0.103335, 0.972118, 0.210498));
@@ -413,7 +413,7 @@ TEST(PointCloud, VoxelDownSample) {
     ref_normals.push_back(Vector3f(0.692861, 0.323767, 0.644296));
     ref_normals.push_back(Vector3f(0.930383, 0.360677, 0.065578));
 
-    thrust::host_vector<Vector3f> ref_colors;
+    std::vector<Vector3f> ref_colors;
     ref_colors.push_back(Vector3f(5.000000, 116.000000, 16.000000));
     ref_colors.push_back(Vector3f(17.000000, 242.000000, 134.000000));
     ref_colors.push_back(Vector3f(21.000000, 49.000000, 169.000000));
@@ -438,13 +438,13 @@ TEST(PointCloud, VoxelDownSample) {
     size_t size = 20;
     geometry::PointCloud pc;
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, Zero3f, Vector3f(1000.0, 1000.0, 1000.0), 0);
     pc.SetPoints(points);
-    thrust::host_vector<Vector3f> normals(size);
+    std::vector<Vector3f> normals(size);
     Rand(normals, Zero3f, Vector3f(10.0, 10.0, 10.0), 0);
     pc.SetNormals(normals);
-    thrust::host_vector<Vector3f> colors(size);
+    std::vector<Vector3f> colors(size);
     Rand(colors, Zero3f, Vector3f(255.0, 255.0, 255.0), 0);
     pc.SetColors(colors);
 
@@ -469,7 +469,7 @@ TEST(PointCloud, VoxelDownSample) {
 }
 
 TEST(PointCloud, UniformDownSample) {
-    thrust::host_vector<Vector3f> ref;
+    std::vector<Vector3f> ref;
     ref.push_back(Vector3f(839.215686, 392.156863, 780.392157));
     ref.push_back(Vector3f(364.705882, 509.803922, 949.019608));
     ref.push_back(Vector3f(152.941176, 400.000000, 129.411765));
@@ -502,7 +502,7 @@ TEST(PointCloud, UniformDownSample) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
@@ -519,7 +519,7 @@ TEST(PointCloud, CropPointCloud) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
@@ -533,7 +533,7 @@ TEST(PointCloud, CropPointCloud) {
 }
 
 TEST(PointCloud, EstimateNormals) {
-    thrust::host_vector<Vector3f> ref;
+    std::vector<Vector3f> ref;
     ref.push_back(Vector3f(0.282003, 0.866394, 0.412111));
     ref.push_back(Vector3f(0.550791, 0.829572, -0.091869));
     ref.push_back(Vector3f(0.076085, -0.974168, 0.212620));
@@ -581,12 +581,12 @@ TEST(PointCloud, EstimateNormals) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
     pc.EstimateNormals(knn::KDTreeSearchParamKNN());
-    thrust::host_vector<Vector3f> normals = pc.GetNormals();
+    std::vector<Vector3f> normals = pc.GetNormals();
     for (size_t idx = 0; idx < ref.size(); ++idx) {
         if ((ref[idx](0) < 0 && normals[idx](0) > 0) ||
             (ref[idx](0) > 0 && normals[idx](0) < 0)) {
@@ -597,7 +597,7 @@ TEST(PointCloud, EstimateNormals) {
 }
 
 TEST(PointCloud, OrientNormalsToAlignWithDirection) {
-    thrust::host_vector<Vector3f> ref;
+    std::vector<Vector3f> ref;
     ref.push_back(Vector3f(0.282003, 0.866394, 0.412111));
     ref.push_back(Vector3f(0.550791, 0.829572, -0.091869));
     ref.push_back(Vector3f(0.076085, -0.974168, 0.212620));
@@ -645,7 +645,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
 
-    thrust::host_vector<Vector3f> points;
+    std::vector<Vector3f> points;
     points.resize(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
@@ -658,7 +658,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
 
 TEST(PointCloud, SegmentPlaneKnownPlane) {
     // Points sampled from the plane x + y + z + 1 = 0
-    thrust::host_vector<Eigen::Vector3f> ref_points;
+    std::vector<Eigen::Vector3f> ref_points;
     ref_points.push_back(Eigen::Vector3f({1.0, 1.0, -1.0}));
     ref_points.push_back(Eigen::Vector3f({2.0, 2.0, -5.0}));
     ref_points.push_back(Eigen::Vector3f({-1.0, -1.0, 1.0}));
@@ -670,11 +670,13 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
     Eigen::Vector4f plane_model;
     utility::device_vector<size_t> inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10);
-    ExpectEQ(pcd.SelectByIndex(inliers)->GetPoints(), ref_points);
+    std::vector<size_t> h_inliers(inliers.size());
+    copy_device_to_host(inliers, h_inliers);
+    ExpectEQ(pcd.SelectByIndex(h_inliers)->GetPoints(), ref_points);
 }
 
 TEST(PointCloud, RemoveRadiusOutliers) {
-    thrust::host_vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> points;
     points.push_back(Eigen::Vector3f({0.0, 0.0, 0.0}));
     points.push_back(Eigen::Vector3f({1.0, 0.0, 0.0}));
     points.push_back(Eigen::Vector3f({-1.0, 0.0, 0.0}));

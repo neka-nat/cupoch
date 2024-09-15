@@ -45,13 +45,13 @@ struct is_inf_functor {
 }  // namespace
 
 TEST(LinearBoundingVolumeHierarchyKNN, SearchKNN) {
-    thrust::host_vector<int> ref_indices;
+    std::vector<int> ref_indices;
     int indices0[] = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
                       39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
                       52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
     for (int i = 0; i < 30; ++i) ref_indices.push_back(indices0[i]);
 
-    thrust::host_vector<float> ref_distance2;
+    std::vector<float> ref_distance2;
     float distances0[] = {
             0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
             10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
@@ -67,15 +67,15 @@ TEST(LinearBoundingVolumeHierarchyKNN, SearchKNN) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f> points(size);
+    std::vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    knn::LinearBoundingVolumeHierarchyKNN kdtree(geometry::ConvertVector3fVectorRef(pc));
+    knn::LinearBoundingVolumeHierarchyKNN kdtree(geometry::ConvertVector3fStdVector(pc));
 
     Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
-    thrust::host_vector<unsigned int> indices;
-    thrust::host_vector<float> distance2;
+    std::vector<unsigned int> indices;
+    std::vector<float> distance2;
 
     int result = kdtree.SearchNN(query, std::numeric_limits<float>::max(), indices, distance2);
 

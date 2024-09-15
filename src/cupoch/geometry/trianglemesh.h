@@ -40,18 +40,22 @@ public:
     ~TriangleMesh() override;
     TriangleMesh &operator=(const TriangleMesh &other);
 
-    thrust::host_vector<Eigen::Vector3i> GetTriangles() const;
+    std::vector<Eigen::Vector3i> GetTriangles() const;
     void SetTriangles(const thrust::host_vector<Eigen::Vector3i> &triangles);
+    void SetTriangles(const std::vector<Eigen::Vector3i> &triangles);
 
-    thrust::host_vector<Eigen::Vector3f> GetTriangleNormals() const;
+    std::vector<Eigen::Vector3f> GetTriangleNormals() const;
     void SetTriangleNormals(
             const thrust::host_vector<Eigen::Vector3f> &triangle_normals);
+    void SetTriangleNormals(const std::vector<Eigen::Vector3f> &triangle_normals);
 
-    thrust::host_vector<Eigen::Vector2i> GetEdgeList() const;
+    std::vector<Eigen::Vector2i> GetEdgeList() const;
     void SetEdgeList(const thrust::host_vector<Eigen::Vector2i> &edge_list);
+    void SetEdgeList(const std::vector<Eigen::Vector2i> &edge_list);
 
-    thrust::host_vector<Eigen::Vector2f> GetTriangleUVs() const;
-    void SetTriangleUVs(thrust::host_vector<Eigen::Vector2f> &triangle_uvs);
+    std::vector<Eigen::Vector2f> GetTriangleUVs() const;
+    void SetTriangleUVs(const thrust::host_vector<Eigen::Vector2f> &triangle_uvs);
+    void SetTriangleUVs(const std::vector<Eigen::Vector2f> &triangle_uvs);
 
 public:
     virtual TriangleMesh &Clear() override;

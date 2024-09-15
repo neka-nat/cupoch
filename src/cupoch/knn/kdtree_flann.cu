@@ -29,6 +29,10 @@ KDTreeFlann::KDTreeFlann() {}
 
 KDTreeFlann::KDTreeFlann(const utility::device_vector<Eigen::Vector3f>& data) { SetRawData(data); }
 
+KDTreeFlann::KDTreeFlann(const std::vector<Eigen::Vector3f> &data) {
+    SetRawData(utility::device_vector<Eigen::Vector3f>(data));
+}
+
 KDTreeFlann::~KDTreeFlann() {}
 
 template <typename T>
@@ -128,6 +132,55 @@ int KDTreeFlann::SearchRadius(const T &query,
     return result;
 }
 
+template <typename T>
+int KDTreeFlann::Search(const T &query,
+                        const KDTreeSearchParam &param,
+                        std::vector<int> &indices,
+                        std::vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = Search<T>(query_dv, param, indices_dv, distance2_dv);
+    indices.resize(indices_dv.size());
+    distance2.resize(distance2_dv.size());
+    copy_device_to_host(indices_dv, indices);
+    copy_device_to_host(distance2_dv, distance2);
+    return result;
+}
+
+template <typename T>
+int KDTreeFlann::SearchKNN(const T &query,
+                           int knn,
+                           std::vector<int> &indices,
+                           std::vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = SearchKNN<T>(query_dv, knn, indices_dv, distance2_dv);
+    indices.resize(indices_dv.size());
+    distance2.resize(distance2_dv.size());
+    copy_device_to_host(indices_dv, indices);
+    copy_device_to_host(distance2_dv, distance2);
+    return result;
+}
+
+template <typename T>
+int KDTreeFlann::SearchRadius(const T &query,
+                              float radius,
+                              int max_nn,
+                              std::vector<int> &indices,
+                              std::vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = SearchRadius<T>(query_dv, radius, max_nn, indices_dv, distance2_dv);
+    indices.resize(indices_dv.size());
+    distance2.resize(distance2_dv.size());
+    copy_device_to_host(indices_dv, indices);
+    copy_device_to_host(distance2_dv, distance2);
+    return result;
+}
+
 template int KDTreeFlann::Search<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &query,
         const KDTreeSearchParam &param,
@@ -160,6 +213,22 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector3f>(
         int max_nn,
         thrust::host_vector<int> &indices,
         thrust::host_vector<float> &distance2) const;
+template int KDTreeFlann::Search<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        const KDTreeSearchParam &param,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
+template int KDTreeFlann::SearchKNN<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        int knn,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
+template int KDTreeFlann::SearchRadius<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        float radius,
+        int max_nn,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
 template bool KDTreeFlann::SetRawData<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &data);
 
@@ -195,6 +264,22 @@ template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
         int max_nn,
         thrust::host_vector<int> &indices,
         thrust::host_vector<float> &distance2) const;
+template int KDTreeFlann::Search<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        const KDTreeSearchParam &param,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
+template int KDTreeFlann::SearchKNN<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        int knn,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
+template int KDTreeFlann::SearchRadius<Eigen::Vector2f>(
+        const Eigen::Vector2f &query,
+        float radius,
+        int max_nn,
+        std::vector<int> &indices,
+        std::vector<float> &distance2) const;
 template bool KDTreeFlann::SetRawData<Eigen::Vector2f>(
         const utility::device_vector<Eigen::Vector2f> &data);
 

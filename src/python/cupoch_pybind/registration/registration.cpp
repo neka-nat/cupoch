@@ -338,7 +338,8 @@ void pybind_registration_classes(py::module &m) {
             .def_property(
                     "correspondence_set",
                     &registration::RegistrationResult::GetCorrespondenceSet,
-                    &registration::RegistrationResult::SetCorrespondenceSet,
+                     py::overload_cast<const std::vector<Eigen::Vector2i> &>(
+                             &registration::RegistrationResult::SetCorrespondenceSet),
                     "``n x 2`` int numpy array: Correspondence set between "
                     "source and target point cloud.")
             .def_readwrite("inlier_rmse",

@@ -160,6 +160,7 @@ elseif (UNIX)
 endif ()
 
 find_package(CUDA REQUIRED)
+enable_language(CUDA)
 if(NOT CMAKE_CUDA_ARCHITECTURES)
   set(CMAKE_CUDA_ARCHITECTURES 86)
 endif()

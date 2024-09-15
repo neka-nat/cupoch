@@ -58,18 +58,24 @@ public:
             const utility::pinned_host_vector<Eigen::Vector2i> &lines);
     LineSet(const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points,
             const thrust::host_vector<Eigen::Vector2i> &lines);
+    LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &points,
+            const std::vector<Eigen::Vector2i> &lines);
     LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &path);
     LineSet(const LineSet &other);
     ~LineSet();
 
     void SetPoints(
             const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &points);
+    void SetPoints(
+            const std::vector<Eigen::Matrix<float, Dim, 1>> &points);
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> GetPoints() const;
 
     void SetLines(const thrust::host_vector<Eigen::Vector2i> &lines);
+    void SetLines(const std::vector<Eigen::Vector2i> &lines);
     thrust::host_vector<Eigen::Vector2i> GetLines() const;
 
     void SetColors(const thrust::host_vector<Eigen::Vector3f> &colors);
+    void SetColors(const std::vector<Eigen::Vector3f> &colors);
     thrust::host_vector<Eigen::Vector3f> GetColors() const;
 
 public:
@@ -99,10 +105,7 @@ public:
     GetLineCoordinate(size_t line_index) const;
 
     /// Assigns each line in the LineSet the same color \param color.
-    LineSet &PaintUniformColor(const Eigen::Vector3f &color) {
-        ResizeAndPaintUniformColor(colors_, lines_.size(), color);
-        return *this;
-    }
+    LineSet &PaintUniformColor(const Eigen::Vector3f &color);
 
     LineSet &PaintIndexedColor(const utility::device_vector<size_t> &indices,
                                const Eigen::Vector3f &color);

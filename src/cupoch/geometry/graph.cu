@@ -177,8 +177,9 @@ Graph<Dim>::Graph(const Graph &other)
       is_directed_(other.is_directed_) {}
 
 template <int Dim>
-thrust::host_vector<int> Graph<Dim>::GetEdgeIndexOffsets() const {
-    thrust::host_vector<int> edge_index_offsets = edge_index_offsets_;
+std::vector<int> Graph<Dim>::GetEdgeIndexOffsets() const {
+    std::vector<int> edge_index_offsets(edge_index_offsets_.size());
+    copy_device_to_host(edge_index_offsets_, edge_index_offsets);
     return edge_index_offsets;
 }
 
@@ -189,8 +190,9 @@ void Graph<Dim>::SetEdgeIndexOffsets(
 }
 
 template <int Dim>
-thrust::host_vector<float> Graph<Dim>::GetEdgeWeights() const {
-    thrust::host_vector<float> edge_weights = edge_weights_;
+std::vector<float> Graph<Dim>::GetEdgeWeights() const {
+    std::vector<float> edge_weights(edge_weights_.size());
+    copy_device_to_host(edge_weights_, edge_weights);
     return edge_weights;
 }
 
@@ -391,6 +393,18 @@ Graph<Dim> &Graph<Dim>::AddEdges(
 }
 
 template <int Dim>
+Graph<Dim> &Graph<Dim>::AddEdges(
+        const std::vector<Eigen::Vector2i> &edges,
+        const std::vector<float> &weights,
+        bool lazy_add) {
+    utility::device_vector<Eigen::Vector2i> d_edges(edges.size());
+    copy_host_to_device(edges, d_edges);
+    utility::device_vector<float> d_weights(weights.size());
+    copy_host_to_device(weights, d_weights);
+    return AddEdges(d_edges, d_weights, lazy_add);
+}
+
+template <int Dim>
 Graph<Dim> &Graph<Dim>::RemoveEdge(const Eigen::Vector2i &edge) {
     bool has_colors = this->HasColors();
     bool has_weights = this->HasWeights();
@@ -511,6 +525,13 @@ Graph<Dim> &Graph<Dim>::RemoveEdges(
 }
 
 template <int Dim>
+Graph<Dim> &Graph<Dim>::RemoveEdges(const std::vector<Eigen::Vector2i> &edges) {
+    utility::device_vector<Eigen::Vector2i> d_edges(edges.size());
+    copy_host_to_device(edges, d_edges);
+    return RemoveEdges(d_edges);
+}
+
+template <int Dim>
 Graph<Dim> &Graph<Dim>::PaintEdgeColor(const Eigen::Vector2i &edge,
                                        const Eigen::Vector3f &color) {
     if (!this->HasColors()) {
@@ -575,6 +596,15 @@ Graph<Dim> &Graph<Dim>::PaintEdgesColor(
 }
 
 template <int Dim>
+Graph<Dim> &Graph<Dim>::PaintEdgesColor(
+        const std::vector<Eigen::Vector2i> &edges,
+        const Eigen::Vector3f &color) {
+    utility::device_vector<Eigen::Vector2i> d_edges(edges.size());
+    copy_host_to_device(edges, d_edges);
+    return PaintEdgesColor(d_edges, color);
+}
+
+template <int Dim>
 Graph<Dim> &Graph<Dim>::PaintNodeColor(int node, const Eigen::Vector3f &color) {
     if (!HasNodeColors()) {
         node_colors_.resize(this->points_.size(), Eigen::Vector3f::Ones());
@@ -599,6 +629,14 @@ template <int Dim>
 Graph<Dim> &Graph<Dim>::PaintNodesColor(const thrust::host_vector<int> &nodes,
                                         const Eigen::Vector3f &color) {
     utility::device_vector<int> d_nodes = nodes;
+    return PaintNodesColor(d_nodes, color);
+}
+
+template <int Dim>
+Graph<Dim> &Graph<Dim>::PaintNodesColor(const std::vector<int> &nodes,
+                                        const Eigen::Vector3f &color) {
+    utility::device_vector<int> d_nodes(nodes.size());
+    copy_host_to_device(nodes, d_nodes);
     return PaintNodesColor(d_nodes, color);
 }
 

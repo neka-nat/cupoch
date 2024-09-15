@@ -45,13 +45,13 @@ struct is_inf_functor {
 }  // namespace
 
 TEST(KDTreeFlann, SearchKNN) {
-    thrust::host_vector<int> ref_indices;
+    std::vector<int> ref_indices;
     int indices0[] = {27, 48, 4,  77, 90, 7,  54, 17, 76, 38,
                       39, 60, 15, 84, 11, 57, 3,  32, 99, 36,
                       52, 40, 26, 59, 22, 97, 20, 42, 73, 24};
     for (int i = 0; i < 30; ++i) ref_indices.push_back(indices0[i]);
 
-    thrust::host_vector<float> ref_distance2;
+    std::vector<float> ref_distance2;
     float distances0[] = {
             0.000000,  4.684353,  4.996539,  9.191849,  10.034604, 10.466745,
             10.649751, 11.434066, 12.089195, 13.345638, 13.696270, 14.016148,
@@ -67,16 +67,16 @@ TEST(KDTreeFlann, SearchKNN) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f> points(size);
+    std::vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(pc));
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fStdVector(pc));
 
     Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int knn = 30;
-    thrust::host_vector<int> indices;
-    thrust::host_vector<float> distance2;
+    std::vector<int> indices;
+    std::vector<float> distance2;
 
     int result = kdtree.SearchKNN(query, knn, indices, distance2);
 
@@ -91,11 +91,11 @@ TEST(KDTreeFlann, SearchKNN) {
 }
 
 TEST(KDTreeFlann, SearchRadius) {
-    thrust::host_vector<int> ref_indices;
+    std::vector<int> ref_indices;
     int indices0[] = {27, 48, 4, 77, 90, 7, 54, 17, 76, 38, 39, 60, 15, 84, 11};
     for (int i = 0; i < 15; ++i) ref_indices.push_back(indices0[i]);
 
-    thrust::host_vector<float> ref_distance2;
+    std::vector<float> ref_distance2;
     float distances0[] = {0.000000,  4.684353,  4.996539,  9.191849,
                           10.034604, 10.466745, 10.649751, 11.434066,
                           12.089195, 13.345638, 13.696270, 14.016148,
@@ -109,17 +109,17 @@ TEST(KDTreeFlann, SearchRadius) {
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(10.0, 10.0, 10.0);
 
-    thrust::host_vector<Eigen::Vector3f> points(size);
+    std::vector<Eigen::Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     pc.SetPoints(points);
 
-    knn::KDTreeFlann kdtree(geometry::ConvertVector3fVectorRef(pc));
+    knn::KDTreeFlann kdtree(geometry::ConvertVector3fStdVector(pc));
 
     Eigen::Vector3f query = {1.647059, 4.392157, 8.784314};
     int max_nn = 15;
     float radius = 5.0;
-    thrust::host_vector<int> indices;
-    thrust::host_vector<float> distance2;
+    std::vector<int> indices;
+    std::vector<float> distance2;
 
     int result = kdtree.SearchRadius<Vector3f>(query, radius, max_nn, indices,
                                                distance2);

@@ -41,8 +41,9 @@ MeshBase &MeshBase::operator=(const MeshBase &other) {
     return *this;
 }
 
-thrust::host_vector<Eigen::Vector3f> MeshBase::GetVertices() const {
-    thrust::host_vector<Eigen::Vector3f> vertices = vertices_;
+std::vector<Eigen::Vector3f> MeshBase::GetVertices() const {
+    std::vector<Eigen::Vector3f> vertices(vertices_.size());
+    copy_device_to_host(vertices_, vertices);
     return vertices;
 }
 
@@ -51,8 +52,14 @@ void MeshBase::SetVertices(
     vertices_ = vertices;
 }
 
-thrust::host_vector<Eigen::Vector3f> MeshBase::GetVertexNormals() const {
-    thrust::host_vector<Eigen::Vector3f> vertex_normals = vertex_normals_;
+void MeshBase::SetVertices(const std::vector<Eigen::Vector3f> &vertices) {
+    vertices_.resize(vertices.size());
+    copy_host_to_device(vertices, vertices_);
+}
+
+std::vector<Eigen::Vector3f> MeshBase::GetVertexNormals() const {
+    std::vector<Eigen::Vector3f> vertex_normals(vertex_normals_.size());
+    copy_device_to_host(vertex_normals_, vertex_normals);
     return vertex_normals;
 }
 
@@ -61,14 +68,25 @@ void MeshBase::SetVertexNormals(
     vertex_normals_ = vertex_normals;
 }
 
-thrust::host_vector<Eigen::Vector3f> MeshBase::GetVertexColors() const {
-    thrust::host_vector<Eigen::Vector3f> vertex_colors = vertex_colors_;
+void MeshBase::SetVertexNormals(const std::vector<Eigen::Vector3f> &vertex_normals) {
+    vertex_normals_.resize(vertex_normals.size());
+    copy_host_to_device(vertex_normals, vertex_normals_);
+}
+
+std::vector<Eigen::Vector3f> MeshBase::GetVertexColors() const {
+    std::vector<Eigen::Vector3f> vertex_colors(vertex_colors_.size());
+    copy_device_to_host(vertex_colors_, vertex_colors);
     return vertex_colors;
 }
 
 void MeshBase::SetVertexColors(
         const thrust::host_vector<Eigen::Vector3f> &vertex_colors) {
     vertex_colors_ = vertex_colors;
+}
+
+void MeshBase::SetVertexColors(const std::vector<Eigen::Vector3f> &vertex_colors) {
+    vertex_colors_.resize(vertex_colors.size());
+    copy_host_to_device(vertex_colors, vertex_colors_);
 }
 
 MeshBase &MeshBase::Clear() {
@@ -158,6 +176,11 @@ MeshBase &MeshBase::NormalizeNormals() {
                              nl = Eigen::Vector3f(0.0, 0.0, 1.0);
                          }
                      });
+    return *this;
+}
+
+MeshBase &MeshBase::PaintUniformColor(const Eigen::Vector3f &color) {
+    ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
     return *this;
 }
 

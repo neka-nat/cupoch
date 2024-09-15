@@ -167,6 +167,16 @@ std::shared_ptr<PointCloud> PointCloud::SelectByMask(
     return output;
 }
 
+std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
+        const std::vector<size_t> &indices, bool invert) const {
+    return SelectByIndex(utility::device_vector<size_t>(indices), invert);
+}
+
+std::shared_ptr<PointCloud> PointCloud::SelectByMask(
+        const std::vector<bool> &mask, bool invert) const {
+    return SelectByMask(utility::device_vector<bool>(mask), invert);
+}
+
 std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         float voxel_size) const {
     auto output = std::make_shared<PointCloud>();
