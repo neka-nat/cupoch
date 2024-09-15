@@ -67,6 +67,12 @@ public:
                  thrust::host_vector<float> &distance2) const;
 
     template <typename T>
+    int SearchNN(const T &query,
+                 float radius,
+                 std::vector<unsigned int> &indices,
+                 std::vector<float> &distance2) const;
+
+    template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);
 
 private:

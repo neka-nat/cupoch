@@ -68,7 +68,7 @@ TEST(OccupancyGrid, Insert) {
     auto occupancy_grid = std::make_shared<geometry::OccupancyGrid>();
     occupancy_grid->origin_ = Eigen::Vector3f(-0.5, -0.5, 0);
     occupancy_grid->voxel_size_ = 1.0;
-    utility::pinned_host_vector<Eigen::Vector3f> host_points;
+    std::vector<Eigen::Vector3f> host_points;
     host_points.push_back({0.0, 0.0, 3.5});
     occupancy_grid->Insert(host_points, Eigen::Vector3f::Zero());
     EXPECT_EQ(occupancy_grid->ExtractKnownVoxels()->size(), 4);

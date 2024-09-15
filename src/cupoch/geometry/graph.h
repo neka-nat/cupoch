@@ -55,10 +55,10 @@ public:
     Graph(const Graph &other);
     ~Graph();
 
-    thrust::host_vector<int> GetEdgeIndexOffsets() const;
+    std::vector<int> GetEdgeIndexOffsets() const;
     void SetEdgeIndexOffsets(
             const thrust::host_vector<int> &edge_index_offsets);
-    thrust::host_vector<float> GetEdgeWeights() const;
+    std::vector<float> GetEdgeWeights() const;
     void SetEdgeWeights(const thrust::host_vector<float> &edge_weights);
 
     bool HasWeights() const {

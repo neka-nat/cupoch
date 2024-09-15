@@ -115,6 +115,22 @@ int LinearBoundingVolumeHierarchyKNN::SearchNN(const T &query,
 }
 
 template <typename T>
+int LinearBoundingVolumeHierarchyKNN::SearchNN(const T &query,
+                           float radius,
+                           std::vector<unsigned int> &indices,
+                           std::vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<unsigned int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = SearchNN<T>(query_dv, radius, indices_dv, distance2_dv);
+    indices.resize(indices_dv.size());
+    distance2.resize(distance2_dv.size());
+    copy_device_to_host(indices_dv, indices);
+    copy_device_to_host(distance2_dv, distance2);
+    return result;
+}
+
+template <typename T>
 bool LinearBoundingVolumeHierarchyKNN::SetRawData(const utility::device_vector<T> &data) {
     n_points_ = data.size();
     n_nodes_ = n_points_ * 2 - 1;
@@ -253,6 +269,12 @@ template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
         float radius,
         thrust::host_vector<unsigned int> &indices,
         thrust::host_vector<float> &distance2) const;
+
+template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        float radius,
+        std::vector<unsigned int> &indices,
+        std::vector<float> &distance2) const;
 
 template bool LinearBoundingVolumeHierarchyKNN::SetRawData<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &data);

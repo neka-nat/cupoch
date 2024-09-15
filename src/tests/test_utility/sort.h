@@ -20,8 +20,6 @@
 **/
 #pragma once
 
-#include <thrust/host_vector.h>
-
 #include <Eigen/Core>
 
 #include "cupoch/utility/eigen.h"
@@ -36,6 +34,6 @@ bool GE(const Eigen::Matrix<T, Dim, 1>& v0, const Eigen::Matrix<T, Dim, 1>& v1);
 // method needed because std::sort failed on TravisCI/macOS (works fine on
 // Linux)
 template <typename T, int Dim>
-void Do(thrust::host_vector<Eigen::Matrix<T, Dim, 1>>& v);
+void Do(std::vector<Eigen::Matrix<T, Dim, 1>>& v);
 }  // namespace sort
 }  // namespace unit_test

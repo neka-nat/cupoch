@@ -63,9 +63,9 @@ TEST(LineSet, Clear) {
 
     geometry::LineSet<3> ls;
 
-    thrust::host_vector<Eigen::Vector3f> points(size);
-    thrust::host_vector<Eigen::Vector2i> lines(size);
-    thrust::host_vector<Eigen::Vector3f> colors(size);
+    std::vector<Eigen::Vector3f> points(size);
+    std::vector<Eigen::Vector2i> lines(size);
+    std::vector<Eigen::Vector3f> colors(size);
     Rand(points, dmin, dmax, 0);
     Rand(lines, imin, imax, 0);
     Rand(colors, dmin, dmax, 0);

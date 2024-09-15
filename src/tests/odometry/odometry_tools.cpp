@@ -20,8 +20,6 @@
 **/
 #include "tests/odometry/odometry_tools.h"
 
-#include <thrust/host_vector.h>
-
 using namespace cupoch;
 using namespace std;
 using namespace unit_test;
@@ -38,7 +36,7 @@ shared_ptr<geometry::Image> odometry_tools::GenerateImage(
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image->data_.size());
+    std::vector<uint8_t> data(image->data_.size());
     float* const depthData = Cast<float>(&data[0]);
     Rand(depthData, width * height, vmin, vmax, seed);
     image->SetData(data);
@@ -56,7 +54,7 @@ void odometry_tools::ShiftLeft(shared_ptr<geometry::Image> image,
     // int num_of_channels = image->num_of_channels_;
     // int bytes_per_channel = image->bytes_per_channel_;
 
-    thrust::host_vector<uint8_t> data = image->GetData();
+    std::vector<uint8_t> data = image->GetData();
     float* const float_data = Cast<float>(&data[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
@@ -75,7 +73,7 @@ void odometry_tools::ShiftUp(shared_ptr<geometry::Image> image,
     // int num_of_channels = image->num_of_channels_;
     // int bytes_per_channel = image->bytes_per_channel_;
 
-    thrust::host_vector<uint8_t> data = image->GetData();
+    std::vector<uint8_t> data = image->GetData();
     float* const float_data = Cast<float>(&data[0]);
     for (int h = 0; h < height; h++)
         for (int w = 0; w < width; w++)
@@ -99,7 +97,7 @@ shared_ptr<geometry::Image> odometry_tools::CorrespondenceMap(const int& width,
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image->data_.size());
+    std::vector<uint8_t> data(image->data_.size());
     int* const int_data = Cast<int>(&data[0]);
     size_t image_size = image->data_.size() / sizeof(int);
     Rand(int_data, image_size, vmin, vmax, seed);
@@ -123,7 +121,7 @@ shared_ptr<geometry::Image> odometry_tools::DepthBuffer(const int& width,
 
     image->Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image->data_.size());
+    std::vector<uint8_t> data(image->data_.size());
     float* const float_data = Cast<float>(&data[0]);
     size_t image_size = image->data_.size() / sizeof(float);
     Rand(float_data, image_size, vmin, vmax, seed);

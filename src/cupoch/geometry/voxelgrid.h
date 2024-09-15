@@ -91,6 +91,8 @@ public:
     GetVoxels() const;
     void SetVoxels(const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
                    const thrust::host_vector<Voxel> &voxels_values);
+    void SetVoxels(const std::vector<Eigen::Vector3i> &voxels_keys,
+                   const std::vector<Voxel> &voxels_values);
 
     VoxelGrid &Clear() override;
     bool IsEmpty() const override;

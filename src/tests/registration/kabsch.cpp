@@ -36,7 +36,7 @@ TEST(Kabsch, Kabsch) {
     const size_t size = 20;
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     geometry::PointCloud source;
     source.SetPoints(points);

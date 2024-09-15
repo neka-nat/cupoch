@@ -177,8 +177,9 @@ Graph<Dim>::Graph(const Graph &other)
       is_directed_(other.is_directed_) {}
 
 template <int Dim>
-thrust::host_vector<int> Graph<Dim>::GetEdgeIndexOffsets() const {
-    thrust::host_vector<int> edge_index_offsets = edge_index_offsets_;
+std::vector<int> Graph<Dim>::GetEdgeIndexOffsets() const {
+    std::vector<int> edge_index_offsets;
+    copy_device_to_host(edge_index_offsets_, edge_index_offsets);
     return edge_index_offsets;
 }
 
@@ -189,8 +190,9 @@ void Graph<Dim>::SetEdgeIndexOffsets(
 }
 
 template <int Dim>
-thrust::host_vector<float> Graph<Dim>::GetEdgeWeights() const {
-    thrust::host_vector<float> edge_weights = edge_weights_;
+std::vector<float> Graph<Dim>::GetEdgeWeights() const {
+    std::vector<float> edge_weights;
+    copy_device_to_host(edge_weights_, edge_weights);
     return edge_weights;
 }
 

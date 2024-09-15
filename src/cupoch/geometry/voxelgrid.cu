@@ -148,6 +148,14 @@ void VoxelGrid::SetVoxels(
     voxels_values_ = voxels_values;
 }
 
+void VoxelGrid::SetVoxels(const std::vector<Eigen::Vector3i> &voxels_keys,
+                          const std::vector<Voxel> &voxels_values) {
+    voxels_keys_.resize(voxels_keys.size());
+    voxels_values_.resize(voxels_values.size());
+    copy_host_to_device(voxels_keys, voxels_keys_);
+    copy_host_to_device(voxels_values, voxels_values_);
+}
+
 VoxelGrid &VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3f::Zero();

@@ -56,13 +56,15 @@ TEST(Collision, VoxelLineSet) {
     voxel.voxel_size_ = 1.0;
     voxel.AddVoxel(geometry::Voxel(Eigen::Vector3i(0, 0, 0)));
     voxel.AddVoxel(geometry::Voxel(Eigen::Vector3i(5, 0, 0)));
-    thrust::host_vector<Eigen::Vector3f> points;
-    points.push_back(Eigen::Vector3f(-0.1, -0.1, -0.1));
-    points.push_back(Eigen::Vector3f(-0.1, -0.1, 1.1));
-    points.push_back(Eigen::Vector3f(1.1, 1.1, 1.1));
-    thrust::host_vector<Eigen::Vector2i> lines;
-    lines.push_back(Eigen::Vector2i(0, 1));
-    lines.push_back(Eigen::Vector2i(0, 2));
+    std::vector<Eigen::Vector3f> points = {
+        Eigen::Vector3f(-0.1, -0.1, -0.1),
+        Eigen::Vector3f(-0.1, -0.1, 1.1),
+        Eigen::Vector3f(1.1, 1.1, 1.1)
+        };
+    std::vector<Eigen::Vector2i> lines = {
+        Eigen::Vector2i(0, 1),
+        Eigen::Vector2i(0, 2)
+    };
     lineset.SetPoints(points);
     lineset.SetLines(lines);
 

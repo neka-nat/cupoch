@@ -27,7 +27,6 @@
 #endif
 
 #include <gtest/gtest.h>
-#include <thrust/host_vector.h>
 
 #include <Eigen/Core>
 
@@ -58,8 +57,8 @@ void ExpectEQ(const Eigen::Matrix<T, M, N, A>& v0,
         EXPECT_NEAR(v0.coeff(i), v1.coeff(i), threshold);
 }
 template <class T, int M, int N, int A>
-void ExpectEQ(const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v0,
-              const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v1,
+void ExpectEQ(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+              const std::vector<Eigen::Matrix<T, M, N, A>>& v1,
               double threshold = THRESHOLD_1E_4) {
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) ExpectEQ(v0[i], v1[i], threshold);
@@ -86,12 +85,12 @@ void ExpectLE(const Eigen::Matrix<T, M, N, A>& v0,
 }
 template <class T, int M, int N, int A>
 void ExpectLE(const Eigen::Matrix<T, M, N, A>& v0,
-              const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v1) {
+              const std::vector<Eigen::Matrix<T, M, N, A>>& v1) {
     for (size_t i = 0; i < v1.size(); i++) ExpectLE(v0, v1[i]);
 }
 template <class T, int M, int N, int A>
-void ExpectLE(const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v0,
-              const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v1) {
+void ExpectLE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+              const std::vector<Eigen::Matrix<T, M, N, A>>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) ExpectLE(v0[i], v1[i]);
 }
@@ -105,12 +104,12 @@ void ExpectGE(const Eigen::Matrix<T, M, N, A>& v0,
 }
 template <class T, int M, int N, int A>
 void ExpectGE(const Eigen::Matrix<T, M, N, A>& v0,
-              const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v1) {
+              const std::vector<Eigen::Matrix<T, M, N, A>>& v1) {
     for (size_t i = 0; i < v1.size(); i++) ExpectGE(v0, v1[i]);
 }
 template <class T, int M, int N, int A>
-void ExpectGE(const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v0,
-              const thrust::host_vector<Eigen::Matrix<T, M, N, A>>& v1) {
+void ExpectGE(const std::vector<Eigen::Matrix<T, M, N, A>>& v0,
+              const std::vector<Eigen::Matrix<T, M, N, A>>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     for (size_t i = 0; i < v0.size(); i++) ExpectGE(v0[i], v1[i]);
 }
@@ -121,22 +120,22 @@ void ExpectEQ(const uint8_t* const v0,
               const size_t& size);
 
 // Test equality of two vectors of uint8_t.
-void ExpectEQ(const thrust::host_vector<uint8_t>& v0,
-              const thrust::host_vector<uint8_t>& v1);
+void ExpectEQ(const std::vector<uint8_t>& v0,
+              const std::vector<uint8_t>& v1);
 
 // Test equality of two arrays of int.
 void ExpectEQ(const int* const v0, const int* const v1, const size_t& size);
 
 // Test equality of two vectors of int.
-void ExpectEQ(const thrust::host_vector<int>& v0,
-              const thrust::host_vector<int>& v1);
+void ExpectEQ(const std::vector<int>& v0,
+              const std::vector<int>& v1);
 
 // Test equality of two arrays of float.
 void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
 
 // Test equality of two vectors of float.
-void ExpectEQ(const thrust::host_vector<float>& v0,
-              const thrust::host_vector<float>& v1);
+void ExpectEQ(const std::vector<float>& v0,
+              const std::vector<float>& v1);
 
 // Test equality of two arrays of double.
 void ExpectEQ(const float* const v0, const float* const v1, const size_t& size);
