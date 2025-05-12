@@ -346,8 +346,9 @@ TriangleMesh &TriangleMesh::operator=(const TriangleMesh &other) {
     return *this;
 }
 
-thrust::host_vector<Eigen::Vector3i> TriangleMesh::GetTriangles() const {
-    thrust::host_vector<Eigen::Vector3i> triangles = triangles_;
+std::vector<Eigen::Vector3i> TriangleMesh::GetTriangles() const {
+    std::vector<Eigen::Vector3i> triangles(triangles_.size());
+    copy_device_to_host(triangles_, triangles);
     return triangles;
 }
 
@@ -356,8 +357,14 @@ void TriangleMesh::SetTriangles(
     triangles_ = triangles;
 }
 
-thrust::host_vector<Eigen::Vector3f> TriangleMesh::GetTriangleNormals() const {
-    thrust::host_vector<Eigen::Vector3f> triangle_normals = triangle_normals_;
+void TriangleMesh::SetTriangles(const std::vector<Eigen::Vector3i> &triangles) {
+    triangles_.resize(triangles.size());
+    copy_host_to_device(triangles, triangles_);
+}
+
+std::vector<Eigen::Vector3f> TriangleMesh::GetTriangleNormals() const {
+    std::vector<Eigen::Vector3f> triangle_normals(triangle_normals_.size());
+    copy_device_to_host(triangle_normals_, triangle_normals);
     return triangle_normals;
 }
 
@@ -366,8 +373,14 @@ void TriangleMesh::SetTriangleNormals(
     triangle_normals_ = triangle_normals;
 }
 
-thrust::host_vector<Eigen::Vector2i> TriangleMesh::GetEdgeList() const {
-    thrust::host_vector<Eigen::Vector2i> edge_list = edge_list_;
+void TriangleMesh::SetTriangleNormals(const std::vector<Eigen::Vector3f> &triangle_normals) {
+    triangle_normals_.resize(triangle_normals.size());
+    copy_host_to_device(triangle_normals, triangle_normals_);
+}
+
+std::vector<Eigen::Vector2i> TriangleMesh::GetEdgeList() const {
+    std::vector<Eigen::Vector2i> edge_list(edge_list_.size());
+    copy_device_to_host(edge_list_, edge_list);
     return edge_list;
 }
 
@@ -376,14 +389,25 @@ void TriangleMesh::SetEdgeList(
     edge_list_ = edge_list;
 }
 
-thrust::host_vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
-    thrust::host_vector<Eigen::Vector2f> triangle_uvs = triangle_uvs_;
+void TriangleMesh::SetEdgeList(const std::vector<Eigen::Vector2i> &edge_list) {
+    edge_list_.resize(edge_list.size());
+    copy_host_to_device(edge_list, edge_list_);
+}
+
+std::vector<Eigen::Vector2f> TriangleMesh::GetTriangleUVs() const {
+    std::vector<Eigen::Vector2f> triangle_uvs(triangle_uvs_.size());
+    copy_device_to_host(triangle_uvs_, triangle_uvs);
     return triangle_uvs;
 }
 
 void TriangleMesh::SetTriangleUVs(
-        thrust::host_vector<Eigen::Vector2f> &triangle_uvs) {
+        const thrust::host_vector<Eigen::Vector2f> &triangle_uvs) {
     triangle_uvs_ = triangle_uvs;
+}
+
+void TriangleMesh::SetTriangleUVs(const std::vector<Eigen::Vector2f> &triangle_uvs) {
+    triangle_uvs_.resize(triangle_uvs.size());
+    copy_host_to_device(triangle_uvs, triangle_uvs_);
 }
 
 TriangleMesh &TriangleMesh::Clear() {

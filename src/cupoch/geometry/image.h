@@ -85,8 +85,9 @@ public:
     Eigen::Vector2f GetMaxBound() const override;
     Eigen::Vector2f GetCenter() const override;
 
-    thrust::host_vector<uint8_t> GetData() const;
+    std::vector<uint8_t> GetData() const;
     void SetData(const thrust::host_vector<uint8_t> &data);
+    void SetData(const std::vector<uint8_t> &data);
 
     /// \brief Test if coordinate `(u, v)` is located in the inner_marge of the
     /// image.
@@ -170,6 +171,9 @@ public:
 
     std::shared_ptr<Image> FilterHorizontal(
             const utility::device_vector<float> &kernel) const;
+
+    std::shared_ptr<Image> FilterHorizontal(
+            const std::vector<float> &kernel) const;
 
     std::shared_ptr<Image> BilateralFilter(int diameter,
                                            float sigma_color,

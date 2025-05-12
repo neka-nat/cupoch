@@ -200,7 +200,7 @@ TEST(Image, CreateDepthToCameraDistanceMultiplierFloatImage) {
 void TEST_CreateFloatImage(
         const int& num_of_channels,
         const int& bytes_per_channel,
-        const thrust::host_vector<uint8_t>& ref,
+        const std::vector<uint8_t>& ref,
         const geometry::Image::ColorToIntensityConversionType& type) {
     geometry::Image image;
 
@@ -211,7 +211,7 @@ void TEST_CreateFloatImage(
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image.data_.size());
+    std::vector<uint8_t> data(image.data_.size());
     Rand(data, 0, 255, 0);
     image.SetData(data);
 
@@ -236,7 +236,7 @@ TEST(Image, CreateFloatImage_1_1) {
             162, 34,  63,  183, 182, 54,  63,  145, 144, 16,  62,  155, 154,
             26,  63,  129, 128, 128, 60,  246, 244, 116, 62,  137, 136, 8,
             62,  207, 205, 77,  63,  157, 156, 28,  62};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(1, 1, ref, ConversionType::Weighted);
@@ -252,7 +252,7 @@ TEST(Image, CreateFloatImage_1_2) {
             0, 56,  151, 70, 0, 162, 5,   71, 0, 125, 120, 71, 0, 74,  68,  71,
             0, 134, 68,  71, 0, 102, 99,  71, 0, 144, 178, 70, 0, 205, 106, 71,
             0, 17,  114, 71};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(1, 2, ref, ConversionType::Weighted);
@@ -269,7 +269,7 @@ TEST(Image, CreateFloatImage_1_4) {
             137, 95,  193, 130, 170, 135, 10,  111, 237, 237, 183, 72,  188,
             163, 90,  175, 42,  112, 224, 211, 84,  58,  227, 89,  175, 243,
             150, 167, 218, 112, 235, 101, 207, 174, 232};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(1, 4, ref, ConversionType::Weighted);
@@ -286,7 +286,7 @@ TEST(Image, CreateFloatImage_3_1_Weighted) {
             12,  35,  63,  122, 21,  90,  62,  101, 168, 243, 62,  209, 97,
             143, 62,  10,   228, 61,  63,  224, 255, 239, 62,  59,  33,  29,
             63,  197, 186, 3,   63,  145, 27,  72,  63};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 1, ref, ConversionType::Weighted);
@@ -303,7 +303,7 @@ TEST(Image, CreateFloatImage_3_1_Equal) {
             12,  35,  63,  122, 21,  90,  62,  101, 168, 243, 62,  209, 97,
             143, 62,  10,   228, 61,  63,  224, 255, 239, 62,  59,  33,  29,
             63,  197, 186, 3,   63,  145, 27,  72,  63};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 1, ref, ConversionType::Equal);
@@ -320,7 +320,7 @@ TEST(Image, CreateFloatImage_3_2_Weighted) {
             235, 76,  71,  31,  111, 86,  71,  27,  105, 148, 70,  71,  196,
             219, 70,  12,  108, 22,  71,  197, 41,  183, 70,  225, 5,   23,
             71,  210, 181, 85,  71,  101, 14,  28,  71};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 2, ref, ConversionType::Weighted);
@@ -337,7 +337,7 @@ TEST(Image, CreateFloatImage_3_2_Equal) {
             235, 76,  71,  31,  111, 86,  71,  27,  105, 148, 70,  71,  196,
             219, 70,  12,  108, 22,  71,  197, 41,  183, 70,  225, 5,   23,
             71,  210, 181, 85,  71,  101, 14,  28,  71};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 2, ref, ConversionType::Equal);
@@ -354,7 +354,7 @@ TEST(Image, CreateFloatImage_3_4_Weighted) {
             111, 82,  249, 14,  45,  72,  210, 222, 97,  25,  247, 179, 223,
             15,  114, 245, 201, 149, 76,  224, 3,   24,  64,  17,  103, 98,
             222, 145, 236, 94,  233, 36,  85,  141, 233};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 4, ref, ConversionType::Weighted);
@@ -371,7 +371,7 @@ TEST(Image, CreateFloatImage_3_4_Equal) {
             111, 82,  249, 14,  45,  72,  210, 222, 97,  25,  247, 179, 223,
             15,  114, 245, 201, 149, 76,  224, 3,   24,  64,  17,  103, 98,
             222, 145, 236, 94,  233, 36,  85,  141, 233};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_CreateFloatImage(3, 4, ref, ConversionType::Equal);
@@ -388,7 +388,7 @@ TEST(Image, ConvertDepthToFloatImage) {
             137, 38,  58,  79,  25,  59,  58,  198, 8,   20,  57,  126, 80,
             30,  58,  6,   150, 131, 55,  251, 213, 122, 57,  102, 207, 11,
             57,  69,  190, 82,  58,  215, 94,  32,  57};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
     geometry::Image image;
 
@@ -401,7 +401,7 @@ TEST(Image, ConvertDepthToFloatImage) {
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image.data_.size());
+    std::vector<uint8_t> data(image.data_.size());
     Rand(data, 0, 255, 0);
     image.SetData(data);
 
@@ -423,7 +423,7 @@ TEST(Image, TransposeUint8) {
         6,  7,  8,  9,  10, 11,
         12, 13, 14, 15, 16, 17
     };
-    thrust::host_vector<uint8_t> input;
+    std::vector<uint8_t> input;
     for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
     uint8_t raw_transposed_ref[] = {
         0,  6,  12,
@@ -433,7 +433,7 @@ TEST(Image, TransposeUint8) {
         4,  10, 16,
         5,  11, 17
     };
-    thrust::host_vector<uint8_t> transposed_ref;
+    std::vector<uint8_t> transposed_ref;
     for (int i = 0; i < 18; ++i) transposed_ref.push_back(raw_transposed_ref[i]);
     // clang-format on
 
@@ -464,7 +464,7 @@ TEST(Image, TransposeFloat) {
         6,  7,  8,  9,  10, 11,
         12, 13, 14, 15, 16, 17
     };
-    thrust::host_vector<float> input;
+    std::vector<float> input;
     for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
     float raw_transposed_ref[] = {
         0,  6,  12,
@@ -474,7 +474,7 @@ TEST(Image, TransposeFloat) {
         4,  10, 16,
         5,  11, 17
     };
-    thrust::host_vector<float> transposed_ref;
+    std::vector<float> transposed_ref;
     for (int i = 0; i < 18; ++i) transposed_ref.push_back(raw_transposed_ref[i]);
     // clang-format on
 
@@ -488,7 +488,7 @@ TEST(Image, TransposeFloat) {
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
     const uint8_t* input_uint8_ptr =
             reinterpret_cast<const uint8_t*>(input.data());
-    thrust::host_vector<uint8_t> input_uint8(
+    std::vector<uint8_t> input_uint8(
             input_uint8_ptr, input_uint8_ptr + image.data_.size());
     image.SetData(input_uint8);
 
@@ -499,11 +499,11 @@ TEST(Image, TransposeFloat) {
     EXPECT_EQ(num_of_channels, transposed_image->num_of_channels_);
     EXPECT_EQ(int(sizeof(float)), transposed_image->bytes_per_channel_);
 
-    thrust::host_vector<uint8_t> transposed_host_data =
+    std::vector<uint8_t> transposed_host_data =
             transposed_image->GetData();
     const float* transpose_image_floats =
             reinterpret_cast<const float*>(transposed_host_data.data());
-    thrust::host_vector<float> transpose_image_data(
+    std::vector<float> transpose_image_data(
             transpose_image_floats,
             transpose_image_floats + transposed_ref.size());
     ExpectEQ(transposed_ref, transpose_image_data);
@@ -517,14 +517,14 @@ TEST(Image, FlipVerticalImage) {
       6, 7, 8, 9, 10, 11,
       12, 13, 14, 15, 16, 17
     };
-    thrust::host_vector<uint8_t> input;
+    std::vector<uint8_t> input;
     for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
     uint8_t raw_flipped[] = {
       12, 13, 14, 15, 16, 17,
       6, 7, 8, 9, 10, 11,
       0, 1, 2, 3, 4, 5,
     };
-    thrust::host_vector<uint8_t> flipped;
+    std::vector<uint8_t> flipped;
     for (int i = 0; i < 18; ++i) flipped.push_back(raw_flipped[i]);
     // clang-format on
 
@@ -555,14 +555,14 @@ TEST(Image, FlipHorizontalImage) {
       6, 7, 8, 9, 10, 11,
       12, 13, 14, 15, 16, 17
     };
-    thrust::host_vector<uint8_t> input;
+    std::vector<uint8_t> input;
     for (int i = 0; i < 18; ++i) input.push_back(raw_input[i]);
     uint8_t raw_flipped[] = {
       5, 4, 3, 2, 1, 0,
       11, 10, 9, 8, 7, 6,
       17, 16, 15, 14, 13, 12
     };
-    thrust::host_vector<uint8_t> flipped;
+    std::vector<uint8_t> flipped;
     for (int i = 0; i < 18; ++i) flipped.push_back(raw_flipped[i]);
     // clang-format on
 
@@ -585,7 +585,7 @@ TEST(Image, FlipHorizontalImage) {
     ExpectEQ(flipped, flip_image->GetData());
 }
 
-void TEST_Filter(const thrust::host_vector<uint8_t>& ref,
+void TEST_Filter(const std::vector<uint8_t>& ref,
                  const geometry::Image::FilterType& filter) {
     geometry::Image image;
 
@@ -597,7 +597,7 @@ void TEST_Filter(const thrust::host_vector<uint8_t>& ref,
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image.data_.size());
+    std::vector<uint8_t> data(image.data_.size());
     Rand(data, 0, 255, 0);
     image.SetData(data);
 
@@ -624,7 +624,7 @@ TEST(Image, Filter_Gaussian3) {
             91,  77,  233, 2,   196, 171, 233, 229, 149, 243, 233, 12,  159,
             128, 233, 36,  49,  20,  226, 223, 39,  141, 226, 137, 164, 52,
             234, 108, 176, 182, 234, 146, 238, 64,  234};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_Filter(ref, FilterType::Gaussian3);
@@ -641,7 +641,7 @@ TEST(Image, Filter_Gaussian5) {
             73,  101, 233, 15,  186, 202, 233, 62,  231, 242, 233, 76,  236,
             159, 233, 35,  111, 205, 231, 102, 26,  76,  233, 254, 241, 44,
             234, 33,  174, 126, 234, 84,  234, 47,  234};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_Filter(ref, FilterType::Gaussian5);
@@ -658,7 +658,7 @@ TEST(Image, Filter_Gaussian7) {
             49,  127, 233, 20,  166, 194, 233, 176, 46,  222, 233, 33,  207,
             168, 233, 186, 237, 232, 232, 98,  40,  161, 233, 128, 206, 18,
             234, 109, 135, 55,  234, 187, 97,  17,  234};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_Filter(ref, FilterType::Gaussian7);
@@ -675,7 +675,7 @@ TEST(Image, Filter_Sobel3Dx) {
             133, 106, 99,  73,  45,  10,  235, 101, 207, 174, 232, 44,  100,
             107, 107, 28,  239, 8,   228, 119, 32,  52,  97,  114, 163, 52,
             236, 140, 27,  131, 233, 33,  139, 48,  108};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_Filter(ref, FilterType::Sobel3Dx);
@@ -692,7 +692,7 @@ TEST(Image, Filter_Sobel3Dy) {
             88,  77,  107, 189, 46,  10,  235, 229, 149, 243, 235, 12,  159,
             128, 235, 189, 150, 69,  227, 36,  53,  188, 227, 97,  219, 112,
             235, 229, 149, 243, 235, 12,  159, 128, 235};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     TEST_Filter(ref, FilterType::Sobel3Dy);
@@ -709,7 +709,7 @@ TEST(Image, FilterHorizontal) {
             247, 230, 215, 97,  137, 95,  192, 72,  188, 163, 89,  108, 154,
             117, 90,  211, 150, 69,  226, 40,  53,  188, 226, 97,  219, 112,
             234, 229, 149, 243, 234, 12,  159, 128, 234};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 100; ++i) ref.push_back(raw_ref[i]);
 
     geometry::Image image;
@@ -722,13 +722,13 @@ TEST(Image, FilterHorizontal) {
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image.data_.size());
+    std::vector<uint8_t> data(image.data_.size());
     Rand(data, 0, 255, 0);
     image.SetData(data);
 
     auto float_image = image.CreateFloatImage();
 
-    thrust::host_vector<float> Gaussian3(3);
+    std::vector<float> Gaussian3(3);
     Gaussian3[0] = 0.25;
     Gaussian3[1] = 0.5;
     Gaussian3[2] = 0.25;
@@ -747,7 +747,7 @@ TEST(Image, Downsample) {
     // reference data used to validate the filtering of an image
     uint8_t raw_ref[] = {172, 41, 59,  204, 93, 130, 242, 232,
                          22,  91, 205, 233, 49, 169, 227, 87};
-    thrust::host_vector<uint8_t> ref;
+    std::vector<uint8_t> ref;
     for (int i = 0; i < 16; ++i) ref.push_back(raw_ref[i]);
 
     geometry::Image image;
@@ -760,7 +760,7 @@ TEST(Image, Downsample) {
 
     image.Prepare(width, height, num_of_channels, bytes_per_channel);
 
-    thrust::host_vector<uint8_t> data(image.data_.size());
+    std::vector<uint8_t> data(image.data_.size());
     Rand(data, 0, 255, 0);
     image.SetData(data);
 

@@ -32,10 +32,10 @@ using namespace unit_test;
 TEST(DistanceTransform, ComputeVoronoiDiagram) {
     geometry::VoxelGrid voxelgrid;
     voxelgrid.voxel_size_ = 1.0;
-    thrust::host_vector<Eigen::Vector3i> h_keys;
+    std::vector<Eigen::Vector3i> h_keys;
     Eigen::Vector3i ref(5, 5, 5);
     h_keys.push_back(ref);
-    voxelgrid.SetVoxels(h_keys, thrust::host_vector<geometry::Voxel>());
+    voxelgrid.SetVoxels(h_keys, std::vector<geometry::Voxel>());
     geometry::DistanceTransform dt(1.0, 512);
     dt.ComputeVoronoiDiagram(voxelgrid);
     auto v = dt.GetVoxel(Eigen::Vector3f(0.0, 0.0, 0.0));

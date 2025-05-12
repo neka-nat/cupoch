@@ -389,12 +389,18 @@ Eigen::Vector2f Image::GetCenter() const {
     return Eigen::Vector2f(width_ / 2, height_ / 2);
 }
 
-thrust::host_vector<uint8_t> Image::GetData() const {
-    thrust::host_vector<uint8_t> data = data_;
+std::vector<uint8_t> Image::GetData() const {
+    std::vector<uint8_t> data(data_.size());
+    copy_device_to_host(data_, data);
     return data;
 }
 
 void Image::SetData(const thrust::host_vector<uint8_t> &data) { data_ = data; }
+
+void Image::SetData(const std::vector<uint8_t> &data) {
+    data_.resize(data.size());
+    copy_host_to_device(data, data_);
+}
 
 bool Image::TestImageBoundary(float u,
                               float v,
@@ -517,6 +523,13 @@ std::shared_ptr<Image> Image::FilterHorizontal(
                 thrust::make_counting_iterator<size_t>(width_ * height_), func);
     }
     return output;
+}
+
+std::shared_ptr<Image> Image::FilterHorizontal(
+        const std::vector<float> &kernel) const {
+    utility::device_vector<float> d_kernel(kernel.size());
+    copy_host_to_device(kernel, d_kernel);
+    return FilterHorizontal(d_kernel);
 }
 
 std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {

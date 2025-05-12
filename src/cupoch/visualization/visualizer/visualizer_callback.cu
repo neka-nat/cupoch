@@ -20,6 +20,7 @@
 **/
 #include "cupoch/utility/console.h"
 #include "cupoch/visualization/utility/color_map.h"
+#include "cupoch/visualization/shader/geometry_renderer.h"
 #include "cupoch/visualization/visualizer/visualizer.h"
 
 using namespace cupoch;

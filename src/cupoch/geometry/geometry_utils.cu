@@ -69,6 +69,22 @@ const utility::device_vector<Eigen::Vector3f>& ConvertVector3fVectorRef(const Ge
     }
 }
 
+const std::vector<Eigen::Vector3f> ConvertVector3fStdVector(const Geometry &geometry) {
+    switch (geometry.GetGeometryType()) {
+        case Geometry::GeometryType::PointCloud:
+            return ((const PointCloud &)geometry).GetPoints();
+        case Geometry::GeometryType::TriangleMesh:
+            return ((const TriangleMesh &)geometry).GetVertices();
+        case Geometry::GeometryType::Image:
+        case Geometry::GeometryType::Unspecified:
+        default:
+            utility::LogWarning(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+            throw std::runtime_error(
+                    "[KDTreeFlann::SetGeometry] Unsupported Geometry type.");
+    }
+}
+
 void ResizeAndPaintUniformColor(utility::device_vector<Eigen::Vector3f> &colors,
                                 const size_t size,
                                 const Eigen::Vector3f &color) {

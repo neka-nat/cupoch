@@ -56,7 +56,7 @@ TEST(VoxelGrid, GetVoxel) {
 
 TEST(VoxelGrid, CreateFromPointCloudWithinBounds) {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
-    thrust::host_vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> points;
     points.push_back(Eigen::Vector3f(0.5, 0.5, 0.5));
     pointcloud->SetPoints(points);
     auto voxel_grid = geometry::VoxelGrid::CreateFromPointCloudWithinBounds(

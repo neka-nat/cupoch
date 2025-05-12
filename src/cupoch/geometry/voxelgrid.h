@@ -91,6 +91,8 @@ public:
     GetVoxels() const;
     void SetVoxels(const thrust::host_vector<Eigen::Vector3i> &voxels_keys,
                    const thrust::host_vector<Voxel> &voxels_values);
+    void SetVoxels(const std::vector<Eigen::Vector3i> &voxels_keys,
+                   const std::vector<Voxel> &voxels_values);
 
     VoxelGrid &Clear() override;
     bool IsEmpty() const override;
@@ -134,8 +136,8 @@ public:
 
     // Element-wise check if a query in the list is included in the VoxelGrid
     // Queries are double precision and are mapped to the closest voxel.
-    thrust::host_vector<bool> CheckIfIncluded(
-            const thrust::host_vector<Eigen::Vector3f> &queries);
+    std::vector<bool> CheckIfIncluded(
+            const std::vector<Eigen::Vector3f> &queries);
 
     /// Remove all voxels from the VoxelGrid where none of the boundary points
     /// of the voxel projects to depth value that is smaller, or equal than the

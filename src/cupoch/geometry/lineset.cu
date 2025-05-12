@@ -69,6 +69,13 @@ LineSet<Dim>::LineSet(
       lines_(lines) {}
 
 template <int Dim>
+LineSet<Dim>::LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &points,
+                     const std::vector<Eigen::Vector2i> &lines)
+    : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet),
+      points_(points),
+      lines_(lines) {}
+
+template <int Dim>
 LineSet<Dim>::LineSet(const std::vector<Eigen::Matrix<float, Dim, 1>> &path)
     : GeometryBaseXD<Dim>(Geometry::GeometryType::LineSet) {
     utility::pinned_host_vector<Eigen::Matrix<float, Dim, 1>> points;
@@ -102,6 +109,13 @@ void LineSet<Dim>::SetPoints(
 }
 
 template <int Dim>
+void LineSet<Dim>::SetPoints(
+        const std::vector<Eigen::Matrix<float, Dim, 1>> &points) {
+    points_.resize(points.size());
+    copy_host_to_device(points, points_);
+}
+
+template <int Dim>
 thrust::host_vector<Eigen::Matrix<float, Dim, 1>> LineSet<Dim>::GetPoints()
         const {
     thrust::host_vector<Eigen::Matrix<float, Dim, 1>> points = points_;
@@ -114,6 +128,12 @@ void LineSet<Dim>::SetLines(const thrust::host_vector<Eigen::Vector2i> &lines) {
 }
 
 template <int Dim>
+void LineSet<Dim>::SetLines(const std::vector<Eigen::Vector2i> &lines) {
+    lines_.resize(lines.size());
+    copy_host_to_device(lines, lines_);
+}
+
+template <int Dim>
 thrust::host_vector<Eigen::Vector2i> LineSet<Dim>::GetLines() const {
     thrust::host_vector<Eigen::Vector2i> lines = lines_;
     return lines;
@@ -123,6 +143,12 @@ template <int Dim>
 void LineSet<Dim>::SetColors(
         const thrust::host_vector<Eigen::Vector3f> &colors) {
     colors_ = colors;
+}
+
+template <int Dim>
+void LineSet<Dim>::SetColors(const std::vector<Eigen::Vector3f> &colors) {
+    colors_.resize(colors.size());
+    copy_host_to_device(colors, colors_);
 }
 
 template <int Dim>
@@ -196,6 +222,12 @@ thrust::pair<Eigen::Matrix<float, Dim, 1>, Eigen::Matrix<float, Dim, 1>>
 LineSet<Dim>::GetLineCoordinate(size_t line_index) const {
     const Eigen::Vector2i idxs = lines_[line_index];
     return thrust::make_pair(points_[idxs[0]], points_[idxs[1]]);
+}
+
+template <int Dim>
+LineSet<Dim> &LineSet<Dim>::PaintUniformColor(const Eigen::Vector3f &color) {
+    ResizeAndPaintUniformColor(colors_, lines_.size(), color);
+    return *this;
 }
 
 template <int Dim>

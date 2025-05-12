@@ -62,10 +62,9 @@ void bind_axis_aligned_bounding_box(AabbT &axis_aligned_bounding_box) {
                  "points"_a)
             .def_static(
                     "create_from_points",
-                    py::overload_cast<
-                            const utility::device_vector<Eigen::Matrix<float, Dim, 1>> &>(
-                            &geometry::AxisAlignedBoundingBox<Dim>::
-                                    CreateFromPoints),
+                    [] (const wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>>& points) {
+                        return geometry::AxisAlignedBoundingBox<Dim>::CreateFromPoints(points.data_);
+                    },
                     "Creates the bounding box that encloses the set of points.",
                     "points"_a)
             .def_readwrite("min_bound",
