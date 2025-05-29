@@ -148,6 +148,14 @@ void VoxelGrid::SetVoxels(
     voxels_values_ = voxels_values;
 }
 
+void VoxelGrid::SetVoxels(const std::vector<Eigen::Vector3i> &voxels_keys,
+                          const std::vector<Voxel> &voxels_values) {
+    voxels_keys_.resize(voxels_keys.size());
+    voxels_values_.resize(voxels_values.size());
+    copy_host_to_device(voxels_keys, voxels_keys_);
+    copy_host_to_device(voxels_values, voxels_values_);
+}
+
 VoxelGrid &VoxelGrid::Clear() {
     voxel_size_ = 0.0;
     origin_ = Eigen::Vector3f::Zero();
@@ -362,9 +370,9 @@ std::array<Eigen::Vector3f, 8> VoxelGrid::GetVoxelBoundingPoints(
     return points;
 }
 
-thrust::host_vector<bool> VoxelGrid::CheckIfIncluded(
-        const thrust::host_vector<Eigen::Vector3f> &queries) {
-    thrust::host_vector<bool> output;
+std::vector<bool> VoxelGrid::CheckIfIncluded(
+        const std::vector<Eigen::Vector3f> &queries) {
+    std::vector<bool> output;
     output.resize(queries.size());
     for (size_t i = 0; i < queries.size(); ++i) {
         auto query = GetVoxel(queries[i]);

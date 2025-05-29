@@ -135,6 +135,13 @@ Eigen::Matrix4f_u cupoch::registration::Kabsch(
     return Kabsch(stream1, stream2, model, target, corres);
 }
 
+Eigen::Matrix4f_u cupoch::registration::Kabsch(
+        const std::vector<Eigen::Vector3f> &model,
+        const std::vector<Eigen::Vector3f> &target) {
+    return Kabsch(utility::device_vector<Eigen::Vector3f>(model),
+                  utility::device_vector<Eigen::Vector3f>(target));
+}
+
 Eigen::Matrix4f_u cupoch::registration::KabschWeighted(
         const utility::device_vector<Eigen::Vector3f> &model,
         const utility::device_vector<Eigen::Vector3f> &target,

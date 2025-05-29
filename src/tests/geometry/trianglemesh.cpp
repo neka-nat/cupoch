@@ -80,11 +80,11 @@ TEST(TriangleMesh, Clear) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
-    thrust::host_vector<Vector3f> vertex_normals(size);
-    thrust::host_vector<Vector3f> vertex_colors(size);
-    thrust::host_vector<Vector3i> triangles(size);
-    thrust::host_vector<Vector3f> triangle_normals(size);
+    std::vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertex_normals(size);
+    std::vector<Vector3f> vertex_colors(size);
+    std::vector<Vector3i> triangles(size);
+    std::vector<Vector3f> triangle_normals(size);
 
     Rand(vertices, dmin, dmax, 0);
     tm.SetVertices(vertices);
@@ -130,7 +130,7 @@ TEST(TriangleMesh, IsEmpty) {
 
     EXPECT_TRUE(tm.IsEmpty());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
 
     EXPECT_FALSE(tm.IsEmpty());
@@ -144,7 +144,7 @@ TEST(TriangleMesh, GetMinBound) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     Rand(vertices, dmin, dmax, 0);
     tm.SetVertices(vertices);
 
@@ -159,7 +159,7 @@ TEST(TriangleMesh, GetMaxBound) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     Rand(vertices, dmin, dmax, 0);
     tm.SetVertices(vertices);
 
@@ -178,11 +178,11 @@ TEST(TriangleMesh, OperatorAppend) {
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
 
-    thrust::host_vector<Vector3f> vertices0(size);
-    thrust::host_vector<Vector3f> vertex_normals0(size);
-    thrust::host_vector<Vector3f> vertex_colors0(size);
-    thrust::host_vector<Vector3i> triangles0(size);
-    thrust::host_vector<Vector3f> triangle_normals0(size);
+    std::vector<Vector3f> vertices0(size);
+    std::vector<Vector3f> vertex_normals0(size);
+    std::vector<Vector3f> vertex_colors0(size);
+    std::vector<Vector3i> triangles0(size);
+    std::vector<Vector3f> triangle_normals0(size);
     Rand(vertices0, dmin, dmax, 0);
     Rand(vertex_normals0, dmin, dmax, 0);
     Rand(vertex_colors0, dmin, dmax, 0);
@@ -194,11 +194,11 @@ TEST(TriangleMesh, OperatorAppend) {
     tm0.SetTriangles(triangles0);
     tm0.SetTriangleNormals(triangle_normals0);
 
-    thrust::host_vector<Vector3f> vertices1(size);
-    thrust::host_vector<Vector3f> vertex_normals1(size);
-    thrust::host_vector<Vector3f> vertex_colors1(size);
-    thrust::host_vector<Vector3i> triangles1(size);
-    thrust::host_vector<Vector3f> triangle_normals1(size);
+    std::vector<Vector3f> vertices1(size);
+    std::vector<Vector3f> vertex_normals1(size);
+    std::vector<Vector3f> vertex_colors1(size);
+    std::vector<Vector3i> triangles1(size);
+    std::vector<Vector3f> triangle_normals1(size);
     Rand(vertices1, dmin, dmax, 0);
     Rand(vertex_normals1, dmin, dmax, 0);
     Rand(vertex_colors1, dmin, dmax, 0);
@@ -213,11 +213,11 @@ TEST(TriangleMesh, OperatorAppend) {
     geometry::TriangleMesh tm(tm0);
     tm += tm1;
 
-    thrust::host_vector<Vector3f> vertices = tm.GetVertices();
-    thrust::host_vector<Vector3f> vertex_normals = tm.GetVertexNormals();
-    thrust::host_vector<Vector3f> vertex_colors = tm.GetVertexColors();
-    thrust::host_vector<Vector3i> triangles = tm.GetTriangles();
-    thrust::host_vector<Vector3f> triangle_normals = tm.GetTriangleNormals();
+    std::vector<Vector3f> vertices = tm.GetVertices();
+    std::vector<Vector3f> vertex_normals = tm.GetVertexNormals();
+    std::vector<Vector3f> vertex_colors = tm.GetVertexColors();
+    std::vector<Vector3i> triangles = tm.GetTriangles();
+    std::vector<Vector3f> triangle_normals = tm.GetTriangleNormals();
 
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++) {
@@ -266,11 +266,11 @@ TEST(TriangleMesh, OperatorADD) {
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
 
-    thrust::host_vector<Vector3f> vertices0(size);
-    thrust::host_vector<Vector3f> vertex_normals0(size);
-    thrust::host_vector<Vector3f> vertex_colors0(size);
-    thrust::host_vector<Vector3i> triangles0(size);
-    thrust::host_vector<Vector3f> triangle_normals0(size);
+    std::vector<Vector3f> vertices0(size);
+    std::vector<Vector3f> vertex_normals0(size);
+    std::vector<Vector3f> vertex_colors0(size);
+    std::vector<Vector3i> triangles0(size);
+    std::vector<Vector3f> triangle_normals0(size);
     Rand(vertices0, dmin, dmax, 0);
     Rand(vertex_normals0, dmin, dmax, 0);
     Rand(vertex_colors0, dmin, dmax, 0);
@@ -282,11 +282,11 @@ TEST(TriangleMesh, OperatorADD) {
     tm0.SetTriangles(triangles0);
     tm0.SetTriangleNormals(triangle_normals0);
 
-    thrust::host_vector<Vector3f> vertices1(size);
-    thrust::host_vector<Vector3f> vertex_normals1(size);
-    thrust::host_vector<Vector3f> vertex_colors1(size);
-    thrust::host_vector<Vector3i> triangles1(size);
-    thrust::host_vector<Vector3f> triangle_normals1(size);
+    std::vector<Vector3f> vertices1(size);
+    std::vector<Vector3f> vertex_normals1(size);
+    std::vector<Vector3f> vertex_colors1(size);
+    std::vector<Vector3i> triangles1(size);
+    std::vector<Vector3f> triangle_normals1(size);
     Rand(vertices1, dmin, dmax, 0);
     Rand(vertex_normals1, dmin, dmax, 0);
     Rand(vertex_colors1, dmin, dmax, 0);
@@ -300,11 +300,11 @@ TEST(TriangleMesh, OperatorADD) {
 
     geometry::TriangleMesh tm = tm0 + tm1;
 
-    thrust::host_vector<Vector3f> vertices = tm.GetVertices();
-    thrust::host_vector<Vector3f> vertex_normals = tm.GetVertexNormals();
-    thrust::host_vector<Vector3f> vertex_colors = tm.GetVertexColors();
-    thrust::host_vector<Vector3i> triangles = tm.GetTriangles();
-    thrust::host_vector<Vector3f> triangle_normals = tm.GetTriangleNormals();
+    std::vector<Vector3f> vertices = tm.GetVertices();
+    std::vector<Vector3f> vertex_normals = tm.GetVertexNormals();
+    std::vector<Vector3f> vertex_colors = tm.GetVertexColors();
+    std::vector<Vector3i> triangles = tm.GetTriangles();
+    std::vector<Vector3f> triangle_normals = tm.GetTriangleNormals();
 
     EXPECT_EQ(2 * size, tm.vertices_.size());
     for (size_t i = 0; i < size; i++) {
@@ -367,7 +367,7 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
                           {-0.085377, -0.916925, 0.389820},
                           {0.787892, 0.611808, -0.070127},
                           {0.788022, 0.488544, 0.374628}};
-    thrust::host_vector<Vector3f> ref(25);
+    std::vector<Vector3f> ref(25);
     for (int i = 0; i < 25; ++i) ref[i] = ref_raw[i];
 
     size_t size = 25;
@@ -380,11 +380,11 @@ TEST(TriangleMesh, ComputeTriangleNormals) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     Rand(vertices, dmin, dmax, 0);
     tm.SetVertices(vertices);
 
-    thrust::host_vector<Vector3i> triangles;
+    std::vector<Vector3i> triangles;
     for (size_t i = 0; i < size; i++)
         triangles.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
     tm.SetTriangles(triangles);
@@ -409,7 +409,7 @@ TEST(TriangleMesh, ComputeVertexNormals) {
             {0.361530, 0.784805, -0.503366},   {0.429700, 0.646636, -0.630253},
             {-0.264834, -0.963970, -0.025005}, {0.940214, -0.336158, -0.054732},
             {0.862650, 0.449603, 0.231714}};
-    thrust::host_vector<Vector3f> ref(25);
+    std::vector<Vector3f> ref(25);
     for (int i = 0; i < 25; ++i) ref[i] = ref_raw[i];
 
     size_t size = 25;
@@ -422,11 +422,11 @@ TEST(TriangleMesh, ComputeVertexNormals) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     Rand(vertices, dmin, dmax, 0);
     tm.SetVertices(vertices);
 
-    thrust::host_vector<Vector3i> triangles;
+    std::vector<Vector3i> triangles;
     for (size_t i = 0; i < size; i++)
         triangles.push_back(Vector3i(i, (i + 1) % size, (i + 2) % size));
     tm.SetTriangles(triangles);
@@ -443,7 +443,7 @@ TEST(TriangleMesh, ComputeEdgeList) {
     Eigen::Vector3f C(-1, 1, 0);   // 2
     Eigen::Vector3f D(-1, -1, 0);  // 3
     Eigen::Vector3f E(1, -1, 0);   // 4
-    thrust::host_vector<Eigen::Vector3f> vertices;
+    std::vector<Eigen::Vector3f> vertices;
     vertices.push_back(A);
     vertices.push_back(B);
     vertices.push_back(C);
@@ -452,7 +452,7 @@ TEST(TriangleMesh, ComputeEdgeList) {
 
     geometry::TriangleMesh tm;
     tm.SetVertices(vertices);
-    thrust::host_vector<Eigen::Vector3i> triangles;
+    std::vector<Eigen::Vector3i> triangles;
     triangles.push_back(Eigen::Vector3i(0, 1, 2));
     triangles.push_back(Eigen::Vector3i(0, 2, 3));
     triangles.push_back(Eigen::Vector3i(0, 3, 4));
@@ -464,7 +464,7 @@ TEST(TriangleMesh, ComputeEdgeList) {
     tm.ComputeEdgeList();
     EXPECT_TRUE(tm.HasEdgeList());
 
-    thrust::host_vector<Eigen::Vector2i> ref;
+    std::vector<Eigen::Vector2i> ref;
     ref.push_back({0, 1});
     ref.push_back({0, 2});
     ref.push_back({0, 3});
@@ -511,7 +511,7 @@ TEST(TriangleMesh, Purge) {
                                    {847.058824, 262.745098, 537.254902},
                                    {372.549020, 756.862745, 509.803922},
                                    {666.666667, 529.411765, 39.215686}};
-    thrust::host_vector<Vector3f> ref_vertices(24);
+    std::vector<Vector3f> ref_vertices(24);
     for (int i = 0; i < 24; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
     Vector3f ref_vertex_normals_raw[] = {{839.215686, 392.156863, 780.392157},
@@ -538,7 +538,7 @@ TEST(TriangleMesh, Purge) {
                                          {847.058824, 262.745098, 537.254902},
                                          {372.549020, 756.862745, 509.803922},
                                          {666.666667, 529.411765, 39.215686}};
-    thrust::host_vector<Vector3f> ref_vertex_normals(24);
+    std::vector<Vector3f> ref_vertex_normals(24);
     for (int i = 0; i < 24; ++i)
         ref_vertex_normals[i] = ref_vertex_normals_raw[i];
 
@@ -566,7 +566,7 @@ TEST(TriangleMesh, Purge) {
                                         {847.058824, 262.745098, 537.254902},
                                         {372.549020, 756.862745, 509.803922},
                                         {666.666667, 529.411765, 39.215686}};
-    thrust::host_vector<Vector3f> ref_vertex_colors(24);
+    std::vector<Vector3f> ref_vertex_colors(24);
     for (int i = 0; i < 24; ++i)
         ref_vertex_colors[i] = ref_vertex_colors_raw[i];
 
@@ -576,7 +576,7 @@ TEST(TriangleMesh, Purge) {
             {7, 15, 12},  {11, 23, 6}, {9, 21, 6}, {8, 19, 22},  {1, 22, 12},
             {1, 4, 15},   {21, 8, 1},  {0, 10, 1}, {5, 23, 21},  {20, 6, 12},
             {8, 18, 12},  {16, 12, 0}};
-    thrust::host_vector<Vector3i> ref_triangles(22);
+    std::vector<Vector3i> ref_triangles(22);
     for (int i = 0; i < 22; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
     Vector3f ref_triangle_normals_raw[] = {{839.215686, 392.156863, 780.392157},
@@ -601,7 +601,7 @@ TEST(TriangleMesh, Purge) {
                                            {847.058824, 262.745098, 537.254902},
                                            {372.549020, 756.862745, 509.803922},
                                            {666.666667, 529.411765, 39.215686}};
-    thrust::host_vector<Vector3f> ref_triangle_normals(22);
+    std::vector<Vector3f> ref_triangle_normals(22);
     for (int i = 0; i < 22; ++i)
         ref_triangle_normals[i] = ref_triangle_normals_raw[i];
 
@@ -616,11 +616,11 @@ TEST(TriangleMesh, Purge) {
     geometry::TriangleMesh tm0;
     geometry::TriangleMesh tm1;
 
-    thrust::host_vector<Vector3f> vertices(size);
-    thrust::host_vector<Vector3f> vertex_normals(size);
-    thrust::host_vector<Vector3f> vertex_colors(size);
-    thrust::host_vector<Vector3i> triangles(size);
-    thrust::host_vector<Vector3f> triangle_normals(size);
+    std::vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertex_normals(size);
+    std::vector<Vector3f> vertex_colors(size);
+    std::vector<Vector3i> triangles(size);
+    std::vector<Vector3f> triangle_normals(size);
     Rand(vertices, dmin, dmax, 0);
     Rand(vertex_normals, dmin, dmax, 0);
     Rand(vertex_colors, dmin, dmax, 0);
@@ -685,11 +685,11 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     auto mesh_empty = geometry::TriangleMesh();
     EXPECT_THROW(mesh_empty.SamplePointsUniformly(100), std::runtime_error);
 
-    thrust::host_vector<Vector3f> vertices;
+    std::vector<Vector3f> vertices;
     vertices.push_back(Vector3f(0, 0, 0));
     vertices.push_back(Vector3f(1, 0, 0));
     vertices.push_back(Vector3f(0, 1, 0));
-    thrust::host_vector<Vector3i> triangles;
+    std::vector<Vector3i> triangles;
     triangles.push_back(Vector3i(0, 1, 2));
 
     auto mesh_simple = geometry::TriangleMesh();
@@ -702,11 +702,11 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->colors_.size() == 0);
     EXPECT_TRUE(pcd_simple->normals_.size() == 0);
 
-    thrust::host_vector<Vector3f> colors;
+    std::vector<Vector3f> colors;
     colors.push_back(Vector3f(1, 0, 0));
     colors.push_back(Vector3f(1, 0, 0));
     colors.push_back(Vector3f(1, 0, 0));
-    thrust::host_vector<Vector3f> normals;
+    std::vector<Vector3f> normals;
     normals.push_back(Vector3f(0, 1, 0));
     normals.push_back(Vector3f(0, 1, 0));
     normals.push_back(Vector3f(0, 1, 0));
@@ -717,8 +717,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
     EXPECT_TRUE(pcd_simple->normals_.size() == n_points);
 
-    thrust::host_vector<Vector3f> hc = pcd_simple->GetColors();
-    thrust::host_vector<Vector3f> hn = pcd_simple->GetNormals();
+    std::vector<Vector3f> hc = pcd_simple->GetColors();
+    std::vector<Vector3f> hn = pcd_simple->GetNormals();
     for (size_t pidx = 0; pidx < n_points; ++pidx) {
         ExpectEQ(hc[pidx], Vector3f(1, 0, 0));
         ExpectEQ(hn[pidx], Vector3f(0, 1, 0));
@@ -741,7 +741,7 @@ TEST(TriangleMesh, SamplePointsUniformly) {
     }
 
     // use triangle normal, this time the mesh has no vertex normals
-    mesh_simple.SetVertexNormals(thrust::host_vector<Vector3f>());
+    mesh_simple.SetVertexNormals(std::vector<Vector3f>());
     pcd_simple = mesh_simple.SamplePointsUniformly(n_points, true);
     EXPECT_TRUE(pcd_simple->points_.size() == n_points);
     EXPECT_TRUE(pcd_simple->colors_.size() == n_points);
@@ -757,8 +757,8 @@ TEST(TriangleMesh, SamplePointsUniformly) {
 
 TEST(TriangleMesh, FilterSharpen) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    thrust::host_vector<Eigen::Vector3f> vertices;
-    thrust::host_vector<Eigen::Vector3i> triangles;
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<Eigen::Vector3i> triangles;
     vertices.push_back({0, 0, 0});
     vertices.push_back({1, 0, 0});
     vertices.push_back({0, 1, 0});
@@ -772,7 +772,7 @@ TEST(TriangleMesh, FilterSharpen) {
     mesh->SetTriangles(triangles);
 
     mesh = mesh->FilterSharpen(1, 1);
-    thrust::host_vector<Eigen::Vector3f> ref1;
+    std::vector<Eigen::Vector3f> ref1;
     ref1.push_back({0, 0, 0});
     ref1.push_back({4, 0, 0});
     ref1.push_back({0, 4, 0});
@@ -781,7 +781,7 @@ TEST(TriangleMesh, FilterSharpen) {
     ExpectEQ(mesh->GetVertices(), ref1);
 
     mesh = mesh->FilterSharpen(9, 0.1);
-    thrust::host_vector<Eigen::Vector3f> ref2;
+    std::vector<Eigen::Vector3f> ref2;
     ref2.push_back({0, 0, 0});
     ref2.push_back({42.417997, 0, 0});
     ref2.push_back({0, 42.417997, 0});
@@ -792,8 +792,8 @@ TEST(TriangleMesh, FilterSharpen) {
 
 TEST(TriangleMesh, FilterSmoothSimple) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    thrust::host_vector<Eigen::Vector3f> vertices;
-    thrust::host_vector<Eigen::Vector3i> triangles;
+    std::vector<Eigen::Vector3f> vertices;
+    std::vector<Eigen::Vector3i> triangles;
     vertices.push_back({0, 0, 0});
     vertices.push_back({1, 0, 0});
     vertices.push_back({0, 1, 0});
@@ -807,7 +807,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
     mesh->SetTriangles(triangles);
 
     mesh = mesh->FilterSmoothSimple(1);
-    thrust::host_vector<Eigen::Vector3f> ref1;
+    std::vector<Eigen::Vector3f> ref1;
     ref1.push_back({0, 0, 0});
     ref1.push_back({0.25, 0, 0});
     ref1.push_back({0, 0.25, 0});
@@ -816,7 +816,7 @@ TEST(TriangleMesh, FilterSmoothSimple) {
     ExpectEQ(mesh->GetVertices(), ref1);
 
     mesh = mesh->FilterSmoothSimple(3);
-    thrust::host_vector<Eigen::Vector3f> ref2;
+    std::vector<Eigen::Vector3f> ref2;
     ref2.push_back({0, 0, 0});
     ref2.push_back({0.003906, 0, 0});
     ref2.push_back({0, 0.003906, 0});
@@ -827,13 +827,13 @@ TEST(TriangleMesh, FilterSmoothSimple) {
 
 TEST(TriangleMesh, FilterSmoothLaplacian) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    thrust::host_vector<Eigen::Vector3f> vertices;
+    std::vector<Eigen::Vector3f> vertices;
     vertices.push_back({0, 0, 0});
     vertices.push_back({1, 0, 0});
     vertices.push_back({0, 1, 0});
     vertices.push_back({-1, 0, 0});
     vertices.push_back({0, -1, 0});
-    thrust::host_vector<Eigen::Vector3i> triangles;
+    std::vector<Eigen::Vector3i> triangles;
     triangles.push_back({0, 1, 2});
     triangles.push_back({0, 2, 3});
     triangles.push_back({0, 3, 4});
@@ -842,7 +842,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
     mesh->SetTriangles(triangles);
 
     mesh = mesh->FilterSmoothLaplacian(1, 0.5);
-    thrust::host_vector<Eigen::Vector3f> ref1;
+    std::vector<Eigen::Vector3f> ref1;
     ref1.push_back({0, 0, 0});
     ref1.push_back({0.5, 0, 0});
     ref1.push_back({0, 0.5, 0});
@@ -851,7 +851,7 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
     ExpectEQ(mesh->GetVertices(), ref1);
 
     mesh = mesh->FilterSmoothLaplacian(10, 0.5);
-    thrust::host_vector<Eigen::Vector3f> ref2;
+    std::vector<Eigen::Vector3f> ref2;
     ref2.push_back({0, 0, 0});
     ref2.push_back({0.000488, 0, 0});
     ref2.push_back({0, 0.000488, 0});
@@ -862,13 +862,13 @@ TEST(TriangleMesh, FilterSmoothLaplacian) {
 
 TEST(TriangleMesh, FilterSmoothTaubin) {
     auto mesh = std::make_shared<geometry::TriangleMesh>();
-    thrust::host_vector<Eigen::Vector3f> vertices;
+    std::vector<Eigen::Vector3f> vertices;
     vertices.push_back({0, 0, 0});
     vertices.push_back({1, 0, 0});
     vertices.push_back({0, 1, 0});
     vertices.push_back({-1, 0, 0});
     vertices.push_back({0, -1, 0});
-    thrust::host_vector<Eigen::Vector3i> triangles;
+    std::vector<Eigen::Vector3i> triangles;
     triangles.push_back({0, 1, 2});
     triangles.push_back({0, 2, 3});
     triangles.push_back({0, 3, 4});
@@ -877,7 +877,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
     mesh->SetTriangles(triangles);
 
     mesh = mesh->FilterSmoothTaubin(1, 0.5, -0.53);
-    thrust::host_vector<Eigen::Vector3f> ref1;
+    std::vector<Eigen::Vector3f> ref1;
     ref1.push_back({0, 0, 0});
     ref1.push_back({0.765, 0, 0});
     ref1.push_back({0, 0.765, 0});
@@ -886,7 +886,7 @@ TEST(TriangleMesh, FilterSmoothTaubin) {
     ExpectEQ(mesh->GetVertices(), ref1);
 
     mesh = mesh->FilterSmoothTaubin(10, 0.5, -0.53);
-    thrust::host_vector<Eigen::Vector3f> ref2;
+    std::vector<Eigen::Vector3f> ref2;
     ref2.push_back({0, 0, 0});
     ref2.push_back({0.052514, 0, 0});
     ref2.push_back({0, 0.052514, 0});
@@ -902,7 +902,7 @@ TEST(TriangleMesh, HasVertices) {
 
     EXPECT_FALSE(tm.HasVertices());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
 
     EXPECT_TRUE(tm.HasVertices());
@@ -915,9 +915,9 @@ TEST(TriangleMesh, HasTriangles) {
 
     EXPECT_FALSE(tm.HasTriangles());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
-    thrust::host_vector<Vector3i> triangles(size);
+    std::vector<Vector3i> triangles(size);
     tm.SetTriangles(triangles);
 
     EXPECT_TRUE(tm.HasTriangles());
@@ -930,9 +930,9 @@ TEST(TriangleMesh, HasVertexNormals) {
 
     EXPECT_FALSE(tm.HasVertexNormals());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
-    thrust::host_vector<Vector3f> vertex_normals(size);
+    std::vector<Vector3f> vertex_normals(size);
     tm.SetVertexNormals(vertex_normals);
 
     EXPECT_TRUE(tm.HasVertexNormals());
@@ -945,9 +945,9 @@ TEST(TriangleMesh, HasVertexColors) {
 
     EXPECT_FALSE(tm.HasVertexColors());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
-    thrust::host_vector<Vector3f> vertex_colors(size);
+    std::vector<Vector3f> vertex_colors(size);
     tm.SetVertexColors(vertex_colors);
 
     EXPECT_TRUE(tm.HasVertexColors());
@@ -960,11 +960,11 @@ TEST(TriangleMesh, HasTriangleNormals) {
 
     EXPECT_FALSE(tm.HasTriangleNormals());
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
-    thrust::host_vector<Vector3i> triangles(size);
+    std::vector<Vector3i> triangles(size);
     tm.SetTriangles(triangles);
-    thrust::host_vector<Vector3f> triangle_normals(size);
+    std::vector<Vector3f> triangle_normals(size);
     tm.SetTriangleNormals(triangle_normals);
 
     EXPECT_TRUE(tm.HasTriangleNormals());
@@ -985,7 +985,7 @@ TEST(TriangleMesh, NormalizeNormals) {
             {0.175031, 0.720545, 0.670953}, {0.816905, 0.253392, 0.518130},
             {0.377967, 0.767871, 0.517219}, {0.782281, 0.621223, 0.046017},
             {0.314385, 0.671253, 0.671253}};
-    thrust::host_vector<Vector3f> ref_vertex_normals(25);
+    std::vector<Vector3f> ref_vertex_normals(25);
     for (int i = 0; i < 25; ++i)
         ref_vertex_normals[i] = ref_vertex_normals_raw[i];
 
@@ -1003,7 +1003,7 @@ TEST(TriangleMesh, NormalizeNormals) {
             {0.616413, 0.573987, 0.539049}, {0.372896, 0.762489, 0.528733},
             {0.669715, 0.451103, 0.589905}, {0.771164, 0.057123, 0.634068},
             {0.620625, 0.620625, 0.479217}};
-    thrust::host_vector<Vector3f> ref_triangle_normals(25);
+    std::vector<Vector3f> ref_triangle_normals(25);
     for (int i = 0; i < 25; ++i)
         ref_triangle_normals[i] = ref_triangle_normals_raw[i];
 
@@ -1014,8 +1014,8 @@ TEST(TriangleMesh, NormalizeNormals) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertex_normals(size);
-    thrust::host_vector<Vector3f> triangle_normals(size);
+    std::vector<Vector3f> vertex_normals(size);
+    std::vector<Vector3f> triangle_normals(size);
     Rand(vertex_normals, dmin, dmax, 0);
     Rand(triangle_normals, dmin, dmax, 1);
     tm.SetVertexNormals(vertex_normals);
@@ -1035,9 +1035,9 @@ TEST(TriangleMesh, PaintUniformColor) {
 
     geometry::TriangleMesh tm;
 
-    thrust::host_vector<Vector3f> vertices(size);
+    std::vector<Vector3f> vertices(size);
     tm.SetVertices(vertices);
-    thrust::host_vector<Vector3f> vertex_colors(size);
+    std::vector<Vector3f> vertex_colors(size);
     tm.SetVertexColors(vertex_colors);
 
     Vector3f color(233. / 255., 171. / 255., 53.0 / 255.);
@@ -1091,7 +1091,7 @@ TEST(TriangleMesh, CreateMeshSphere) {
                                    {-0.181636, -0.559017, -0.809017},
                                    {0.181636, -0.559017, -0.809017},
                                    {0.475528, -0.345492, -0.809017}};
-    thrust::host_vector<Vector3f> ref_vertices(42);
+    std::vector<Vector3f> ref_vertices(42);
     for (int i = 0; i < 42; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
     Vector3i ref_triangles_raw[] = {
@@ -1115,7 +1115,7 @@ TEST(TriangleMesh, CreateMeshSphere) {
             {36, 27, 26}, {36, 37, 27}, {37, 28, 27}, {37, 38, 28},
             {38, 29, 28}, {38, 39, 29}, {39, 30, 29}, {39, 40, 30},
             {40, 31, 30}, {40, 41, 31}, {41, 22, 31}, {41, 32, 22}};
-    thrust::host_vector<Vector3i> ref_triangles(80);
+    std::vector<Vector3i> ref_triangles(80);
     for (int i = 0; i < 80; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
     auto output_tm = geometry::TriangleMesh::CreateSphere(1.0, 5);
@@ -1152,7 +1152,7 @@ TEST(TriangleMesh, CreateMeshCylinder) {
                                    {-0.809017, 0.587785, -1.000000},
                                    {-0.809017, -0.587785, -1.000000},
                                    {0.309017, -0.951057, -1.000000}};
-    thrust::host_vector<Vector3f> ref_vertices(27);
+    std::vector<Vector3f> ref_vertices(27);
     for (int i = 0; i < 27; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
     Vector3i ref_triangles_raw[] = {
@@ -1169,7 +1169,7 @@ TEST(TriangleMesh, CreateMeshCylinder) {
             {22, 18, 17}, {22, 23, 18}, {23, 19, 18}, {23, 24, 19},
             {24, 20, 19}, {24, 25, 20}, {25, 21, 20}, {25, 26, 21},
             {26, 17, 21}, {26, 22, 17}};
-    thrust::host_vector<Vector3i> ref_triangles(50);
+    std::vector<Vector3i> ref_triangles(50);
     for (int i = 0; i < 50; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
     auto output_tm = geometry::TriangleMesh::CreateCylinder(1.0, 2.0, 5);
@@ -1184,13 +1184,13 @@ TEST(TriangleMesh, CreateMeshCone) {
             {1.000000, 0.000000, 0.000000},  {0.309017, 0.951057, 0.000000},
             {-0.809017, 0.587785, 0.000000}, {-0.809017, -0.587785, 0.000000},
             {0.309017, -0.951057, 0.000000}};
-    thrust::host_vector<Vector3f> ref_vertices(7);
+    std::vector<Vector3f> ref_vertices(7);
     for (int i = 0; i < 7; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
     Vector3i ref_triangles_raw[] = {{0, 3, 2}, {1, 2, 3}, {0, 4, 3}, {1, 3, 4},
                                     {0, 5, 4}, {1, 4, 5}, {0, 6, 5}, {1, 5, 6},
                                     {0, 2, 6}, {1, 6, 2}};
-    thrust::host_vector<Vector3i> ref_triangles(10);
+    std::vector<Vector3i> ref_triangles(10);
     for (int i = 0; i < 10; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
     auto output_tm = geometry::TriangleMesh::CreateCone(1.0, 2.0, 5);
@@ -1218,7 +1218,7 @@ TEST(TriangleMesh, CreateMeshArrow) {
             {0.000000, 0.000000, 3.000000},   {1.500000, 0.000000, 2.000000},
             {0.463525, 1.426585, 2.000000},   {-1.213525, 0.881678, 2.000000},
             {-1.213525, -0.881678, 2.000000}, {0.463525, -1.426585, 2.000000}};
-    thrust::host_vector<Vector3f> ref_vertices(34);
+    std::vector<Vector3f> ref_vertices(34);
     for (int i = 0; i < 34; ++i) ref_vertices[i] = ref_vertices_raw[i];
 
     Vector3i ref_triangles_raw[] = {
@@ -1237,7 +1237,7 @@ TEST(TriangleMesh, CreateMeshArrow) {
             {26, 17, 21}, {26, 22, 17}, {27, 30, 29}, {28, 29, 30},
             {27, 31, 30}, {28, 30, 31}, {27, 32, 31}, {28, 31, 32},
             {27, 33, 32}, {28, 32, 33}, {27, 29, 33}, {28, 33, 29}};
-    thrust::host_vector<Vector3i> ref_triangles(60);
+    std::vector<Vector3i> ref_triangles(60);
     for (int i = 0; i < 60; ++i) ref_triangles[i] = ref_triangles_raw[i];
 
     auto output_tm = geometry::TriangleMesh::CreateArrow(1.0, 1.5, 2.0, 1.0, 5);

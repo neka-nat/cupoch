@@ -30,24 +30,18 @@ void HostPointCloud::FromDevice(const geometry::PointCloud& pointcloud) {
     points_.resize(pointcloud.points_.size());
     normals_.resize(pointcloud.normals_.size());
     colors_.resize(pointcloud.colors_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(points_.data()), thrust::raw_pointer_cast(pointcloud.points_.data()),
-                            points_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(normals_.data()), thrust::raw_pointer_cast(pointcloud.normals_.data()),
-                            normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(colors_.data()), thrust::raw_pointer_cast(pointcloud.colors_.data()),
-                            colors_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
+    copy_device_to_host(pointcloud.points_, points_);
+    copy_device_to_host(pointcloud.normals_, normals_);
+    copy_device_to_host(pointcloud.colors_, colors_);
 }
 
 void HostPointCloud::ToDevice(geometry::PointCloud& pointcloud) const {
     pointcloud.points_.resize(points_.size());
     pointcloud.normals_.resize(normals_.size());
     pointcloud.colors_.resize(colors_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(pointcloud.points_.data()), thrust::raw_pointer_cast(points_.data()),
-                            points_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(pointcloud.normals_.data()), thrust::raw_pointer_cast(normals_.data()),
-                            normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(pointcloud.colors_.data()), thrust::raw_pointer_cast(colors_.data()),
-                            colors_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
+    copy_host_to_device(points_, pointcloud.points_);
+    copy_host_to_device(normals_, pointcloud.normals_);
+    copy_host_to_device(colors_, pointcloud.colors_);
 }
 
 void HostPointCloud::Clear() {

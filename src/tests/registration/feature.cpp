@@ -29,7 +29,7 @@ using namespace std;
 using namespace unit_test;
 
 TEST(Feature, ComputeFPFHFeature) {
-    thrust::host_vector<Vector3f> points;
+    std::vector<Vector3f> points;
     points.push_back(Vector3f(1.9765625, 2.58410227, 1.16015625));
     points.push_back(Vector3f(1.9609375, 2.58455765, 1.16015625));
     points.push_back(Vector3f(1.8984375, 2.58400571, 1.16015625));
@@ -51,7 +51,7 @@ TEST(Feature, ComputeFPFHFeature) {
     points.push_back(Vector3f(1.89438566, 2.59281059, 1.12763938));
     points.push_back(Vector3f(1.84362796, 2.59052256, 1.12894744));
 
-    thrust::host_vector<Vector3f> normals;
+    std::vector<Vector3f> normals;
     normals.push_back(
             Vector3f(-1.72579880e-02, -9.57760371e-01, -2.87049184e-01));
     normals.push_back(
@@ -145,7 +145,7 @@ TEST(Feature, ComputeFPFHFeature) {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 
-    thrust::host_vector<registration::Feature<33>::FeatureType> ref_features;
+    std::vector<registration::Feature<33>::FeatureType> ref_features;
     for (int i = 0; i < mat_features.cols(); i++) {
         ref_features.push_back(mat_features.col(i));
     }

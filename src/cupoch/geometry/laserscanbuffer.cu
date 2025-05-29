@@ -137,8 +137,8 @@ LaserScanBuffer::LaserScanBuffer(const LaserScanBuffer& other)
       max_angle_(other.max_angle_),
       origins_(other.origins_) {}
 
-thrust::host_vector<float> LaserScanBuffer::GetRanges() const {
-    thrust::host_vector<float> ranges;
+std::vector<float> LaserScanBuffer::GetRanges() const {
+    std::vector<float> ranges;
     if (top_ == bottom_) {
         return ranges;
     }
@@ -161,8 +161,8 @@ thrust::host_vector<float> LaserScanBuffer::GetRanges() const {
     }
 }
 
-thrust::host_vector<float> LaserScanBuffer::GetIntensities() const {
-    thrust::host_vector<float> intensities;
+std::vector<float> LaserScanBuffer::GetIntensities() const {
+    std::vector<float> intensities;
     if (top_ == bottom_) {
         return intensities;
     }
@@ -302,6 +302,11 @@ template LaserScanBuffer& LaserScanBuffer::AddRanges(
         const thrust::host_vector<float>& ranges,
         const Eigen::Matrix4f& transformation,
         const thrust::host_vector<float>& intensities);
+
+template LaserScanBuffer& LaserScanBuffer::AddRanges(
+        const std::vector<float>& ranges,
+        const Eigen::Matrix4f& transformation,
+        const std::vector<float>& intensities);
 
 
 class ContainerLikePtr {

@@ -48,8 +48,8 @@ public:
     ~LaserScanBuffer();
     LaserScanBuffer(const LaserScanBuffer &other);
 
-    thrust::host_vector<float> GetRanges() const;
-    thrust::host_vector<float> GetIntensities() const;
+    std::vector<float> GetRanges() const;
+    std::vector<float> GetIntensities() const;
 
     LaserScanBuffer &Clear() override;
     bool IsEmpty() const override;

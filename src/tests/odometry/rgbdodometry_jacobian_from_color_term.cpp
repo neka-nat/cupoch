@@ -29,7 +29,7 @@ using namespace cupoch;
 using namespace unit_test;
 
 TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
-    thrust::host_vector<Vector6f> ref_J_r(10);
+    std::vector<Vector6f> ref_J_r(10);
     ref_J_r[0] << -1.208103, 0.621106, -0.040830, 0.173142, 0.260220, -1.164557;
     ref_J_r[1] << -0.338017, 0.140257, 0.019732, 0.030357, 0.128839, -0.395772;
     ref_J_r[2] << -0.235842, 0.122008, 0.029948, 0.037260, 0.119792, -0.194611;
@@ -43,7 +43,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
 
     float ref_r_raw[] = {0.419608,  -0.360784, 0.274510,  0.564706, 0.835294,
                          -0.352941, -0.545098, -0.360784, 0.121569, -0.094118};
-    thrust::host_vector<float> ref_r;
+    std::vector<float> ref_r;
     for (int i = 0; i < 10; ++i) ref_r.push_back(ref_r_raw[i]);
 
     int width = 10;
@@ -84,7 +84,7 @@ TEST(RGBDOdometryJacobianFromColorTerm, ComputeJacobianAndResidual) {
     extrinsic(2, 2) = 1.0;
 
     int rows = height;
-    thrust::host_vector<Vector4i> corresps(rows);
+    std::vector<Vector4i> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
     odometry::RGBDOdometryJacobianFromColorTerm jacobian_method;

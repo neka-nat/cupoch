@@ -57,7 +57,9 @@ public:
 
     void SetCorrespondenceSet(
             const thrust::host_vector<Eigen::Vector2i> &corres);
-    thrust::host_vector<Eigen::Vector2i> GetCorrespondenceSet() const;
+    void SetCorrespondenceSet(
+            const std::vector<Eigen::Vector2i> &corres);
+    std::vector<Eigen::Vector2i> GetCorrespondenceSet() const;
 
 public:
     Eigen::Matrix4f_u transformation_;

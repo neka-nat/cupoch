@@ -537,6 +537,14 @@ OccupancyGrid& OccupancyGrid::Insert(
     return Insert(dev_points, viewpoint, max_range);
 }
 
+OccupancyGrid& OccupancyGrid::Insert(const std::vector<Eigen::Vector3f>& points,
+                                     const Eigen::Vector3f& viewpoint,
+                                     float max_range) {
+    utility::device_vector<Eigen::Vector3f> dev_points(points.size());
+    copy_host_to_device(points, dev_points);
+    return Insert(dev_points, viewpoint, max_range);
+}
+
 OccupancyGrid& OccupancyGrid::Insert(const geometry::PointCloud& pointcloud,
                                      const Eigen::Vector3f& viewpoint,
                                      float max_range) {

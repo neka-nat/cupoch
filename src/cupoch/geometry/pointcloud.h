@@ -51,13 +51,16 @@ public:
     PointCloud &operator=(const PointCloud &other);
 
     void SetPoints(const thrust::host_vector<Eigen::Vector3f> &points);
-    thrust::host_vector<Eigen::Vector3f> GetPoints() const;
+    void SetPoints(const std::vector<Eigen::Vector3f> &points);
+    std::vector<Eigen::Vector3f> GetPoints() const;
 
     void SetNormals(const thrust::host_vector<Eigen::Vector3f> &normals);
-    thrust::host_vector<Eigen::Vector3f> GetNormals() const;
+    void SetNormals(const std::vector<Eigen::Vector3f> &normals);
+    std::vector<Eigen::Vector3f> GetNormals() const;
 
     void SetColors(const thrust::host_vector<Eigen::Vector3f> &colors);
-    thrust::host_vector<Eigen::Vector3f> GetColors() const;
+    void SetColors(const std::vector<Eigen::Vector3f> &colors);
+    std::vector<Eigen::Vector3f> GetColors() const;
 
     PointCloud &Clear() override;
     bool IsEmpty() const override;
@@ -122,6 +125,14 @@ public:
 
     std::shared_ptr<PointCloud> SelectByMask(
             const utility::device_vector<bool> &mask,
+            bool invert = false) const;
+
+    std::shared_ptr<PointCloud> SelectByIndex(
+            const std::vector<size_t> &indices,
+            bool invert = false) const;
+
+    std::shared_ptr<PointCloud> SelectByMask(
+            const std::vector<bool> &mask,
             bool invert = false) const;
 
     /// Function to downsample \param input pointcloud into output pointcloud

@@ -20,6 +20,8 @@
  **/
 #include "cupoch/registration/feature.h"
 
+#include "cupoch/utility/helper.h"
+
 namespace cupoch {
 namespace registration {
 
@@ -53,16 +55,18 @@ bool Feature<Dim>::IsEmpty() const {
 }
 
 template <int Dim>
-thrust::host_vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData()
+std::vector<Eigen::Matrix<float, Dim, 1>> Feature<Dim>::GetData()
         const {
-    thrust::host_vector<Eigen::Matrix<float, Dim, 1>> h_data = data_;
+    std::vector<Eigen::Matrix<float, Dim, 1>> h_data(data_.size());
+    copy_device_to_host(data_, h_data);
     return h_data;
 }
 
 template <int Dim>
 void Feature<Dim>::SetData(
-        const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &data) {
-    data_ = data;
+        const std::vector<Eigen::Matrix<float, Dim, 1>> &data) {
+    data_.resize(data.size());
+    copy_host_to_device(data, data_);
 }
 
 template class Feature<33>;

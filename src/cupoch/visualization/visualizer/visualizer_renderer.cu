@@ -26,6 +26,7 @@
 #include "cupoch/io/class_io/ijson_convertible_io.h"
 #include "cupoch/io/class_io/image_io.h"
 #include "cupoch/utility/console.h"
+#include "cupoch/visualization/shader/geometry_renderer.h"
 #include "cupoch/visualization/visualizer/view_trajectory.h"
 #include "cupoch/visualization/visualizer/visualizer.h"
 

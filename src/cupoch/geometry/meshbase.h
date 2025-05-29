@@ -59,17 +59,19 @@ public:
     MeshBase(const MeshBase &other);
     MeshBase &operator=(const MeshBase &other);
 
-    thrust::host_vector<Eigen::Vector3f> GetVertices() const;
+    std::vector<Eigen::Vector3f> GetVertices() const;
     void SetVertices(const thrust::host_vector<Eigen::Vector3f> &vertices);
+    void SetVertices(const std::vector<Eigen::Vector3f> &vertices);
 
-    thrust::host_vector<Eigen::Vector3f> GetVertexNormals() const;
+    std::vector<Eigen::Vector3f> GetVertexNormals() const;
     void SetVertexNormals(
             const thrust::host_vector<Eigen::Vector3f> &vertex_normals);
+    void SetVertexNormals(const std::vector<Eigen::Vector3f> &vertex_normals);
 
-    thrust::host_vector<Eigen::Vector3f> GetVertexColors() const;
+    std::vector<Eigen::Vector3f> GetVertexColors() const;
     void SetVertexColors(
             const thrust::host_vector<Eigen::Vector3f> &vertex_colors);
-
+    void SetVertexColors(const std::vector<Eigen::Vector3f> &vertex_colors);
 public:
     virtual MeshBase &Clear() override;
     virtual bool IsEmpty() const override;
@@ -105,10 +107,7 @@ public:
     MeshBase &NormalizeNormals();
 
     /// Assigns each vertex in the TriangleMesh the same color \param color.
-    MeshBase &PaintUniformColor(const Eigen::Vector3f &color) {
-        ResizeAndPaintUniformColor(vertex_colors_, vertices_.size(), color);
-        return *this;
-    }
+    MeshBase &PaintUniformColor(const Eigen::Vector3f &color);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base

@@ -29,7 +29,7 @@ using namespace cupoch;
 using namespace unit_test;
 
 TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
-    thrust::host_vector<Vector6f> ref_J_r(20);
+    std::vector<Vector6f> ref_J_r(20);
     ref_J_r[0] << -0.216112, 0.111107, -0.007304, 0.030973, 0.046549, -0.208322;
     ref_J_r[1] << -2.459541, 1.263714, -0.080521, 0.240151, 0.312196, -2.435808;
     ref_J_r[2] << -0.060466, 0.025090, 0.003530, 0.005430, 0.023047, -0.070798;
@@ -62,7 +62,7 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
             -0.063136, 0.231499, -0.097510, 1.207652,  -0.064539,
             0.949145,  0.021747, 1.408284,  -0.016836, 0.470714,
     };
-    thrust::host_vector<float> ref_r;
+    std::vector<float> ref_r;
     for (int i = 0; i < 20; ++i) ref_r.push_back(ref_r_raw[i]);
 
     int width = 10;
@@ -103,7 +103,7 @@ TEST(RGBDOdometryJacobianFromHybridTerm, ComputeJacobianAndResidual) {
     extrinsic(2, 2) = 1.0;
 
     int rows = height;
-    thrust::host_vector<Vector4i> corresps(rows);
+    std::vector<Vector4i> corresps(rows);
     Rand(corresps, 0, 3, 0);
 
     odometry::RGBDOdometryJacobianFromHybridTerm jacobian_method;

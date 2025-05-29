@@ -42,6 +42,7 @@ class LinearBoundingVolumeHierarchyKNN {
 public:
     LinearBoundingVolumeHierarchyKNN(size_t leaf_size = 32, bool compact = false, bool sort_queries = false, bool shrink_to_fit = false);
     LinearBoundingVolumeHierarchyKNN(const utility::device_vector<Eigen::Vector3f> &data, size_t leaf_size = 32, bool compact = false, bool sort_queries = false, bool shrink_to_fit = false);
+    LinearBoundingVolumeHierarchyKNN(const std::vector<Eigen::Vector3f> &data, size_t leaf_size = 32, bool compact = false, bool sort_queries = false, bool shrink_to_fit = false);
     ~LinearBoundingVolumeHierarchyKNN();
     LinearBoundingVolumeHierarchyKNN(const LinearBoundingVolumeHierarchyKNN &) = delete;
     LinearBoundingVolumeHierarchyKNN &operator=(const LinearBoundingVolumeHierarchyKNN &) = delete;
@@ -65,6 +66,12 @@ public:
                  float radius,
                  thrust::host_vector<unsigned int> &indices,
                  thrust::host_vector<float> &distance2) const;
+
+    template <typename T>
+    int SearchNN(const T &query,
+                 float radius,
+                 std::vector<unsigned int> &indices,
+                 std::vector<float> &distance2) const;
 
     template <typename T>
     bool SetRawData(const utility::device_vector<T> &data);
