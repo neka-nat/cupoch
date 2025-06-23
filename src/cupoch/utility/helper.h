@@ -438,25 +438,25 @@ __host__ __device__ inline thrust::tuple<int, int, int> KeyOf(size_t idx,
     return thrust::make_tuple(x, y, z);
 }
 
-template <typename T>
+template <typename T, typename ContainerType>
 inline void copy_device_to_host(const utility::device_vector<T> &src,
-                                utility::pinned_host_vector<T> &dist) {
+                                ContainerType &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyDeviceToHost));
 }
 
-template <typename T>
-inline void copy_host_to_device(const utility::pinned_host_vector<T> &src,
+template <typename T, typename ContainerType>
+inline void copy_host_to_device(const ContainerType &src,
                                 utility::device_vector<T> &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyHostToDevice));
 }
 
-template <typename T>
+template <typename T, typename ContainerType>
 inline void copy_device_to_device(const utility::device_vector<T> &src,
-                                  utility::device_vector<T> &dist) {
+                                  ContainerType &dist) {
     cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(dist.data()),
                             thrust::raw_pointer_cast(src.data()),
                             src.size() * sizeof(T), cudaMemcpyDeviceToDevice));

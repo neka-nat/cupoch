@@ -21,8 +21,8 @@ rospy-all = {version = "^0.0.1", optional = true}
 rosmaster = {version = "^1.15.11", optional = true}
 rosbag = {version = "^1.15.11", optional = true}
 transformations = {version = "^2022.9.26", optional = true}
-
 setuptools = "^72.2.0"
+
 [tool.poetry.dev-dependencies]
 twine = "^3.2.0"
 wheel = "^0.36.2"

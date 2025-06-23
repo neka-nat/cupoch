@@ -44,6 +44,7 @@ class KDTreeFlann {
 public:
     KDTreeFlann();
     KDTreeFlann(const utility::device_vector<Eigen::Vector3f> &data);
+    KDTreeFlann(const std::vector<Eigen::Vector3f> &data);
     ~KDTreeFlann();
     KDTreeFlann(const KDTreeFlann &) = delete;
     KDTreeFlann &operator=(const KDTreeFlann &) = delete;
@@ -108,6 +109,25 @@ public:
                      int max_nn,
                      thrust::host_vector<int> &indices,
                      thrust::host_vector<float> &distance2) const;
+
+    template <typename T>
+    int Search(const T &query,
+               const KDTreeSearchParam &param,
+               std::vector<int> &indices,
+               std::vector<float> &distance2) const;
+
+    template <typename T>
+    int SearchKNN(const T &query,
+                  int knn,
+                  std::vector<int> &indices,
+                  std::vector<float> &distance2) const;
+
+    template <typename T>
+    int SearchRadius(const T &query,
+                     float radius,
+                     int max_nn,
+                     std::vector<int> &indices,
+                     std::vector<float> &distance2) const;
 
     template <typename InputIterator, int Dim>
     bool SetRawData(InputIterator first, InputIterator last);

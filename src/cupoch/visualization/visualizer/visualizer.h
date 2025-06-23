@@ -27,7 +27,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "cupoch/visualization/shader/geometry_renderer.h"
 #include "cupoch/visualization/visualizer/render_option.h"
 
 namespace cupoch {
@@ -41,6 +40,12 @@ class Image;
 }  // namespace geometry
 
 namespace visualization {
+namespace glsl {
+class CoordinateFrameRenderer;
+class GridLineRenderer;
+class GeometryRenderer;
+}  // namespace glsl
+
 class ViewControl;
 
 class Visualizer {

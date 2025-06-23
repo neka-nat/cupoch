@@ -43,6 +43,10 @@ Eigen::Matrix4f_u Kabsch(cudaStream_t stream1,
                          const utility::device_vector<Eigen::Vector3f> &model,
                          const utility::device_vector<Eigen::Vector3f> &target);
 
+Eigen::Matrix4f_u Kabsch(const std::vector<Eigen::Vector3f> &model,
+                         const std::vector<Eigen::Vector3f> &target);
+
+
 Eigen::Matrix4f_u KabschWeighted(
         const utility::device_vector<Eigen::Vector3f> &model,
         const utility::device_vector<Eigen::Vector3f> &target,

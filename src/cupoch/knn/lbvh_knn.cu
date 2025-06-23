@@ -84,6 +84,13 @@ LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(const utility
     SetRawData(data);
 }
 
+LinearBoundingVolumeHierarchyKNN::LinearBoundingVolumeHierarchyKNN(const std::vector<Eigen::Vector3f> &data,
+                                                                   size_t leaf_size, bool compact, bool sort_queries, bool shrink_to_fit)
+    : leaf_size_(leaf_size), compact_(compact), sort_queries_(sort_queries), shrink_to_fit_(shrink_to_fit) {
+    nodes_ = std::make_unique<utility::device_vector<lbvh::BVHNode>>();
+    SetRawData(utility::device_vector<Eigen::Vector3f>(data));
+}
+
 LinearBoundingVolumeHierarchyKNN::~LinearBoundingVolumeHierarchyKNN() {}
 
 template <typename T>
@@ -111,6 +118,22 @@ int LinearBoundingVolumeHierarchyKNN::SearchNN(const T &query,
     auto result = SearchNN<T>(query_dv, radius, indices_dv, distance2_dv);
     indices = indices_dv;
     distance2 = distance2_dv;
+    return result;
+}
+
+template <typename T>
+int LinearBoundingVolumeHierarchyKNN::SearchNN(const T &query,
+                           float radius,
+                           std::vector<unsigned int> &indices,
+                           std::vector<float> &distance2) const {
+    utility::device_vector<T> query_dv(1, query);
+    utility::device_vector<unsigned int> indices_dv;
+    utility::device_vector<float> distance2_dv;
+    auto result = SearchNN<T>(query_dv, radius, indices_dv, distance2_dv);
+    indices.resize(indices_dv.size());
+    distance2.resize(distance2_dv.size());
+    copy_device_to_host(indices_dv, indices);
+    copy_device_to_host(distance2_dv, distance2);
     return result;
 }
 
@@ -253,6 +276,12 @@ template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
         float radius,
         thrust::host_vector<unsigned int> &indices,
         thrust::host_vector<float> &distance2) const;
+
+template int LinearBoundingVolumeHierarchyKNN::SearchNN<Eigen::Vector3f>(
+        const Eigen::Vector3f &query,
+        float radius,
+        std::vector<unsigned int> &indices,
+        std::vector<float> &distance2) const;
 
 template bool LinearBoundingVolumeHierarchyKNN::SetRawData<Eigen::Vector3f>(
         const utility::device_vector<Eigen::Vector3f> &data);

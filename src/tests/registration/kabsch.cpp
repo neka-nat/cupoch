@@ -36,7 +36,7 @@ TEST(Kabsch, Kabsch) {
     const size_t size = 20;
     Vector3f vmin(0.0, 0.0, 0.0);
     Vector3f vmax(1000.0, 1000.0, 1000.0);
-    thrust::host_vector<Vector3f> points(size);
+    std::vector<Vector3f> points(size);
     Rand(points, vmin, vmax, 0);
     geometry::PointCloud source;
     source.SetPoints(points);
@@ -48,7 +48,7 @@ TEST(Kabsch, Kabsch) {
 
     geometry::PointCloud target = source;
     target.Transform(ref_tf);
-    const Matrix4f res = registration::Kabsch(source.points_, target.points_);
+    const Matrix4f res = registration::Kabsch(source.GetPoints(), target.GetPoints());
     std::cout << ref_tf << std::endl;
     std::cout << res << std::endl;
     EXPECT_TRUE(res.isApprox(ref_tf, 1.0e-3));

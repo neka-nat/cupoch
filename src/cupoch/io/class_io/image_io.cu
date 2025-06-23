@@ -30,13 +30,13 @@ void HostImage::FromDevice(const geometry::Image& image) {
     data_.resize(image.data_.size());
     Prepare(image.width_, image.height_, image.num_of_channels_,
             image.bytes_per_channel_);
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(data_.data()), thrust::raw_pointer_cast(image.data_.data()), image.data_.size(), cudaMemcpyDeviceToHost));
+    copy_device_to_host(image.data_, data_);
 }
 
 void HostImage::ToDevice(geometry::Image& image) const {
     image.Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
     image.data_.resize(data_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(image.data_.data()), thrust::raw_pointer_cast(data_.data()), image.data_.size(), cudaMemcpyHostToDevice));
+    copy_host_to_device(data_, image.data_);
 }
 
 void HostImage::Clear() {

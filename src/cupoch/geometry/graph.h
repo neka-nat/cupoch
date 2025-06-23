@@ -55,10 +55,10 @@ public:
     Graph(const Graph &other);
     ~Graph();
 
-    thrust::host_vector<int> GetEdgeIndexOffsets() const;
+    std::vector<int> GetEdgeIndexOffsets() const;
     void SetEdgeIndexOffsets(
             const thrust::host_vector<int> &edge_index_offsets);
-    thrust::host_vector<float> GetEdgeWeights() const;
+    std::vector<float> GetEdgeWeights() const;
     void SetEdgeWeights(const thrust::host_vector<float> &edge_weights);
 
     bool HasWeights() const {
@@ -97,11 +97,15 @@ public:
             const utility::pinned_host_vector<float> &weights =
                     utility::pinned_host_vector<float>(),
             bool lazy_add = false);
+    Graph<Dim> &AddEdges(const std::vector<Eigen::Vector2i> &edges,
+                        const std::vector<float> &weights = std::vector<float>(),
+                        bool lazy_add = false);
 
     Graph<Dim> &RemoveEdge(const Eigen::Vector2i &edge);
     Graph<Dim> &RemoveEdges(
             const utility::device_vector<Eigen::Vector2i> &edges);
     Graph<Dim> &RemoveEdges(const thrust::host_vector<Eigen::Vector2i> &edges);
+    Graph<Dim> &RemoveEdges(const std::vector<Eigen::Vector2i> &edges);
 
     Graph<Dim> &PaintEdgeColor(const Eigen::Vector2i &edge,
                                const Eigen::Vector3f &color);
@@ -111,11 +115,16 @@ public:
     Graph<Dim> &PaintEdgesColor(
             const thrust::host_vector<Eigen::Vector2i> &edges,
             const Eigen::Vector3f &color);
+    Graph<Dim> &PaintEdgesColor(
+            const std::vector<Eigen::Vector2i> &edges,
+            const Eigen::Vector3f &color);
 
     Graph<Dim> &PaintNodeColor(int node, const Eigen::Vector3f &color);
     Graph<Dim> &PaintNodesColor(const utility::device_vector<int> &nodes,
                                 const Eigen::Vector3f &color);
     Graph<Dim> &PaintNodesColor(const thrust::host_vector<int> &nodes,
+                                const Eigen::Vector3f &color);
+    Graph<Dim> &PaintNodesColor(const std::vector<int> &nodes,
                                 const Eigen::Vector3f &color);
 
     Graph<Dim> &SetEdgeWeightsFromDistance();

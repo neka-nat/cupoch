@@ -81,7 +81,7 @@ void pybind_distancetransform(py::module &m) {
             .def("get_distance", &geometry::DistanceTransform::GetDistance)
             .def("get_distances",
                  [] (const geometry::DistanceTransform& self,
-                     const wrapper::device_vector_vector3f& points) {
+                     const wrapper::device_vector_vector3f& points) -> wrapper::device_vector_float {
                      return wrapper::device_vector_float(*self.GetDistances(points.data_));
                  })
             .def_static(

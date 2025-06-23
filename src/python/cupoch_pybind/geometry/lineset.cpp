@@ -34,8 +34,8 @@ template <class LineSetT, int Dim>
 void bind_def(LineSetT& lineset) {
     py::detail::bind_default_constructor<geometry::LineSet<Dim>>(lineset);
     py::detail::bind_copy_functions<geometry::LineSet<Dim>>(lineset);
-    lineset.def(py::init<const thrust::host_vector<Eigen::Matrix<float, Dim, 1>> &,
-                         const thrust::host_vector<Eigen::Vector2i> &>(),
+    lineset.def(py::init<const std::vector<Eigen::Matrix<float, Dim, 1>> &,
+                         const std::vector<Eigen::Vector2i> &>(),
                 "Create a LineSet from given points and line indices",
                 "points"_a, "lines"_a)
             .def(py::init([](const wrapper::device_vector_wrapper<Eigen::Matrix<float, Dim, 1>> &points,
@@ -72,7 +72,9 @@ void bind_def(LineSetT& lineset) {
                  })
             .def_static(
                     "create_from_point_cloud_correspondences",
-                    &geometry::LineSet<Dim>::template CreateFromPointCloudCorrespondences<Dim>,
+                    [] (const geometry::PointCloud& cloud0, const geometry::PointCloud& cloud1, const wrapper::device_vector_wrapper<Eigen::Vector2i>& correspondences) {
+                        return geometry::LineSet<Dim>::template CreateFromPointCloudCorrespondences<Dim>(cloud0, cloud1, correspondences.data_);
+                    },
                     "Factory function to create a LineSet from two "
                     "pointclouds and a correspondence set.",
                     "cloud0"_a, "cloud1"_a, "correspondences"_a)

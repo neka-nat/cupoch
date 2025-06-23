@@ -32,18 +32,12 @@ void HostTriangleMesh::FromDevice(const geometry::TriangleMesh& trianglemesh) {
     triangles_.resize(trianglemesh.triangles_.size());
     triangle_normals_.resize(trianglemesh.triangle_normals_.size());
     triangle_uvs_.resize(trianglemesh.triangle_uvs_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(vertices_.data()), thrust::raw_pointer_cast(trianglemesh.vertices_.data()),
-                            vertices_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(vertex_normals_.data()), thrust::raw_pointer_cast(trianglemesh.vertex_normals_.data()),
-                            vertex_normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(vertex_colors_.data()), thrust::raw_pointer_cast(trianglemesh.vertex_colors_.data()),
-                            vertex_colors_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(triangles_.data()), thrust::raw_pointer_cast(trianglemesh.triangles_.data()),
-                            triangles_.size() * sizeof(Eigen::Vector3i), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(triangle_normals_.data()), thrust::raw_pointer_cast(trianglemesh.triangle_normals_.data()),
-                            triangle_normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyDeviceToHost));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(triangle_uvs_.data()), thrust::raw_pointer_cast(trianglemesh.triangle_uvs_.data()),
-                            triangle_uvs_.size() * sizeof(Eigen::Vector2f), cudaMemcpyDeviceToHost));
+    copy_device_to_host(trianglemesh.vertices_, vertices_);
+    copy_device_to_host(trianglemesh.vertex_normals_, vertex_normals_);
+    copy_device_to_host(trianglemesh.vertex_colors_, vertex_colors_);
+    copy_device_to_host(trianglemesh.triangles_, triangles_);
+    copy_device_to_host(trianglemesh.triangle_normals_, triangle_normals_);
+    copy_device_to_host(trianglemesh.triangle_uvs_, triangle_uvs_);
     texture_.FromDevice(trianglemesh.texture_);
 }
 
@@ -54,18 +48,12 @@ void HostTriangleMesh::ToDevice(geometry::TriangleMesh& trianglemesh) const {
     trianglemesh.triangles_.resize(triangles_.size());
     trianglemesh.triangle_normals_.resize(triangle_normals_.size());
     trianglemesh.triangle_uvs_.resize(triangle_uvs_.size());
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.vertices_.data()), thrust::raw_pointer_cast(vertices_.data()),
-                            vertices_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.vertex_normals_.data()), thrust::raw_pointer_cast(vertex_normals_.data()),
-                            vertex_normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.vertex_colors_.data()), thrust::raw_pointer_cast(vertex_colors_.data()),
-                            vertex_colors_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.triangles_.data()), thrust::raw_pointer_cast(triangles_.data()),
-                            triangles_.size() * sizeof(Eigen::Vector3i), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.triangle_normals_.data()), thrust::raw_pointer_cast(triangle_normals_.data()),
-                            triangle_normals_.size() * sizeof(Eigen::Vector3f), cudaMemcpyHostToDevice));
-    cudaSafeCall(cudaMemcpy(thrust::raw_pointer_cast(trianglemesh.triangle_uvs_.data()), thrust::raw_pointer_cast(triangle_uvs_.data()),
-                            triangle_uvs_.size() * sizeof(Eigen::Vector2f), cudaMemcpyHostToDevice));
+    copy_host_to_device(vertices_, trianglemesh.vertices_);
+    copy_host_to_device(vertex_normals_, trianglemesh.vertex_normals_);
+    copy_host_to_device(vertex_colors_, trianglemesh.vertex_colors_);
+    copy_host_to_device(triangles_, trianglemesh.triangles_);
+    copy_host_to_device(triangle_normals_, trianglemesh.triangle_normals_);
+    copy_host_to_device(triangle_uvs_, trianglemesh.triangle_uvs_);
     texture_.ToDevice(trianglemesh.texture_);
 }
 

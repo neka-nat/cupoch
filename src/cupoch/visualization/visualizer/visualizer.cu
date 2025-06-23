@@ -28,6 +28,7 @@
 #include "cupoch/geometry/trianglemesh.h"
 #include "cupoch/utility/console.h"
 #include "cupoch/utility/platform.h"
+#include "cupoch/visualization/shader/geometry_renderer.h"
 
 using namespace cupoch;
 using namespace cupoch::visualization;

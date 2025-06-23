@@ -57,7 +57,7 @@ TEST(Graph, Constructor) {
 
 TEST(Graph, AddEdge) {
     geometry::Graph<3> gp;
-    thrust::host_vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> points;
     points.push_back({0.0, 0.0, 0.0});
     points.push_back({1.0, 0.0, 0.0});
     points.push_back({0.0, 1.0, 0.0});
@@ -71,7 +71,7 @@ TEST(Graph, AddEdge) {
     gp.AddEdge({3, 4});
 
     EXPECT_EQ(gp.lines_.size(), 10);
-    thrust::host_vector<int> edge_index_offsets = gp.GetEdgeIndexOffsets();
+    std::vector<int> edge_index_offsets = gp.GetEdgeIndexOffsets();
     EXPECT_EQ(edge_index_offsets.size(), 6);
     EXPECT_EQ(edge_index_offsets[0], 0);
     EXPECT_EQ(edge_index_offsets[1], 2);
@@ -83,7 +83,7 @@ TEST(Graph, AddEdge) {
 
 TEST(Graph, DijkstraPath) {
     geometry::Graph<3> gp;
-    thrust::host_vector<Eigen::Vector3f> points;
+    std::vector<Eigen::Vector3f> points;
     points.push_back({0.0, 0.0, 0.0});
     points.push_back({1.0, 0.0, 0.0});
     points.push_back({0.0, 1.0, 0.0});

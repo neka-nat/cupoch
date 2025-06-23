@@ -53,8 +53,8 @@ void unit_test::ExpectEQ(const uint8_t* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of uint8_t.
 // ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const host_vector<uint8_t>& v0,
-                         const host_vector<uint8_t>& v1) {
+void unit_test::ExpectEQ(const std::vector<uint8_t>& v0,
+                         const std::vector<uint8_t>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size());
 }
@@ -71,8 +71,8 @@ void unit_test::ExpectEQ(const int* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of int.
 // ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const host_vector<int>& v0,
-                         const host_vector<int>& v1) {
+void unit_test::ExpectEQ(const std::vector<int>& v0,
+                         const std::vector<int>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size());
 }
@@ -89,8 +89,8 @@ void unit_test::ExpectEQ(const float* const v0,
 // ----------------------------------------------------------------------------
 // Test equality of two vectors of float.
 // ----------------------------------------------------------------------------
-void unit_test::ExpectEQ(const host_vector<float>& v0,
-                         const host_vector<float>& v1) {
+void unit_test::ExpectEQ(const std::vector<float>& v0,
+                         const std::vector<float>& v1) {
     EXPECT_EQ(v0.size(), v1.size());
     ExpectEQ(v0.data(), v1.data(), v0.size());
 }
