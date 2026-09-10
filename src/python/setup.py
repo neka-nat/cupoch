@@ -55,6 +55,8 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Education",
         "Topic :: Multimedia :: Graphics :: 3D Rendering",
         "Topic :: Multimedia :: Graphics :: Viewers",

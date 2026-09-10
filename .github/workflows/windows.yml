@@ -28,6 +28,14 @@ jobs:
             cuda: "11.2.0"
             visual_studio: "Visual Studio 16 2019"
             python-version: "3.12"
+          - os: windows-2019
+            cuda: "11.2.0"
+            visual_studio: "Visual Studio 16 2019"
+            python-version: "3.13"
+          - os: windows-2019
+            cuda: "11.2.0"
+            visual_studio: "Visual Studio 16 2019"
+            python-version: "3.14"
     env:
       build_dir: "build"
       config: "Release"
@@ -38,7 +46,7 @@ jobs:
       with:
         submodules: true
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install CUDA 
