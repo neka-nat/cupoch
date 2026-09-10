@@ -26,6 +26,12 @@ macro(INSTALL_HEADERS source)
 endmacro()
 
 if (BUILD_PYBIND11)
+    # Force pybind11's classic Python detection (FindPythonLibsNew.cmake) so it
+    # keeps populating the legacy PYTHON_INCLUDE_DIRS/PYTHON_LIBRARIES/
+    # PYTHON_MODULE_PREFIX/PYTHON_MODULE_EXTENSION/PYTHON_VERSION variables that
+    # src/python/CMakeLists.txt reads directly. pybind11 >=3 defaults to CMake's
+    # own FindPython on CMake >=3.27, which does not set those variables.
+    set(PYBIND11_FINDPYTHON OFF)
     add_subdirectory(pybind11)
 endif ()
 

@@ -53,6 +53,8 @@ endif ()
 if (BUILD_PYTHON_MODULE)
     # pybind11 provides PYBIND11_INCLUDE_DIR / PYTHON_* the python target needs.
     if (BUILD_PYBIND11)
+        # See third_party/CMakeLists.txt for why classic mode is forced.
+        set(PYBIND11_FINDPYTHON OFF)
         add_subdirectory(third_party/pybind11 ${CMAKE_BINARY_DIR}/pybind11)
     endif ()
     add_subdirectory(src/python)
