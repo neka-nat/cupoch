@@ -542,7 +542,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateSphere(
             resolution);
     thrust::for_each(thrust::make_counting_iterator<size_t>(0),
                      thrust::make_counting_iterator<size_t>(
-                             2 * (resolution - 1) * resolution),
+                             2 * (resolution - 2) * resolution),
                      func_tr2);
     return mesh_ptr;
 }
